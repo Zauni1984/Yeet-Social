@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: yeet-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yeet
+      POSTGRES_USER: yeet
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yeet_dev_pw}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yeet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: yeet-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  # ── Backend (Rust/Axum) ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: yeet-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://yeet:${POSTGRES_PASSWORD:-yeet_dev_pw}@postgres:5432/yeet
+      REDIS_URL: redis://redis:6379
+      BSC_RPC_URL: ${BSC_RPC_URL:-https://bsc-dataseed.binance.org/}
+      YEET_TOKEN_ADDRESS: ${YEET_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
+      YEET_NFT_ADDRESS: ${YEET_NFT_ADDRESS:-0x0000000000000000000000000000000000000000}
+      JWT_SECRET: ${JWT_SECRET}
+      REWARDS_MINTER_PRIVKEY: ${REWARDS_MINTER_PRIVKEY:-}
+      PORT: 8080
+      RUST_LOG: backend=info,tower_http=info
+    ports:
+      - "8080:8080"
+
+  # ── Frontend (Leptos WASM via Trunk) ─────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: yeet-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  # ── Nginx reverse proxy ───────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: yeet-nginx
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+
+volumes:
+  postgres_data:
+  redis_data:
