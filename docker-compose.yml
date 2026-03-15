@@ -1,12 +1,16 @@
 version: "3.9"
 
-# Yeet Social Media — Production
-# VPS: 76.13.150.206 | Hostinger Docker Manager
-# Deploy: git push origin main  →  GitHub Actions  →  Hostinger API
+# ============================================================
+#  Yeet Social — Hostinger Docker Manager
+#  Deploy URL:
+#  https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml
+#
+#  ENV VARS im Hostinger Docker Manager eintragen:
+#    POSTGRES_PASSWORD=dein_sicheres_passwort
+# ============================================================
 
 services:
 
-  # ── PostgreSQL ───────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: yeet-postgres
@@ -14,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: yeet
       POSTGRES_USER: yeet
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yeet_change_me}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks: [yeet-net]
@@ -25,7 +29,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Redis ────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: yeet-redis
@@ -40,36 +43,24 @@ services:
       interval: 10s
       retries: 5
 
-  # ── Backend (Rust/Axum) ──────────────────────────────────────────────────────
-  backend:
-    image: ghcr.io/zauni1984/yeet-social/backend:main
-    container_name: yeet-backend
+  adminer:
+    image: adminer:latest
+    container_name: yeet-adminer
     restart: always
-    depends_on:
-      postgres: {condition: service_healthy}
-      redis:    {condition: service_healthy}
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      BSC_RPC_URL: ${BSC_RPC_URL}
-      YEET_TOKEN_ADDRESS: ${YEET_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
-      YEET_NFT_ADDRESS: ${YEET_NFT_ADDRESS:-0x0000000000000000000000000000000000000000}
-      JWT_SECRET: ${JWT_SECRET}
-      REWARDS_MINTER_PRIVKEY: ${REWARDS_MINTER_PRIVKEY:-}
-      PORT: 8080
-      RUST_LOG: ${RUST_LOG:-backend=info,tower_http=warn}
-    networks: [yeet-net]
     ports:
       - "8080:8080"
-
-  # ── Frontend (Leptos WASM) ───────────────────────────────────────────────────
-  frontend:
-    image: ghcr.io/zauni1984/yeet-social/frontend:main
-    container_name: yeet-frontend
-    restart: always
     networks: [yeet-net]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    image: nginx:alpine
+    container_name: yeet-web
+    restart: always
     ports:
       - "80:80"
+    networks: [yeet-net]
 
 networks:
   yeet-net:
@@ -78,3 +69,15 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+```
+
+**4.** Oben rechts **"Commit changes"** klicken → **"Commit directly to main"** → bestätigen
+
+**5.** Dann im Hostinger Docker Manager:**"Compose from URL"** klicken und diese URL einfügen:
+```
+https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml
+```
+
+**6.** Als Environment Variable eintragen:
+```
+POSTGRES_PASSWORD=dein_sicheres_passwort
