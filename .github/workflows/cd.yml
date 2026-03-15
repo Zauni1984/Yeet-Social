@@ -1,0 +1,40 @@
+name: CD — Deploy to Hostinger VPS
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS (76.13.150.206)
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: http://76.13.150.206
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Hostinger VPS
+        uses: hostinger/deploy-on-vps@v2
+        with:
+          api-key: ${{ secrets.HOSTINGER_API_KEY }}
+          virtual-machine: ${{ vars.HOSTINGER_VM_ID }}
+          project-name: yeet-social
+          docker-compose-path: docker-compose.yml
+          environment-variables: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            REDIS_URL=redis://redis:6379
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            BSC_RPC_URL=https://bsc-dataseed.binance.org/
+            YEET_TOKEN_ADDRESS=${{ vars.YEET_TOKEN_ADDRESS }}
+            YEET_NFT_ADDRESS=${{ vars.YEET_NFT_ADDRESS }}
+            REWARDS_MINTER_PRIVKEY=${{ secrets.REWARDS_MINTER_PRIVKEY }}
+            PORT=8080
+            RUST_LOG=backend=info,tower_http=warn
+            API_URL=http://76.13.150.206/api/v1
