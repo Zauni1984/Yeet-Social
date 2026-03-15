@@ -1,34 +1,32 @@
-use anyhow::Result;
-use sqlx::{PgPool, postgres::PgPoolOptions};
+//! PostgreSQL connection pool via sqlx.
+use anyhow::{Context, Result};
+use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::time::Duration;
 
-/// Thin wrapper around sqlx PgPool
-#[derive(Clone)]
-pub struct Database {
-    pub pool: PgPool,
-}
-
-pub type RedisPool = deadpool_redis::Pool;
+#[derive(Clone, Debug)]
+pub struct Database { pub(crate) pool: PgPool }
 
 impl Database {
     pub async fn connect(url: &str) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .max_connections(20)
+            .min_connections(2)
+            .acquire_timeout(Duration::from_secs(10))
             .connect(url)
-            .await?;
+            .await
+            .context("Failed to connect to PostgreSQL")?;
         Ok(Self { pool })
     }
 
-    /// Run embedded migrations from ./migrations/
-    pub async fn migrate(&self) -> Result<()> {
-        sqlx::migrate!("./migrations").run(&self.pool).await?;
+    pub async fn run_migrations(&self) -> Result<()> {
+        sqlx::migrate!("./migrations").run(&self.pool).await.context("Migrations failed")?;
         Ok(())
     }
-}
 
-impl RedisPool {
-    pub fn new(url: &str) -> Result<Self> {
-        let cfg = deadpool_redis::Config::from_url(url);
-        let pool = cfg.create_pool(Some(deadpool_redis::Runtime::Tokio1))?;
-        Ok(pool)
+    pub async fn ping(&self) -> Result<()> {
+        sqlx::query("SELECT 1").execute(&self.pool).await.context("DB ping failed")?;
+        Ok(())
     }
+
+    pub fn pool(&self) -> &PgPool { &self.pool }
 }
