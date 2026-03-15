@@ -2,7 +2,7 @@
 name        = "backend"
 version     = "0.1.0"
 edition     = "2021"
-description = "Yeet Social Media — Rust/Axum backend"
+description = "Yeet Social Media — Rust/Axum backend (web + Android + iOS)"
 
 [[bin]]
 name = "yeet-server"
@@ -30,6 +30,7 @@ dotenvy          = "0.15"
 tracing          = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator        = { version = "0.18", features = ["derive"] }
+async-trait      = "0.1"
 
 [profile.release]
 opt-level     = 3
