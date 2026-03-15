@@ -1,134 +1,116 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    Json,
-};
-use chrono::{Duration, Utc};
-use jsonwebtoken::{encode, EncodingKey, Header};
-use rand::Rng;
+//! Auth handlers — wallet-based login (works on web + Android + iOS).
+use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use crate::AppState;
-use shared::ApiResponse;
+use std::time::Duration;
+use crate::{AppError, AppResult, AppState, services::auth, models::ApiResponse};
+use crate::api::middleware::AuthUser;
 
-#[derive(Serialize)]
-pub struct NonceResponse {
-    pub nonce: String,
-    pub message: String,
-}
+// ── Request / Response types ──────────────────────────────────────────────────
 
-#[derive(Deserialize)]
-pub struct WalletLoginRequest {
-    pub wallet_address: String,
-    pub signature: String,
-    pub message: String,
-}
+#[derive(Debug, Deserialize)]
+pub struct NonceRequest { pub address: String }
 
-#[derive(Serialize)]
-pub struct AuthResponse {
-    pub token: String,
-    pub user_id: Uuid,
-    pub wallet_address: String,
-    pub is_new_user: bool,
-}
+#[derive(Debug, Serialize)]
+pub struct NonceResponse { pub nonce: String, pub message: String }
 
-#[derive(Serialize, Deserialize)]
-pub struct Claims {
-    pub sub: String,
-    pub wallet: String,
-    pub exp: i64,
-}
+#[derive(Debug, Deserialize)]
+pub struct VerifyRequest { pub address: String, pub signature: String, pub nonce: String }
 
+#[derive(Debug, Serialize)]
+pub struct TokenResponse { pub access_token: String, pub refresh_token: String, pub token_type: String }
+
+#[derive(Debug, Deserialize)]
+pub struct RefreshRequest { pub refresh_token: String }
+
+// ── Handlers ──────────────────────────────────────────────────────────────────
+
+/// Step 1: Request a nonce for a wallet address.
+/// The client must sign this nonce with their private key.
 pub async fn get_nonce(
     State(state): State<AppState>,
-    Path(wallet): Path<String>,
-) -> Result<Json<ApiResponse<NonceResponse>>, StatusCode> {
-    let nonce: String = rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
-        .take(32)
-        .map(char::from)
-        .collect();
+    Json(req): Json<NonceRequest>,
+) -> AppResult<Json<ApiResponse<NonceResponse>>> {
+    let address = req.address.to_lowercase();
+    if !is_valid_address(&address) {
+        return Err(AppError::Validation("Invalid wallet address".into()));
+    }
 
-    let message = format!(
-        "Welcome to Yeet!\nSign to login.\nWallet: {wallet}\nNonce: {nonce}\nTime: {}",
-        Utc::now().timestamp()
-    );
+    let nonce = auth::generate_nonce();
+    let message = auth::sign_message(&nonce);
 
-    // Cache nonce in Redis (5 min TTL)
-    let mut conn = state.redis.get().await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let key = format!("nonce:{}", wallet.to_lowercase());
-    redis::cmd("SETEX")
-        .arg(&key).arg(300).arg(&nonce)
-        .query_async::<_, ()>(&mut conn).await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    // Store nonce in Redis — expires in 10 minutes
+    state.cache.set_nonce(&address, &nonce, Duration::from_secs(600)).await
+        .map_err(|e| AppError::Cache(e.to_string()))?;
 
     Ok(Json(ApiResponse::ok(NonceResponse { nonce, message })))
 }
 
-pub async fn wallet_login(
+/// Step 2: Verify EIP-191 signature and issue JWT tokens.
+pub async fn verify_signature(
     State(state): State<AppState>,
-    Json(req): Json<WalletLoginRequest>,
-) -> Result<Json<ApiResponse<AuthResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
-    let wallet = req.wallet_address.to_lowercase();
+    Json(req): Json<VerifyRequest>,
+) -> AppResult<Json<ApiResponse<TokenResponse>>> {
+    let address = req.address.to_lowercase();
 
-    // 1. Verify BSC wallet signature
-    let valid = state.bsc
-        .verify_signature(&wallet, &req.message, &req.signature)
-        .map_err(|_| (StatusCode::BAD_REQUEST, Json(ApiResponse::err("Bad signature format"))))?;
+    // Consume the nonce (single-use, atomic)
+    let stored_nonce = state.cache.consume_nonce(&address).await
+        .map_err(|e| AppError::Cache(e.to_string()))?
+        .ok_or_else(|| AppError::Unauthorised("Nonce not found or expired".into()))?;
 
-    if !valid {
-        return Err((StatusCode::UNAUTHORIZED, Json(ApiResponse::err("Invalid signature"))));
+    if stored_nonce != req.nonce {
+        return Err(AppError::Unauthorised("Nonce mismatch".into()));
     }
 
-    // 2. Upsert user in DB
-    let user = sqlx::query!(
-        r#"
-        INSERT INTO users (id, wallet_address, username, created_at)
-        VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (wallet_address)
-        DO UPDATE SET wallet_address = EXCLUDED.wallet_address
-        RETURNING id, username,
-            (xmax = 0) AS "is_new_user!"
-        "#,
-        Uuid::new_v4(),
-        wallet,
-        format!("user_{}", &wallet[2..8])
+    // Verify EIP-191 signature — recover signer address
+    let message = auth::sign_message(&req.nonce);
+    let recovered = auth::recover_signer(&message, &req.signature)
+        .map_err(|e| AppError::Unauthorised(format!("Signature verification failed: {e}")))?;
+
+    if recovered != address {
+        return Err(AppError::Unauthorised("Signature does not match address".into()));
+    }
+
+    // Upsert user in DB
+    sqlx::query!(
+        r#"INSERT INTO users (wallet_address) VALUES ($1)
+           ON CONFLICT (wallet_address) DO UPDATE SET updated_at = NOW()"#,
+        address
     )
-    .fetch_one(&state.db.pool)
+    .execute(state.db.pool())
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err("DB error"))))?;
+    .map_err(AppError::Database)?;
 
-    // 3. Reward daily login tokens (if new day)
-    if user.is_new_user {
-        let _ = crate::services::tokens::reward_action(
-            &state, user.id,
-            shared::RewardAction::DailyLogin
-        ).await;
-    }
+    // Issue JWT pair
+    let (access_token, refresh_token) = auth::issue_token_pair(&address, &state.jwt)
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    // 4. Issue JWT
-    let claims = Claims {
-        sub: user.id.to_string(),
-        wallet: wallet.clone(),
-        exp: (Utc::now() + Duration::days(7)).timestamp(),
-    };
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(state.jwt_secret.as_bytes()),
-    ).map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err("Token error"))))?;
-
-    Ok(Json(ApiResponse::ok(AuthResponse {
-        token,
-        user_id: user.id,
-        wallet_address: wallet,
-        is_new_user: user.is_new_user,
+    Ok(Json(ApiResponse::ok(TokenResponse {
+        access_token,
+        refresh_token,
+        token_type: "Bearer".into(),
     })))
 }
 
+/// Refresh an access token using a valid refresh token.
 pub async fn refresh_token(
-    State(_state): State<AppState>,
-) -> Json<ApiResponse<String>> {
-    Json(ApiResponse::err("Not implemented"))
+    State(state): State<AppState>,
+    Json(req): Json<RefreshRequest>,
+) -> AppResult<Json<ApiResponse<TokenResponse>>> {
+    let claims = auth::verify_refresh_token(&req.refresh_token, &state.jwt)
+        .map_err(|e| AppError::Unauthorised(e.to_string()))?;
+
+    if state.cache.is_blacklisted(&claims.jti).await.unwrap_or(false) {
+        return Err(AppError::Unauthorised("Refresh token has been revoked".into()));
+    }
+
+    let (access_token, refresh_token) = auth::issue_token_pair(&claims.sub, &state.jwt)
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(ApiResponse::ok(TokenResponse { access_token, refresh_token, token_type: "Bearer".into() })))
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+fn is_valid_address(address: &str) -> bool {
+    address.starts_with("0x") && address.len() == 42 && address[2..].chars().all(|c| c.is_ascii_hexdigit())
 }
