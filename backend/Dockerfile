@@ -1,22 +1,18 @@
 # syntax=docker/dockerfile:1
-# Uses rust:latest to always get newest stable Rust
-# Required: time@0.3.47 + home@0.5.12 need rustc >= 1.88.0
+# rust:latest = always newest stable (>= 1.88 required by time + home deps)
 FROM rust:latest AS builder
-
 WORKDIR /build
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev libpq-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Cache deps layer
+# Cache dependency layer
 COPY Cargo.toml ./
-ENV SQLX_OFFLINE=true
 RUN mkdir src && echo 'fn main() {}' > src/main.rs
 RUN cargo build --release --bin yeet-server 2>/dev/null || true
 RUN rm -rf src
 
-# Build real source
+# Build real source (no SQLX_OFFLINE — using query() not query! macros)
 COPY . .
 RUN touch src/main.rs
 RUN cargo build --release --bin yeet-server
