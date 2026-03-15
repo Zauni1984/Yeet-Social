@@ -1,106 +1,112 @@
-use axum::{extract::{Path, State}, Json, http::StatusCode};
+//! User profile handlers — get, update, follow, unfollow.
+use axum::{extract::{Path, State}, Json};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use crate::AppState;
-use shared::{ApiResponse, User};
-use chrono::Utc;
+use crate::{AppError, AppResult, AppState, models::{ApiResponse, UserProfile}};
+use crate::api::middleware::AuthUser;
 
-pub async fn get_profile(
-    State(state): State<AppState>,
-    Path(username): Path<String>,
-) -> Result<Json<ApiResponse<User>>, StatusCode> {
-    let row = sqlx::query!(
-        r#"
-        SELECT id, username, display_name, bio, avatar_url,
-               wallet_address, country_code, is_verified,
-               age_verified, yeet_token_balance, created_at
-        FROM users WHERE username = $1
-        "#,
-        username
-    )
-    .fetch_optional(&state.db.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    match row {
-        Some(r) => Ok(Json(ApiResponse::ok(User {
-            id: r.id,
-            username: r.username,
-            display_name: r.display_name.unwrap_or_default(),
-            bio: r.bio,
-            avatar_url: r.avatar_url,
-            wallet_address: r.wallet_address,
-            country_code: r.country_code,
-            is_verified: r.is_verified.unwrap_or(false),
-            age_verified: r.age_verified.unwrap_or(false),
-            yeet_token_balance: r.yeet_token_balance.unwrap_or(0.0),
-            created_at: r.created_at,
-        }))),
-        None => Ok(Json(ApiResponse::err("User not found"))),
-    }
-}
-
-pub async fn get_me(State(s): State<AppState>) -> Json<ApiResponse<String>> {
-    Json(ApiResponse::ok("TODO: extract from JWT middleware".into()))
-}
-
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct UpdateProfileRequest {
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
+    pub adult_content: Option<bool>,
 }
 
-pub async fn update_me(
+pub async fn get_profile(
     State(state): State<AppState>,
+    Path(address): Path<String>,
+) -> AppResult<Json<ApiResponse<UserProfile>>> {
+    let addr = address.to_lowercase();
+    let r = sqlx::query!(
+        r#"SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.created_at,
+              (SELECT COUNT(*) FROM follows WHERE following_id = u.id) as follower_count,
+              (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
+              (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW()) as post_count
+           FROM users u WHERE u.wallet_address = $1"#,
+        addr
+    )
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+    .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+    Ok(Json(ApiResponse::ok(UserProfile {
+        id: r.id, wallet_address: r.wallet_address, display_name: r.display_name,
+        bio: r.bio, avatar_url: r.avatar_url,
+        follower_count: r.follower_count.unwrap_or(0),
+        following_count: r.following_count.unwrap_or(0),
+        post_count: r.post_count.unwrap_or(0),
+        created_at: r.created_at,
+    })))
+}
+
+pub async fn get_my_profile(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<ApiResponse<UserProfile>>> {
+    get_profile(State(state), Path(auth.address)).await
+}
+
+pub async fn update_profile(
+    State(state): State<AppState>,
+    auth: AuthUser,
     Json(req): Json<UpdateProfileRequest>,
-) -> Result<Json<ApiResponse<()>>, StatusCode> {
-    let user_id = Uuid::new_v4(); // TODO: from JWT
+) -> AppResult<Json<ApiResponse<()>>> {
+    if let Some(ref name) = req.display_name {
+        if name.len() > 50 { return Err(AppError::Validation("Display name max 50 chars".into())); }
+    }
+    if let Some(ref bio) = req.bio {
+        if bio.len() > 280 { return Err(AppError::Validation("Bio max 280 chars".into())); }
+    }
+
     sqlx::query!(
-        r#"
-        UPDATE users
-        SET display_name = COALESCE($2, display_name),
-            bio = COALESCE($3, bio),
-            avatar_url = COALESCE($4, avatar_url)
-        WHERE id = $1
-        "#,
-        user_id, req.display_name, req.bio, req.avatar_url,
+        r#"UPDATE users SET
+            display_name  = COALESCE($2, display_name),
+            bio           = COALESCE($3, bio),
+            avatar_url    = COALESCE($4, avatar_url),
+            adult_content = COALESCE($5, adult_content),
+            updated_at    = NOW()
+           WHERE wallet_address = $1"#,
+        auth.address, req.display_name, req.bio, req.avatar_url, req.adult_content
     )
-    .execute(&state.db.pool)
+    .execute(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(AppError::Database)?;
+
     Ok(Json(ApiResponse::ok(())))
 }
 
-pub async fn follow(
+pub async fn follow_user(
     State(state): State<AppState>,
-    Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, StatusCode> {
-    let follower_id = Uuid::new_v4(); // TODO: from JWT
+    auth: AuthUser,
+    Path(address): Path<String>,
+) -> AppResult<Json<ApiResponse<()>>> {
+    let follower = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("Follower not found".into()))?;
+    let following = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", address.to_lowercase())
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User to follow not found".into()))?;
+    if follower.id == following.id { return Err(AppError::Validation("Cannot follow yourself".into())); }
     sqlx::query!(
-        r#"
-        INSERT INTO follows (follower_id, following_id, created_at)
-        VALUES ($1, $2, NOW()) ON CONFLICT DO NOTHING
-        "#,
-        follower_id, id
-    )
-    .execute(&state.db.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        follower.id, following.id
+    ).execute(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(())))
 }
 
-pub async fn unfollow(
+pub async fn unfollow_user(
     State(state): State<AppState>,
-    Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, StatusCode> {
-    let follower_id = Uuid::new_v4(); // TODO: from JWT
+    auth: AuthUser,
+    Path(address): Path<String>,
+) -> AppResult<Json<ApiResponse<()>>> {
+    let follower = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("Follower not found".into()))?;
+    let following = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", address.to_lowercase())
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
     sqlx::query!(
         "DELETE FROM follows WHERE follower_id = $1 AND following_id = $2",
-        follower_id, id
-    )
-    .execute(&state.db.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        follower.id, following.id
+    ).execute(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(())))
 }
