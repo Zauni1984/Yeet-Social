@@ -1,26 +1,4 @@
-FROM rust:1.88-slim-bookworm AS builder
-
-RUN apt-get update && apt-get install -y \
-    pkg-config libssl-dev curl \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN rustup target add wasm32-unknown-unknown
-RUN cargo install trunk
-
-WORKDIR /app
-
-# Workspace Cargo.toml + alle Members kopieren
-COPY Cargo.toml ./
-COPY shared/ shared/
-COPY backend/ backend/
-COPY frontend/ frontend/
-
-WORKDIR /app/frontend
-ARG API_URL=http://76.13.150.206/api/v1
-ENV API_URL=$API_URL
-RUN trunk build --release
-
 FROM nginx:alpine
-COPY --from=builder /app/frontend/dist /usr/share/nginx/html
+RUN echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Yeet Social</title><style>body{background:#0d0d0d;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}.box{text-align:center}.logo{font-size:4rem;margin-bottom:1rem}h1{font-size:2rem;margin:0}p{color:#888}</style></head><body><div class="box"><div class="logo">🚀</div><h1>Yeet Social</h1><p>Frontend coming soon — API is live at /api/v1</p></div></body></html>' > /usr/share/nginx/html/index.html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
