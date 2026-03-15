@@ -5,9 +5,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+# Workspace Cargo.toml + alle Members kopieren
 COPY Cargo.toml ./
 COPY shared/ shared/
 COPY backend/ backend/
+COPY frontend/ frontend/
 
 RUN cargo build --release --bin yeet-server
 
