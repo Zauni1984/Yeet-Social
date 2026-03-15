@@ -32,6 +32,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator        = { version = "0.18", features = ["derive"] }
 async-trait      = "0.1"
 
+# Pin time to avoid edition2024 requirement in older Rust
+[dependencies.time]
+version  = "0.3"
+features = ["formatting", "parsing"]
+
 [profile.release]
 opt-level     = 3
 lto           = true
