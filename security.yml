@@ -1,0 +1,59 @@
+name: Security
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Jeden Montag 06:00 UTC
+  workflow_dispatch:       # Manuell auslösbar
+
+jobs:
+
+  # ── Rust Dependency Vulnerabilities ──────────────────────────────────────
+  rust-audit:
+    name: Rust Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Solidity: Slither Static Analysis ────────────────────────────────────
+  slither:
+    name: Slither Smart Contract Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Slither analysis
+        uses: crytic/slither-action@v0.3.0
+        with:
+          target: contracts/
+          slither-args: >
+            --filter-paths "lib/"
+            --exclude-dependencies
+            --checklist
+          sarif: results.sarif
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+  # ── Secret Scanning (gitleaks) ────────────────────────────────────────────
+  gitleaks:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Volle History für gitleaks
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
