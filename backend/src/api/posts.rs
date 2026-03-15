@@ -1,269 +1,210 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    Json,
-};
-use chrono::{Duration, Utc};
+//! Post CRUD, likes, reshares, comments, NFT minting.
+use axum::{extract::{Path, State}, Json};
+use chrono::{Duration as ChronoDuration, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::AppState;
-use shared::{ApiResponse, Post, PostVisibility, PostSource, Comment};
+use crate::{AppError, AppResult, AppState, models::{ApiResponse, Comment, FeedPost, FeedPostAuthor}};
+use crate::api::middleware::AuthUser;
+use crate::services::tokens::{self, rewards, RewardAction};
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct CreatePostRequest {
     pub content: String,
-    pub media_urls: Vec<String>,
-    pub visibility: PostVisibility,
-    pub pay_per_view_price: Option<f64>,
+    pub media_url: Option<String>,
+    pub is_adult: Option<bool>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct AddCommentRequest { pub content: String }
+
+/// POST /api/v1/posts
 pub async fn create_post(
     State(state): State<AppState>,
+    auth: AuthUser,
     Json(req): Json<CreatePostRequest>,
-) -> Result<Json<ApiResponse<Post>>, StatusCode> {
-    // TODO: extract user_id from JWT middleware
-    let author_id = Uuid::new_v4(); // placeholder
+) -> AppResult<Json<ApiResponse<Uuid>>> {
+    if req.content.trim().is_empty() || req.content.len() > 280 {
+        return Err(AppError::Validation("Post content must be 1-280 characters".into()));
+    }
 
-    // Posts expire in 24h (hybrid logic: DB-side timer)
-    let expires_at = Utc::now() + Duration::hours(24);
+    let user = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
-    let row = sqlx::query!(
-        r#"
-        INSERT INTO posts (
-            id, author_id, content, media_urls, visibility,
-            pay_per_view_price, expires_at, created_at
-        )
-        VALUES ($1, $2, $3, $4, $5::post_visibility, $6, $7, NOW())
-        RETURNING id, created_at
-        "#,
-        Uuid::new_v4(),
-        author_id,
-        req.content,
-        &req.media_urls,
-        serde_json::to_string(&req.visibility).unwrap().trim_matches('"'),
-        req.pay_per_view_price,
-        expires_at,
+    let expires_at = Utc::now() + ChronoDuration::hours(24);
+
+    let post_id = sqlx::query_scalar!(
+        r#"INSERT INTO posts (author_id, content, media_url, is_adult, expires_at)
+           VALUES ($1, $2, $3, $4, $5) RETURNING id"#,
+        user.id, req.content, req.media_url, req.is_adult.unwrap_or(false), expires_at
     )
-    .fetch_one(&state.db.pool)
+    .fetch_one(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(AppError::Database)?;
 
-    // Reward token for posting
-    let _ = crate::services::tokens::reward_action(
-        &state, author_id, shared::RewardAction::Share
-    ).await;
+    // Grant reward (fire-and-forget — do not fail request on reward error)
+    let _ = tokens::grant_reward(&state.db, user.id, RewardAction::PostCreated, rewards::POST_CREATED).await;
 
-    let post = Post {
-        id: row.id,
-        author_id,
-        author_username: "unknown".into(),
-        content: req.content,
-        media_urls: req.media_urls,
-        visibility: req.visibility,
-        source: PostSource::Yeet,
-        pay_per_view_price: req.pay_per_view_price,
-        is_nft: false,
-        nft_token_id: None,
-        nft_contract: None,
-        like_count: 0,
-        comment_count: 0,
-        reshare_count: 0,
-        tip_total: 0.0,
-        expires_at,
-        created_at: row.created_at,
-        reshared_from: None,
-    };
-
-    Ok(Json(ApiResponse::ok(post)))
+    Ok(Json(ApiResponse::ok(post_id)))
 }
 
+/// GET /api/v1/posts/:id
 pub async fn get_post(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<Post>>, StatusCode> {
-    let row = sqlx::query!(
-        r#"
-        SELECT p.*, u.username as author_username
-        FROM posts p
-        JOIN users u ON u.id = p.author_id
-        WHERE p.id = $1
-          AND p.expires_at > NOW()
-          AND p.deleted_at IS NULL
-        "#,
+) -> AppResult<Json<ApiResponse<FeedPost>>> {
+    let r = sqlx::query!(
+        r#"SELECT p.id, p.content, p.media_url, p.is_adult, p.nft_token_id,
+                  p.like_count, p.reshare_count, p.comment_count, p.expires_at, p.created_at,
+                  u.id as author_id, u.wallet_address, u.display_name, u.avatar_url
+           FROM posts p JOIN users u ON p.author_id = u.id
+           WHERE p.id = $1 AND p.expires_at > NOW()"#,
         id
     )
-    .fetch_optional(&state.db.pool)
+    .fetch_optional(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(AppError::Database)?
+    .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
 
-    match row {
-        Some(r) => {
-            let post = Post {
-                id: r.id,
-                author_id: r.author_id,
-                author_username: r.author_username,
-                content: r.content,
-                media_urls: r.media_urls.unwrap_or_default(),
-                visibility: serde_json::from_str(
-                    &format!("\"{}\"", r.visibility)
-                ).unwrap_or(PostVisibility::Public),
-                source: PostSource::Yeet,
-                pay_per_view_price: r.pay_per_view_price.map(|v| v.to_f64().unwrap_or(0.0)),
-                is_nft: r.is_nft,
-                nft_token_id: r.nft_token_id,
-                nft_contract: r.nft_contract_address,
-                like_count: r.like_count.unwrap_or(0),
-                comment_count: r.comment_count.unwrap_or(0),
-                reshare_count: r.reshare_count.unwrap_or(0),
-                tip_total: r.tip_total.map(|v| v.to_f64().unwrap_or(0.0)).unwrap_or(0.0),
-                expires_at: r.expires_at,
-                created_at: r.created_at,
-                reshared_from: r.reshared_from,
-            };
-            Ok(Json(ApiResponse::ok(post)))
-        }
-        None => Ok(Json(ApiResponse::err("Post not found or expired"))),
-    }
+    Ok(Json(ApiResponse::ok(FeedPost {
+        id: r.id, content: r.content, media_url: r.media_url, is_adult: r.is_adult,
+        is_nft: r.nft_token_id.is_some(), like_count: r.like_count, reshare_count: r.reshare_count,
+        comment_count: r.comment_count, is_liked: false, expires_at: r.expires_at, created_at: r.created_at,
+        author: FeedPostAuthor { id: r.author_id, wallet_address: r.wallet_address, display_name: r.display_name, avatar_url: r.avatar_url },
+    })))
 }
 
+/// DELETE /api/v1/posts/:id
 pub async fn delete_post(
     State(state): State<AppState>,
+    auth: AuthUser,
     Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<()>>, StatusCode> {
-    // Soft-delete (NFT posts can't be truly deleted — only hidden from feed)
-    sqlx::query!(
-        "UPDATE posts SET deleted_at = NOW() WHERE id = $1 AND is_nft = false",
-        id
+) -> AppResult<Json<ApiResponse<()>>> {
+    let user = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+    let result = sqlx::query!(
+        "DELETE FROM posts WHERE id = $1 AND author_id = $2 AND nft_token_id IS NULL",
+        id, user.id
     )
-    .execute(&state.db.pool)
+    .execute(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(AppError::Database)?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("Post not found or cannot be deleted (NFT posts are permanent)".into()));
+    }
 
     Ok(Json(ApiResponse::ok(())))
 }
 
+/// POST /api/v1/posts/:id/like
 pub async fn like_post(
     State(state): State<AppState>,
+    auth: AuthUser,
     Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<i64>>, StatusCode> {
-    let row = sqlx::query!(
-        r#"
-        INSERT INTO post_likes (post_id, user_id, created_at)
-        VALUES ($1, $2, NOW())
-        ON CONFLICT DO NOTHING;
-        SELECT COUNT(*) as "count!" FROM post_likes WHERE post_id = $1
-        "#,
-        id,
-        Uuid::new_v4(), // TODO: from JWT
-    )
-    .fetch_one(&state.db.pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+) -> AppResult<Json<ApiResponse<()>>> {
+    let user = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
-    Ok(Json(ApiResponse::ok(row.count)))
+    // Insert like (idempotent via ON CONFLICT DO NOTHING)
+    let result = sqlx::query!(
+        "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+        id, user.id
+    )
+    .execute(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+
+    if result.rows_affected() > 0 {
+        sqlx::query!("UPDATE posts SET like_count = like_count + 1 WHERE id = $1", id)
+            .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    }
+
+    Ok(Json(ApiResponse::ok(())))
 }
 
+/// POST /api/v1/posts/:id/reshare — resets 24h expiry timer
 pub async fn reshare_post(
     State(state): State<AppState>,
+    auth: AuthUser,
     Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<Post>>, StatusCode> {
-    // Reset the 24h timer on the original post (Hybrid logic!)
+) -> AppResult<Json<ApiResponse<()>>> {
+    let user = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+    let new_expiry = Utc::now() + ChronoDuration::hours(24);
+
     sqlx::query!(
-        r#"
-        UPDATE posts
-        SET expires_at = GREATEST(expires_at, NOW() + INTERVAL '24 hours'),
-            reshare_count = reshare_count + 1
-        WHERE id = $1 AND is_nft = false
-        "#,
-        id
+        "UPDATE posts SET reshare_count = reshare_count + 1, expires_at = GREATEST(expires_at, $1) WHERE id = $2",
+        new_expiry, id
     )
-    .execute(&state.db.pool)
+    .execute(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(AppError::Database)?;
 
-    // Reward resharer
-    let _ = crate::services::tokens::reward_action(
-        &state, Uuid::new_v4(), shared::RewardAction::Reshare
-    ).await;
+    let _ = tokens::grant_reward(&state.db, user.id, RewardAction::PostReshared, rewards::POST_RESHARED).await;
 
-    // Return fresh post
-    get_post(State(state), Path(id)).await.map(|r| r)
+    Ok(Json(ApiResponse::ok(())))
 }
 
-#[derive(Deserialize)]
-pub struct CreateCommentRequest {
-    pub content: String,
-}
-
+/// GET /api/v1/posts/:id/comments
 pub async fn get_comments(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-) -> Result<Json<ApiResponse<Vec<Comment>>>, StatusCode> {
-    let rows = sqlx::query!(
-        r#"
-        SELECT c.id, c.post_id, c.author_id, u.username, c.content, c.created_at
-        FROM comments c
-        JOIN users u ON u.id = c.author_id
-        WHERE c.post_id = $1
-        ORDER BY c.created_at ASC
-        LIMIT 100
-        "#,
+) -> AppResult<Json<ApiResponse<Vec<Comment>>>> {
+    let comments = sqlx::query_as!(
+        Comment,
+        "SELECT id, post_id, author_id, content, created_at FROM comments WHERE post_id = $1 ORDER BY created_at ASC",
         id
     )
-    .fetch_all(&state.db.pool)
+    .fetch_all(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    let comments = rows.into_iter().map(|r| Comment {
-        id: r.id,
-        post_id: r.post_id,
-        author_id: r.author_id,
-        author_username: r.username,
-        content: r.content,
-        created_at: r.created_at,
-    }).collect();
+    .map_err(AppError::Database)?;
 
     Ok(Json(ApiResponse::ok(comments)))
 }
 
+/// POST /api/v1/posts/:id/comments
 pub async fn add_comment(
     State(state): State<AppState>,
+    auth: AuthUser,
     Path(id): Path<Uuid>,
-    Json(req): Json<CreateCommentRequest>,
-) -> Result<Json<ApiResponse<Comment>>, StatusCode> {
-    let author_id = Uuid::new_v4(); // TODO: from JWT
+    Json(req): Json<AddCommentRequest>,
+) -> AppResult<Json<ApiResponse<Uuid>>> {
+    if req.content.trim().is_empty() || req.content.len() > 280 {
+        return Err(AppError::Validation("Comment must be 1-280 characters".into()));
+    }
 
-    let row = sqlx::query!(
-        r#"
-        INSERT INTO comments (id, post_id, author_id, content, created_at)
-        VALUES ($1, $2, $3, $4, NOW())
-        RETURNING id, created_at
-        "#,
-        Uuid::new_v4(), id, author_id, req.content
+    let user = sqlx::query!("SELECT id FROM users WHERE wallet_address = $1", auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+    let comment_id = sqlx::query_scalar!(
+        "INSERT INTO comments (post_id, author_id, content) VALUES ($1, $2, $3) RETURNING id",
+        id, user.id, req.content
     )
-    .fetch_one(&state.db.pool)
+    .fetch_one(state.db.pool())
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    .map_err(AppError::Database)?;
 
-    let _ = crate::services::tokens::reward_action(
-        &state, author_id, shared::RewardAction::Comment
-    ).await;
+    sqlx::query!("UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1", id)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
-    Ok(Json(ApiResponse::ok(Comment {
-        id: row.id,
-        post_id: id,
-        author_id,
-        author_username: "unknown".into(),
-        content: req.content,
-        created_at: row.created_at,
-    })))
+    let _ = tokens::grant_reward(&state.db, user.id, RewardAction::CommentPosted, rewards::COMMENT_POSTED).await;
+
+    Ok(Json(ApiResponse::ok(comment_id)))
 }
 
+/// POST /api/v1/posts/:id/nft — mint post as NFT (5 YEET burn fee)
 pub async fn mint_nft(
     State(_state): State<AppState>,
+    _auth: AuthUser,
     Path(_id): Path<Uuid>,
-) -> Json<ApiResponse<String>> {
-    // NFT minting: once minted, post gets is_nft=true and expires_at is cleared
-    // Full implementation in services/nft.rs
-    Json(ApiResponse::err("NFT minting: connect wallet in frontend"))
+) -> AppResult<Json<ApiResponse<String>>> {
+    // TODO: implement NFT minting via ethers-rs once contracts are deployed
+    Err(AppError::Internal("NFT minting not yet available — contracts not deployed".into()))
 }
