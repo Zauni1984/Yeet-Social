@@ -1,24 +1,25 @@
 # syntax=docker/dockerfile:1
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM rust:1.77-slim-bookworm AS builder
+# Rust 1.85+ required: transitive deps (time-core v0.1.8) use edition2024
+FROM rust:1.85-slim-bookworm AS builder
 
 WORKDIR /build
 
-# Install system deps needed for OpenSSL + sqlx offline mode
+# System deps for OpenSSL + libpq
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config libssl-dev libpq-dev \
+    pkg-config libssl-dev libpq-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Cache dependencies layer
+# Cache dependency layer — build dummy binary first
 COPY Cargo.toml Cargo.lock* ./
 RUN mkdir src && echo 'fn main() {}' > src/main.rs
-RUN cargo build --release 2>/dev/null || true
+ENV SQLX_OFFLINE=true
+RUN cargo build --release --bin yeet-server 2>/dev/null || true
 RUN rm -rf src
 
-# Build actual source
+# Build real source
 COPY . .
-# Disable sqlx offline checking — queries verified at runtime
-ENV SQLX_OFFLINE=true
+RUN touch src/main.rs
 RUN cargo build --release --bin yeet-server
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
@@ -26,12 +27,11 @@ FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 
-# Runtime deps only
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 libpq5 \
+    ca-certificates libssl3 libpq5 curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Non-root user for security
+# Non-root user
 RUN useradd -r -s /bin/false yeet
 USER yeet
 
