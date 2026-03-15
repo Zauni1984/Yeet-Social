@@ -1,73 +1,38 @@
-use axum::{
-    async_trait,
-    extract::{FromRequestParts, State},
-    http::{request::Parts, StatusCode, HeaderMap},
-    RequestPartsExt,
-};
-use axum_extra::{
-    headers::{Authorization, authorization::Bearer},
-    TypedHeader,
-};
-use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
-use uuid::Uuid;
-use crate::AppState;
-use crate::api::auth::Claims;
+//! Axum middleware — JWT authentication extractor.
+use axum::{extract::{FromRequestParts, State}, http::{request::Parts, header::AUTHORIZATION}, RequestPartsExt};
+use async_trait::async_trait;
+use crate::{AppError, AppResult, AppState, services::auth::verify_access_token};
 
 /// Authenticated user extracted from JWT Bearer token.
-/// Add `auth: AuthUser` as a parameter to any handler to require auth.
 #[derive(Debug, Clone)]
 pub struct AuthUser {
-    pub user_id: Uuid,
-    pub wallet: String,
+    pub address: String,
+    pub jti: String,
 }
 
 #[async_trait]
 impl FromRequestParts<AppState> for AuthUser {
-    type Rejection = (StatusCode, &'static str);
+    type Rejection = AppError;
 
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &AppState,
-    ) -> Result<Self, Self::Rejection> {
-        // Extract Bearer token from Authorization header
-        let TypedHeader(Authorization(bearer)) = parts
-            .extract::<TypedHeader<Authorization<Bearer>>>()
-            .await
-            .map_err(|_| (StatusCode::UNAUTHORIZED, "Missing Authorization header"))?;
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> AppResult<Self> {
+        let auth_header = parts
+            .headers
+            .get(AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .ok_or_else(|| AppError::Unauthorised("Missing Authorization header".into()))?;
 
-        // Decode and validate JWT
-        let token_data = decode::<Claims>(
-            bearer.token(),
-            &DecodingKey::from_secret(state.jwt_secret.as_bytes()),
-            &Validation::new(Algorithm::HS256),
-        )
-        .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid or expired token"))?;
+        let token = auth_header
+            .strip_prefix("Bearer ")
+            .ok_or_else(|| AppError::Unauthorised("Invalid Authorization format — expected 'Bearer <token>'".into()))?;
 
-        let user_id = token_data.claims.sub
-            .parse::<Uuid>()
-            .map_err(|_| (StatusCode::UNAUTHORIZED, "Malformed token subject"))?;
+        let claims = verify_access_token(token, &state.jwt)
+            .map_err(|e| AppError::Unauthorised(e.to_string()))?;
 
-        Ok(AuthUser {
-            user_id,
-            wallet: token_data.claims.wallet,
-        })
-    }
-}
+        // Check token blacklist (logout)
+        if state.cache.is_blacklisted(&claims.jti).await.unwrap_or(false) {
+            return Err(AppError::Unauthorised("Token has been revoked".into()));
+        }
 
-/// Optional auth — returns None if no valid token present.
-/// Use for endpoints that behave differently for logged-in users.
-pub struct OptionalAuthUser(pub Option<AuthUser>);
-
-#[async_trait]
-impl FromRequestParts<AppState> for OptionalAuthUser {
-    type Rejection = std::convert::Infallible;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &AppState,
-    ) -> Result<Self, Self::Rejection> {
-        Ok(OptionalAuthUser(
-            AuthUser::from_request_parts(parts, state).await.ok()
-        ))
+        Ok(AuthUser { address: claims.sub, jti: claims.jti })
     }
 }
