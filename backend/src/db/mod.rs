@@ -1,4 +1,4 @@
-//! PostgreSQL connection pool via sqlx.
+//! PostgreSQL connection pool.
 use anyhow::{Context, Result};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
@@ -18,13 +18,20 @@ impl Database {
         Ok(Self { pool })
     }
 
+    /// Run migrations from the ./migrations directory.
     pub async fn run_migrations(&self) -> Result<()> {
-        sqlx::migrate!("./migrations").run(&self.pool).await.context("Migrations failed")?;
+        sqlx::migrate!("./migrations")
+            .run(&self.pool)
+            .await
+            .context("Migrations failed")?;
         Ok(())
     }
 
     pub async fn ping(&self) -> Result<()> {
-        sqlx::query("SELECT 1").execute(&self.pool).await.context("DB ping failed")?;
+        sqlx::query("SELECT 1")
+            .execute(&self.pool)
+            .await
+            .context("DB ping failed")?;
         Ok(())
     }
 
