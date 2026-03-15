@@ -6,11 +6,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Workspace Cargo.toml + alle Members kopieren
+# Temporaeres Workspace Cargo.toml ohne frontend
 COPY Cargo.toml ./
+RUN sed -i 's|"frontend",||g' Cargo.toml && \
+    sed -i 's|"frontend"||g' Cargo.toml
+
 COPY shared/ shared/
 COPY backend/ backend/
-COPY frontend/ frontend/
 
 RUN cargo build --release --bin yeet-server
 
