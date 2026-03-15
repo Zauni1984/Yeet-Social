@@ -1,0 +1,24 @@
+# Secrets — NIEMALS committen!
+.env
+*.pem
+*.key
+
+# Rust
+target/
+
+# Foundry
+out/
+cache/
+broadcast/*/31337/
+
+# Frontend build
+dist/
+pkg/
+
+# IDE
+.idea/
+.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
