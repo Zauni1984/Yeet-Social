@@ -1,4 +1,3 @@
-# ── Build stage ──────────────────────────────────────────────────────────────
 FROM rust:1.78-slim-bookworm AS builder
 
 RUN apt-get update && apt-get install -y \
@@ -6,16 +5,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml ./
 COPY shared/ shared/
 COPY backend/ backend/
 
-# Cache dependencies
-RUN cargo build --release --bin yeet-server 2>/dev/null || true
-COPY . .
 RUN cargo build --release --bin yeet-server
 
-# ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
