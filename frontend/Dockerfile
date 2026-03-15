@@ -8,8 +8,11 @@ RUN rustup target add wasm32-unknown-unknown
 RUN cargo install trunk
 
 WORKDIR /app
+
+# Workspace Cargo.toml + alle Members kopieren
 COPY Cargo.toml ./
 COPY shared/ shared/
+COPY backend/ backend/
 COPY frontend/ frontend/
 
 WORKDIR /app/frontend
