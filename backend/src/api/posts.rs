@@ -1,4 +1,4 @@
-//! Post CRUD, likes, reshares, comments, NFT minting.
+//! Post CRUD, likes, reshares, comments.
 use axum::{extract::{Path, State}, Json};
 use chrono::{Duration as ChronoDuration, Utc, DateTime};
 use serde::{Deserialize, Serialize};
@@ -19,10 +19,36 @@ pub struct AddCommentRequest { pub content: String }
 
 #[derive(sqlx::FromRow)]
 struct PostRow {
-    id: Uuid, content: String, media_url: Option<String>, is_adult: bool,
-    nft_token_id: Option<i64>, like_count: i32, reshare_count: i32, comment_count: i32,
-    expires_at: DateTime<Utc>, created_at: DateTime<Utc>,
-    author_id: Uuid, wallet_address: String, display_name: Option<String>, avatar_url: Option<String>,
+    id: Uuid,
+    content: String,
+    media_urls: Option<Vec<String>>,
+    is_nft: bool,
+    nft_token_id: Option<String>,
+    like_count: i64,
+    reshare_count: i64,
+    comment_count: i64,
+    expires_at: DateTime<Utc>,
+    created_at: DateTime<Utc>,
+    author_id: Uuid,
+    wallet_address: String,
+    display_name: Option<String>,
+    avatar_url: Option<String>,
+}
+
+fn row_to_feed_post(r: PostRow) -> FeedPost {
+    let media_url = r.media_urls.and_then(|v| v.into_iter().next());
+    FeedPost {
+        id: r.id, content: r.content, media_url, is_adult: false,
+        is_nft: r.is_nft,
+        like_count: r.like_count as i32,
+        reshare_count: r.reshare_count as i32,
+        comment_count: r.comment_count as i32,
+        is_liked: false, expires_at: r.expires_at, created_at: r.created_at,
+        author: FeedPostAuthor {
+            id: r.author_id, wallet_address: r.wallet_address,
+            display_name: r.display_name, avatar_url: r.avatar_url,
+        },
+    }
 }
 
 pub async fn create_post(
@@ -39,12 +65,12 @@ pub async fn create_post(
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
     let expires_at = Utc::now() + ChronoDuration::hours(24);
+    let media_arr: Vec<String> = req.media_url.into_iter().collect();
     let post_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO posts (author_id, content, media_url, is_adult, expires_at)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id"
+        "INSERT INTO posts (author_id, content, media_urls, expires_at)
+         VALUES ($1, $2, $3, $4) RETURNING id"
     )
-    .bind(user_id).bind(&req.content).bind(&req.media_url)
-    .bind(req.is_adult.unwrap_or(false)).bind(expires_at)
+    .bind(user_id).bind(&req.content).bind(&media_arr).bind(expires_at)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let _ = tokens::grant_reward(&state.db, user_id, RewardAction::PostCreated, rewards::POST_CREATED).await;
@@ -56,22 +82,16 @@ pub async fn get_post(
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<FeedPost>>> {
     let r = sqlx::query_as::<_, PostRow>(
-        "SELECT p.id, p.content, p.media_url, p.is_adult, p.nft_token_id,
+        "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
                 p.like_count, p.reshare_count, p.comment_count, p.expires_at, p.created_at,
                 u.id as author_id, u.wallet_address, u.display_name, u.avatar_url
          FROM posts p JOIN users u ON p.author_id = u.id
-         WHERE p.id = $1 AND p.expires_at > NOW()"
+         WHERE p.id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
     )
     .bind(id)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
     .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
-
-    Ok(Json(ApiResponse::ok(FeedPost {
-        id: r.id, content: r.content, media_url: r.media_url, is_adult: r.is_adult,
-        is_nft: r.nft_token_id.is_some(), like_count: r.like_count, reshare_count: r.reshare_count,
-        comment_count: r.comment_count, is_liked: false, expires_at: r.expires_at, created_at: r.created_at,
-        author: FeedPostAuthor { id: r.author_id, wallet_address: r.wallet_address, display_name: r.display_name, avatar_url: r.avatar_url },
-    })))
+    Ok(Json(ApiResponse::ok(row_to_feed_post(r))))
 }
 
 pub async fn delete_post(
@@ -85,13 +105,13 @@ pub async fn delete_post(
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
     let result = sqlx::query(
-        "DELETE FROM posts WHERE id = $1 AND author_id = $2 AND nft_token_id IS NULL"
+        "UPDATE posts SET deleted_at = NOW() WHERE id = $1 AND author_id = $2 AND is_nft = false AND deleted_at IS NULL"
     )
     .bind(id).bind(user_id)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
     if result.rows_affected() == 0 {
-        return Err(AppError::NotFound("Post not found or cannot be deleted (NFT posts are permanent)".into()));
+        return Err(AppError::NotFound("Post not found or cannot be deleted".into()));
     }
     Ok(Json(ApiResponse::ok(())))
 }
@@ -106,13 +126,13 @@ pub async fn like_post(
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
-    let result = sqlx::query(
+    let inserted = sqlx::query(
         "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING"
     )
     .bind(id).bind(user_id)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
-    if result.rows_affected() > 0 {
+    if inserted.rows_affected() > 0 {
         sqlx::query("UPDATE posts SET like_count = like_count + 1 WHERE id = $1")
             .bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
     }
@@ -184,5 +204,5 @@ pub async fn mint_nft(
     _auth: AuthUser,
     Path(_id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<String>>> {
-    Err(AppError::Internal("NFT minting not yet available — contracts not deployed".into()))
+    Err(AppError::Internal("NFT minting not yet available".into()))
 }
