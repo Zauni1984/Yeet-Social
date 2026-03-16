@@ -52,12 +52,15 @@ pub async fn verify_signature(
     if recovered != address {
         return Err(AppError::Unauthorised("Signature does not match address".into()));
     }
-    // Upsert user
+    // Upsert user — use short wallet prefix as username (e.g. "0xabcd...ef12")
+    let username = format!("{}...{}", &address[..6], &address[address.len()-4..]);
     sqlx::query(
-        "INSERT INTO users (wallet_address) VALUES ($1)
+        "INSERT INTO users (wallet_address, username)
+         VALUES ($1, $2)
          ON CONFLICT (wallet_address) DO UPDATE SET updated_at = NOW()"
     )
     .bind(&address)
+    .bind(&username)
     .execute(state.db.pool())
     .await
     .map_err(AppError::Database)?;
