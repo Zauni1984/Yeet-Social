@@ -1,88 +1,64 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/YeetToken.sol";
-import "../src/YeetPlatform.sol";
-import "../src/YeetSwapVault.sol";
 
 contract YeetTokenTest is Test {
-    YeetToken   token;
-    YeetPlatform platform;
-    YeetSwapVault vault;
-
-    address owner     = address(this);
-    address treasury  = makeAddr("treasury");
-    address team      = makeAddr("team");
-    address liquidity = makeAddr("liquidity");
-    address community = makeAddr("community");
-    address oracle    = makeAddr("oracle");
-    address alice     = makeAddr("alice");
-    address bob       = makeAddr("bob");
+    YeetToken token;
+    address owner    = address(0x1);
+    address pool     = address(0x2);
+    address alice    = address(0x3);
+    address bob      = address(0x4);
 
     function setUp() public {
-        token    = new YeetToken(treasury, team, liquidity, community);
-        platform = new YeetPlatform(address(token));
-        vault    = new YeetSwapVault(address(token), oracle);
-
-        // Fund platform with reward pool
-        token.setRewardDistributor(address(platform));
-        token.setSwapVault(address(vault));
+        vm.prank(owner);
+        token = new YeetToken(owner, pool);
     }
 
     function test_TotalSupply() public view {
-        assertEq(token.totalSupply(), 21_000_000_000 * 1e18);
+        assertEq(token.totalSupply(), token.MAX_SUPPLY());
     }
 
-    function test_Allocations() public view {
-        assertEq(token.balanceOf(treasury),  token.TREASURY());
-        assertEq(token.balanceOf(team),      token.TEAM_VESTING());
-        assertEq(token.balanceOf(liquidity), token.LIQUIDITY());
-        assertEq(token.balanceOf(community), token.COMMUNITY());
+    function test_OwnerBalance() public view {
+        uint256 expected = (token.MAX_SUPPLY() * 70) / 100; // 40+20+10
+        assertEq(token.balanceOf(owner), expected);
     }
 
-    function test_PostReward() public {
-        uint256 before = token.balanceOf(alice);
-        platform.rewardPost(alice);
-        assertEq(token.balanceOf(alice), before + 5 * 1e18);
+    function test_PoolBalance() public view {
+        uint256 expected = (token.MAX_SUPPLY() * 30) / 100;
+        assertEq(token.balanceOf(pool), expected);
     }
 
-    function test_BurnToDead() public {
-        uint256 aliceAmt = 100 * 1e18;
-        deal(address(token), alice, aliceAmt);
-        vm.prank(alice);
-        token.burnToDead(50 * 1e18);
-        assertEq(token.burnedBalance(), 50 * 1e18);
-        assertEq(token.balanceOf(alice), 50 * 1e18);
-    }
-
-    function test_Tip() public {
-        uint256 tipAmt = 100 * 1e18;
-        deal(address(token), alice, tipAmt);
-        vm.startPrank(alice);
-        token.approve(address(platform), tipAmt);
-        platform.tip(bob, tipAmt);
-        vm.stopPrank();
-        // Bob gets 95%, treasury gets 5%
-        assertApproxEqRel(token.balanceOf(bob), 95 * 1e18, 1e15);
-    }
-
-    function test_SwapClaim() public {
-        uint256 swapAmt = 1000 * 1e18;
-        bytes32 oldTx   = keccak256("old_chain_tx_1");
-
-        // Create oracle signature
-        (address oracleSigner, uint256 oracleKey) = makeAddrAndKey("oracle");
+    function test_Transfer() public {
         vm.prank(owner);
-        vault.setOracle(oracleSigner);
+        token.transfer(alice, 1000 ether);
+        assertEq(token.balanceOf(alice), 1000 ether);
+    }
 
-        bytes32 hash = keccak256(abi.encodePacked(alice, swapAmt, oldTx));
-        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(oracleKey, ethHash);
-        bytes memory sig = abi.encodePacked(r, s, v);
+    function test_Burn() public {
+        vm.startPrank(owner);
+        uint256 before = token.totalSupply();
+        token.burn(100 ether);
+        assertEq(token.totalSupply(), before - 100 ether);
+        vm.stopPrank();
+    }
 
-        deal(address(token), address(vault), swapAmt);
-        vault.claim(alice, swapAmt, oldTx, sig);
-        assertEq(token.balanceOf(alice), swapAmt);
+    function test_MintCappedAtMax() public {
+        vm.prank(owner);
+        vm.expectRevert("Exceeds max supply");
+        token.mint(alice, 1);
+    }
+
+    function test_SetRewardPool() public {
+        vm.prank(owner);
+        token.setRewardPool(alice);
+        assertEq(token.rewardPool(), alice);
+    }
+
+    function test_OnlyOwnerCanMint() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        token.mint(bob, 1 ether);
     }
 }
