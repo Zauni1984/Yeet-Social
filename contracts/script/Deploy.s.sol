@@ -2,68 +2,57 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
-import "../YeetToken.sol";
-import "../YeetNFT.sol";
+import "../src/YeetToken.sol";
+import "../src/YeetPlatform.sol";
+import "../src/YeetSwapVault.sol";
 
 /**
- * @notice Deploy YeetToken (BEP-20) and YeetNFT (BEP-721) to BSC.
+ * Deploy sequence:
+ *   1. YeetToken   (mints 21B, distributes allocations)
+ *   2. YeetPlatform (holds reward pool)
+ *   3. YeetSwapVault (holds swap reserve)
  *
- * Usage:
- *   # BSC Testnet
- *   forge script contracts/script/Deploy.s.sol:DeployYeet \
- *     --rpc-url bsc_testnet \
- *     --broadcast \
- *     --verify \
- *     -vvvv
- *
- *   # BSC Mainnet
- *   forge script contracts/script/Deploy.s.sol:DeployYeet \
- *     --rpc-url bsc_mainnet \
- *     --broadcast \
- *     --verify \
- *     -vvvv
- *
- * Set in .env:
- *   PRIVATE_KEY=0x...
- *   TEAM_WALLET=0x...
- *   ECOSYSTEM_WALLET=0x...
- *   LIQUIDITY_WALLET=0x...
- *   REWARDS_MINTER=0x...   (backend hot wallet)
+ * Run on BSC Testnet:
+ *   forge script script/Deploy.s.sol --rpc-url $BSC_TESTNET_RPC --broadcast --verify
  */
-contract DeployYeet is Script {
-
+contract Deploy is Script {
     function run() external {
-        uint256 deployerKey = vm.envUint("PRIVATE_KEY");
-        address deployer     = vm.addr(deployerKey);
-        address team         = vm.envAddress("TEAM_WALLET");
-        address ecosystem    = vm.envAddress("ECOSYSTEM_WALLET");
-        address liquidity    = vm.envAddress("LIQUIDITY_WALLET");
-        address minter       = vm.envAddress("REWARDS_MINTER");
+        uint256 pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address deployer  = vm.addr(pk);
+        address treasury  = vm.envAddress("TREASURY_ADDRESS");
+        address team      = vm.envAddress("TEAM_ADDRESS");
+        address liquidity = vm.envAddress("LIQUIDITY_ADDRESS");
+        address community = vm.envAddress("COMMUNITY_ADDRESS");
+        address oracle    = vm.envAddress("ORACLE_ADDRESS");
 
-        console.log("Deployer:   ", deployer);
-        console.log("Team:       ", team);
-        console.log("Ecosystem:  ", ecosystem);
-        console.log("Liquidity:  ", liquidity);
-        console.log("Minter:     ", minter);
+        vm.startBroadcast(pk);
 
-        vm.startBroadcast(deployerKey);
+        // 1. Token
+        YeetToken token = new YeetToken(treasury, team, liquidity, community);
+        console.log("YeetToken:", address(token));
 
-        // 1. Deploy YEET Token (BEP-20)
-        YeetToken token = new YeetToken(team, ecosystem, liquidity);
-        console.log("YeetToken:  ", address(token));
+        // 2. Platform
+        YeetPlatform platform = new YeetPlatform(address(token));
+        console.log("YeetPlatform:", address(platform));
 
-        // 2. Authorize backend hot wallet as reward minter
-        token.setRewardsMinter(minter);
+        // 3. Swap Vault
+        YeetSwapVault vault = new YeetSwapVault(address(token), oracle);
+        console.log("YeetSwapVault:", address(vault));
 
-        // 3. Deploy YeetNFT (BEP-721)
-        YeetNFT nft = new YeetNFT(address(token));
-        console.log("YeetNFT:    ", address(nft));
+        // 4. Wire up
+        token.setRewardDistributor(address(platform));
+        token.setSwapVault(address(vault));
 
         vm.stopBroadcast();
 
-        // Print .env values to copy
-        console.log("\n--- Copy these into your .env ---");
-        console.log("YEET_TOKEN_ADDRESS=", address(token));
-        console.log("YEET_NFT_ADDRESS=",   address(nft));
+        console.log("\n=== YEET Token Deployment ===");
+        console.log("Total supply  : 21,000,000,000 YEET");
+        console.log("Burn address  : 0x000000000000000000000000000000000000dEaD");
+        console.log("Swap reserve  : 10,500,000,000 YEET (50%)");
+        console.log("Reward pool   :  4,200,000,000 YEET (20%)");
+        console.log("Treasury      :  2,100,000,000 YEET (10%)");
+        console.log("Team vesting  :  1,680,000,000 YEET  (8%)");
+        console.log("Liquidity     :  1,260,000,000 YEET  (6%)");
+        console.log("Community     :  1,260,000,000 YEET  (6%)");
     }
 }
