@@ -1,58 +1,47 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import "../src/YeetToken.sol";
-import "../src/YeetPlatform.sol";
-import "../src/YeetSwapVault.sol";
+import "../src/YeetTipping.sol";
+import "../src/YeetNFT.sol";
 
-/**
- * Deploy sequence:
- *   1. YeetToken   (mints 21B, distributes allocations)
- *   2. YeetPlatform (holds reward pool)
- *   3. YeetSwapVault (holds swap reserve)
- *
- * Run on BSC Testnet:
- *   forge script script/Deploy.s.sol --rpc-url $BSC_TESTNET_RPC --broadcast --verify
- */
+/// @notice Deploy all Yeet contracts to BSC Chapel Testnet
+/// @dev Run: forge script script/Deploy.s.sol --rpc-url chapel --broadcast --verify
 contract Deploy is Script {
     function run() external {
-        uint256 pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address deployer  = vm.addr(pk);
-        address treasury  = vm.envAddress("TREASURY_ADDRESS");
-        address team      = vm.envAddress("TEAM_ADDRESS");
-        address liquidity = vm.envAddress("LIQUIDITY_ADDRESS");
-        address community = vm.envAddress("COMMUNITY_ADDRESS");
-        address oracle    = vm.envAddress("ORACLE_ADDRESS");
+        uint256 deployerKey = vm.envUint("PRIVATE_KEY");
+        address deployer    = vm.addr(deployerKey);
+        address rewardPool  = vm.envOr("REWARD_POOL", deployer); // fallback to deployer on testnet
 
-        vm.startBroadcast(pk);
+        console.log("Deploying from:", deployer);
+        console.log("Network:        BSC Chapel Testnet (97)");
+        console.log("Reward pool:   ", rewardPool);
 
-        // 1. Token
-        YeetToken token = new YeetToken(treasury, team, liquidity, community);
-        console.log("YeetToken:", address(token));
+        vm.startBroadcast(deployerKey);
 
-        // 2. Platform
-        YeetPlatform platform = new YeetPlatform(address(token));
-        console.log("YeetPlatform:", address(platform));
+        // 1. Deploy YEET token
+        YeetToken token = new YeetToken(deployer, rewardPool);
+        console.log("YeetToken:    ", address(token));
 
-        // 3. Swap Vault
-        YeetSwapVault vault = new YeetSwapVault(address(token), oracle);
-        console.log("YeetSwapVault:", address(vault));
+        // 2. Deploy Tipping (platform fee wallet = deployer on testnet)
+        YeetTipping tipping = new YeetTipping(address(token), deployer, deployer);
+        console.log("YeetTipping:  ", address(tipping));
 
-        // 4. Wire up
-        token.setRewardDistributor(address(platform));
-        token.setSwapVault(address(vault));
+        // 3. Deploy NFT
+        YeetNFT nft = new YeetNFT(deployer);
+        console.log("YeetNFT:      ", address(nft));
 
         vm.stopBroadcast();
 
-        console.log("\n=== YEET Token Deployment ===");
-        console.log("Total supply  : 21,000,000,000 YEET");
-        console.log("Burn address  : 0x000000000000000000000000000000000000dEaD");
-        console.log("Swap reserve  : 10,500,000,000 YEET (50%)");
-        console.log("Reward pool   :  4,200,000,000 YEET (20%)");
-        console.log("Treasury      :  2,100,000,000 YEET (10%)");
-        console.log("Team vesting  :  1,680,000,000 YEET  (8%)");
-        console.log("Liquidity     :  1,260,000,000 YEET  (6%)");
-        console.log("Community     :  1,260,000,000 YEET  (6%)");
+        // Print summary
+        console.log("\n=== Deployment Summary ===");
+        console.log("YEET Token:  ", address(token));
+        console.log("Tipping:     ", address(tipping));
+        console.log("NFT:         ", address(nft));
+        console.log("\nVerify on BSCScan Testnet:");
+        console.log("https://testnet.bscscan.com/address/", address(token));
+        console.log("https://testnet.bscscan.com/address/", address(tipping));
+        console.log("https://testnet.bscscan.com/address/", address(nft));
     }
 }
