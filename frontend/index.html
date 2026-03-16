@@ -2,344 +2,324 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>YEET — Web3 Social</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700&family=Unbounded:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
-:root{--black:#080808;--void:#0d0d0d;--panel:#111;--border:#1e1e1e;--border-bright:#2a2a2a;--yeet:#d4f000;--yeet-glow:rgba(212,240,0,0.1);--red:#ff3b3b;--muted:#3a3a3a;--text:#c8c8c8;--text-dim:#555;--mono:'Space Mono',monospace;--display:'Unbounded',sans-serif}
+:root{--bg:#05060a;--sur:#0c0e14;--pan:#12141c;--ln:rgba(255,255,255,.07);--ln2:rgba(255,255,255,.13);--ac:#c6f135;--ac2:#8ef0a2;--red:#ff4d4d;--tx:#d0d4e0;--mu:#4a5068;--br:#eef0f6;--mo:'DM Mono',monospace;--di:'Syne',sans-serif}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--black);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.6;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:9999}
-.topbar{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(8,8,8,0.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100}
-.logo{font-family:var(--display);font-weight:900;font-size:19px;color:var(--yeet);letter-spacing:-0.04em;text-decoration:none;display:flex;align-items:center;gap:8px}
-.logo-dot{width:7px;height:7px;background:var(--yeet);border-radius:50%;animation:blink 2s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.6)}}
-.topbar-right{display:flex;align-items:center;gap:10px}
-.btn{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;border:none;padding:8px 16px;transition:all .15s}
-.btn-ghost{background:transparent;color:var(--text-dim);border:1px solid var(--border)}
-.btn-ghost:hover{border-color:var(--border-bright);color:var(--text)}
-.btn-primary{background:var(--yeet);color:var(--black)}
-.btn-primary:hover{background:#eeff22;box-shadow:0 0 24px rgba(212,240,0,.3)}
-.layout{display:grid;grid-template-columns:220px 600px 1fr;max-width:1140px;margin:0 auto;padding-top:52px;min-height:100vh}
-@media(max-width:960px){.layout{grid-template-columns:1fr}.sidebar-left,.sidebar-right{display:none}.main{border:none}}
-.sidebar-left{border-right:1px solid var(--border);padding:16px 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--text-dim);text-decoration:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;transition:all .1s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
-.nav-item:hover,.nav-item.active{color:var(--yeet);background:var(--yeet-glow)}
-.nav-icon{font-size:15px;width:22px;text-align:center}
-.nav-divider{height:1px;background:var(--border);margin:8px 0}
-.nav-label{font-size:10px;color:var(--text-dim);padding:8px 20px 4px;text-transform:uppercase;letter-spacing:.15em}
-.wallet-box{margin:12px;padding:12px;border:1px solid var(--border);background:var(--panel)}
-.wallet-box-title{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
-.wallet-address{font-size:11px;color:var(--yeet);font-weight:700;word-break:break-all}
-.token-balance{font-size:11px;color:var(--text);margin-top:6px}
-.token-balance span{color:var(--yeet);font-weight:700}
-.main{border-right:1px solid var(--border);min-height:calc(100vh - 52px)}
-.feed-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:52px;background:rgba(8,8,8,.96);backdrop-filter:blur(10px);z-index:10}
-.feed-title{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:-.02em;color:#fff}
-.feed-tabs{display:flex;border-bottom:1px solid var(--border)}
-.feed-tab{flex:1;padding:13px 8px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
-.feed-tab:hover{color:var(--text)}
-.feed-tab.active{color:var(--yeet);border-bottom-color:var(--yeet)}
-.compose{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px}
-.avatar{width:36px;height:36px;background:var(--panel);border:1px solid var(--border-bright);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-dim);overflow:hidden;font-family:var(--mono)}
-.avatar.connected{border-color:var(--yeet);color:var(--yeet);font-size:10px;font-weight:700}
-.compose-right{flex:1}
-.compose-input{width:100%;background:transparent;border:none;color:var(--text);font-family:var(--mono);font-size:14px;resize:none;outline:none;min-height:56px}
-.compose-input::placeholder{color:var(--muted)}
-.compose-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-.compose-icons{display:flex;gap:14px}
-.compose-icon-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;padding:4px;transition:color .1s}
-.compose-icon-btn:hover{color:var(--yeet)}
-.char-counter{font-size:10px;color:var(--text-dim)}
-.char-counter.warn{color:var(--red)}
-.post{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;cursor:pointer;transition:background .1s;animation:fadeIn .35s ease-out both}
-.post:nth-child(2){animation-delay:.05s}.post:nth-child(3){animation-delay:.1s}.post:nth-child(4){animation-delay:.15s}.post:nth-child(5){animation-delay:.2s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+body{background:var(--bg);color:var(--tx);font-family:var(--mo);font-size:13px;line-height:1.5;overflow-x:hidden;display:flex;flex-direction:column;min-height:100vh}
+
+/* TOPBAR */
+.tb{position:fixed;top:0;left:0;right:0;height:54px;background:rgba(5,6,10,.95);border-bottom:1px solid var(--ln);backdrop-filter:blur(16px);display:flex;align-items:center;padding:0 20px;gap:16px;z-index:100}
+.logo{font-family:var(--di);font-weight:800;font-size:21px;color:var(--ac);letter-spacing:-.03em;display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ac);animation:pulse 2.4s ease infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,241,53,.5)}60%{box-shadow:0 0 0 7px rgba(198,241,53,0)}}
+.srch{flex:1;max-width:380px;display:flex;align-items:center;gap:8px;background:var(--pan);border:1px solid var(--ln);padding:0 12px;height:34px}
+.srch input{background:none;border:none;outline:none;font-family:var(--mo);font-size:12px;color:var(--tx);width:100%}
+.srch input::placeholder{color:var(--mu)}
+.tbr{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn{font-family:var(--mo);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btno{background:transparent;color:var(--mu);border:1px solid var(--ln2);padding:7px 14px}
+.btno:hover{color:var(--tx);border-color:rgba(255,255,255,.25)}
+.btnp{background:var(--ac);color:#060801;padding:8px 18px;border:1px solid transparent}
+.btnp:hover{background:#d4ff40;transform:translateY(-1px)}
+
+/* TICKER */
+.tkr{position:fixed;top:54px;left:0;right:0;height:28px;background:var(--sur);border-bottom:1px solid var(--ln);overflow:hidden;display:flex;align-items:center;z-index:99}
+.tkt{display:flex;white-space:nowrap;animation:scroll 28s linear infinite}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tki{display:flex;align-items:center;gap:7px;padding:0 22px;height:28px;border-right:1px solid var(--ln);font-size:11px}
+.ts{color:var(--mu);font-weight:500}.tp{color:var(--br);font-weight:500}.tu{color:var(--ac2)}.td{color:var(--red)}
+
+/* LAYOUT — full width flex, no max-width centering */
+.app{display:flex;padding-top:82px;min-height:calc(100vh - 82px)}
+
+/* LEFT NAV */
+.nav{width:230px;flex-shrink:0;border-right:1px solid var(--ln);position:sticky;top:82px;height:calc(100vh - 82px);overflow-y:auto;padding:8px 0 20px}
+.nl{display:flex;align-items:center;gap:11px;padding:10px 18px;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;border:none;background:none;width:100%;text-align:left;border-left:2px solid transparent;transition:all .1s;letter-spacing:.02em}
+.nl:hover{color:var(--tx);background:rgba(255,255,255,.025)}
+.nl.on{color:var(--ac);background:rgba(198,241,53,.05);border-left-color:var(--ac)}
+.ni{width:18px;text-align:center;font-size:13px;flex-shrink:0}
+.nb{margin-left:auto;background:var(--ac);color:#060801;font-size:9px;font-weight:700;padding:2px 5px}
+.nsl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);padding:14px 18px 4px}
+.nhr{height:1px;background:var(--ln);margin:6px 0}
+.wbox{margin:14px 10px 0;background:rgba(198,241,53,.04);border:1px solid rgba(198,241,53,.15);padding:12px}
+.wl{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.13em;margin-bottom:5px}
+.wa{font-size:11px;color:var(--ac);font-weight:500;word-break:break-all;line-height:1.4}
+.wb{font-size:11px;color:var(--tx);margin-top:7px;display:flex;justify-content:space-between}
+.wb span{color:var(--ac);font-weight:500}
+
+/* FEED */
+.feed{flex:1;border-right:1px solid var(--ln);min-height:calc(100vh - 82px);max-width:620px}
+.fstk{position:sticky;top:82px;background:rgba(5,6,10,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--ln);z-index:10}
+.fhd{padding:15px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.ftl{font-family:var(--di);font-weight:700;font-size:14px;color:var(--br);letter-spacing:-.02em}
+.rbtn{font-family:var(--mo);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;background:none;border:1px solid var(--ln);color:var(--mu);padding:5px 9px;cursor:pointer;transition:all .15s}
+.rbtn:hover{border-color:var(--ln2);color:var(--tx)}
+.ftabs{display:flex;margin-top:2px}
+.ft{flex:1;padding:11px 6px;text-align:center;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
+.ft:hover{color:var(--tx)}
+.ft.on{color:var(--ac);border-bottom-color:var(--ac)}
+
+/* COMPOSE */
+.cmp{padding:14px 20px;border-bottom:1px solid var(--ln);display:flex;gap:11px;background:var(--sur)}
+.cav{width:36px;height:36px;flex-shrink:0;background:var(--pan);border:1px solid var(--ln2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--mu);overflow:hidden}
+.cav.on{border-color:rgba(198,241,53,.4);color:var(--ac)}
+.cr{flex:1;min-width:0}
+.ci{width:100%;background:transparent;border:none;color:var(--br);font-family:var(--mo);font-size:14px;line-height:1.5;resize:none;outline:none;min-height:50px;caret-color:var(--ac)}
+.ci::placeholder{color:var(--mu)}
+.cf{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px solid var(--ln)}
+.cts{display:flex;gap:0}
+.ctb{background:none;border:none;color:var(--mu);font-size:13px;cursor:pointer;padding:5px 7px;transition:color .1s;font-family:var(--mo)}
+.ctb:hover{color:var(--ac)}
+.cm{display:flex;align-items:center;gap:9px}
+
+/* ring */
+.rw{position:relative;width:26px;height:26px}
+.rw svg{transform:rotate(-90deg)}
+.rv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mu)}
+
+/* POSTS */
+.post{display:flex;gap:11px;padding:14px 20px;border-bottom:1px solid var(--ln);cursor:pointer;animation:fi .3s ease both;transition:background .1s}
+.post:nth-child(2){animation-delay:.05s}.post:nth-child(3){animation-delay:.1s}.post:nth-child(4){animation-delay:.14s}.post:nth-child(5){animation-delay:.18s}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 .post:hover{background:rgba(255,255,255,.018)}
-.post-body{flex:1;min-width:0}
-.post-header{display:flex;align-items:baseline;gap:8px;margin-bottom:5px;flex-wrap:wrap}
-.post-name{font-weight:700;color:#fff;font-size:12px}
-.post-wallet{font-size:10px;color:var(--text-dim)}
-.post-time{font-size:10px;color:var(--text-dim);margin-left:auto}
-.post-content{font-size:13px;line-height:1.55;word-break:break-word;color:var(--text)}
-.post-content .tag{color:var(--yeet)}
-.post-content .mention{color:#7ecfff}
-.nft-badge{display:inline-flex;align-items:center;gap:4px;background:var(--yeet-glow);border:1px solid rgba(212,240,0,.25);color:var(--yeet);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;margin-bottom:5px}
-.post-actions{display:flex;gap:20px;margin-top:10px}
-.post-action{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;background:none;border:none;font-family:var(--mono);transition:color .1s;padding:0}
-.post-action:hover{color:var(--yeet)}
-.post-action.active{color:var(--yeet)}
-.post-expires{font-size:9px;color:var(--text-dim);margin-top:6px;display:flex;align-items:center;gap:4px}
-.expires-bar{flex:1;height:1px;background:var(--border);max-width:80px;position:relative;overflow:hidden}
-.expires-fill{height:100%;background:var(--yeet)}
-.sidebar-right{padding:16px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto}
-.widget{margin-bottom:20px}
-.widget-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:var(--text-dim);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-.trend-item{padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:all .1s}
-.trend-item:hover .trend-tag{color:#fff}
-.trend-tag{font-size:12px;font-weight:700;color:var(--yeet)}
-.trend-count{font-size:10px;color:var(--text-dim);margin-top:2px}
-.token-price{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.token-sym{font-weight:700;color:#fff;font-size:12px}
-.token-val{font-size:11px;color:var(--yeet)}
-.token-chg{font-size:10px}
-.token-chg.up{color:#4cff8e}
-.token-chg.down{color:var(--red)}
-.loading{padding:40px;text-align:center;color:var(--text-dim)}
-.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--yeet);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.empty{padding:60px 20px;text-align:center;color:var(--text-dim)}
-.empty-icon{font-size:32px;margin-bottom:12px;opacity:.4}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);animation:fadeInO .2s ease}
-@keyframes fadeInO{from{opacity:0}to{opacity:1}}
-.modal{background:var(--void);border:1px solid var(--border-bright);width:440px;max-width:95vw;padding:32px;animation:slideUp .2s ease;position:relative}
-@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.modal-title{font-family:var(--display);font-weight:900;font-size:20px;color:var(--yeet);letter-spacing:-.03em;margin-bottom:8px}
-.modal-sub{font-size:11px;color:var(--text-dim);margin-bottom:24px;line-height:1.7}
-.modal-step{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-.modal-step:last-of-type{border:none}
-.step-num{width:22px;height:22px;background:var(--yeet);color:var(--black);font-weight:700;font-size:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.step-text{font-size:12px;color:var(--text);line-height:1.5}
-.step-text strong{color:#fff}
-.modal-actions{display:flex;gap:10px;margin-top:20px}
-.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:4px}
-.modal-close:hover{color:#fff}
-.toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
-.toast{background:var(--panel);border:1px solid var(--border-bright);padding:12px 16px;font-size:12px;color:var(--text);animation:toastIn .2s ease;min-width:240px;display:flex;align-items:center;gap:10px}
-@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-.toast.success .toast-icon{color:var(--yeet)}
-.toast.error .toast-icon{color:var(--red)}
-.ticker-wrap{border-bottom:1px solid var(--border);overflow:hidden;height:32px;display:flex;align-items:center;background:var(--void)}
-.ticker{display:flex;gap:40px;white-space:nowrap;animation:tickerScroll 25s linear infinite;padding:0 20px}
-@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.ticker-item{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700}
-.ticker-sym{color:var(--yeet)}.ticker-price{color:#fff}.ticker-up{color:#4cff8e}.ticker-down{color:var(--red)}
-.refresh-btn{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:5px 10px;cursor:pointer;transition:all .15s}
-.refresh-btn:hover{border-color:var(--yeet);color:var(--yeet)}
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-bright)}
+.pav{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;background:var(--pan);border:1px solid var(--ln)}
+.pb{flex:1;min-width:0}
+.ph{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+.pn{font-weight:500;font-size:13px;color:var(--br)}
+.pa{font-size:10px;color:var(--mu)}
+.pt{font-size:10px;color:var(--mu);margin-left:auto}
+.ptx{font-size:13px;line-height:1.6;color:var(--tx);word-break:break-word}
+.ptx .ht{color:var(--ac)}.ptx .mn{color:#7ecfff}
+.pnft{display:inline-flex;align-items:center;gap:4px;background:rgba(198,241,53,.07);border:1px solid rgba(198,241,53,.2);color:var(--ac);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;padding:2px 7px;margin-bottom:5px}
+.pxp{margin-top:7px;display:flex;align-items:center;gap:7px;font-size:10px;color:var(--mu)}
+.xbar{flex:1;max-width:90px;height:1px;background:var(--ln);position:relative}
+.xfil{position:absolute;top:0;left:0;height:100%;background:var(--ac);opacity:.5}
+.pacts{display:flex;margin-top:10px;border-top:1px solid var(--ln)}
+.pac{display:flex;align-items:center;gap:5px;padding:8px 11px 0;font-size:11px;color:var(--mu);background:none;border:none;font-family:var(--mo);cursor:pointer;transition:color .1s}
+.pac:hover{color:var(--ac)}.pac.on{color:var(--ac)}
+
+/* LOADING/EMPTY */
+.ld{padding:44px;text-align:center;color:var(--mu)}
+.sp{width:20px;height:20px;border:2px solid var(--ln2);border-top-color:var(--ac);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.em{padding:60px 20px;text-align:center;color:var(--mu)}
+.eg{font-size:26px;margin-bottom:10px;opacity:.3}
+
+/* RIGHT ASIDE */
+.aside{width:290px;flex-shrink:0;position:sticky;top:82px;height:calc(100vh - 82px);overflow-y:auto;padding:14px}
+.wgt{margin-bottom:22px}
+.wh{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--ln)}
+.tr{padding:7px 0;border-bottom:1px solid var(--ln);cursor:pointer}
+.tr:last-child{border:none}
+.tr:hover .trt{color:var(--br)}
+.trt{font-size:13px;font-weight:500;color:var(--ac)}
+.trc{font-size:10px;color:var(--mu);margin-top:2px}
+.tkr2{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ln)}
+.tkr2:last-child{border:none}
+.ks{font-size:13px;font-weight:500;color:var(--br)}
+.kp{font-size:12px;color:var(--tx)}
+.kc{font-size:11px;font-weight:500}
+.kc.u{color:var(--ac2)}.kc.d{color:var(--red)}
+.abt{font-size:12px;color:var(--mu);line-height:1.8}
+.abt .y{color:var(--ac)}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(2,3,8,.9);display:flex;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px);animation:mf .18s ease}
+@keyframes mf{from{opacity:0}to{opacity:1}}
+.mo{background:var(--sur);border:1px solid var(--ln2);width:450px;max-width:94vw;padding:34px;position:relative;animation:mu .2s ease}
+@keyframes mu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.mx{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--mu);font-size:17px;cursor:pointer;padding:4px;line-height:1}
+.mx:hover{color:var(--br)}
+.mtl{font-family:var(--di);font-weight:800;font-size:23px;color:var(--ac);letter-spacing:-.03em;margin-bottom:6px}
+.msu{font-size:12px;color:var(--mu);line-height:1.7;margin-bottom:22px}
+.stp{display:flex;gap:13px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--ln)}
+.stp:last-of-type{border:none}
+.sn{width:22px;height:22px;flex-shrink:0;background:var(--ac);color:#060801;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.st{font-size:12px;color:var(--tx);line-height:1.5}
+.st strong{color:var(--br)}
+.mba{display:flex;gap:9px;margin-top:22px}
+.mst{margin-top:10px;font-size:11px;color:var(--mu);min-height:15px}
+.mst.e{color:var(--red)}
+
+/* TOASTS */
+.tst{position:fixed;bottom:22px;right:22px;z-index:400;display:flex;flex-direction:column;gap:7px}
+.tst .t{background:var(--pan);border:1px solid var(--ln2);padding:11px 15px;font-size:12px;color:var(--tx);display:flex;align-items:center;gap:9px;min-width:240px;animation:ti .2s ease}
+@keyframes ti{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.tst .t .ic{font-size:13px}
+.tst .t.ok .ic{color:var(--ac)}
+.tst .t.er .ic{color:var(--red)}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--ln2)}
 </style>
 </head>
 <body>
-<header class="topbar">
-  <a class="logo" href="#"><div class="logo-dot"></div>YEET</a>
-  <div class="topbar-right">
-    <button class="btn btn-ghost" id="topbar-login-btn" onclick="showWalletModal()">Connect Wallet</button>
-    <button class="btn btn-primary" id="topbar-yeet-btn" onclick="focusCompose()" style="display:none">+ Yeet</button>
+
+<header class="tb">
+  <a class="logo" href="#"><div class="dot"></div>YEET</a>
+  <div class="srch"><span style="color:var(--mu);font-size:13px">⌕</span><input placeholder="Search posts, users, tags…"></div>
+  <div class="tbr">
+    <button class="btn btno" id="bc" onclick="showM()">Connect Wallet</button>
+    <button class="btn btnp" id="bp" onclick="fcmp()" style="display:none">+ Yeet</button>
   </div>
 </header>
-<div class="layout">
-  <aside class="sidebar-left">
-    <button class="nav-item active" id="nav-global" onclick="setTab('global')"><span class="nav-icon">⚡</span>Global Feed</button>
-    <button class="nav-item" id="nav-following" onclick="setTab('following')"><span class="nav-icon">◎</span>Following</button>
-    <button class="nav-item" onclick="void 0"><span class="nav-icon">🔥</span>Trending</button>
-    <div class="nav-divider"></div>
-    <div class="nav-label">Discover</div>
-    <button class="nav-item" onclick="void 0"><span class="nav-icon">◈</span>NFT Posts</button>
-    <button class="nav-item" onclick="void 0"><span class="nav-icon">⚡</span>Token Tips</button>
-    <button class="nav-item" onclick="void 0"><span class="nav-icon">◻</span>Webboards</button>
-    <div class="nav-divider"></div>
-    <div class="nav-label">Account</div>
-    <button class="nav-item" onclick="showWalletModal()"><span class="nav-icon">○</span>Profile</button>
-    <button class="nav-item" onclick="void 0"><span class="nav-icon">◫</span>Settings</button>
-    <div id="wallet-panel" style="display:none">
-      <div class="wallet-box">
-        <div class="wallet-box-title">Connected</div>
-        <div class="wallet-address" id="sidebar-address">—</div>
-        <div class="token-balance">Balance: <span id="sidebar-balance">0</span> YEET</div>
+
+<div class="tkr"><div class="tkt" id="tk"></div></div>
+
+<div class="app">
+  <nav class="nav">
+    <button class="nl on" id="ng" onclick="setTab('g')"><span class="ni">⚡</span>Global Feed</button>
+    <button class="nl" id="nf" onclick="setTab('f')"><span class="ni">◎</span>Following</button>
+    <button class="nl"><span class="ni">↑</span>Trending<span class="nb">HOT</span></button>
+    <div class="nhr"></div>
+    <div class="nsl">Discover</div>
+    <button class="nl"><span class="ni">◈</span>NFT Posts</button>
+    <button class="nl"><span class="ni">⚡</span>Token Tips</button>
+    <button class="nl"><span class="ni">◻</span>Webboards</button>
+    <button class="nl"><span class="ni">🔞</span>18+ Content</button>
+    <div class="nhr"></div>
+    <div class="nsl">Account</div>
+    <button class="nl" onclick="showM()"><span class="ni">○</span>Profile</button>
+    <button class="nl"><span class="ni">◫</span>Settings</button>
+    <div id="wp" style="display:none">
+      <div class="wbox">
+        <div class="wl">Connected</div>
+        <div class="wa" id="waddr">—</div>
+        <div class="wb">Balance<span id="wbal">0 YEET</span></div>
       </div>
     </div>
-  </aside>
-  <main class="main">
-    <div class="ticker-wrap">
-      <div class="ticker">
-        <span class="ticker-item"><span class="ticker-sym">YEET</span><span class="ticker-price">$0.0042</span><span class="ticker-up">+12.4%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">BNB</span><span class="ticker-price">$312.50</span><span class="ticker-up">+2.1%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">BTC</span><span class="ticker-price">$84,200</span><span class="ticker-down">-0.8%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">ETH</span><span class="ticker-price">$2,180</span><span class="ticker-up">+1.3%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">YEET</span><span class="ticker-price">$0.0042</span><span class="ticker-up">+12.4%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">BNB</span><span class="ticker-price">$312.50</span><span class="ticker-up">+2.1%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">BTC</span><span class="ticker-price">$84,200</span><span class="ticker-down">-0.8%</span></span>
-        <span class="ticker-item"><span class="ticker-sym">ETH</span><span class="ticker-price">$2,180</span><span class="ticker-up">+1.3%</span></span>
+  </nav>
+
+  <main class="feed">
+    <div class="fstk">
+      <div class="fhd"><span class="ftl" id="ftl">Global Feed</span><button class="rbtn" onclick="loadFeed()">↻ Refresh</button></div>
+      <div class="ftabs">
+        <button class="ft on" id="tg" onclick="setTab('g')">For You</button>
+        <button class="ft" id="tf" onclick="setTab('f')">Following</button>
+        <button class="ft">NFT ◈</button>
+        <button class="ft">18+ 🔥</button>
       </div>
     </div>
-    <div class="feed-header">
-      <span class="feed-title" id="feed-title-text">Global Feed</span>
-      <button class="refresh-btn" onclick="loadFeed()">↻ Refresh</button>
-    </div>
-    <div class="feed-tabs">
-      <button class="feed-tab active" id="tab-global" onclick="setTab('global')">For You</button>
-      <button class="feed-tab" id="tab-following" onclick="setTab('following')">Following</button>
-      <button class="feed-tab" onclick="void 0">NFT ◈</button>
-      <button class="feed-tab" onclick="void 0">18+ 🔥</button>
-    </div>
-    <div class="compose">
-      <div class="avatar" id="compose-avatar">○</div>
-      <div class="compose-right">
-        <textarea class="compose-input" id="compose-text" placeholder="What are you yeeting? (disappears in 24h)" maxlength="280" oninput="updateCharCount(this)"></textarea>
-        <div class="compose-footer">
-          <div class="compose-icons">
-            <button class="compose-icon-btn" title="Image">🖼</button>
-            <button class="compose-icon-btn" title="NFT">◈</button>
-            <button class="compose-icon-btn" title="Tip">⚡</button>
+    <div class="cmp">
+      <div class="cav" id="cav">○</div>
+      <div class="cr">
+        <textarea class="ci" id="ct" placeholder="What are you yeeting? Disappears in 24h…" maxlength="280" oninput="upd(this)"></textarea>
+        <div class="cf">
+          <div class="cts">
+            <button class="ctb">🖼</button>
+            <button class="ctb">◈</button>
+            <button class="ctb">🔒</button>
+            <button class="ctb">⚡</button>
           </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span class="char-counter" id="char-count">280</span>
-            <button class="btn btn-primary" style="padding:6px 14px;font-size:10px" onclick="submitPost()">YEET IT</button>
+          <div class="cm">
+            <div class="rw">
+              <svg width="26" height="26" viewBox="0 0 26 26">
+                <circle cx="13" cy="13" r="10" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+                <circle cx="13" cy="13" r="10" fill="none" stroke="#c6f135" stroke-width="2"
+                  stroke-dasharray="62.83" stroke-dashoffset="62.83" id="rarc" style="transition:stroke-dashoffset .15s"/>
+              </svg>
+              <div class="rv" id="rv"></div>
+            </div>
+            <button class="btn btnp" style="padding:7px 15px" onclick="doPost()">Yeet it</button>
           </div>
         </div>
       </div>
     </div>
-    <div id="feed-list"><div class="loading"><div class="spinner"></div>Loading feed...</div></div>
+    <div id="fl"><div class="ld"><div class="sp"></div>Loading feed…</div></div>
   </main>
-  <aside class="sidebar-right">
-    <div class="widget">
-      <div class="widget-title">Trending Tags</div>
-      <div class="trend-item"><div class="trend-tag">#YeetToken</div><div class="trend-count">1.2K posts</div></div>
-      <div class="trend-item"><div class="trend-tag">#BSC</div><div class="trend-count">840 posts</div></div>
-      <div class="trend-item"><div class="trend-tag">#Web3Social</div><div class="trend-count">620 posts</div></div>
-      <div class="trend-item"><div class="trend-tag">#NFT</div><div class="trend-count">445 posts</div></div>
-      <div class="trend-item"><div class="trend-tag">#DeFi</div><div class="trend-count">312 posts</div></div>
+
+  <aside class="aside">
+    <div class="wgt">
+      <div class="wh">Trending Tags</div>
+      <div class="tr"><div class="trt">#YeetToken</div><div class="trc">1.2K posts · trending</div></div>
+      <div class="tr"><div class="trt">#BSC</div><div class="trc">840 posts</div></div>
+      <div class="tr"><div class="trt">#Web3Social</div><div class="trc">620 posts</div></div>
+      <div class="tr"><div class="trt">#NFTDrop</div><div class="trc">445 posts</div></div>
+      <div class="tr"><div class="trt">#DeFi</div><div class="trc">312 posts</div></div>
     </div>
-    <div class="widget">
-      <div class="widget-title">Token Prices</div>
-      <div class="token-price"><span class="token-sym">YEET</span><span class="token-val">$0.0042</span><span class="token-chg up">+12.4%</span></div>
-      <div class="token-price"><span class="token-sym">BNB</span><span class="token-val">$312.50</span><span class="token-chg up">+2.1%</span></div>
-      <div class="token-price"><span class="token-sym">BTC</span><span class="token-val">$84,200</span><span class="token-chg down">-0.8%</span></div>
-      <div class="token-price"><span class="token-sym">ETH</span><span class="token-val">$2,180</span><span class="token-chg up">+1.3%</span></div>
+    <div class="wgt">
+      <div class="wh">Token Prices</div>
+      <div class="tkr2"><span class="ks">YEET</span><span class="kp">$0.0042</span><span class="kc u">+12.4%</span></div>
+      <div class="tkr2"><span class="ks">BNB</span><span class="kp">$312.50</span><span class="kc u">+2.1%</span></div>
+      <div class="tkr2"><span class="ks">BTC</span><span class="kp">$84,200</span><span class="kc d">-0.8%</span></div>
+      <div class="tkr2"><span class="ks">ETH</span><span class="kp">$2,180</span><span class="kc u">+1.3%</span></div>
     </div>
-    <div class="widget">
-      <div class="widget-title">About Yeet</div>
-      <div style="font-size:11px;color:var(--text-dim);line-height:1.8">
-        Decentralised social on BSC.<br>Posts auto-delete in 24h.<br>Earn YEET tokens for engagement.<br><br>
-        <span style="color:var(--yeet)">✓</span> No algorithm &nbsp;
-        <span style="color:var(--yeet)">✓</span> No ads<br>
-        <span style="color:var(--yeet)">✓</span> Your keys, your data
-      </div>
+    <div class="wgt">
+      <div class="wh">About</div>
+      <div class="abt">Decentralised social on BSC.<br>Posts auto-delete in 24h.<br>Earn <span class="y">YEET</span> for engagement.<br><br>
+      <span class="y">✓</span> No algorithm &nbsp;<span class="y">✓</span> No ads<br>
+      <span class="y">✓</span> Your keys, your data<br>
+      <span class="y">✓</span> EU GDPR compliant</div>
     </div>
   </aside>
 </div>
-<div class="modal-overlay" id="wallet-modal" style="display:none" onclick="closeOverlay(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('wallet-modal').style.display='none'">✕</button>
-    <div class="modal-title">Connect Wallet</div>
-    <div class="modal-sub">Connect your BSC wallet to post, like, tip, and earn YEET tokens.</div>
-    <div class="modal-step"><div class="step-num">1</div><div class="step-text"><strong>Get nonce</strong> — We generate a one-time signing message.</div></div>
-    <div class="modal-step"><div class="step-num">2</div><div class="step-text"><strong>Sign message</strong> — No gas fee. Sign in MetaMask to authenticate.</div></div>
-    <div class="modal-step"><div class="step-num">3</div><div class="step-text"><strong>You're in</strong> — Your wallet IS your account. No password needed.</div></div>
-    <div class="modal-actions">
-      <button class="btn btn-primary" style="flex:1" onclick="connectWallet()">🦊 Connect MetaMask</button>
-      <button class="btn btn-ghost" onclick="document.getElementById('wallet-modal').style.display='none'">Cancel</button>
+
+<div class="mbg" id="modal" style="display:none" onclick="bgc(event)">
+  <div class="mo">
+    <button class="mx" onclick="closeM()">✕</button>
+    <div class="mtl">Connect Wallet</div>
+    <div class="msu">Connect your BSC wallet to post, earn YEET tokens, tip creators and unlock gated content.</div>
+    <div class="stp"><div class="sn">1</div><div class="st"><strong>Get nonce</strong> — One-time signing challenge tied to your address.</div></div>
+    <div class="stp"><div class="sn">2</div><div class="st"><strong>Sign message</strong> — No gas fee. Sign in MetaMask to authenticate.</div></div>
+    <div class="stp"><div class="sn">3</div><div class="st"><strong>You're in</strong> — Your wallet IS your account. No email needed.</div></div>
+    <div class="mba">
+      <button class="btn btnp" style="flex:1;justify-content:center;padding:10px" onclick="conn()">🦊 Connect MetaMask</button>
+      <button class="btn btno" onclick="closeM()">Cancel</button>
     </div>
-    <div id="wallet-modal-status" style="margin-top:12px;font-size:11px;color:var(--text-dim);min-height:16px"></div>
+    <div class="mst" id="mst"></div>
   </div>
 </div>
-<div class="toast-container" id="toasts"></div>
+
+<div class="tst" id="tsts"></div>
+
 <script>
 const API='https://justyeet.it/api/v1';
-let currentTab='global',authToken=localStorage.getItem('yeet_token'),walletAddress=localStorage.getItem('yeet_address');
-window.addEventListener('DOMContentLoaded',()=>{if(authToken&&walletAddress)applyConnected(walletAddress);loadFeed()});
-function setTab(t){
-  currentTab=t;
-  ['global','following'].forEach(x=>{
-    document.getElementById('nav-'+x)?.classList.toggle('active',x===t);
-    document.getElementById('tab-'+x)?.classList.toggle('active',x===t);
-  });
-  document.getElementById('feed-title-text').textContent=t==='global'?'Global Feed':'Following';
-  loadFeed();
-}
-async function loadFeed(){
-  const list=document.getElementById('feed-list');
-  list.innerHTML='<div class="loading"><div class="spinner"></div>Loading feed...</div>';
-  try{
-    let url=API+'/feed?page=1&per_page=20',headers={};
-    if(currentTab==='following'){
-      if(!authToken){list.innerHTML='<div class="empty"><div class="empty-icon">◎</div><div class="empty-text">Connect your wallet to see your following feed.</div></div>';return}
-      url=API+'/feed/following?page=1&per_page=20';
-      headers['Authorization']='Bearer '+authToken;
-    }
-    const r=await fetch(url,{headers});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();
-    renderFeed(d.data||[]);
-  }catch(e){list.innerHTML='<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">'+e.message+'</div></div>'}
-}
-function renderFeed(posts){
-  const list=document.getElementById('feed-list');
-  if(!posts.length){list.innerHTML='<div class="empty"><div class="empty-icon">○</div><div class="empty-text">No posts yet. Be the first to Yeet!</div></div>';return}
-  list.innerHTML=posts.map(renderPost).join('');
-}
-function renderPost(p){
-  const addr=p.author?.wallet_address||'';
-  const name=p.author?.display_name||fmtAddr(addr);
-  const short=addr?addr.slice(0,6)+'…'+addr.slice(-4):'';
-  const content=fmtContent(p.content||'');
-  const age=timeAgo(p.created_at);
-  const exp=calcExpiry(p.expires_at);
-  const pct=calcPct(p.created_at,p.expires_at);
-  const nft=p.is_nft?'<div class="nft-badge">◈ NFT</div>':'';
-  const av=(p.author?.display_name||name||'?').slice(0,2).toUpperCase();
-  return '<div class="post" onclick="void 0"><div class="avatar">'+av+'</div><div class="post-body">'+nft+'<div class="post-header"><span class="post-name">'+esc(name)+'</span><span class="post-wallet">'+short+'</span><span class="post-time">'+age+'</span></div><div class="post-content">'+content+'</div><div class="post-expires"><span>⏱ '+exp+'</span><div class="expires-bar"><div class="expires-fill" style="width:'+pct+'%"></div></div></div><div class="post-actions"><button class="post-action" onclick="likePost(event,''+p.id+'',this)">♥ <span>'+(p.like_count||0)+'</span></button><button class="post-action">◎ <span>'+(p.comment_count||0)+'</span></button><button class="post-action" onclick="reshare(event,''+p.id+'')">↺ <span>'+(p.reshare_count||0)+'</span></button><button class="post-action" onclick="tipPost(event)">⚡ Tip</button></div></div></div>';
-}
-function fmtContent(t){return esc(t).replace(/#(\w+)/g,'<span class="tag">#$1</span>').replace(/@(\w+)/g,'<span class="mention">@$1</span>')}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function fmtAddr(a){return a?a.slice(0,6)+'…'+a.slice(-4):'Anonymous'}
-function timeAgo(iso){if(!iso)return'';const d=Math.floor((Date.now()-new Date(iso))/1000);if(d<60)return d+'s';if(d<3600)return Math.floor(d/60)+'m';if(d<86400)return Math.floor(d/3600)+'h';return Math.floor(d/86400)+'d'}
-function calcExpiry(iso){if(!iso)return'expires soon';const s=Math.floor((new Date(iso)-Date.now())/1000);if(s<=0)return'expired';if(s<3600)return'expires in '+Math.floor(s/60)+'m';return'expires in '+Math.floor(s/3600)+'h'}
-function calcPct(c,e){if(!c||!e)return 50;const t=new Date(e)-new Date(c),el=Date.now()-new Date(c);return Math.max(0,Math.min(100,100-(el/t*100)))}
-async function likePost(e,id,btn){e.stopPropagation();if(!authToken){showWalletModal();return}try{const r=await fetch(API+'/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+authToken}});if(r.ok){btn.classList.add('active');const sp=btn.querySelector('span');sp.textContent=parseInt(sp.textContent||0)+1;toast('Liked! +1 YEET earned','success')}}catch(err){}}
-function reshare(e,id){e.stopPropagation();if(!authToken){showWalletModal();return}toast('Reshared — post lifetime extended!','success')}
-function tipPost(e){e.stopPropagation();if(!authToken){showWalletModal();return}toast('YEET token tipping coming soon','success')}
-function updateCharCount(el){const l=280-el.value.length;const c=document.getElementById('char-count');c.textContent=l;c.className='char-counter'+(l<30?' warn':'')}
-async function submitPost(){
-  if(!authToken){showWalletModal();return}
-  const text=document.getElementById('compose-text').value.trim();
-  if(!text){toast('Write something first!','error');return}
-  try{
-    const r=await fetch(API+'/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+authToken},body:JSON.stringify({content:text})});
-    if(r.ok){document.getElementById('compose-text').value='';updateCharCount(document.getElementById('compose-text'));toast('Yeeted! 🚀 +5 YEET earned','success');setTimeout(loadFeed,600)}
-    else{const err=await r.json();toast(err.error?.message||'Failed to post','error')}
-  }catch(e){toast('Network error','error')}
-}
-function focusCompose(){document.getElementById('compose-text').focus()}
-function showWalletModal(){document.getElementById('wallet-modal').style.display='flex';document.getElementById('wallet-modal-status').textContent=''}
-function closeOverlay(e){if(e.target===e.currentTarget)e.currentTarget.style.display='none'}
-async function connectWallet(){
-  const st=document.getElementById('wallet-modal-status');
-  if(typeof window.ethereum==='undefined'){st.textContent='⚠ MetaMask not detected. Please install MetaMask.';st.style.color='var(--red)';return}
-  try{
-    st.textContent='Requesting wallet access...';st.style.color='var(--text-dim)';
-    const accounts=await window.ethereum.request({method:'eth_requestAccounts'});
-    const address=accounts[0].toLowerCase();
-    st.textContent='Getting nonce...';
-    const nr=await fetch(API+'/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
-    const nd=await nr.json();
-    if(!nd.success)throw new Error(nd.error?.message||'Nonce failed');
-    const{nonce,message}=nd.data;
-    st.textContent='Please sign in MetaMask...';
-    const signature=await window.ethereum.request({method:'personal_sign',params:[message,address]});
-    st.textContent='Verifying...';
-    const vr=await fetch(API+'/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address,nonce,signature})});
-    const vd=await vr.json();
-    if(!vd.success)throw new Error(vd.error?.message||'Verification failed');
-    authToken=vd.data.access_token;walletAddress=address;
-    localStorage.setItem('yeet_token',authToken);localStorage.setItem('yeet_address',address);
-    document.getElementById('wallet-modal').style.display='none';
-    applyConnected(address);toast('Wallet connected! Welcome to Yeet 🚀','success');loadFeed();
-  }catch(e){st.textContent='✗ '+(e.message||'Connection failed');st.style.color='var(--red)'}
-}
-function applyConnected(address){
-  const short=address.slice(0,6)+'…'+address.slice(-4);
-  document.getElementById('topbar-login-btn').style.display='none';
-  document.getElementById('topbar-yeet-btn').style.display='block';
-  document.getElementById('wallet-panel').style.display='block';
-  document.getElementById('sidebar-address').textContent=short;
-  const av=document.getElementById('compose-avatar');
-  av.classList.add('connected');av.textContent=address.slice(2,4).toUpperCase();
-}
-function toast(msg,type='success'){const c=document.getElementById('toasts');const el=document.createElement('div');el.className='toast '+type;el.innerHTML='<span class="toast-icon">'+(type==='success'?'✓':'✗')+'</span>'+msg;c.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';el.style.transition='all .3s';setTimeout(()=>el.remove(),300)},3000)}
+const C=2*Math.PI*10;
+let tab='g',tok=localStorage.getItem('yt'),wal=localStorage.getItem('yw');
+
+// Ticker
+(()=>{const d=[['YEET','$0.0042','u','+12.4%'],['BNB','$312.50','u','+2.1%'],['BTC','$84,200','d','-0.8%'],['ETH','$2,180','u','+1.3%'],['SOL','$142','u','+4.1%'],['MATIC','$0.58','d','-1.1%']];const dd=[...d,...d];document.getElementById('tk').innerHTML=dd.map(([s,p,dir,c])=>`<span class="tki"><span class="ts">${s}</span><span class="tp">${p}</span><span class="t${dir}">${c}</span></span>`).join('')})();
+
+function upd(el){const u=el.value.length,l=280-u,pct=u/280,off=C*(1-pct);document.getElementById('rarc').style.strokeDashoffset=off;const rv=document.getElementById('rv');rv.textContent=l<20?l:'';rv.style.color=l<10?'#ff4d4d':'#c6f135';document.getElementById('rarc').style.stroke=l<10?'#ff4d4d':'#c6f135';}
+
+function setTab(t){tab=t;['g','f'].forEach(x=>{document.getElementById('n'+x)?.classList.toggle('on',(x==='g'&&t==='g')||(x==='f'&&t==='f'));document.getElementById('t'+x)?.classList.toggle('on',(x==='g'&&t==='g')||(x==='f'&&t==='f'))});document.getElementById('ftl').textContent=t==='g'?'Global Feed':'Following';loadFeed();}
+
+async function loadFeed(){const fl=document.getElementById('fl');fl.innerHTML='<div class="ld"><div class="sp"></div>Loading feed…</div>';try{let url=API+'/feed?page=1&per_page=20',h={};if(tab==='f'){if(!tok){fl.innerHTML='<div class="em"><div class="eg">◎</div>Connect wallet to see following feed.</div>';return}url=API+'/feed/following?page=1&per_page=20';h['Authorization']='Bearer '+tok;}const r=await fetch(url,{headers:h});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();renderFeed(d.data||[]);}catch(e){fl.innerHTML=`<div class="em"><div class="eg">⚠</div>${e.message}</div>`;}}
+
+function renderFeed(ps){const fl=document.getElementById('fl');if(!ps.length){fl.innerHTML='<div class="em"><div class="eg">○</div>No posts yet. Be the first to Yeet!</div>';return}fl.innerHTML=ps.map(rp).join('');}
+
+function rp(p){const a=p.author?.wallet_address||'',nm=p.author?.display_name||fa(a),sh=a?a.slice(0,6)+'…'+a.slice(-4):'',av=(nm||'?').slice(0,2).toUpperCase(),cs=['#c6f135','#8ef0a2','#7ecfff','#ffd17e','#ff9ef0'],ci=a?parseInt(a.slice(2,4),16)%5:0,cl=cs[ci],nft=p.is_nft?'<div class="pnft">◈ NFT</div>':'',exp=ex(p.expires_at),pct=ep(p.created_at,p.expires_at);
+return `<article class="post"><div class="pav" style="color:${cl};border-color:rgba(0,0,0,.3)">${av}</div><div class="pb">${nft}<div class="ph"><span class="pn">${esc(nm)}</span><span class="pa">${sh}</span><span class="pt">${ago(p.created_at)}</span></div><div class="ptx">${fc(p.content||'')}</div><div class="pxp"><span>⏱ ${exp}</span><div class="xbar"><div class="xfil" style="width:${pct}%"></div></div></div><div class="pacts"><button class="pac" onclick="like(event,'${p.id}',this)">♥ <span>${p.like_count||0}</span></button><button class="pac">◎ <span>${p.comment_count||0}</span></button><button class="pac" onclick="rs(event)">↺ <span>${p.reshare_count||0}</span></button><button class="pac" onclick="tip(event)">⚡ Tip</button></div></div></article>`;}
+
+function fc(t){return esc(t).replace(/#(\w+)/g,'<span class="ht">#$1</span>').replace(/@(\w+)/g,'<span class="mn">@$1</span>')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fa(a){return a?a.slice(0,6)+'…'+a.slice(-4):'Anonymous'}
+function ago(iso){if(!iso)return'';const s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
+function ex(iso){if(!iso)return'';const s=Math.floor((new Date(iso)-Date.now())/1000);if(s<=0)return'expired';if(s<3600)return Math.floor(s/60)+'m left';return Math.floor(s/3600)+'h left';}
+function ep(c,e){if(!c||!e)return 50;const t=new Date(e)-new Date(c),el=Date.now()-new Date(c);return Math.max(0,Math.min(100,100-(el/t*100)));}
+
+async function like(e,id,btn){e.stopPropagation();if(!tok){showM();return}try{const r=await fetch(API+'/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+tok}});if(r.ok){btn.classList.add('on');const sp=btn.querySelector('span');sp.textContent=+sp.textContent+1;toast('Liked ♥','ok');}}catch(_){}}
+function rs(e){e.stopPropagation();if(!tok){showM();return}toast('Reshared — 24h extended','ok');}
+function tip(e){e.stopPropagation();if(!tok){showM();return}toast('YEET tipping coming soon','ok');}
+function fcmp(){document.getElementById('ct').focus();}
+
+async function doPost(){if(!tok){showM();return}const txt=document.getElementById('ct').value.trim();if(!txt){toast('Write something first','er');return}try{const r=await fetch(API+'/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({content:txt})});if(r.ok){document.getElementById('ct').value='';upd(document.getElementById('ct'));toast('Yeeted! 🚀 +5 YEET','ok');setTimeout(loadFeed,700);}else{const err=await r.json();toast(err.error?.message||'Failed','er');}}catch(e){toast('Network error','er');}}
+
+function showM(){document.getElementById('modal').style.display='flex';document.getElementById('mst').textContent='';}
+function closeM(){document.getElementById('modal').style.display='none';}
+function bgc(e){if(e.target===e.currentTarget)closeM();}
+function st(msg,err=false){const el=document.getElementById('mst');el.textContent=msg;el.className='mst'+(err?' e':'');}
+
+async function conn(){if(typeof window.ethereum==='undefined'){st('MetaMask not found — install it first.',true);return}try{st('Requesting access…');const acc=await window.ethereum.request({method:'eth_requestAccounts'});const addr=acc[0].toLowerCase();st('Getting nonce…');const nr=await fetch(API+'/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});const nd=await nr.json();if(!nd.success)throw new Error(nd.error?.message||'Nonce failed');st('Sign in MetaMask…');const sig=await window.ethereum.request({method:'personal_sign',params:[nd.data.message,addr]});st('Verifying…');const vr=await fetch(API+'/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,nonce:nd.data.nonce,signature:sig})});const vd=await vr.json();if(!vd.success)throw new Error(vd.error?.message||'Failed');tok=vd.data.access_token;wal=addr;localStorage.setItem('yt',tok);localStorage.setItem('yw',addr);closeM();applyC(addr);toast('Connected! Welcome 🚀','ok');loadFeed();}catch(e){st('✗ '+(e.message||'Error'),true);}}
+
+function applyC(addr){const sh=addr.slice(0,6)+'…'+addr.slice(-4);document.getElementById('bc').style.display='none';document.getElementById('bp').style.display='flex';document.getElementById('wp').style.display='block';document.getElementById('waddr').textContent=sh;const av=document.getElementById('cav');av.classList.add('on');av.textContent=addr.slice(2,4).toUpperCase();}
+
+function toast(msg,type){const c=document.getElementById('tsts');const el=document.createElement('div');el.className='t '+type;el.innerHTML=`<span class="ic">${type==='ok'?'✓':'✗'}</span>${msg}`;c.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(14px)';el.style.transition='all .25s';setTimeout(()=>el.remove(),260)},3000);}
+
+if(tok&&wal)applyC(wal);
+loadFeed();
 </script>
 </body>
 </html>
