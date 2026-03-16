@@ -2,7 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="application-name" content="YEET">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YEET">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#05060a">
+<meta name="description" content="Decentralised social on BSC. Posts vanish in 24h. Earn YEET tokens.">
+<meta name="keywords" content="web3,social,BSC,blockchain,crypto,decentralised">
+<meta property="og:title" content="YEET — Web3 Social">
+<meta property="og:description" content="Decentralised social on BSC. Posts vanish in 24h.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://justyeet.it">
+<meta property="og:image" content="https://justyeet.it/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="YEET — Web3 Social">
+<meta name="twitter:description" content="Decentralised social on BSC. Posts vanish in 24h.">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
 <title>YEET — Web3 Social</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
@@ -320,6 +339,62 @@ function toast(msg,type){const c=document.getElementById('tsts');const el=docume
 
 if(tok&&wal)applyC(wal);
 loadFeed();
+</script>
+
+<script>
+// Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', {scope: '/'})
+      .then(reg => console.log('[SW] registered', reg.scope))
+      .catch(err => console.warn('[SW] failed', err));
+  });
+}
+
+// PWA Install prompt
+let deferredPrompt = null;
+const installBanner = document.createElement('div');
+installBanner.id = 'pwa-banner';
+installBanner.innerHTML = `
+  <div style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0c0e14;border-top:1px solid rgba(198,241,53,0.25);padding:14px 20px;z-index:9000;display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:'DM Mono',monospace" id="pwa-inner">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:24px">⚡</span>
+      <div>
+        <div style="color:#eef0f6;font-size:13px;font-weight:500">Install YEET App</div>
+        <div style="color:#4a5068;font-size:11px">Add to Home Screen — no App Store needed</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button id="pwa-dismiss" style="background:transparent;border:1px solid rgba(255,255,255,0.13);color:#4a5068;font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:6px 12px;cursor:pointer">Later</button>
+      <button id="pwa-install" style="background:#c6f135;border:none;color:#060801;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;padding:6px 14px;cursor:pointer">Install</button>
+    </div>
+  </div>`;
+document.body.appendChild(installBanner);
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const inner = document.getElementById('pwa-inner');
+  if (inner) inner.style.display = 'flex';
+});
+
+document.addEventListener('click', e => {
+  if (e.target.id === 'pwa-install' && deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(c => {
+      deferredPrompt = null;
+      document.getElementById('pwa-inner').style.display = 'none';
+    });
+  }
+  if (e.target.id === 'pwa-dismiss') {
+    document.getElementById('pwa-inner').style.display = 'none';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-inner').style.display = 'none';
+  console.log('[PWA] installed');
+});
 </script>
 </body>
 </html>
