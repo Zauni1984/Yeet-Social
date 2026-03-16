@@ -9,26 +9,31 @@ services:
     environment:
       POSTGRES_DB: yeet
       POSTGRES_USER: yeet
-      POSTGRES_PASSWORD: yeet_secure_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - yeet-net
+    networks: [yeet-net]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U yeet"]
       interval: 10s
       timeout: 5s
       retries: 5
+    expose: ["5432"]
 
   redis:
     image: redis:7-alpine
     container_name: yeet-redis
     restart: always
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: >
+      redis-server
+      --save 60 1
+      --loglevel warning
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
-    networks:
-      - yeet-net
+    networks: [yeet-net]
+    expose: ["6379"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -38,56 +43,49 @@ services:
     image: ghcr.io/zauni1984/yeet-social/backend:main
     container_name: yeet-backend
     restart: always
+    pull_policy: always
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://yeet:yeet_secure_password@postgres:5432/yeet
-      REDIS_URL: redis://redis:6379
-      BSC_RPC_URL: https://bsc-dataseed.binance.org/
-      YEET_TOKEN_ADDRESS: "0x0000000000000000000000000000000000000000"
-      YEET_NFT_ADDRESS: "0x0000000000000000000000000000000000000000"
-      JWT_SECRET: yeet_jwt_secret_change_in_production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://yeet-redis:6379}
+      BSC_RPC_URL: ${BSC_RPC_URL:-https://bsc-dataseed.binance.org/}
+      YEET_TOKEN_ADDRESS: ${YEET_TOKEN_ADDRESS:-0x0000000000000000000000000000000000000000}
+      YEET_NFT_ADDRESS: ${YEET_NFT_ADDRESS:-0x0000000000000000000000000000000000000000}
+      JWT_SECRET: ${JWT_SECRET}
+      REWARDS_MINTER_PRIVKEY: ${REWARDS_MINTER_PRIVKEY:-}
       PORT: "8080"
-      RUST_LOG: backend=info,tower_http=warn
-    networks:
-      - yeet-net
+      RUST_LOG: ${RUST_LOG:-backend=info,tower_http=warn}
+    networks: [yeet-net]
     ports:
-      - "8081:8080"
-
-  frontend:
-    image: ghcr.io/zauni1984/yeet-social/frontend:main
-    container_name: yeet-frontend
-    restart: always
-    networks:
-      - yeet-net
-    ports:
-      - "3000:80"
-
-  nginx:
-    image: nginx:alpine
-    container_name: yeet-nginx
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - yeet-net
+      - "127.0.0.1:8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   adminer:
     image: adminer:latest
     container_name: yeet-adminer
     restart: always
+    networks: [yeet-net]
     ports:
-      - "8080:8080"
-    networks:
-      - yeet-net
+      - "8081:8080"
+
+  nginx:
+    image: nginx:alpine
+    container_name: yeet-nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    networks: [yeet-net]
+    depends_on:
+      - backend
 
 networks:
   yeet-net:
@@ -95,4 +93,6 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
