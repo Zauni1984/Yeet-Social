@@ -1,14 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Yeet — Decentralized Social</title>
-  <meta name="description" content="Decentralized social media on BSC. Own your content, earn YEET tokens."/>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237c5af0'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='central' fill='white' font-weight='700'>Y</text></svg>"/>
-  <link data-trunk rel="css" href="style/yeet.css"/>
-  <link data-trunk rel="rust" href="Cargo.toml" data-wasm-opt="z"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YEET — Decentralized Social on BSC</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050508;--surface:#0d0d14;--surface2:#12121e;--border:#1e1e30;--neon:#00ff9d;--neon2:#ff2d6b;--neon3:#7b4dff;--yellow:#ffe600;--text:#e0e0ff;--muted:#5a5a7a}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;overflow-x:hidden}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:9999}
+.ticker-wrap{background:var(--neon);color:#000;overflow:hidden;height:32px;display:flex;align-items:center}
+.ticker-track{display:flex;animation:ticker 30s linear infinite;white-space:nowrap}
+.ticker-track span{font-family:'Space Mono',monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.15em;padding:0 2rem;text-transform:uppercase}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+nav{position:fixed;top:32px;left:0;right:0;z-index:1000;padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;background:rgba(5,5,8,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:0.1em;color:var(--neon);text-shadow:0 0 20px var(--neon);text-decoration:none}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;transition:color 0.2s}
+.nav-links a:hover{color:var(--neon)}
+.nav-cta{background:var(--neon);color:#000;font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;padding:0.5rem 1.2rem;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;transition:all 0.2s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)}
+.nav-cta:hover{background:var(--yellow)}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:7rem 2rem 4rem;position:relative;overflow:hidden}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,157,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,157,0.04) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%)}
+.hero-glow{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(0,255,157,0.08) 0%,transparent 70%);top:50%;left:35%;transform:translate(-50%,-50%);pointer-events:none}
+.hero-tag{display:inline-flex;align-items:center;gap:0.5rem;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--neon);border:1px solid rgba(0,255,157,0.3);padding:0.3rem 0.8rem;margin-bottom:2rem;animation:fadeIn 0.6s ease}
+.hero-tag::before{content:'';width:6px;height:6px;background:var(--neon);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,12vw,10rem);line-height:0.9;letter-spacing:0.02em;animation:fadeIn 0.6s ease 0.1s both}
+.hero-title .green{color:var(--neon);text-shadow:0 0 40px rgba(0,255,157,0.5)}
+.hero-title .red{color:var(--neon2);text-shadow:0 0 40px rgba(255,45,107,0.5)}
+.hero-sub{margin-top:2rem;font-size:0.9rem;line-height:1.8;color:var(--muted);max-width:500px;animation:fadeIn 0.6s ease 0.2s both}
+.hero-sub em{color:var(--text);font-style:normal}
+.hero-actions{display:flex;gap:1rem;margin-top:2.5rem;flex-wrap:wrap;animation:fadeIn 0.6s ease 0.3s both}
+.btn-p{background:var(--neon);color:#000;font-family:'Space Mono',monospace;font-weight:700;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.85rem 2rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);transition:all 0.2s}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,255,157,0.4)}
+.btn-s{color:var(--text);font-family:'Space Mono',monospace;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.85rem 2rem;text-decoration:none;border:1px solid var(--border);display:inline-flex;align-items:center;gap:0.5rem;transition:all 0.2s}
+.btn-s:hover{border-color:var(--neon);color:var(--neon);background:rgba(0,255,157,0.04)}
+.hero-stats{display:flex;gap:3rem;margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);animation:fadeIn 0.6s ease 0.4s both;flex-wrap:wrap}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--neon);letter-spacing:0.05em}
+.sl{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-top:0.2rem}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+section{padding:6rem 2rem}
+.si{max-width:1100px;margin:0 auto}
+.stag{font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--neon);margin-bottom:1rem}
+.sh{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,6vw,5rem);line-height:1;letter-spacing:0.03em;margin-bottom:1.5rem}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;margin-top:3rem;background:var(--border)}
+.hi{background:var(--bg);padding:2.5rem 2rem;position:relative;transition:background 0.3s}
+.hi:hover{background:var(--surface)}
+.hn{font-family:'Bebas Neue',sans-serif;font-size:5rem;color:var(--border);line-height:1;margin-bottom:1rem;transition:color 0.3s}
+.hi:hover .hn{color:rgba(0,255,157,0.1)}
+.ht{font-family:'Space Mono',monospace;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;color:var(--text);margin-bottom:0.75rem;text-transform:uppercase}
+.hd{font-size:0.78rem;line-height:1.7;color:var(--muted)}
+.hl{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--neon);transform:scaleX(0);transform-origin:left;transition:transform 0.4s}
+.hi:hover .hl{transform:scaleX(1)}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;margin-top:3rem;background:var(--border)}
+.f{background:var(--surface);padding:2rem;position:relative;overflow:hidden;transition:background 0.3s}
+.f:hover{background:var(--surface2)}
+.fi{font-size:1.5rem;margin-bottom:1rem;display:block}
+.ft{font-family:'Space Mono',monospace;font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em}
+.fd{font-size:0.78rem;line-height:1.7;color:var(--muted)}
+.fc{position:absolute;top:0;right:0;width:30px;height:30px;border-top:2px solid var(--neon);border-right:2px solid var(--neon);opacity:0;transition:opacity 0.3s}
+.f:hover .fc{opacity:1}
+.tok{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.tr{width:220px;height:220px;border-radius:50%;background:conic-gradient(var(--neon) 0deg 108deg,var(--neon2) 108deg 180deg,var(--neon3) 180deg 252deg,var(--yellow) 252deg 288deg,var(--muted) 288deg 360deg);position:relative;margin:0 auto}
+.tr::after{content:'';position:absolute;inset:30px;border-radius:50%;background:var(--surface)}
+.trl{position:absolute;text-align:center;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1}
+.trl .big{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--neon);letter-spacing:0.05em}
+.trl .sm{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted)}
+.ll{display:flex;flex-direction:column;gap:1rem}
+.li{display:flex;align-items:center;gap:0.75rem}
+.ld{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.lt{font-size:0.78rem;color:var(--muted);flex:1}
+.lp{font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--text)}
+.live-feed-wrap{margin-top:3rem;display:flex;flex-direction:column;gap:1px;background:var(--border);max-height:500px;overflow:hidden;position:relative}
+.live-feed-wrap::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,var(--bg));pointer-events:none}
+.pr{background:var(--surface);padding:1.25rem 1.5rem;display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:start;transition:background 0.2s;cursor:pointer}
+.pr:hover{background:var(--surface2)}
+.pa{width:36px;height:36px;background:var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:var(--neon);font-family:'Space Mono',monospace;flex-shrink:0}
+.pau{font-size:0.7rem;color:var(--neon);letter-spacing:0.05em;margin-bottom:0.3rem}
+.pc{font-size:0.82rem;color:var(--text);line-height:1.6}
+.pact{display:flex;gap:0.75rem;margin-top:0.5rem;font-size:0.65rem;color:var(--muted)}
+.pact span{cursor:pointer;transition:color 0.2s}
+.pact span:hover{color:var(--neon)}
+.pt{font-size:0.65rem;color:var(--muted)}
+.pe{font-size:0.6rem;color:var(--neon2);margin-top:0.25rem}
+.sk{background:var(--border);border-radius:2px;animation:shim 1.5s infinite}
+@keyframes shim{0%,100%{opacity:0.5}50%{opacity:1}}
+.compose{background:var(--surface);border:1px solid var(--border);padding:1.5rem;margin-top:2rem;position:relative}
+.compose::before{content:'> POST TO YEET';position:absolute;top:-1px;left:1rem;background:var(--surface);font-size:0.6rem;letter-spacing:0.15em;color:var(--neon);padding:0 0.5rem;transform:translateY(-50%)}
+.cta{text-align:center;padding:8rem 2rem;position:relative;overflow:hidden}
+.ctab{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 100%,rgba(0,255,157,0.06) 0%,transparent 70%)}
+.ctat{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,8vw,7rem);line-height:1;letter-spacing:0.02em;margin-bottom:1.5rem;position:relative}
+.ctat .g{color:var(--neon);text-shadow:0 0 40px rgba(0,255,157,0.4)}
+.ctas{font-size:0.85rem;color:var(--muted);max-width:440px;margin:0 auto 3rem;line-height:1.7;position:relative}
+footer{padding:3rem 2rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.fl{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--neon);opacity:0.6;letter-spacing:0.1em}
+.flinks{display:flex;gap:2rem;list-style:none;flex-wrap:wrap}
+.flinks a{font-size:0.7rem;color:var(--muted);text-decoration:none;letter-spacing:0.1em;text-transform:uppercase;transition:color 0.2s}
+.flinks a:hover{color:var(--text)}
+.fc2{font-size:0.65rem;color:var(--muted);letter-spacing:0.08em}
+@media(max-width:900px){.tg{grid-template-columns:1fr}.hero-stats{gap:1.5rem}footer{flex-direction:column;gap:1.5rem;text-align:center}}
+@media(max-width:600px){nav{padding:0 1rem}.nav-links{display:none}.hero{padding:6rem 1rem 3rem}section{padding:4rem 1rem}.how-grid,.fg{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
+
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <span>$YEET ON BSC</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>24H AUTO-DELETE</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>EARN TOKENS FOR POSTING</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>NFT POSTS ON BSC</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>WALLET-BASED IDENTITY</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>NO ADS EVER</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>$YEET ON BSC</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>24H AUTO-DELETE</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>EARN TOKENS FOR POSTING</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>NFT POSTS ON BSC</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>WALLET-BASED IDENTITY</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+    <span>NO ADS EVER</span><span style="opacity:0.4;padding:0 0.5rem !important">///</span>
+  </div>
+</div>
+
+<nav>
+  <a class="nav-logo" href="/">YEET</a>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#token">$YEET Token</a></li>
+    <li><a href="#feed">Live Feed</a></li>
+  </ul>
+  <a class="nav-cta" href="#feed">Connect Wallet →</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div style="position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(255,45,107,0.06) 0%,transparent 70%);top:30%;right:10%;pointer-events:none"></div>
+  <div>
+    <div class="hero-tag">Live on BSC · v0.1.0 · justyeet.it</div>
+    <h1 class="hero-title">POST.<br><span class="green">EARN.</span><br><span class="red">EXPIRE.</span></h1>
+    <p class="hero-sub">The <em>decentralized social network</em> where posts live for 24 hours, every interaction earns <em>$YEET tokens</em>, and your wallet is your identity. No ads. No algorithms. No bullshit.</p>
+    <div class="hero-actions">
+      <a class="btn-p" href="#feed">Launch App →</a>
+      <a class="btn-s" href="#how">How It Works</a>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;margin-top:1rem">
+      <span style="width:5px;height:5px;background:var(--neon);border-radius:50%;animation:pulse 2s infinite;display:inline-block"></span>
+      Requires MetaMask or WalletConnect · BSC Network
+    </div>
+    <div class="hero-stats">
+      <div><div class="sv" id="stat-posts">—</div><div class="sl">Posts Live</div></div>
+      <div><div class="sv">24H</div><div class="sl">Post Lifetime</div></div>
+      <div><div class="sv">$YEET</div><div class="sl">Earn Per Post</div></div>
+      <div><div class="sv">0%</div><div class="sl">Ads Forever</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="si">
+    <div class="stag">// How It Works</div>
+    <h2 class="sh">THREE STEPS.<br>ZERO FRICTION.</h2>
+    <div class="how-grid">
+      <div class="hi"><div class="hn">01</div><div class="ht">Connect Wallet</div><div class="hd">Sign in with MetaMask or WalletConnect. Your wallet address is your identity — no email, no password, no tracking.</div><div class="hl"></div></div>
+      <div class="hi"><div class="hn">02</div><div class="ht">Post & Earn</div><div class="hd">Every post earns $YEET tokens. Likes, reshares, and comments multiply your rewards. Posts auto-delete after 24 hours.</div><div class="hl"></div></div>
+      <div class="hi"><div class="hn">03</div><div class="ht">Own Your Content</div><div class="hd">Mint your best posts as NFTs. Set pay-per-view prices. Receive tips in BNB. Your content, your revenue.</div><div class="hl"></div></div>
+      <div class="hi"><div class="hn">04</div><div class="ht">Govern Together</div><div class="hd">$YEET holders vote on platform rules, fee structures, and feature development. True community ownership.</div><div class="hl"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="si">
+    <div class="stag">// Features</div>
+    <h2 class="sh">BUILT DIFFERENT.</h2>
+    <div class="fg">
+      <div class="f"><span class="fi">⏳</span><div class="ft">24H Auto-Delete</div><div class="fd">All posts expire after 24 hours. Ephemeral by design. No permanent digital footprint. Resharing extends life.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">🪙</span><div class="ft">$YEET Token Rewards</div><div class="fd">Earn tokens for posting, liking, and engaging. A real economy built around authentic content creation.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">🖼️</span><div class="ft">NFT Posts</div><div class="fd">Mint any post as an NFT on BSC. Your viral moments become tradeable assets. True digital ownership.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">🔒</span><div class="ft">Pay-Per-View</div><div class="fd">Lock premium content behind a $YEET paywall. Monetize your audience directly, no middleman.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">💸</span><div class="ft">Wallet Tipping</div><div class="fd">Send BNB tips directly to creators you love. Instant, on-chain, with no platform cut taken by us.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">🔞</span><div class="ft">18+ Content Layer</div><div class="fd">Optional adult content with age-gate filter. GDPR compliant. EU-hosted. Your privacy, protected.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">📡</span><div class="ft">Web Board RSS</div><div class="fd">Connect external RSS feeds directly to your YEET profile. Bridge the open web into the ecosystem.</div><div class="fc"></div></div>
+      <div class="f"><span class="fi">📱</span><div class="ft">Mobile First</div><div class="fd">Native Android and iOS apps on the roadmap. Full REST API for developers. Build on YEET.</div><div class="fc"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="token" class="tok">
+  <div class="si">
+    <div class="stag">// $YEET Token</div>
+    <h2 class="sh">TOKENOMICS.</h2>
+    <div class="tg">
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;height:260px">
+        <div class="tr"></div>
+        <div class="trl"><div class="big">1B</div><div class="sm">Total Supply</div></div>
+      </div>
+      <div>
+        <div class="ll">
+          <div class="li"><div class="ld" style="background:var(--neon)"></div><div class="lt">Community Rewards</div><div class="lp">30%</div></div>
+          <div class="li"><div class="ld" style="background:var(--neon2)"></div><div class="lt">Liquidity Pool</div><div class="lp">20%</div></div>
+          <div class="li"><div class="ld" style="background:var(--neon3)"></div><div class="lt">Team & Development</div><div class="lp">20%</div></div>
+          <div class="li"><div class="ld" style="background:var(--yellow)"></div><div class="lt">Marketing & Growth</div><div class="lp">10%</div></div>
+          <div class="li"><div class="ld" style="background:var(--muted)"></div><div class="lt">Reserve & Treasury</div><div class="lp">20%</div></div>
+        </div>
+        <div style="margin-top:2rem;padding-top:2rem;border-top:1px solid var(--border)">
+          <div style="font-size:0.65rem;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:1rem">Revenue Split</div>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <div style="background:var(--bg);padding:0.75rem 1rem;border:1px solid var(--border)"><div style="font-family:'Bebas Neue';font-size:1.5rem;color:var(--neon)">10%</div><div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">Crypto Fees</div></div>
+            <div style="background:var(--bg);padding:0.75rem 1rem;border:1px solid var(--border)"><div style="font-family:'Bebas Neue';font-size:1.5rem;color:var(--neon2)">20%</div><div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">Fiat Fees</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="feed" style="background:var(--bg)">
+  <div class="si">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+      <div><div class="stag">// Live Feed</div><h2 class="sh" style="font-size:clamp(2rem,5vw,3.5rem)">WHAT'S YEETING.</h2></div>
+      <div style="text-align:right"><div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">Total Posts</div><div style="font-family:'Bebas Neue';font-size:2rem;color:var(--neon)" id="feed-count">—</div></div>
+    </div>
+    <div class="compose">
+      <textarea style="width:100%;background:transparent;border:none;color:var(--text);font-family:'DM Mono',monospace;font-size:0.85rem;line-height:1.6;resize:none;outline:none;min-height:80px" placeholder="Connect wallet to post... (280 chars max)" maxlength="280" readonly></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.08em">Posts auto-delete in <span style="color:var(--neon2)">24 hours</span> · Earn <span style="color:var(--neon)">$YEET</span></div>
+        <a class="btn-p" style="font-size:0.7rem;padding:0.5rem 1.2rem" href="#">Connect Wallet</a>
+      </div>
+    </div>
+    <div class="live-feed-wrap" id="live-feed">
+      <div style="background:var(--surface);padding:1.25rem 1.5rem;display:flex;gap:1rem;align-items:center">
+        <div class="sk" style="width:36px;height:36px"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:0.5rem"><div class="sk" style="height:10px;width:120px"></div><div class="sk" style="height:10px;width:70%"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="ctab"></div>
+  <h2 class="ctat">JOIN THE<br><span class="g">REVOLUTION</span></h2>
+  <p class="ctas">The internet was supposed to be free. Let's make it free again. Connect your wallet and start earning today.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;position:relative">
+    <a class="btn-p" style="font-size:0.85rem;padding:1rem 2.5rem" href="#feed">Connect Wallet & Post →</a>
+    <a class="btn-s" style="font-size:0.85rem;padding:1rem 2.5rem" href="https://github.com/Zauni1984/Yeet-Social" target="_blank">View on GitHub</a>
+  </div>
+</section>
+
+<footer>
+  <div class="fl">YEET</div>
+  <ul class="flinks">
+    <li><a href="#">Whitepaper</a></li>
+    <li><a href="https://justyeet.it/api/v1/health">API</a></li>
+    <li><a href="https://github.com/Zauni1984/Yeet-Social" target="_blank">GitHub</a></li>
+    <li><a href="#">Privacy</a></li>
+  </ul>
+  <div class="fc2">© 2026 justyeet.it — Built on BSC · EU Hosted</div>
+</footer>
+
+<script>
+const API='https://justyeet.it/api/v1';
+async function loadFeed(){
+  try{
+    const r=await fetch(API+'/feed?per_page=20');
+    const d=await r.json();
+    const fe=document.getElementById('live-feed');
+    const ce=document.getElementById('feed-count');
+    const se=document.getElementById('stat-posts');
+    if(ce)ce.textContent=d.total||0;
+    if(se)se.textContent=d.total||0;
+    if(!d.data||d.data.length===0){
+      fe.innerHTML='<div style="background:var(--surface);padding:2rem;text-align:center;color:var(--muted);font-size:0.78rem;letter-spacing:0.1em">NO POSTS YET — BE THE FIRST TO YEET</div>';
+      return;
+    }
+    fe.innerHTML=d.data.map(p=>{
+      const a=p.author?.wallet_address||'0x???';
+      const sh=a.slice(0,6)+'...'+a.slice(-4);
+      const in2=a.slice(2,4).toUpperCase();
+      const exp=p.expires_at?tl(p.expires_at):'?';
+      const cr=p.created_at?ta(p.created_at):'';
+      return `<div class="pr"><div class="pa">${in2}</div><div><div class="pau">${sh}</div><div class="pc">${eh(p.content)}</div><div class="pact"><span>♥ ${p.like_count||0}</span><span>↺ ${p.reshare_count||0}</span><span>💬 ${p.comment_count||0}</span></div></div><div style="text-align:right"><div class="pt">${cr}</div><div class="pe">⧖ ${exp}</div></div></div>`;
+    }).join('');
+  }catch(e){console.error(e)}
+}
+function eh(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function tl(iso){const d=new Date(iso)-Date.now();if(d<=0)return'expired';const h=Math.floor(d/36e5),m=Math.floor((d%36e5)/6e4);return h>0?h+'h '+m+'m left':m+'m left'}
+function ta(iso){const d=Date.now()-new Date(iso),m=Math.floor(d/6e4);if(m<1)return'just now';if(m<60)return m+'m ago';return Math.floor(m/60)+'h ago'}
+loadFeed();
+setInterval(loadFeed,30000);
+</script>
 </body>
 </html>
