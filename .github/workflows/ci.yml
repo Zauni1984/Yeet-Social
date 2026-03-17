@@ -27,6 +27,8 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
+    env:
+      DATABASE_URL: postgresql://yeet:yeet_secure_password@localhost:5432/yeet
     defaults:
       run:
         working-directory: backend
