@@ -1,0 +1,67 @@
+name: Deploy Contracts — BNB Smart Chain Testnet
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DEPLOY to confirm testnet deployment'
+        required: true
+        default: ''
+      network:
+        description: 'Network to deploy to'
+        required: true
+        default: 'bsc_testnet'
+        type: choice
+        options:
+          - bsc_testnet
+          - bsc_mainnet
+
+jobs:
+  deploy:
+    name: Deploy to BNB Smart Chain
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'DEPLOY'
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install dependencies
+        run: |
+          git clone --depth 1 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
+          git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
+
+      - name: Build
+        run: forge build
+
+      - name: Run tests (must pass before deploy)
+        run: forge test -v
+
+      - name: Deploy
+        env:
+          PRIVATE_KEY: ${{ secrets.BNB_PRIVATE_KEY }}
+          BSCSCAN_API_KEY: ${{ secrets.BSCSCAN_API_KEY }}
+        run: |
+          NETWORK=${{ github.event.inputs.network }}
+          echo "Deploying to: $NETWORK"
+          forge script script/Deploy.s.sol \
+            --rpc-url $NETWORK \
+            --broadcast \
+            --verify \
+            -vvvv 2>&1 | tee deploy-output.txt
+          echo "\n=== Contract Addresses ==="
+          grep -E "YeetToken|YeetTipping|YeetNFT" deploy-output.txt | grep "0x" || true
+
+      - name: Upload deploy artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deploy-output-${{ github.event.inputs.network }}
+          path: contracts/deploy-output.txt
+          retention-days: 90
