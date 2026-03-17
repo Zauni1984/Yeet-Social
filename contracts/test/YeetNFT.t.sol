@@ -6,14 +6,14 @@ import "../src/YeetNFT.sol";
 
 contract YeetNFTTest is Test {
     YeetNFT nft;
-    address owner = address(0x1);
-    address alice = address(0x2);
-    address bob   = address(0x3);
+    address owner;
+    address alice = makeAddr("alice");
+    address bob   = makeAddr("bob");
 
     bytes32 POST_ID  = keccak256("post-abc");
-    bytes32 POST_ID2 = keccak256("post-xyz");
 
     function setUp() public {
+        owner = makeAddr("owner");
         vm.prank(owner);
         nft = new YeetNFT(owner);
     }
@@ -44,14 +44,13 @@ contract YeetNFTTest is Test {
         vm.prank(alice);
         uint256 tokenId = nft.mintPost(POST_ID, "ipfs://QmABC");
         (address receiver, uint256 royaltyAmt) = nft.royaltyInfo(tokenId, 10000);
-        assertEq(receiver,   alice); // creator gets royalty
-        assertEq(royaltyAmt, 1000);  // 10%
+        assertEq(receiver,   alice);
+        assertEq(royaltyAmt, 1000);
     }
 
     function test_MintFeeEnforced() public {
         vm.prank(owner);
         nft.setMintFee(0.01 ether);
-
         vm.deal(alice, 1 ether);
         vm.prank(alice);
         vm.expectRevert("Insufficient mint fee");
@@ -61,14 +60,13 @@ contract YeetNFTTest is Test {
     function test_WithdrawFee() public {
         vm.prank(owner);
         nft.setMintFee(0.01 ether);
-
         vm.deal(alice, 1 ether);
         vm.prank(alice);
         nft.mintPost{value: 0.01 ether}(POST_ID, "ipfs://Qm");
-
-        uint256 before = owner.balance;
+        assertEq(address(nft).balance, 0.01 ether);
+        uint256 ownerBefore = owner.balance;
         vm.prank(owner);
         nft.withdraw();
-        assertEq(owner.balance, before + 0.01 ether);
+        assertEq(owner.balance, ownerBefore + 0.01 ether);
     }
 }
