@@ -1,19 +1,29 @@
 # Yeet Social — Smart Contracts
 
-## Network
-- **Testnet**: BSC Chapel (Chain ID: 97)
-- **Mainnet**: BSC (Chain ID: 56) — after testnet validation
+## Network: BNB Smart Chain
+
+| | Testnet | Mainnet |
+|---|---|---|
+| Chain ID | 97 | 56 |
+| Native Token | tBNB | BNB |
+| RPC | `https://bsc-testnet-dataseed.bnbchain.org` | `https://bsc-dataseed.bnbchain.org` |
+| Explorer | `https://testnet.bscscan.com` | `https://bscscan.com` |
+| Faucet | `https://testnet.bnbchain.org/faucet-smart` | — |
+
+> Note: BNB Smart Chain was formerly known as Binance Smart Chain (BSC).
+> The Chain IDs (56/97), EVM compatibility, and tooling are unchanged.
 
 ## Contracts
 
 | Contract | Description |
 |---|---|
-| `YeetToken.sol` | BEP-20, 1B supply, burnable, mintable up to cap |
-| `YeetTipping.sol` | Wallet-to-wallet YEET tips, 10% platform fee |
-| `YeetNFT.sol` | ERC-721, posts as NFTs, creator royalties (10%) |
+| `YeetToken.sol` | BEP-20, 1B max supply, burnable, owner-mintable |
+| `YeetTipping.sol` | Wallet-to-wallet YEET tips, 10% platform fee, pausable |
+| `YeetNFT.sol` | ERC-721, posts as NFTs, 10% creator royalties |
 
-## Addresses (Chapel Testnet)
-> Run deployment script and paste here
+## Deployed Addresses (Testnet)
+
+> Run deployment and paste addresses here
 
 | Contract | Address |
 |---|---|
@@ -21,46 +31,47 @@
 | YeetTipping | TBD |
 | YeetNFT | TBD |
 
-## Setup
-
-```bash
-# Install Foundry
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
-
-cd contracts
-forge install OpenZeppelin/openzeppelin-contracts
-forge build
-forge test
-```
-
-## Deploy to Chapel Testnet
-
-```bash
-# 1. Get free tBNB: https://testnet.bnb.org
-# 2. Set up .env (copy .env.example)
-cp .env.example .env
-# edit PRIVATE_KEY and BSCSCAN_API_KEY
-
-# 3. Deploy
-forge script script/Deploy.s.sol \
-  --rpc-url chapel \
-  --broadcast \
-  --verify \
-  -vvvv
-```
-
 ## Token Distribution
 
 | Allocation | % | Amount |
 |---|---|---|
 | Community / Airdrop | 40% | 400M YEET |
-| Reward Pool (engagement) | 30% | 300M YEET |
-| Team & Development | 20% | 200M YEET |
+| Reward Pool | 30% | 300M YEET |
+| Team & Dev | 20% | 200M YEET |
 | Liquidity | 10% | 100M YEET |
 
-## Revenue Model
-- **Tips**: 10% platform fee on all YEET tips
-- **NFT minting**: Configurable mint fee (0 on testnet)
-- **NFT royalties**: 5% platform cut on secondary sales
-- **Creator royalties**: 10% on secondary sales
+## Setup
+
+```bash
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash && foundryup
+
+cd contracts
+git clone --depth 1 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
+git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
+forge build
+forge test -v
+```
+
+## Deploy to BNB Smart Chain Testnet
+
+```bash
+cp .env.example .env
+# Set PRIVATE_KEY and BSCSCAN_API_KEY
+
+forge script script/Deploy.s.sol \
+  --rpc-url bsc_testnet \
+  --broadcast \
+  --verify \
+  -vvvv
+```
+
+## Deploy to BNB Smart Chain Mainnet
+
+```bash
+forge script script/Deploy.s.sol \
+  --rpc-url bsc_mainnet \
+  --broadcast \
+  --verify \
+  -vvvv
+```
