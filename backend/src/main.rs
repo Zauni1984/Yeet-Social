@@ -1,3 +1,4 @@
+#![allow(unused_imports, dead_code, unused_variables, unused_mut)]
 //! Yeet Social Media — Production API Server
 //! Web + Android + iOS compatible REST API
 //! BSC blockchain integration, JWT wallet auth, PostgreSQL, Redis
