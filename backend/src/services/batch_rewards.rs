@@ -61,7 +61,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let recipients: Vec<Address> = rows.iter()
         .filter_map(|r| r.wallet_address.as_ref())
         .map(|w| w.parse::<Address>())
-        .collect::<std::result::Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<ethers::types::Address>, _>>()?;
 
     let amounts: Vec<U256> = rows.iter()
         .map(|r| {
@@ -73,7 +73,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 
     let actions: Vec<String> = rows.iter()
         .map(|r| r.action.clone().unwrap_or_default())
-        .collect();
+        .collect::<Vec<String>>();
 
     // Set up signer
     let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
