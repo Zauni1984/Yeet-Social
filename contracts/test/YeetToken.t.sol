@@ -62,16 +62,19 @@ contract YeetTokenTest is Test {
         token.mint(bob, 1 ether);
     }
     function test_BatchMintRewards() public {
-        address[] memory recipients = new address[](3);
-        uint256[] memory amounts = new uint256[](3);
-        string[] memory actions = new string[](3);
-        recipients[0] = alice; amounts[0] = 5e18; actions[0] = "post_created";
-        recipients[1] = bob;   amounts[1] = 1e18; actions[1] = "post_liked";
-        recipients[2] = alice; amounts[2] = 2e18; actions[2] = "daily_login";
-        vm.prank(owner);
-        token.batchMintRewards(recipients, amounts, actions);
-        assertEq(token.balanceOf(alice), 7e18);
-        assertEq(token.balanceOf(bob), 1e18);
+        // Burn 10e18 to create headroom under MAX_SUPPLY (all minted at deploy)
+        vm.startPrank(owner);
+        token.burn(10e18);
+        address[] memory r=new address[](3);
+        uint256[] memory a=new uint256[](3);
+        string[]  memory s2=new string[](3);
+        r[0]=alice;a[0]=5e18;s2[0]="post_created";
+        r[1]=bob;  a[1]=1e18;s2[1]="post_liked";
+        r[2]=alice;a[2]=2e18;s2[2]="daily_login";
+        token.batchMintRewards(r,a,s2);
+        vm.stopPrank();
+        assertEq(token.balanceOf(alice),7e18);
+        assertEq(token.balanceOf(bob),1e18);
     }
 
     function test_BatchMintRewardsMismatchReverts() public {
