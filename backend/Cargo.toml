@@ -9,6 +9,7 @@ name = "yeet-server"
 path = "src/main.rs"
 
 [dependencies]
+ethers = { version = "2", features = ["abigen", "legacy"] }
 # Web framework
 axum             = { version = "0.7", features = ["macros"] }
 tokio            = { version = "1", features = ["full"] }
