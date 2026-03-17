@@ -61,4 +61,27 @@ contract YeetTokenTest is Test {
         vm.expectRevert();
         token.mint(bob, 1 ether);
     }
+    function test_BatchMintRewards() public {
+        address[] memory recipients = new address[](3);
+        uint256[] memory amounts = new uint256[](3);
+        string[] memory actions = new string[](3);
+        recipients[0] = alice; amounts[0] = 5e18; actions[0] = "post_created";
+        recipients[1] = bob;   amounts[1] = 1e18; actions[1] = "post_liked";
+        recipients[2] = alice; amounts[2] = 2e18; actions[2] = "daily_login";
+        vm.prank(owner);
+        token.batchMintRewards(recipients, amounts, actions);
+        assertEq(token.balanceOf(alice), 7e18);
+        assertEq(token.balanceOf(bob), 1e18);
+    }
+
+    function test_BatchMintRewardsMismatchReverts() public {
+        address[] memory r = new address[](2);
+        uint256[] memory a = new uint256[](1);
+        string[] memory s = new string[](2);
+        r[0] = alice; r[1] = bob; a[0] = 1e18; s[0] = "x"; s[1] = "y";
+        vm.prank(owner);
+        vm.expectRevert("Length mismatch");
+        token.batchMintRewards(r, a, s);
+    }
+
 }

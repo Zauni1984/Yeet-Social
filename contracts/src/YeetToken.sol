@@ -15,6 +15,7 @@ contract YeetToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     address public rewardPool;
 
     event RewardPoolUpdated(address indexed oldPool, address indexed newPool);
+    event RewardMinted(address indexed recipient, uint256 amount, string action);
 
     constructor(address initialOwner, address _rewardPool)
         ERC20("Yeet Token", "YEET")
@@ -55,4 +56,23 @@ contract YeetToken is ERC20, ERC20Burnable, ERC20Permit, Ownable {
     function decimals() public pure override returns (uint8) {
         return 18;
     }
+    /// @notice Batch mint rewards to multiple addresses (only owner / reward distributor)
+    /// @param recipients Array of wallet addresses to receive YEET tokens
+    /// @param amounts Array of amounts (in wei, 18 decimals) to mint
+    /// @param actions Array of action strings for event logging
+    function batchMintRewards(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        string[] calldata actions
+    ) external onlyOwner {
+        require(recipients.length == amounts.length, "Length mismatch");
+        require(recipients.length == actions.length, "Length mismatch");
+        require(recipients.length <= 200, "Max 200 per batch");
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(totalSupply() + amounts[i] <= MAX_SUPPLY, "Exceeds max supply");
+            _mint(recipients[i], amounts[i]);
+            emit RewardMinted(recipients[i], amounts[i], actions[i]);
+        }
+    }
+
 }
