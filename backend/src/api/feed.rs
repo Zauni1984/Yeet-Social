@@ -36,7 +36,7 @@ pub async fn get_feed(
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
     let page     = q.page.unwrap_or(1).max(1);
-    let per_page = q.per_page.unwrap_or(20).min(50).max(1);
+    let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset   = (page - 1) * per_page;
 
     let rows = sqlx::query_as::<_, FeedRow>(
@@ -66,7 +66,7 @@ pub async fn get_following_feed(
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
     let page     = q.page.unwrap_or(1).max(1);
-    let per_page = q.per_page.unwrap_or(20).min(50).max(1);
+    let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset   = (page - 1) * per_page;
 
     let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")

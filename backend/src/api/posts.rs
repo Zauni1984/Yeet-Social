@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Post CRUD, likes, reshares, comments.
 use axum::{extract::{Path, State}, Json};
 use chrono::{Duration as ChronoDuration, Utc, DateTime};

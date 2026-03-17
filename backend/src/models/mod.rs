@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Domain models used across API, services, and DB.
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

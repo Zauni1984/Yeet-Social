@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! YEET token reward service with daily cap.
 use uuid::Uuid;
 use crate::{db::Database, error::AppResult, AppError};
