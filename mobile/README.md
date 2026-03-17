@@ -24,7 +24,7 @@ npx pod-install ios && npx react-native run-ios
 - [ ] WalletConnect deep-link sign-in on mobile
 - [ ] YEET BEP-20 token tipping
 - [ ] YEET Token deployment on BSC + swap from old chain
-- [ ] BSC smart contract integration
+- [ ] BNB Smart Chain contract integration
 - [ ] Push notifications
 - [ ] NFT post creation
 - [ ] 18+ content toggle
