@@ -39,7 +39,7 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(addr).await.expect("Bind failed");
     // Start background jobs
-    tokio::spawn(services::batch_rewards::start_batch_reward_job(state.clone()));
+    tokio::spawn(services::batch_rewards::start_reward_batch_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_cleanup_job(state.clone()));
     info!(" Background jobs started (batch rewards + cleanup)");
 

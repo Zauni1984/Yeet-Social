@@ -89,15 +89,9 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let token_addr: Address = std::env::var("YEET_TOKEN_ADDRESS")?.parse()?;
 
     abigen!(
-        YeetToken,
-        r#"[
-            function batchMintRewards(
-                address[] calldata recipients,
-                uint256[] calldata amounts,
-                string[] calldata actions
-            ) external
-        ]"#
-    );
+    YeetToken,
+    r#"[{"inputs":[{"name":"recipients","type":"address[]"},{"name":"amounts","type":"uint256[]"},{"name":"actions","type":"string[]"}],"name":"batchMintRewards","outputs":[],"stateMutability":"nonpayable","type":"function"}]"#
+);
 
     let contract = YeetToken::new(token_addr, client);
     let tx = contract
