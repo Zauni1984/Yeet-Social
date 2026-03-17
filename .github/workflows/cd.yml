@@ -3,6 +3,10 @@ name: CD — Deploy to Hostinger VPS
 on:
   push:
     branches: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
 concurrency:
   group: deploy-production
@@ -12,29 +16,50 @@ jobs:
   deploy:
     name: Deploy to VPS (76.13.150.206)
     runs-on: ubuntu-latest
+    # Only deploy when CI passes (on workflow_run trigger) or on direct push
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     environment:
       name: production
-      url: http://76.13.150.206
+      url: https://justyeet.it
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Hostinger VPS
-        uses: hostinger/deploy-on-vps@v2
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          api-key: ${{ secrets.HOSTINGER_API_KEY }}
-          virtual-machine: ${{ vars.HOSTINGER_VM_ID }}
-          project-name: yeet-social
-          docker-compose-path: docker-compose.yml
-          environment-variables: |
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            REDIS_URL=redis://redis:6379
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            BSC_RPC_URL=https://bsc-dataseed.binance.org/
-            YEET_TOKEN_ADDRESS=${{ vars.YEET_TOKEN_ADDRESS }}
-            YEET_NFT_ADDRESS=${{ vars.YEET_NFT_ADDRESS }}
-            REWARDS_MINTER_PRIVKEY=${{ secrets.REWARDS_MINTER_PRIVKEY }}
-            PORT=8080
-            RUST_LOG=backend=info,tower_http=warn
-            API_URL=http://76.13.150.206/api/v1
+          host: 76.13.150.206
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 120s
+          script: |
+            set -e
+            echo "[CD] Starting deploy at $(date)"
+            
+            # Pull latest backend image
+            docker pull ghcr.io/zauni1984/yeet-social/backend:main || echo "No new image, using existing"
+            
+            # Restart with new image
+            cd /docker/yeet-social
+            docker compose up -d --no-deps --build yeet-backend || true
+            
+            # Sync frontend
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html" \
+              -o /home/yeet-frontend/index.html
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/sw.js" \
+              -o /home/yeet-frontend/sw.js
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/manifest.json" \
+              -o /home/yeet-frontend/manifest.json
+            
+            # Health check
+            sleep 5
+            STATUS=$(curl -sk https://localhost/api/v1/health | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['status'])" 2>/dev/null || echo "error")
+            echo "[CD] Health: $STATUS"
+            
+            if [ "$STATUS" != "ok" ]; then
+              echo "[CD] Health check failed! Running watchdog..."
+              /usr/local/bin/yeet-watchdog
+            fi
+            
+            echo "[CD] Deploy complete at $(date)"
