@@ -51,7 +51,7 @@ export function WalletScreen() {
         <Text style={styles.title}>Wallet</Text>
       </View>
       <View style={styles.card}>
-        <Text style={styles.headline}>Connect your BSC Wallet</Text>
+        <Text style={styles.headline}>Connect your BNB Smart Chain Wallet</Text>
         <Text style={styles.sub}>
           Sign in with MetaMask or WalletConnect to post, earn YEET tokens, and tip creators.
         </Text>
