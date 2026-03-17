@@ -21,6 +21,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend
+          cache-on-failure: true
       - name: Build
         run: cargo build --release
       - name: Clippy
@@ -33,7 +34,7 @@ jobs:
           tags: ghcr.io/zauni1984/yeet-social/backend:ci
 
   smart-contracts:
-    name: Smart Contracts (Foundry — BNB Smart Chain)
+    name: Smart Contracts (Foundry  BNB Smart Chain)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,7 +50,7 @@ jobs:
           git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
       - name: Build
         run: forge build
-      - name: Run tests
+      - name: Test
         run: forge test -v
 
   security-audit:
