@@ -7,13 +7,26 @@ on:
     branches: [main]
 
 env:
-  SQLX_OFFLINE: "true"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-backend:
     name: Build Backend (Rust/Axum)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: yeet
+          POSTGRES_PASSWORD: yeet_secure_password
+          POSTGRES_DB: yeet
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     defaults:
       run:
         working-directory: backend
