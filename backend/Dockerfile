@@ -15,6 +15,7 @@ RUN rm -rf src
 # Build real source (no SQLX_OFFLINE — using query() not query! macros)
 COPY . .
 RUN touch src/main.rs
+ENV SQLX_OFFLINE=true
 RUN cargo build --release --bin yeet-server
 
 FROM debian:bookworm-slim AS runtime
