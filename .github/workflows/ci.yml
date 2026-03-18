@@ -42,7 +42,9 @@ jobs:
           workspaces: backend
           cache-on-failure: true
       - name: Run Migrations
-        run: sqlx migrate run
+        run: |
+          cargo install sqlx-cli --no-default-features --features postgres --quiet 2>/dev/null || true
+          sqlx migrate run
       - name: Build
         run: cargo build --release
       - name: Clippy
