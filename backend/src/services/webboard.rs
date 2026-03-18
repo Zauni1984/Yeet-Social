@@ -21,12 +21,18 @@ pub async fn start_webboard_sync(state: AppState) {
 }
 
 async fn sync_all_boards(state: &AppState) -> Result<()> {
-    let boards: Vec<_> = sqlx::query_unchecked!(
-        r#"
-        SELECT id, user_id, domain, feed_url, username
-        FROM webboard_connections
-        WHERE is_active = true
-        "#
+    #[allow(dead_code)]
+    struct BoardRow {
+        id: uuid::Uuid,
+        user_id: uuid::Uuid,
+        domain: String,
+        feed_url: String,
+        username: Option<String>,
+    }
+    let boards: Vec<BoardRow> = sqlx::query_as!(
+        BoardRow,
+        r#"SELECT id as "id: uuid::Uuid", user_id as "user_id: uuid::Uuid", domain, feed_url, username
+        FROM webboard_connections WHERE is_active = true"#
     )
     .fetch_all(&state.db.pool)
     .await?;
@@ -62,12 +68,12 @@ async fn sync_board(
 
     let body = client.get(feed_url).send().await?.text().await?;
 
-    // Parse RSS/Atom (simplified — production would use a proper crate)
+    // Parse RSS/Atom (simplified â production would use a proper crate)
     let items = parse_rss_simple(&body);
 
     for item in items.iter().take(10) { // max 10 new posts per sync
         let content = format!(
-            "📡 **{}** | {}\n{}",
+            "ð¡ **{}** | {}\n{}",
             domain,
             item.title.as_deref().unwrap_or(""),
             item.description.as_deref().unwrap_or(""),
@@ -96,7 +102,7 @@ async fn sync_board(
     Ok(())
 }
 
-/// Very minimal RSS parser — extracts <item> blocks
+/// Very minimal RSS parser â extracts <item> blocks
 fn parse_rss_simple(xml: &str) -> Vec<RssItem> {
     let mut items = Vec::new();
     for chunk in xml.split("<item>").skip(1) {
