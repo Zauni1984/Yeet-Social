@@ -41,6 +41,8 @@ jobs:
         with:
           workspaces: backend
           cache-on-failure: true
+      - name: Run Migrations
+        run: sqlx migrate run
       - name: Build
         run: cargo build --release
       - name: Clippy

@@ -61,7 +61,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let recipients: Vec<Address> = rows.iter()
         .filter_map(|r| r.wallet_address.as_ref())
         .map(|w| w.parse::<Address>())
-        .collect::<Result<Vec<ethers::types::Address>, _>>()?;
+        .collect::<Result<Vec<ethers::types::Address>, ethers::utils::ConversionError>>()?;
 
     let amounts: Vec<U256> = rows.iter()
         .map(|r| {
