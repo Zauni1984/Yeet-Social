@@ -17,7 +17,7 @@ pub async fn start_reward_batch_job(state: AppState) {
     let privkey = match std::env::var("REWARDS_MINTER_PRIVKEY") {
         Ok(k) if !k.is_empty() => k,
         _ => {
-            warn!("REWARDS_MINTER_PRIVKEY not set — batch reward job disabled");
+            warn!("REWARDS_MINTER_PRIVKEY not set â batch reward job disabled");
             return;
         }
     };
@@ -36,16 +36,19 @@ pub async fn start_reward_batch_job(state: AppState) {
 
 async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // Fetch all unminted rewards (tx_hash IS NULL) from DB
-    let rows: Vec<_> = sqlx::query_unchecked!(
-        r#"
-        SELECT r.id, u.wallet_address, r.action::text as action, r.amount::float8 as amount
-        FROM token_rewards r
-        JOIN users u ON u.id = r.user_id
-        WHERE r.tx_hash IS NULL
-          AND u.wallet_address IS NOT NULL
-        ORDER BY r.created_at ASC
-        LIMIT 500
-        "#
+    #[allow(dead_code)]
+    struct RewardRow {
+        id: uuid::Uuid,
+        wallet_address: Option<String>,
+        action: Option<String>,
+        amount: Option<f64>,
+    }
+    let rows: Vec<RewardRow> = sqlx::query_as!(
+        RewardRow,
+        r#"SELECT r.id as "id: uuid::Uuid", u.wallet_address, r.action::text as action, r.amount::float8 as amount
+        FROM token_rewards r JOIN users u ON u.id = r.user_id
+        WHERE r.tx_hash IS NULL AND u.wallet_address IS NOT NULL
+        ORDER BY r.created_at ASC LIMIT 500"#
     )
     .fetch_all(&state.db.pool)
     .await?;
