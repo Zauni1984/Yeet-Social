@@ -36,7 +36,7 @@ pub async fn start_reward_batch_job(state: AppState) {
 
 async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // Fetch all unminted rewards (tx_hash IS NULL) from DB
-    let rows = sqlx::query!(
+    let rows = sqlx::query_unchecked!(
         r#"
         SELECT r.id, u.wallet_address, r.action::text as action, r.amount
         FROM token_rewards r
@@ -69,7 +69,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
             let wei = (yeet * 1e18) as u128;
             U256::from(wei)
         })
-        .collect();
+        .collect::<Vec<_>>();
 
     let actions: Vec<String> = rows.iter()
         .map(|r| r.action.clone().unwrap_or_default())
@@ -106,8 +106,8 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     info!("Batch mint tx: {}", tx_hash);
 
     // Mark all rewarded rows with the tx hash
-    let ids: Vec<uuid::Uuid> = rows.iter().map(|r| r.id).collect();
-    sqlx::query!(
+    let ids: Vec<uuid::Uuid> = rows.iter().map(|r| r.id).collect::<Vec<_>>();
+    sqlx::query_unchecked!(
         "UPDATE token_rewards SET tx_hash = $1 WHERE id = ANY($2)",
         tx_hash,
         &ids,

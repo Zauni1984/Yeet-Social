@@ -21,7 +21,7 @@ pub async fn start_webboard_sync(state: AppState) {
 }
 
 async fn sync_all_boards(state: &AppState) -> Result<()> {
-    let boards = sqlx::query!(
+    let boards = sqlx::query_unchecked!(
         r#"
         SELECT id, user_id, domain, feed_url, username
         FROM webboard_connections
@@ -74,7 +74,7 @@ async fn sync_board(
         );
 
         // Upsert by link to avoid duplicates
-        sqlx::query!(
+        sqlx::query_unchecked!(
             r#"
             INSERT INTO posts (
                 id, author_id, content, visibility,
