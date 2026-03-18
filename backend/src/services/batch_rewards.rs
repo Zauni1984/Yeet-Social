@@ -38,7 +38,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // Fetch all unminted rewards (tx_hash IS NULL) from DB
     let rows: Vec<_> = sqlx::query_unchecked!(
         r#"
-        SELECT r.id, u.wallet_address, r.action::text as action, r.amount
+        SELECT r.id, u.wallet_address, r.action::text as action, r.amount::float8 as amount
         FROM token_rewards r
         JOIN users u ON u.id = r.user_id
         WHERE r.tx_hash IS NULL
@@ -61,7 +61,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let recipients: Vec<Address> = rows.iter()
         .filter_map(|r| r.wallet_address.as_ref())
         .map(|w| w.parse::<Address>())
-        .collect::<Result<Vec<ethers::types::Address>, ethers::utils::ConversionError>>()?;
+        .collect::<Result<Vec<ethers::types::Address>, rustc_hex::FromHexError>>()?;
 
     let amounts: Vec<U256> = rows.iter()
         .map(|r| {
