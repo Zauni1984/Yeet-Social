@@ -31,7 +31,7 @@ async fn main() {
     state.db.run_migrations().await.expect("DB migrations failed");
     info!("✅ Migrations applied");
 
-    let app = build_router(state);
+    let app = build_router(state.clone());
 
     let port: u16 = std::env::var("PORT").unwrap_or_else(|_| "8080".into()).parse().unwrap_or(8080);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
