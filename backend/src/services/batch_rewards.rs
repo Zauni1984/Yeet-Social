@@ -36,7 +36,7 @@ pub async fn start_reward_batch_job(state: AppState) {
 
 async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // Fetch all unminted rewards (tx_hash IS NULL) from DB
-    let rows = sqlx::query_unchecked!(
+    let rows: Vec<_> = sqlx::query_unchecked!(
         r#"
         SELECT r.id, u.wallet_address, r.action::text as action, r.amount
         FROM token_rewards r

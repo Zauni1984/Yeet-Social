@@ -21,7 +21,7 @@ pub async fn start_webboard_sync(state: AppState) {
 }
 
 async fn sync_all_boards(state: &AppState) -> Result<()> {
-    let boards = sqlx::query_unchecked!(
+    let boards: Vec<_> = sqlx::query_unchecked!(
         r#"
         SELECT id, user_id, domain, feed_url, username
         FROM webboard_connections
