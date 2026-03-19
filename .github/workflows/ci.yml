@@ -55,6 +55,8 @@ jobs:
           context: backend
           push: false
           tags: ghcr.io/zauni1984/yeet-social/backend:ci
+          build-args: |
+            DATABASE_URL=postgresql://yeet:yeet_secure_password@localhost:5432/yeet
 
   smart-contracts:
     name: Smart Contracts (Foundry  BNB Smart Chain)

@@ -7,8 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev libpq-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# SQLX_OFFLINE=true so query_unchecked! macros compile without DB
-ENV SQLX_OFFLINE=true
+# Accept DATABASE_URL as build argument for sqlx compile-time checks
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 
 # Cache dependency layer
 COPY Cargo.toml ./
