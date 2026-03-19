@@ -80,7 +80,7 @@ async fn sync_board(
         );
 
         // Upsert by link to avoid duplicates
-        sqlx::query_unchecked!(
+        sqlx::query!(
             r#"
             INSERT INTO posts (
                 id, author_id, content, visibility,

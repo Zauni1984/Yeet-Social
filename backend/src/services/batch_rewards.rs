@@ -110,7 +110,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 
     // Mark all rewarded rows with the tx hash
     let ids: Vec<uuid::Uuid> = rows.iter().map(|r| r.id).collect::<Vec<_>>();
-    sqlx::query_unchecked!(
+    sqlx::query!(
         "UPDATE token_rewards SET tx_hash = $1 WHERE id = ANY($2)",
         tx_hash,
         &ids,
