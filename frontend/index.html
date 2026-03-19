@@ -1,400 +1,424 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="application-name" content="YEET">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="YEET">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#05060a">
-<meta name="description" content="Decentralised social on BNB Smart Chain. Posts vanish in 24h. Earn YEET tokens.">
-<meta name="keywords" content="web3,social,BSC,blockchain,crypto,decentralised">
-<meta property="og:title" content="YEET — Web3 Social">
-<meta property="og:description" content="Decentralised social on BNB Smart Chain. Posts vanish in 24h.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://justyeet.it">
-<meta property="og:image" content="https://justyeet.it/icons/icon-512.png">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="YEET — Web3 Social">
-<meta name="twitter:description" content="Decentralised social on BNB Smart Chain. Posts vanish in 24h.">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-<link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
-<title>YEET — Web3 Social</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0a0a0a">
+<title>YEET &mdash; Web3 Social</title>
 <style>
-:root{--bg:#05060a;--sur:#0c0e14;--pan:#12141c;--ln:rgba(255,255,255,.07);--ln2:rgba(255,255,255,.13);--ac:#c6f135;--ac2:#8ef0a2;--red:#ff4d4d;--tx:#d0d4e0;--mu:#4a5068;--br:#eef0f6;--mo:'DM Mono',monospace;--di:'Syne',sans-serif}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:var(--mo);font-size:13px;line-height:1.5;overflow-x:hidden;display:flex;flex-direction:column;min-height:100vh}
-
-/* TOPBAR */
-.tb{position:fixed;top:0;left:0;right:0;height:54px;background:rgba(5,6,10,.95);border-bottom:1px solid var(--ln);backdrop-filter:blur(16px);display:flex;align-items:center;padding:0 20px;gap:16px;z-index:100}
-.logo{font-family:var(--di);font-weight:800;font-size:21px;color:var(--ac);letter-spacing:-.03em;display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--ac);animation:pulse 2.4s ease infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(198,241,53,.5)}60%{box-shadow:0 0 0 7px rgba(198,241,53,0)}}
-.srch{flex:1;max-width:380px;display:flex;align-items:center;gap:8px;background:var(--pan);border:1px solid var(--ln);padding:0 12px;height:34px}
-.srch input{background:none;border:none;outline:none;font-family:var(--mo);font-size:12px;color:var(--tx);width:100%}
-.srch input::placeholder{color:var(--mu)}
-.tbr{margin-left:auto;display:flex;gap:8px;align-items:center}
-.btn{font-family:var(--mo);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
-.btno{background:transparent;color:var(--mu);border:1px solid var(--ln2);padding:7px 14px}
-.btno:hover{color:var(--tx);border-color:rgba(255,255,255,.25)}
-.btnp{background:var(--ac);color:#060801;padding:8px 18px;border:1px solid transparent}
-.btnp:hover{background:#d4ff40;transform:translateY(-1px)}
-
-/* TICKER */
-.tkr{position:fixed;top:54px;left:0;right:0;height:28px;background:var(--sur);border-bottom:1px solid var(--ln);overflow:hidden;display:flex;align-items:center;z-index:99}
-.tkt{display:flex;white-space:nowrap;animation:scroll 28s linear infinite}
-@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.tki{display:flex;align-items:center;gap:7px;padding:0 22px;height:28px;border-right:1px solid var(--ln);font-size:11px}
-.ts{color:var(--mu);font-weight:500}.tp{color:var(--br);font-weight:500}.tu{color:var(--ac2)}.td{color:var(--red)}
-
-/* LAYOUT — full width flex, no max-width centering */
-.app{display:flex;padding-top:82px;min-height:calc(100vh - 82px)}
-
-/* LEFT NAV */
-.nav{width:230px;flex-shrink:0;border-right:1px solid var(--ln);position:sticky;top:82px;height:calc(100vh - 82px);overflow-y:auto;padding:8px 0 20px}
-.nl{display:flex;align-items:center;gap:11px;padding:10px 18px;font-size:12px;font-weight:500;color:var(--mu);cursor:pointer;border:none;background:none;width:100%;text-align:left;border-left:2px solid transparent;transition:all .1s;letter-spacing:.02em}
-.nl:hover{color:var(--tx);background:rgba(255,255,255,.025)}
-.nl.on{color:var(--ac);background:rgba(198,241,53,.05);border-left-color:var(--ac)}
-.ni{width:18px;text-align:center;font-size:13px;flex-shrink:0}
-.nb{margin-left:auto;background:var(--ac);color:#060801;font-size:9px;font-weight:700;padding:2px 5px}
-.nsl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);padding:14px 18px 4px}
-.nhr{height:1px;background:var(--ln);margin:6px 0}
-.wbox{margin:14px 10px 0;background:rgba(198,241,53,.04);border:1px solid rgba(198,241,53,.15);padding:12px}
-.wl{font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.13em;margin-bottom:5px}
-.wa{font-size:11px;color:var(--ac);font-weight:500;word-break:break-all;line-height:1.4}
-.wb{font-size:11px;color:var(--tx);margin-top:7px;display:flex;justify-content:space-between}
-.wb span{color:var(--ac);font-weight:500}
-
-/* FEED */
-.feed{flex:1;border-right:1px solid var(--ln);min-height:calc(100vh - 82px);max-width:620px}
-.fstk{position:sticky;top:82px;background:rgba(5,6,10,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--ln);z-index:10}
-.fhd{padding:15px 20px 0;display:flex;align-items:center;justify-content:space-between}
-.ftl{font-family:var(--di);font-weight:700;font-size:14px;color:var(--br);letter-spacing:-.02em}
-.rbtn{font-family:var(--mo);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;background:none;border:1px solid var(--ln);color:var(--mu);padding:5px 9px;cursor:pointer;transition:all .15s}
-.rbtn:hover{border-color:var(--ln2);color:var(--tx)}
-.ftabs{display:flex;margin-top:2px}
-.ft{flex:1;padding:11px 6px;text-align:center;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
-.ft:hover{color:var(--tx)}
-.ft.on{color:var(--ac);border-bottom-color:var(--ac)}
-
-/* COMPOSE */
-.cmp{padding:14px 20px;border-bottom:1px solid var(--ln);display:flex;gap:11px;background:var(--sur)}
-.cav{width:36px;height:36px;flex-shrink:0;background:var(--pan);border:1px solid var(--ln2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--mu);overflow:hidden}
-.cav.on{border-color:rgba(198,241,53,.4);color:var(--ac)}
-.cr{flex:1;min-width:0}
-.ci{width:100%;background:transparent;border:none;color:var(--br);font-family:var(--mo);font-size:14px;line-height:1.5;resize:none;outline:none;min-height:50px;caret-color:var(--ac)}
-.ci::placeholder{color:var(--mu)}
-.cf{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:9px;border-top:1px solid var(--ln)}
-.cts{display:flex;gap:0}
-.ctb{background:none;border:none;color:var(--mu);font-size:13px;cursor:pointer;padding:5px 7px;transition:color .1s;font-family:var(--mo)}
-.ctb:hover{color:var(--ac)}
-.cm{display:flex;align-items:center;gap:9px}
-
-/* ring */
-.rw{position:relative;width:26px;height:26px}
-.rw svg{transform:rotate(-90deg)}
-.rv{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--mu)}
-
-/* POSTS */
-.post{display:flex;gap:11px;padding:14px 20px;border-bottom:1px solid var(--ln);cursor:pointer;animation:fi .3s ease both;transition:background .1s}
-.post:nth-child(2){animation-delay:.05s}.post:nth-child(3){animation-delay:.1s}.post:nth-child(4){animation-delay:.14s}.post:nth-child(5){animation-delay:.18s}
-@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-.post:hover{background:rgba(255,255,255,.018)}
-.pav{width:38px;height:38px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;background:var(--pan);border:1px solid var(--ln)}
-.pb{flex:1;min-width:0}
-.ph{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:5px}
-.pn{font-weight:500;font-size:13px;color:var(--br)}
-.pa{font-size:10px;color:var(--mu)}
-.pt{font-size:10px;color:var(--mu);margin-left:auto}
-.ptx{font-size:13px;line-height:1.6;color:var(--tx);word-break:break-word}
-.ptx .ht{color:var(--ac)}.ptx .mn{color:#7ecfff}
-.pnft{display:inline-flex;align-items:center;gap:4px;background:rgba(198,241,53,.07);border:1px solid rgba(198,241,53,.2);color:var(--ac);font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.12em;padding:2px 7px;margin-bottom:5px}
-.pxp{margin-top:7px;display:flex;align-items:center;gap:7px;font-size:10px;color:var(--mu)}
-.xbar{flex:1;max-width:90px;height:1px;background:var(--ln);position:relative}
-.xfil{position:absolute;top:0;left:0;height:100%;background:var(--ac);opacity:.5}
-.pacts{display:flex;margin-top:10px;border-top:1px solid var(--ln)}
-.pac{display:flex;align-items:center;gap:5px;padding:8px 11px 0;font-size:11px;color:var(--mu);background:none;border:none;font-family:var(--mo);cursor:pointer;transition:color .1s}
-.pac:hover{color:var(--ac)}.pac.on{color:var(--ac)}
-
-/* LOADING/EMPTY */
-.ld{padding:44px;text-align:center;color:var(--mu)}
-.sp{width:20px;height:20px;border:2px solid var(--ln2);border-top-color:var(--ac);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 10px}
-@keyframes sp{to{transform:rotate(360deg)}}
-.em{padding:60px 20px;text-align:center;color:var(--mu)}
-.eg{font-size:26px;margin-bottom:10px;opacity:.3}
-
-/* RIGHT ASIDE */
-.aside{width:290px;flex-shrink:0;position:sticky;top:82px;height:calc(100vh - 82px);overflow-y:auto;padding:14px}
-.wgt{margin-bottom:22px}
-.wh{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.15em;color:var(--mu);padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--ln)}
-.tr{padding:7px 0;border-bottom:1px solid var(--ln);cursor:pointer}
-.tr:last-child{border:none}
-.tr:hover .trt{color:var(--br)}
-.trt{font-size:13px;font-weight:500;color:var(--ac)}
-.trc{font-size:10px;color:var(--mu);margin-top:2px}
-.tkr2{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ln)}
-.tkr2:last-child{border:none}
-.ks{font-size:13px;font-weight:500;color:var(--br)}
-.kp{font-size:12px;color:var(--tx)}
-.kc{font-size:11px;font-weight:500}
-.kc.u{color:var(--ac2)}.kc.d{color:var(--red)}
-.abt{font-size:12px;color:var(--mu);line-height:1.8}
-.abt .y{color:var(--ac)}
-
-/* MODAL */
-.mbg{position:fixed;inset:0;background:rgba(2,3,8,.9);display:flex;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px);animation:mf .18s ease}
-@keyframes mf{from{opacity:0}to{opacity:1}}
-.mo{background:var(--sur);border:1px solid var(--ln2);width:450px;max-width:94vw;padding:34px;position:relative;animation:mu .2s ease}
-@keyframes mu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-.mx{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--mu);font-size:17px;cursor:pointer;padding:4px;line-height:1}
-.mx:hover{color:var(--br)}
-.mtl{font-family:var(--di);font-weight:800;font-size:23px;color:var(--ac);letter-spacing:-.03em;margin-bottom:6px}
-.msu{font-size:12px;color:var(--mu);line-height:1.7;margin-bottom:22px}
-.stp{display:flex;gap:13px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--ln)}
-.stp:last-of-type{border:none}
-.sn{width:22px;height:22px;flex-shrink:0;background:var(--ac);color:#060801;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
-.st{font-size:12px;color:var(--tx);line-height:1.5}
-.st strong{color:var(--br)}
-.mba{display:flex;gap:9px;margin-top:22px}
-.mst{margin-top:10px;font-size:11px;color:var(--mu);min-height:15px}
-.mst.e{color:var(--red)}
-
-/* TOASTS */
-.tst{position:fixed;bottom:22px;right:22px;z-index:400;display:flex;flex-direction:column;gap:7px}
-.tst .t{background:var(--pan);border:1px solid var(--ln2);padding:11px 15px;font-size:12px;color:var(--tx);display:flex;align-items:center;gap:9px;min-width:240px;animation:ti .2s ease}
-@keyframes ti{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
-.tst .t .ic{font-size:13px}
-.tst .t.ok .ic{color:var(--ac)}
-.tst .t.er .ic{color:var(--red)}
-
-::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--ln2)}
+:root{--yeet:#c8f026;--bg:#0a0a0a;--card:#111;--border:#222;--text:#e8e8e8;--muted:#666;--red:#ff4444;--green:#26f075;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;overflow-x:hidden;}
+.ticker-wrap{background:#0f0f0f;border-bottom:1px solid var(--border);overflow:hidden;height:36px;display:flex;align-items:center;}
+.ticker-track{display:flex;animation:ticker 35s linear infinite;white-space:nowrap;}
+.ticker-track:hover{animation-play-state:paused;}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 20px;font-size:12px;font-weight:600;}
+.ticker-item .sym{color:var(--muted);}
+.up{color:var(--green);}
+.dn{color:var(--red);}
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;gap:12px;}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:900;font-size:20px;color:var(--yeet);text-decoration:none;flex-shrink:0;}
+.nav-search{flex:1;max-width:420px;}
+.nav-search input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none;}
+.nav-search input:focus{border-color:var(--yeet);}
+.btn-wallet{background:transparent;border:1px solid var(--yeet);color:var(--yeet);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;margin-left:auto;white-space:nowrap;}
+.btn-wallet:hover{background:var(--yeet);color:#000;}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:.3s;}
+.layout{display:grid;grid-template-columns:220px 1fr 300px;max-width:1200px;margin:0 auto;min-height:calc(100vh - 92px);}
+.sidebar-left{border-right:1px solid var(--border);padding:16px 0;position:sticky;top:92px;height:calc(100vh - 92px);overflow-y:auto;}
+.nav-section{padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:.2s;}
+.nav-item:hover,.nav-item.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet);}
+.nav-badge{margin-left:auto;background:var(--yeet);color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px;}
+.main{border-right:1px solid var(--border);}
+.feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.feed-header h2{font-size:18px;font-weight:800;}
+.btn-refresh{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;}
+.btn-refresh:hover{border-color:var(--yeet);color:var(--yeet);}
+.feed-tabs{display:flex;border-bottom:1px solid var(--border);}
+.feed-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;}
+.feed-tab.active{color:var(--yeet);border-bottom-color:var(--yeet);}
+.composer{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;}
+.composer-avatar{width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.composer-body{flex:1;}
+.composer-body textarea{width:100%;background:none;border:none;color:var(--text);font-size:15px;resize:none;outline:none;min-height:60px;font-family:inherit;}
+.composer-footer{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;}
+.composer-icon{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
+.composer-icon:hover{color:var(--yeet);}
+.btn-yeet{margin-left:auto;background:var(--yeet);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer;}
+.post-empty{padding:60px 20px;text-align:center;color:var(--muted);}
+.sidebar-right{padding:16px;overflow-y:auto;}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+.widget-title{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;}
+.coin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.coin-row:last-child{border-bottom:none;}
+.coin-left{display:flex;align-items:center;gap:8px;}
+.coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.coin-name{font-size:14px;font-weight:700;}
+.coin-sym{font-size:11px;color:var(--muted);}
+.coin-price{font-size:14px;font-weight:700;}
+.coin-change{font-size:12px;}
+.tag-item{display:inline-flex;padding:6px 12px;background:#1a1a1a;border-radius:20px;font-size:13px;margin:4px;cursor:pointer;border:1px solid var(--border);}
+.tag-item:hover{border-color:var(--yeet);color:var(--yeet);}
+.tag-count{font-size:11px;color:var(--muted);margin-left:4px;}
+.pwa-banner{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:200;}
+.pwa-banner.hidden{display:none;}
+.btn-install{background:var(--yeet);color:#000;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;}
+.btn-later{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;}
+.mob-overlay.active{display:block;}
+@media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px;}}
+@media(max-width:900px){.sidebar-right{display:none;}.layout{grid-template-columns:180px 1fr;}}
+@media(max-width:700px){
+  .sidebar-left{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:70px;overflow-y:auto;}
+  .sidebar-left.open{display:block;}
+  .layout{grid-template-columns:1fr;}
+  .hamburger{display:flex;}
+  .nav-search{display:none;}
+}
+@media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:11px;}.feed-header h2{font-size:15px;}}
 </style>
 </head>
 <body>
-
-<header class="tb">
-  <a class="logo" href="#"><div class="dot"></div>YEET</a>
-  <div class="srch"><span style="color:var(--mu);font-size:13px">⌕</span><input placeholder="Search posts, users, tags…"></div>
-  <div class="tbr">
-    <button class="btn btno" id="bc" onclick="showM()">Connect Wallet</button>
-    <button class="btn btnp" id="bp" onclick="fcmp()" style="display:none">+ Yeet</button>
+<div class="ticker-wrap">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item"><span class="sym">BTC</span><span id="tBtcP">---</span>&nbsp;<span id="tBtcC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">ETH</span><span id="tEthP">---</span>&nbsp;<span id="tEthC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">BNB</span><span id="tBnbP">---</span>&nbsp;<span id="tBnbC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">SOL</span><span id="tSolP">---</span>&nbsp;<span id="tSolC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">MATIC</span><span id="tMaticP">---</span>&nbsp;<span id="tMaticC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">YEET</span><span>$0.0042</span>&nbsp;<span class="up">+12.4%</span></span>
   </div>
-</header>
-
-<div class="tkr"><div class="tkt" id="tk"></div></div>
-
-<div class="app">
-  <nav class="nav">
-    <button class="nl on" id="ng" onclick="setTab('g')"><span class="ni">⚡</span>Global Feed</button>
-    <button class="nl" id="nf" onclick="setTab('f')"><span class="ni">◎</span>Following</button>
-    <button class="nl"><span class="ni">↑</span>Trending<span class="nb">HOT</span></button>
-    <div class="nhr"></div>
-    <div class="nsl">Discover</div>
-    <button class="nl"><span class="ni">◈</span>NFT Posts</button>
-    <button class="nl"><span class="ni">⚡</span>Token Tips</button>
-    <button class="nl"><span class="ni">◻</span>Webboards</button>
-    <button class="nl"><span class="ni">🔞</span>18+ Content</button>
-    <div class="nhr"></div>
-    <div class="nsl">Account</div>
-    <button class="nl" onclick="showM()"><span class="ni">○</span>Profile</button>
-    <button class="nl"><span class="ni">◫</span>Settings</button>
-    <div id="wp" style="display:none">
-      <div class="wbox">
-        <div class="wl">Connected</div>
-        <div class="wa" id="waddr">—</div>
-        <div class="wb">Balance<span id="wbal">0 YEET</span></div>
-      </div>
+</div>
+<nav>
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="nav-logo" href="/">
+    <svg width="28" height="28" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
+    YEET
+  </a>
+  <div class="nav-search">
+    <input type="text" placeholder="&#128269; Search posts, users, tags&hellip;">
+  </div>
+  <button class="btn-wallet" onclick="connectWallet()">CONNECT WALLET</button>
+</nav>
+<div class="mob-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="layout">
+  <aside class="sidebar-left" id="sidebarLeft">
+    <a class="nav-item active" href="#">&#127968; Global Feed</a>
+    <a class="nav-item" href="#">&#128100; Following</a>
+    <a class="nav-item" href="#">&#11088; Trending <span class="nav-badge">HOT</span></a>
+    <div class="nav-section">Discover</div>
+    <a class="nav-item" href="#">&#128247; NFT Posts</a>
+    <a class="nav-item" href="#">&#9889; Token Tips</a>
+    <a class="nav-item" href="#">&#128250; Webboards</a>
+    <a class="nav-item" href="#">&#128286; 18+ Content</a>
+    <div class="nav-section">Account</div>
+    <a class="nav-item" href="#">&#128100; Profile</a>
+    <a class="nav-item" href="#">&#9881; Settings</a>
+  </aside>
+  <main class="main">
+    <div class="feed-header">
+      <h2>Global Feed</h2>
+      <button class="btn-refresh" onclick="loadFeed()">&#8635; REFRESH</button>
     </div>
-  </nav>
-
-  <main class="feed">
-    <div class="fstk">
-      <div class="fhd"><span class="ftl" id="ftl">Global Feed</span><button class="rbtn" onclick="loadFeed()">↻ Refresh</button></div>
-      <div class="ftabs">
-        <button class="ft on" id="tg" onclick="setTab('g')">For You</button>
-        <button class="ft" id="tf" onclick="setTab('f')">Following</button>
-        <button class="ft">NFT ◈</button>
-        <button class="ft">18+ 🔥</button>
-      </div>
+    <div class="feed-tabs">
+      <div class="feed-tab active" onclick="switchTab(this)">FOR YOU</div>
+      <div class="feed-tab" onclick="switchTab(this)">FOLLOWING</div>
+      <div class="feed-tab" onclick="switchTab(this)">NFT &#10024;</div>
+      <div class="feed-tab" onclick="switchTab(this)">18+ &#128293;</div>
     </div>
-    <div class="cmp">
-      <div class="cav" id="cav">○</div>
-      <div class="cr">
-        <textarea class="ci" id="ct" placeholder="What are you yeeting? Disappears in 24h…" maxlength="280" oninput="upd(this)"></textarea>
-        <div class="cf">
-          <div class="cts">
-            <button class="ctb">🖼</button>
-            <button class="ctb">◈</button>
-            <button class="ctb">🔒</button>
-            <button class="ctb">⚡</button>
-          </div>
-          <div class="cm">
-            <div class="rw">
-              <svg width="26" height="26" viewBox="0 0 26 26">
-                <circle cx="13" cy="13" r="10" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
-                <circle cx="13" cy="13" r="10" fill="none" stroke="#c6f135" stroke-width="2"
-                  stroke-dasharray="62.83" stroke-dashoffset="62.83" id="rarc" style="transition:stroke-dashoffset .15s"/>
-              </svg>
-              <div class="rv" id="rv"></div>
-            </div>
-            <button class="btn btnp" style="padding:7px 15px" onclick="doPost()">Yeet it</button>
-          </div>
+    <div class="composer">
+      <div class="composer-avatar">&#128100;</div>
+      <div cplyatshso=n"3c o-m p<o<s e'rP-YbEoOdFy'"
+>h
+t m l   =   ' ' '<<t!eDxOtCaTrYePaE  ihdt=m"lp>o
+s<thTtemxlt "l apnlga=c"edheo"l>d
+e<rh=e"aWdh>a
+t< maertea  ycohua ryseeett=i"nUgT?F -D8i"s>a
+p<pmeeatras  nianm e2=4"hv&iheewlploirpt;""  croonwtse=n"t2="">w<i/dttehx=tdaerveiac>e
+- w i d t h , i n<idtiiva lc-lsacsasl=e"=c1o,mvpioeswepro-rfto-oftietr="c>o
+v e r " > 
+ < m e t a< bnuatmteo=n" tchleamses-=c"ocloomrp"o sceorn-tiecnotn="" #t0iat0lae0=a""I>m
+a<gtei"t>l&e#>1Y2E8E2T4 8&;m<d/absuht;t oWne>b
+3   S o c i a l < / t<ibtultet>o
+n< sctlyalses>=
+":croomopto{s-e-ry-eiecto:n#"c 8tfi0t2l6e;=-"-NbFgT:"#>0&a#01a208a1;4-2-;c<a/rbdu:t#t1o1n1>;
+- - b o r d e r : # 2<2b2u;t-t-otne xctl:a#ses8=e"8ceo8m;p-o-smeurt-eidc:o#n6"6 6t;i-t-lree=d":P#afyf-4p4e4r4-;v-i-egwr"e>e&n#:1#22862f7047;5<;/}b
+u*t{tboonx>-
+s i z i n g : b o r d<ebru-tbtooxn; mcalragsisn=:"0c;opmapdodsienrg-:i0c;o}n
+"b otdiyt{lbea=c"kTgirpo"u>n&d#:9v8a8r9(;-<-/bbgu)t;tcoonl>o
+r : v a r ( - - t e x<tb)u;tftoonnt -cflaamsisl=y":b-tanp-pyleee-ts"y sotnecml,iBclki=n"ksMuabcmSiytsPtoesmtF(o)n"t>,Y"ESEeTg oIeT <U/Ib"u,tstaonns>-
+s e r i f ; m i n<-/hdeiivg>h
+t : 1 0 0 v h<;/odvievr>f
+l o w - x<:/hdiidvd>e
+n ; } 
+ .<tdiicvk ecrl-awsrsa=p"{pboasctk-germoputnyd":>#
+0 f 0 f 0 f ;<bdoirvd esrt-ybloet=t"ofmo:n1tp-xs iszoel:i4d8 pvxa;rm(a-r-gbionr-dbeort)t;oomv:e1r6fplxo"w>:&h#i1d2d8e2n9;3h;e<i/gdhitv:>3
+6 p x ; d i s<pdliavy :sftlyelxe;=a"lfiognnt--istiezmes::1c6epnxt;efro;n}t
+-.wteiicgkhetr:-7t0r0a;cmka{rdgiisnp-lbaoyt:tfolme:x8;paxn"i>mNaot ipoons:ttsi cykeetr.  3B5es  tlhien efairr sitn ftion iYteee;tw!h<i/tdei-vs>p
+a c e : n o w<rdaipv; }s
+t.ytliec=k"efro-nttr-ascikz:eh:o1v3eprx{"a>nCiomnanteicotn -ypoluary -wsatlalteet: ptaou ssetda;r}t
+ @pkoesytfirnagm<e/sd itvi>c
+k e r { 0<%/{dtirva>n
+s f o<r/mm:atirna>n
+s l a<taesXi(d0e) }c1l0a0s%s{=t"rsaindsefboarrm-:rtirgahnts"l>a
+t e X ( -<5d0i%v) }c}l
+a.stsi=c"kweird-giette"m>{
+d i s p l a y<:diinvl icnlea-sfsl=e"xw;iadlgiegtn--tiittelmes":>c&e#n1t2e8r2;0g0a;p :L6ipvxe; pCaodidni nPgr:i0c e2s0<p/xd;ifvo>n
+t - s i z e :<1d2ipvx ;ifdo=n"tc-owieniPgrhitc:e6s0"0>;<}d
+i.vt isctkyelre-=i"tceoml o.rs:yvma{rc(o-l-omru:tveadr)(;-f-omnutt-esdi)z;e}:
+1.3uppx{;cpoaldodri:nvga:r8(p-x-"g>rLeoeand)i;n}g
+ .pdrni{cceosl&ohre:lvlairp(;-<-/rdeidv)>;<}/
+dniavv>{
+p o s i t<i/odni:vs>t
+i c k y ;<tdoipv: 0c;lza-sisn=d"ewxi:d1g0e0t;"b>a
+c k g r o u n<dd:irvg bcal(a1s0s,=1"0w,i1d0g,e.t9-5t)i;tblaec"k>d&r#o1p2-8f2i9l3t;e rT:rbelnudri(n1g2 pTxa)g;sb<o/rddievr>-
+b o t t o m :<1dpixv >s
+o l i d   v a r (<-s-pbaonr dcelra)s;sp=a"dtdaign-gi:t0e m1"6>p#xY;eheetiTgohkte:n5<6sppxa;nd icslpalsasy=:"ftlaegx-;caoluingtn"->i1t.e2mKs<:/csepnatne>r<;/gsappa:n1>2
+p x ; } 
+ . n a v<-slpoagno {cdliasspsl=a"yt:afgl-eixt;eaml"i>g#nB-SiCt<esmpsa:nc ecnltaesrs;=g"atpa:g8-pcxo;ufnotn"t>-8w4e0i<g/hstp:a9n0>0<;/fsopnatn->s
+i z e : 2 0 p x ;<csoplaonr :cvlaars(s-=-"yteaegt-)i;tteemx"t>-#dWeecbo3rSaotciioanl:<nsopnaen; fclleaxs-ss=h"rtiangk-:c0o;u}n
+t."n>a6v2-0s<e/asrpcahn{>f<l/esxp:a1n;>m
+a x - w i d t h :<4s2p0apnx ;c}l
+a.snsa=v"-tsaega-ricthe mi"n>p#uNtF{TwDirdotph<:s1p0a0n% ;cblaacsksg=r"otuangd-:c#o1uan1ta"1>a4;4b5o<r/dsepra:n1>p<x/ sspoalni>d
+  v a r ( - - b o<rsdpearn) ;cbloarsdse=r"-traagd-iiutse:m2"0>p#xD;epFaid<dsipnagn: 8cplxa s1s6=p"xt;acgo-lcooru:nvta"r>(3-1-2t<e/xstp)a;nf>o<n/ts-psainz>e
+: 1 4 p x ; o u t<lsipnaen: ncolnaes;s}=
+".tnaagv--isteeamr"c>h# BiNnBp<ustp:afno cculsa{sbso=r"dtearg--ccooluonrt:"v>a2r9(0-<-/ysepeatn)>;<}/
+s.pbatnn>-
+w a l l e t {<b/adcikvg>r
+o u n d :<t/rdainvs>p
+a r e n t<;dbiovr dcelra:s1sp=x" wsiodlgiedt "v>a
+r ( - - y e e<tb)u;tctoolno rs:tvyalre(=-"-wyiedetth):;1p0a0d%d;ibnagc:k8gprxo u1n4dp:xv;abro(r-d-eyre-erta)d;icuosl:o2r0:p#x0;0f0o;nbto-rsdiezre::n1o3npex;;pfaodndti-nwge:i1g0hptx:;7b0o0r;dceurr-sroard:ipuosi:n8tpexr;;fmoanrtg-iwne-ilgehftt::8a0u0t;of;ownhti-tsei-zsep:a1c4ep:xn;ocwurraspo;r}:
+p.obitnnt-ewra;l"l>e&t#:1h2o8v6e4r0{;b aIcnksgtraoluln dY:EvEaTr (A-p-py<e/ebtu)t;tcoonl>o
+r : # 0 0<0/;d}i
+v.>h
+a m b<u/ragseird{ed>i
+s<p/ldaiyv:>n
+o<ndei;vf lcelxa-sdsi=r"epcwtai-obna:ncnoelru mhni;dgdaepn:"5 pixd;=c"uprwsaoBra:npnoeirn"t>e
+r ; p<addidvi nsgt:y4lpex=;"bfaocnktg-rsoiuzned::2n8opnxe";>b&o#r9d8e8r9:;n<o/ndei;v}>
+
+. h a<mdbiuvr gsetry lsep=a"nf{ldeixs:p1l"a>y<:dbilvo cskt;ywlied=t"hf:o2n2tp-xs;ihzeei:g1h4tp:x2;pfxo;nbta-cwkegirgohutn:d7:0v0a"r>(I-n-stteaxltl) ;YbEoErTd eArp-pr<a/ddiiuvs>:<2dpixv; tsrtaynlsei=t"ifoonn:t.-3ssi;z}e
+:.1l2apyxo;ucto{ldoirs:pvlaary(:-g-rmiudt;egdr)i"d>-Atdedm ptloa tHeo-mceo lSucmrnese:n2 2&0mpdxa s1hf;r  n3o0 0Appxp; mSatxo-rwei dntehe:d1e2d0<0/pdxi;vm>a<r/gdiinv:>0
+  a u<tbou;tmtionn- hceliagshst=:"cbatlnc-(l1a0t0evrh"  -o n9c2lpixc)k;=}"
+d.osciudmeebnatr.-gleetfEtl{ebmoerndteBry-Irdi(g\h'tp:w1apBxa nsnoelri\d' )v.acrl(a-s-sbLoirsdte.ra)d;dp(a\d'dhiindgd:e1n6\p'x) "0>;LpAoTsEiRt<i/obnu:tsttoinc>k
+y ; t<obpu:t9t2opnx ;chleaisgsh=t":bctanl-ci(n1s0t0avlhl "-  o9n2cplxi)c;ko=v"eirnfsltoawl-lyP:WaAu(t)o";>}I
+N.SnTaAvL-Ls<e/cbtuitotno{np>a
+d<d/idnigv:>8
+p<xs c1r6ippxt >4
+pcxo;nfsotn tC-OsIiNzSe=:[1{1ipdx:;"fbointtc-owieni"g,hsty:m7:0"0B;TcCo"l,oirc:ovna:r"(&-#-8m3u8t3e;d"),;ctoelx:t"-#tfr7a9n3s1fao"r}m,:{uipdp:e"rectahseer;eluemt"t,esry-ms:p"aEcTiHn"g,:i1cpoxn;:}"
+&.#n9a2v6-;i"t,ecmo{ld:i"s#p6l2a7ye:efal"e}x,;{aildi:g"nb-iintaenmcse:ccoeinnt"e,rs;ygma:p":B1N0Bp"x,;ipcaodnd:i"n&g#:91803p6x; "2,0cpoxl;:c"o#lfo3rb:av2afr"(}-,-{tiedx:t")s;otleaxnta-"d,escyomr:a"tSiOoLn":,niocnoen;:f"oSn"t,-csoilz:e":#1949p4x5;fffo"n}t,-{wiedi:g"hmta:t5i0c0-;nceutrwsoorrk:"p,osiynmt:e"rM;AbToIrCd"e,ri-cloenf:t":M3"p,xc oslo:l"i#d8 2t4r7aen5s"p}a]r;e
+nftu;ntcrtainosni tfimotn(:n.)2{si;f}(
+n.>n=a1v0-0i0t)erme:thuorvne"r$,".+nna.vt-oiLtoecma.laecSttirvien{gb(a"cekng"r,o{umnadx:i#m1u6m1F6r1a6c;tbioorndDeirg-iltesf:t0-}c)o;liofr(:nv>a=r1()-r-eyteuertn)";$c"o+lno.rt:ovFairx(e-d-(y2e)e;tr)e;t}u
+r.nn"a$v"-+bna.dtgoeF{imxaerdg(i4n)-;l}e
+fftu:nacuttioo;nb acchkgg(rco)u{ncdo:nvsatr (u-=-cy>e=e0t;)r;ectoulronr{:c#l0s0:0u;?f"ounpt"-:s"idzne":,1t0xptx:;(fuo?n"t+-"w:e"i"g)h+tc:.8t0o0F;ipxaeddd(i2n)g+:"2%p"x} ;6}p
+xa;sbyonrcd efru-nrcatdiiouns :f8eptxc;h}P
+r.imcaeisn({)b{o
+r d etrr-yr{i
+g h t : 1cpoxn ssto liidds =vCaOrI(N-S-.bmoarpd(ecr=)>;c}.
+i.df)e.ejdo-ihne(a"d,e"r){;p
+a d d i ncgo:n1s6tp xd =2a0wpaxi;tb ofredtecrh-(b"ohttttopms::1/p/xa psio.lciodi nvgaerc(k-o-.bcoormd/earp)i;/dvi3s/psliamyp:lfel/epxr;iaclei?gind-si=t"e+misd:sc+e"n&tvesr_;cjuursrteinfcyi-ecso=nutsedn&ti:nscplaucdee-_b2e4thwre_ecnh;a}n
+g.ef=eterdu-eh"e)a.dtehre nh(2r{=f>orn.tj-ssoinz(e):)1;8
+p x ; f olnett- whe=i"g"h;t
+: 8 0 0 ;C}O
+I.NbSt.nf-orreEfarcehs(hc{=b>a{cckognrsotu npd=:dn[ocn.ei;db]o;ridfe(r!:p1)prxe tsuorlni;dc ovnasrt( -{-cblosr,dtexrt)};=ccohlgo(rp:.vuasrd(_-2-4mhu_tcehda)n;gpea|d|d0i)n;gh:+6=p`x< d1i2vp xc;lbaosrsd=e"rc-oriand-iruosw:"8>p<xd;ifvo nctl-assisz=e":c1o2ipnx-;lceufrts"o>r<:dpiovi nctlears;s}=
+".cbotinn--riecforne"s hs:thyolvee=r"{bbaocrkdgerro-ucnodl:o$r{:cv.acro(l-}-2y2e;ecto)l;ocro:l$o{rc:.vcaorl(}-"->y$e{ect.)i;c}o
+n.}f<e/eddi-vt>a<bdsi{vd>i<sdpilva yc:lfalsesx=;"bcooridne-rn-abmoet"t>o$m{:c1.psxy ms}o<l/iddi vv>a<rd(i-v- bcolradsesr=)";c}o
+i.nf-eseydm-"t>a$b{{cf.liedx.:r1e;pplaadcdei(n/g-:/1g2,p"x ;"t)e.xtto-UaplpiegrnC:acseen(t)e.rs;lfiocnet(-0s,i1z0e):}1<3/pdxi;vf>o<n/td-iwve>i<g/hdti:v6>0<0d;icvo lsotry:lvea=r"(t-e-xmtu-taeldi)g;nc:urrisgohrt:"p>o<idnitve rc;lbaosrsd=e"rc-obiont-tpormi:c2ep"x> $s{oflmitd( pt.ruasnds)p}a<r/ednitv;>t<rdainvs ictliaosns:=."2cso;i}n
+-.cfheaendg-et a$b{.calcst}i"v>e${{ctoxlto}r<:/vdairv(>-<-/ydeievt>)<;/bdoirvd>e`r;-}b)o;t
+t o m - cho+l=o`r<:dviavr (c-l-aysese=t")c;o}i
+n.-croomwp"o>s<edri{vp acdldaisnsg=:"1c6opixn -2l0epfxt;"b>o<rddievr -cbloatstso=m":c1opixn -siocloind"  vsatry(l-e-=b"obradcekrg)r;oduinsdp:l#acy8:ff0l2e6x2;2g;acpo:l1o2rp:x#;c}8
+f.0c2o6m"p>o&s#e9r8-8a9v;a<t/adri{vw>i<ddtihv:>4<0dpixv; hceliagshst=:"4c0opixn;-bnoarmdee"r>-YrEaEdTi<u/sd:i5v0>%<;dbiavc kcglraosusn=d":c#o1ian1-as1yam;"b>oYrEdEeTr :T2OpKxE Ns<o/ldiidv >v<a/rd(i-v->b<o/rddievr>)<;dfilve xs-tsyhlrei=n"kt:e0x;td-iaslpilgany::rfilgehxt;"a>l<idginv- ictleamsss:=c"ecnotienr-;pjruisctei"f>y$-0c.o0n0t4e2n<t/:dcievn>t<edri;vc oclloars:sv=a"rc(o-i-nm-uctheadn)g;e} 
+u.pc"o>m+p1o2s.e4r%-<b/oddiyv{>f<l/edxi:v1>;<}/
+d.icvo>m`p;o
+s e r - bdoodcyu mteenxtt.agreetaE{lweimdetnht:B1y0I0d%(;"bcaocikngPrroiucneds:"n)o.nien;nbeorrHdTeMrL:=nho;n
+e ; c o lcoorn:svta rm(a-p-=t{etxBtt)c;Pf:o"nbti-tsciozien:"1,5tpExt;hrPe:s"iezteh:enroenuem;"o,uttBlnibnPe::"nboinnea;nmcienc-ohieni"g,httS:o6l0Pp:x";sfoolnatn-af"a,mtiMlayt:iicnPh:e"rmiatt;i}c
+-.nceotmwpoorske"r}-;f
+o o t e rO{bdjiescptl.aeyn:tfrlieexs;(amlaipg)n.-fiotreEmasc:hc(e(n[tpeird;,giadp]:)8=p>x{;cpoandsdti npg=-dt[oipd:]8;pixf;(b!opr)dreert-utronp;:c1opnxs ts oplei=dd ovcaurm(e-n-tb.ogredteErl)e;mmeanrtgBiynI-dt(oppi:d8)p;xc;o}n
+s.tc ocmep=odsoecru-miecnotn.{gbeatcEklgermoeunntdB:ynIodn(ep;ibdo.rrdeeprl:ancoen(e";Pc"o,l"oCr":)v)a;ri(f-(-pmeu)tpeed.)t;ecxutrCsoonrt:epnoti=nftmetr(;pf.ounstd-)s;iizfe(:c1e6)p{xc;o}n
+s.tc o{mcploss,etrx-ti}c=ocnh:gh(opv.eurs{dc_o2l4ohr_:cvhaarn(g-e-|y|e0e)t;)c;e}.
+t.ebxttnC-oyneteetn{tm=atrxgti;nc-el.ecflta:sasuNtaom;eb=acclksg;r}o}u)n;d
+: v a r (c-o-nysete tt)=;dcoocluomre:n#t0.0g0e;tbEolredmeern:tnBoynIed;(p"atdidciknegr:T8rpaxc k2"0)p;xi;fb(otr&d&e!rt-.rdaadtiausse:t2.0dpuxp;)f{otn.ti-nwneeirgHhTtM:L8+0=0t;.fionnnte-rsHiTzMeL:;1t4.pdxa;tcausresto.rd:uppo=i"n1t"e;r};
+} 
+ .}pcoasttc-he(mep)t{yd{opcaudmdeinntg.:g6e0tpExl e2m0epnxt;BtyeIxdt(-"acloiignnP:rciecnetse"r);.cionlnoerr:HvTaMrL(=-\-'m<udtievd )s;t}y
+l.es=i"dceoblaorr-:rviagrh(t-{-pmaudtdeidn)g;:f1o6nptx-;soivzeer:f1l3opwx-;yp:aadudtion;g}:
+8.pwxi"d>g&e#t9{8b8a8c;k gPrroiucned :dvaatra( -u-ncaavradi)l;abbolred<e/rd:i1vp>x\ 's;o}l
+i}d
+ fveatrc(h-P-rbiocredse(r));;sbeotrIdnetre-rrvaadli(ufse:t1c2hpPxr;ipcaedsd,i6n0g0:0106)p;x
+;fmuanrcgtiino-nb ottotgogml:e1S6ipdxe;b}a
+r.(w)i{dcgoents-tt ist=ldeo{cfuomnetn-ts.igzeet:E1l3epmxe;nftoBnytI-dw(e"isgihdte:b8a0r0L;ecfotl"o)r;:cvoanrs(t- -om=udtoecdu)m;etnetx.tg-ettrEalnesmfeonrtmB:yuIpdp(e"rocvaesrel;alye"t)t;ecro-nsspta coipnegn:=.s8.pcxl;amsasrLgiisnt-.btootgtgolme:(1"2oppxe;n}"
+).;coo.icnl-arsoswL{idsits.ptloagyg:lfel(e"xa;catliivgen"-,iotpeemns):;cdeonctuemre;njtu.sbtoidfyy.-sctoynltee.notv:esrpfalcoew-=boeptewne?e"nh;ipdaddedni"n:g":"8;p}x
+ f0u;nbcotridoenr -sbwoitttcohmT:a1bp(xt )s{odloicdu mveanrt(.-q-ubeorrydSeerl)e;c}t
+o.rcAoliln(-"r.ofwe:elda-stta-bc"h)i.lfdo{rbEoarcdhe(rx-=b>oxt.tcolma:snsoLnies;t}.
+r.ecmooivne-(l"eafctt{idvies"p)l)a;yt:.fclleaxs;saLliisgtn.-aidtde(m"sa:ccteinvtee"r);;g}a
+pa:s8ypnxc; }f
+u.nccotiino-ni ccoonn{nweicdttWha:l2l8eptx(;)h{eiifg(hwti:n2d8opwx.;ebtohredreeru-mr)a{dtiruys{:c5o0n%s;td ias=palwaayi:tf lweixn;daolwi.gent-hietreemusm:.creenqtueers;tj(u{smteitfhyo-dc:o"nettehn_tr:ecqeunetsetrA;cfcoonutn-tssi"z}e):;1d3opcxu;m}e
+n.tc.oqiune-rnyaSmeel{efcotnotr-(s"i.zbet:n1-4wpaxl;lfeotn"t)-.wteeixgthCto:n7t0e0n;t}=
+a.[c0o]i.ns-lsiycme{(f0o,n6t)-+s"i.z.e.:"1+1ap[x0;]c.oslloirc:ev(a-r4()-;-}mcuattecdh)(;e})
+{.}c}oeilns-ep{railceer{tf(o"nPtl-esaiszee :i1n4sptxa;lflo nMte-twaeMiagshkt :o7r0 0u;s}e
+ .tchoei nY-EcEhTa nmgoeb{ifloen ta-pspi!z"e):;1}2}p
+xf;u}n
+c.ttiaogn- istuebmm{idtiPsopslta(y):{icnolnisnte -tf=ldeoxc;upmaedndti.ngge:t6Eplxe m1e2nptxB;ybIadc(k"gproosutnTde:x#t1"a)1.av1aal;ubeo.rtdreirm-(r)a;diifu(s!:t2)0rpext;ufronn;ta-lseirzte(:"1C3opnxn;emcatr gyionu:r4 pwxa;lcluerts otro: ppooisntt!e"r);;b}o
+rfduenrc:t1ipoxn  sloolaiddF eveadr(()-{-fbeotrcdhe(r")/;a}p
+i./tva1g/-piotsetms:"h)o.vceart{cbho(r(d)e=r>-{c}o)l;o}r
+:lveatr (d-e-fyeererte)d;Pcroolmoprt:;v
+awri(n-d-oywe.eatd)d;E}v
+e.nttaLgi-sctoeunnetr{(f"obnetf-osriezien:s1t1aplxl;pcroolmoprt:"v,aer=(>-{-em.uptreedv)e;nmtaDregfianu-llte(f)t;:d4epfxe;r}r
+e.dpPwrao-mbpatn=nee;rd{opcousmietnito.ng:eftiExleedm;ebnottBtyoImd:(0";plweafBta:n0n;erri"g)h.tc:l0a;sbsaLciksgtr.oruenmdo:v#e1(1"1h;ibdodredne"r)-;t}o)p;:
+1fpuxn cstoiloind  ivnasrt(a-l-lbPoWrAd(e)r{)i;fp(addedfienrgr:e1d2Pprxo m1p6tp)xd;edfiesrprleadyP:rfolmepxt;.aplriogmnp-ti(t)e;mdso:ccuemnetnetr.;ggeatpE:l1e2mpexn;tzB-yiIndd(e"xp:w2a0B0a;n}n
+e.rp"w)a.-cblaansnseLri.shti.daddedn({"dhiisdpdleany":)n;o}n
+ei;f}(
+w.ibntdno-wi.nmsattaclhlM{ebdaicak(g"r(oduinsdp:lvaayr-(m-o-dyee:e ts)t;acnodlaolro:n#e0)0"0);.bmoartdcehre:sn)odnoec;upmaedndti.ngge:t8Eplxe m1e6nptxB;ybIodr(d"eprw-arBaadninuesr:"8)p.xc;lfaosnstL-iwseti.gahdtd:(7"0h0i;dfdoennt"-)s;i
+z<e/:s1c3rpixp;tc>u
+r<s/obro:dpyo>i
+n<t/ehrt;m}l
+>.'b't'n
+-
+lwaittehr {obpaecnk(g'r/otumnpd/:ynco3n/ef;rboonrtdeenrd:/1ipnxd esxo.lhitdm lv'a,r'(w-'-)b oarsd efr:)
+; c o l ofr.:wvrairt(e-(-hmtumtle)d
+)p;rpiandtd(ifn"gW:r8iptxt e1n6:p x{;lbeonr(dhetrm-lr)a}d ibuyst:e8sp xt;of o/nttm-ps/iyzce3:/1f3rpoxn;tceunrds/oirn:dpeoxi.nhttemrl;"})
+
+.PmYoEbO-Fo
+verlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;}
+.mob-overlay.active{display:block;}
+@media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px;}}
+@media(max-width:900px){.sidebar-right{display:none;}.layout{grid-template-columns:180px 1fr;}}
+@media(max-width:700px){
+  .sidebar-left{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:70px;overflow-y:auto;}
+  .sidebar-left.open{display:block;}
+  .layout{grid-template-columns:1fr;}
+  .hamburger{display:flex;}
+  .nav-search{display:none;}
+}
+@media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:11px;}.feed-header h2{font-size:15px;}}
+</style>
+</head>
+<body>
+<div class="ticker-wrap">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item"><span class="sym">BTC</span><span id="tBtcP">---</span>&nbsp;<span id="tBtcC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">ETH</span><span id="tEthP">---</span>&nbsp;<span id="tEthC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">BNB</span><span id="tBnbP">---</span>&nbsp;<span id="tBnbC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">SOL</span><span id="tSolP">---</span>&nbsp;<span id="tSolC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">MATIC</span><span id="tMaticP">---</span>&nbsp;<span id="tMaticC" class="up"></span></span>
+    <span class="ticker-item"><span class="sym">YEET</span><span>$0.0042</span>&nbsp;<span class="up">+12.4%</span></span>
+  </div>
+</div>
+<nav>
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="nav-logo" href="/">
+    <svg width="28" height="28" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
+    YEET
+  </a>
+  <div class="nav-search">
+    <input type="text" placeholder="&#128269; Search posts, users, tags&hellip;">
+  </div>
+  <button class="btn-wallet" onclick="connectWallet()">CONNECT WALLET</button>
+</nav>
+<div class="mob-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="layout">
+  <aside class="sidebar-left" id="sidebarLeft">
+    <a class="nav-item active" href="#">&#127968; Global Feed</a>
+    <a class="nav-item" href="#">&#128100; Following</a>
+    <a class="nav-item" href="#">&#11088; Trending <span class="nav-badge">HOT</span></a>
+    <div class="nav-section">Discover</div>
+    <a class="nav-item" href="#">&#128247; NFT Posts</a>
+    <a class="nav-item" href="#">&#9889; Token Tips</a>
+    <a class="nav-item" href="#">&#128250; Webboards</a>
+    <a class="nav-item" href="#">&#128286; 18+ Content</a>
+    <div class="nav-section">Account</div>
+    <a class="nav-item" href="#">&#128100; Profile</a>
+    <a class="nav-item" href="#">&#9881; Settings</a>
+  </aside>
+  <main class="main">
+    <div class="feed-header">
+      <h2>Global Feed</h2>
+      <button class="btn-refresh" onclick="loadFeed()">&#8635; REFRESH</button>
+    </div>
+    <div class="feed-tabs">
+      <div class="feed-tab active" onclick="switchTab(this)">FOR YOU</div>
+      <div class="feed-tab" onclick="switchTab(this)">FOLLOWING</div>
+      <div class="feed-tab" onclick="switchTab(this)">NFT &#10024;</div>
+      <div class="feed-tab" onclick="switchTab(this)">18+ &#128293;</div>
+    </div>
+    <div class="composer">
+      <div class="composer-avatar">&#128100;</div>
+      <div class="composer-body">
+        <textarea id="postText" placeholder="What are you yeeting? Disappears in 24h&hellip;" rows="2"></textarea>
+        <div class="composer-footer">
+          <button class="composer-icon" title="Image">&#128248;</button>
+          <button class="composer-icon" title="NFT">&#128142;</button>
+          <button class="composer-icon" title="Pay-per-view">&#128274;</button>
+          <button class="composer-icon" title="Tip">&#9889;</button>
+          <button class="btn-yeet" onclick="submitPost()">YEET IT</button>
         </div>
       </div>
     </div>
-    <div id="fl"><div class="ld"><div class="sp"></div>Loading feed…</div></div>
+    <div class="post-empty">
+      <div style="font-size:48px;margin-bottom:16px">&#128293;</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">No posts yet. Be the first to Yeet!</div>
+      <div style="font-size:13px">Connect your wallet to start posting</div>
+    </div>
   </main>
-
-  <aside class="aside">
-    <div class="wgt">
-      <div class="wh">Trending Tags</div>
-      <div class="tr"><div class="trt">#YeetToken</div><div class="trc">1.2K posts · trending</div></div>
-      <div class="tr"><div class="trt">#BSC</div><div class="trc">840 posts</div></div>
-      <div class="tr"><div class="trt">#Web3Social</div><div class="trc">620 posts</div></div>
-      <div class="tr"><div class="trt">#NFTDrop</div><div class="trc">445 posts</div></div>
-      <div class="tr"><div class="trt">#DeFi</div><div class="trc">312 posts</div></div>
+  <aside class="sidebar-right">
+    <div class="widget">
+      <div class="widget-title">&#128200; Live Coin Prices</div>
+      <div id="coinPrices"><div style="color:var(--muted);font-size:13px;padding:8px">Loading prices&hellip;</div></div>
     </div>
-    <div class="wgt">
-      <div class="wh">Token Prices</div>
-      <div class="tkr2"><span class="ks">YEET</span><span class="kp">$0.0042</span><span class="kc u">+12.4%</span></div>
-      <div class="tkr2"><span class="ks">BNB</span><span class="kp">$312.50</span><span class="kc u">+2.1%</span></div>
-      <div class="tkr2"><span class="ks">BTC</span><span class="kp">$84,200</span><span class="kc d">-0.8%</span></div>
-      <div class="tkr2"><span class="ks">ETH</span><span class="kp">$2,180</span><span class="kc u">+1.3%</span></div>
+    <div class="widget">
+      <div class="widget-title">&#128293; Trending Tags</div>
+      <div>
+        <span class="tag-item">#YeetToken<span class="tag-count">1.2K</span></span>
+        <span class="tag-item">#BSC<span class="tag-count">840</span></span>
+        <span class="tag-item">#Web3Social<span class="tag-count">620</span></span>
+        <span class="tag-item">#NFTDrop<span class="tag-count">445</span></span>
+        <span class="tag-item">#DeFi<span class="tag-count">312</span></span>
+        <span class="tag-item">#BNB<span class="tag-count">290</span></span>
+      </div>
     </div>
-    <div class="wgt">
-      <div class="wh">About</div>
-      <div class="abt">Decentralised social on BNB Smart Chain.<br>Posts auto-delete in 24h.<br>Earn <span class="y">YEET</span> for engagement.<br><br>
-      <span class="y">✓</span> No algorithm &nbsp;<span class="y">✓</span> No ads<br>
-      <span class="y">✓</span> Your keys, your data<br>
-      <span class="y">✓</span> EU GDPR compliant</div>
+    <div class="widget">
+      <button style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer;">&#128640; Install YEET App</button>
     </div>
   </aside>
 </div>
-
-<div class="mbg" id="modal" style="display:none" onclick="bgc(event)">
-  <div class="mo">
-    <button class="mx" onclick="closeM()">✕</button>
-    <div class="mtl">Connect Wallet</div>
-    <div class="msu">Connect your BSC wallet to post, earn YEET tokens, tip creators and unlock gated content.</div>
-    <div class="stp"><div class="sn">1</div><div class="st"><strong>Get nonce</strong> — One-time signing challenge tied to your address.</div></div>
-    <div class="stp"><div class="sn">2</div><div class="st"><strong>Sign message</strong> — No gas fee. Sign in MetaMask to authenticate.</div></div>
-    <div class="stp"><div class="sn">3</div><div class="st"><strong>You're in</strong> — Your wallet IS your account. No email needed.</div></div>
-    <div class="mba">
-      <button class="btn btnp" style="flex:1;justify-content:center;padding:10px" onclick="conn()">🦊 Connect MetaMask</button>
-      <button class="btn btno" onclick="closeM()">Cancel</button>
-    </div>
-    <div class="mst" id="mst"></div>
-  </div>
+<div class="pwa-banner hidden" id="pwaBanner">
+  <div style="font-size:28px">&#9889;</div>
+  <div style="flex:1"><div style="font-size:14px;font-weight:700">Install YEET App</div><div style="font-size:12px;color:var(--muted)">Add to Home Screen &mdash; no App Store needed</div></div>
+  <button class="btn-later" onclick="document.getElementById('pwaBanner').classList.add('hidden')">LATER</button>
+  <button class="btn-install" onclick="installPWA()">INSTALL</button>
 </div>
-
-<div class="tst" id="tsts"></div>
-
 <script>
-const API='https://justyeet.it/api/v1';
-const C=2*Math.PI*10;
-let tab='g',tok=localStorage.getItem('yt'),wal=localStorage.getItem('yw');
-
-// Ticker
-(()=>{const d=[['YEET','$0.0042','u','+12.4%'],['BNB','$312.50','u','+2.1%'],['BTC','$84,200','d','-0.8%'],['ETH','$2,180','u','+1.3%'],['SOL','$142','u','+4.1%'],['MATIC','$0.58','d','-1.1%']];const dd=[...d,...d];document.getElementById('tk').innerHTML=dd.map(([s,p,dir,c])=>`<span class="tki"><span class="ts">${s}</span><span class="tp">${p}</span><span class="t${dir}">${c}</span></span>`).join('')})();
-
-function upd(el){const u=el.value.length,l=280-u,pct=u/280,off=C*(1-pct);document.getElementById('rarc').style.strokeDashoffset=off;const rv=document.getElementById('rv');rv.textContent=l<20?l:'';rv.style.color=l<10?'#ff4d4d':'#c6f135';document.getElementById('rarc').style.stroke=l<10?'#ff4d4d':'#c6f135';}
-
-function setTab(t){tab=t;['g','f'].forEach(x=>{document.getElementById('n'+x)?.classList.toggle('on',(x==='g'&&t==='g')||(x==='f'&&t==='f'));document.getElementById('t'+x)?.classList.toggle('on',(x==='g'&&t==='g')||(x==='f'&&t==='f'))});document.getElementById('ftl').textContent=t==='g'?'Global Feed':'Following';loadFeed();}
-
-async function loadFeed(){const fl=document.getElementById('fl');fl.innerHTML='<div class="ld"><div class="sp"></div>Loading feed…</div>';try{let url=API+'/feed?page=1&per_page=20',h={};if(tab==='f'){if(!tok){fl.innerHTML='<div class="em"><div class="eg">◎</div>Connect wallet to see following feed.</div>';return}url=API+'/feed/following?page=1&per_page=20';h['Authorization']='Bearer '+tok;}const r=await fetch(url,{headers:h});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();renderFeed(d.data||[]);}catch(e){fl.innerHTML=`<div class="em"><div class="eg">⚠</div>${e.message}</div>`;}}
-
-function renderFeed(ps){const fl=document.getElementById('fl');if(!ps.length){fl.innerHTML='<div class="em"><div class="eg">○</div>No posts yet. Be the first to Yeet!</div>';return}fl.innerHTML=ps.map(rp).join('');}
-
-function rp(p){const a=p.author?.wallet_address||'',nm=p.author?.display_name||fa(a),sh=a?a.slice(0,6)+'…'+a.slice(-4):'',av=(nm||'?').slice(0,2).toUpperCase(),cs=['#c6f135','#8ef0a2','#7ecfff','#ffd17e','#ff9ef0'],ci=a?parseInt(a.slice(2,4),16)%5:0,cl=cs[ci],nft=p.is_nft?'<div class="pnft">◈ NFT</div>':'',exp=ex(p.expires_at),pct=ep(p.created_at,p.expires_at);
-return `<article class="post"><div class="pav" style="color:${cl};border-color:rgba(0,0,0,.3)">${av}</div><div class="pb">${nft}<div class="ph"><span class="pn">${esc(nm)}</span><span class="pa">${sh}</span><span class="pt">${ago(p.created_at)}</span></div><div class="ptx">${fc(p.content||'')}</div><div class="pxp"><span>⏱ ${exp}</span><div class="xbar"><div class="xfil" style="width:${pct}%"></div></div></div><div class="pacts"><button class="pac" onclick="like(event,'${p.id}',this)">♥ <span>${p.like_count||0}</span></button><button class="pac">◎ <span>${p.comment_count||0}</span></button><button class="pac" onclick="rs(event)">↺ <span>${p.reshare_count||0}</span></button><button class="pac" onclick="tip(event)">⚡ Tip</button></div></div></article>`;}
-
-function fc(t){return esc(t).replace(/#(\w+)/g,'<span class="ht">#$1</span>').replace(/@(\w+)/g,'<span class="mn">@$1</span>')}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function fa(a){return a?a.slice(0,6)+'…'+a.slice(-4):'Anonymous'}
-function ago(iso){if(!iso)return'';const s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
-function ex(iso){if(!iso)return'';const s=Math.floor((new Date(iso)-Date.now())/1000);if(s<=0)return'expired';if(s<3600)return Math.floor(s/60)+'m left';return Math.floor(s/3600)+'h left';}
-function ep(c,e){if(!c||!e)return 50;const t=new Date(e)-new Date(c),el=Date.now()-new Date(c);return Math.max(0,Math.min(100,100-(el/t*100)));}
-
-async function like(e,id,btn){e.stopPropagation();if(!tok){showM();return}try{const r=await fetch(API+'/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+tok}});if(r.ok){btn.classList.add('on');const sp=btn.querySelector('span');sp.textContent=+sp.textContent+1;toast('Liked ♥','ok');}}catch(_){}}
-function rs(e){e.stopPropagation();if(!tok){showM();return}toast('Reshared — 24h extended','ok');}
-function tip(e){e.stopPropagation();if(!tok){showM();return}toast('YEET tipping coming soon','ok');}
-function fcmp(){document.getElementById('ct').focus();}
-
-async function doPost(){if(!tok){showM();return}const txt=document.getElementById('ct').value.trim();if(!txt){toast('Write something first','er');return}try{const r=await fetch(API+'/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({content:txt})});if(r.ok){document.getElementById('ct').value='';upd(document.getElementById('ct'));toast('Yeeted! 🚀 +5 YEET','ok');setTimeout(loadFeed,700);}else{const err=await r.json();toast(err.error?.message||'Failed','er');}}catch(e){toast('Network error','er');}}
-
-function showM(){document.getElementById('modal').style.display='flex';document.getElementById('mst').textContent='';}
-function closeM(){document.getElementById('modal').style.display='none';}
-function bgc(e){if(e.target===e.currentTarget)closeM();}
-function st(msg,err=false){const el=document.getElementById('mst');el.textContent=msg;el.className='mst'+(err?' e':'');}
-
-async function conn(){if(typeof window.ethereum==='undefined'){st('MetaMask not found — install it first.',true);return}try{st('Requesting access…');const acc=await window.ethereum.request({method:'eth_requestAccounts'});const addr=acc[0].toLowerCase();st('Getting nonce…');const nr=await fetch(API+'/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});const nd=await nr.json();if(!nd.success)throw new Error(nd.error?.message||'Nonce failed');st('Sign in MetaMask…');const sig=await window.ethereum.request({method:'personal_sign',params:[nd.data.message,addr]});st('Verifying…');const vr=await fetch(API+'/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,nonce:nd.data.nonce,signature:sig})});const vd=await vr.json();if(!vd.success)throw new Error(vd.error?.message||'Failed');tok=vd.data.access_token;wal=addr;localStorage.setItem('yt',tok);localStorage.setItem('yw',addr);closeM();applyC(addr);toast('Connected! Welcome 🚀','ok');loadFeed();}catch(e){st('✗ '+(e.message||'Error'),true);}}
-
-function applyC(addr){const sh=addr.slice(0,6)+'…'+addr.slice(-4);document.getElementById('bc').style.display='none';document.getElementById('bp').style.display='flex';document.getElementById('wp').style.display='block';document.getElementById('waddr').textContent=sh;const av=document.getElementById('cav');av.classList.add('on');av.textContent=addr.slice(2,4).toUpperCase();}
-
-function toast(msg,type){const c=document.getElementById('tsts');const el=document.createElement('div');el.className='t '+type;el.innerHTML=`<span class="ic">${type==='ok'?'✓':'✗'}</span>${msg}`;c.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(14px)';el.style.transition='all .25s';setTimeout(()=>el.remove(),260)},3000);}
-
-if(tok&&wal)applyC(wal);
-loadFeed();
-</script>
-
-<script>
-// Service Worker registration
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', {scope: '/'})
-      .then(reg => console.log('[SW] registered', reg.scope))
-      .catch(err => console.warn('[SW] failed', err));
-  });
+const COINS=[{id:"bitcoin",sym:"BTC",icon:"&#8383;",col:"#f7931a"},{id:"ethereum",sym:"ETH",icon:"&#926;",col:"#627eea"},{id:"binancecoin",sym:"BNB",icon:"&#9836;",col:"#f3ba2f"},{id:"solana",sym:"SOL",icon:"S",col:"#9945ff"},{id:"matic-network",sym:"MATIC",icon:"M",col:"#8247e5"}];
+function fmt(n){if(n>=1000)return"$"+n.toLocaleString("en",{maximumFractionDigits:0});if(n>=1)return"$"+n.toFixed(2);return"$"+n.toFixed(4);}
+function chg(c){const u=c>=0;return{cls:u?"up":"dn",txt:(u?"+":"")+c.toFixed(2)+"%"};}
+async function fetchPrices(){
+  try{
+    const ids=COINS.map(c=>c.id).join(",");
+    const d=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+ids+"&vs_currencies=usd&include_24hr_change=true").then(r=>r.json());
+    let h="";
+    COINS.forEach(c=>{const p=d[c.id];if(!p)return;const {cls,txt}=chg(p.usd_24h_change||0);h+=`<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:${c.col}22;color:${c.col}">${c.icon}</div><div><div class="coin-name">${c.sym}</div><div class="coin-sym">${c.id.replace(/-/g," ").toUpperCase().slice(0,10)}</div></div></div><div style="text-align:right"><div class="coin-price">${fmt(p.usd)}</div><div class="coin-change ${cls}">${txt}</div></div></div>`;});
+    h+=`<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">&#9889;</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div style="text-align:right"><div class="coin-price">$0.0042</div><div class="coin-change up">+12.4%</div></div></div>`;
+    document.getElementById("coinPrices").innerHTML=h;
+    const map={tBtcP:"bitcoin",tEthP:"ethereum",tBnbP:"binancecoin",tSolP:"solana",tMaticP:"matic-network"};
+    Object.entries(map).forEach(([pid,id])=>{const p=d[id];if(!p)return;const pe=document.getElementById(pid);const ce=document.getElementById(pid.replace("P","C"));if(pe)pe.textContent=fmt(p.usd);if(ce){const {cls,txt}=chg(p.usd_24h_change||0);ce.textContent=txt;ce.className=cls;}});
+    const t=document.getElementById("tickerTrack");if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup="1";}
+  }catch(e){document.getElementById("coinPrices").innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px">&#9888; Price data unavailable</div>';}
 }
-
-// PWA Install prompt
-let deferredPrompt = null;
-const installBanner = document.createElement('div');
-installBanner.id = 'pwa-banner';
-installBanner.innerHTML = `
-  <div style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0c0e14;border-top:1px solid rgba(198,241,53,0.25);padding:14px 20px;z-index:9000;display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:'DM Mono',monospace" id="pwa-inner">
-    <div style="display:flex;align-items:center;gap:12px">
-      <span style="font-size:24px">⚡</span>
-      <div>
-        <div style="color:#eef0f6;font-size:13px;font-weight:500">Install YEET App</div>
-        <div style="color:#4a5068;font-size:11px">Add to Home Screen — no App Store needed</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
-      <button id="pwa-dismiss" style="background:transparent;border:1px solid rgba(255,255,255,0.13);color:#4a5068;font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:6px 12px;cursor:pointer">Later</button>
-      <button id="pwa-install" style="background:#c6f135;border:none;color:#060801;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;padding:6px 14px;cursor:pointer">Install</button>
-    </div>
-  </div>`;
-document.body.appendChild(installBanner);
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  const inner = document.getElementById('pwa-inner');
-  if (inner) inner.style.display = 'flex';
-});
-
-document.addEventListener('click', e => {
-  if (e.target.id === 'pwa-install' && deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(c => {
-      deferredPrompt = null;
-      document.getElementById('pwa-inner').style.display = 'none';
-    });
-  }
-  if (e.target.id === 'pwa-dismiss') {
-    document.getElementById('pwa-inner').style.display = 'none';
-  }
-});
-
-window.addEventListener('appinstalled', () => {
-  document.getElementById('pwa-inner').style.display = 'none';
-  console.log('[PWA] installed');
-});
+fetchPrices();setInterval(fetchPrices,60000);
+function toggleSidebar(){const s=document.getElementById("sidebarLeft");const o=document.getElementById("overlay");const open=s.classList.toggle("open");o.classList.toggle("active",open);document.body.style.overflow=open?"hidden":"";}
+function switchTab(t){document.querySelectorAll(".feed-tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");}
+async function connectWallet(){if(window.ethereum){try{const a=await window.ethereum.request({method:"eth_requestAccounts"});document.querySelector(".btn-wallet").textContent=a[0].slice(0,6)+"..."+a[0].slice(-4);}catch(e){}}else{alert("Please install MetaMask or use the YEET mobile app!");}}
+function submitPost(){const t=document.getElementById("postText").value.trim();if(!t)return;alert("Connect your wallet to post!");}
+function loadFeed(){fetch("/api/v1/posts").catch(()=>{});}
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;document.getElementById("pwaBanner").classList.remove("hidden");});
+function installPWA(){if(deferredPrompt)deferredPrompt.prompt();document.getElementById("pwaBanner").classList.add("hidden");}
+if(window.matchMedia("(display-mode: standalone)").matches)document.getElementById("pwaBanner").classList.add("hidden");
 </script>
 </body>
 </html>
