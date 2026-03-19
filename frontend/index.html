@@ -2,423 +2,241 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0a0a0a">
 <title>YEET &mdash; Web3 Social</title>
 <style>
-:root{--yeet:#c8f026;--bg:#0a0a0a;--card:#111;--border:#222;--text:#e8e8e8;--muted:#666;--red:#ff4444;--green:#26f075;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;overflow-x:hidden;}
-.ticker-wrap{background:#0f0f0f;border-bottom:1px solid var(--border);overflow:hidden;height:36px;display:flex;align-items:center;}
-.ticker-track{display:flex;animation:ticker 35s linear infinite;white-space:nowrap;}
-.ticker-track:hover{animation-play-state:paused;}
-@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 20px;font-size:12px;font-weight:600;}
-.ticker-item .sym{color:var(--muted);}
-.up{color:var(--green);}
-.dn{color:var(--red);}
-nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 16px;height:56px;display:flex;align-items:center;gap:12px;}
-.nav-logo{display:flex;align-items:center;gap:8px;font-weight:900;font-size:20px;color:var(--yeet);text-decoration:none;flex-shrink:0;}
-.nav-search{flex:1;max-width:420px;}
-.nav-search input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none;}
-.nav-search input:focus{border-color:var(--yeet);}
-.btn-wallet{background:transparent;border:1px solid var(--yeet);color:var(--yeet);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;margin-left:auto;white-space:nowrap;}
-.btn-wallet:hover{background:var(--yeet);color:#000;}
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none;}
-.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:.3s;}
-.layout{display:grid;grid-template-columns:220px 1fr 300px;max-width:1200px;margin:0 auto;min-height:calc(100vh - 92px);}
-.sidebar-left{border-right:1px solid var(--border);padding:16px 0;position:sticky;top:92px;height:calc(100vh - 92px);overflow-y:auto;}
-.nav-section{padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:.2s;}
-.nav-item:hover,.nav-item.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet);}
-.nav-badge{margin-left:auto;background:var(--yeet);color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px;}
-.main{border-right:1px solid var(--border);}
-.feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.feed-header h2{font-size:18px;font-weight:800;}
-.btn-refresh{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;}
-.btn-refresh:hover{border-color:var(--yeet);color:var(--yeet);}
-.feed-tabs{display:flex;border-bottom:1px solid var(--border);}
-.feed-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;}
-.feed-tab.active{color:var(--yeet);border-bottom-color:var(--yeet);}
-.composer{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;}
-.composer-avatar{width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);}
-.composer-body{flex:1;}
-.composer-body textarea{width:100%;background:none;border:none;color:var(--text);font-size:15px;resize:none;outline:none;min-height:60px;font-family:inherit;}
-.composer-footer{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;}
-.composer-icon{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;}
-.composer-icon:hover{color:var(--yeet);}
-.btn-yeet{margin-left:auto;background:var(--yeet);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer;}
-.post-empty{padding:60px 20px;text-align:center;color:var(--muted);}
-.sidebar-right{padding:16px;overflow-y:auto;}
-.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
-.widget-title{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;}
-.coin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
-.coin-row:last-child{border-bottom:none;}
-.coin-left{display:flex;align-items:center;gap:8px;}
-.coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;}
-.coin-name{font-size:14px;font-weight:700;}
-.coin-sym{font-size:11px;color:var(--muted);}
-.coin-price{font-size:14px;font-weight:700;}
-.coin-change{font-size:12px;}
-.tag-item{display:inline-flex;padding:6px 12px;background:#1a1a1a;border-radius:20px;font-size:13px;margin:4px;cursor:pointer;border:1px solid var(--border);}
-.tag-item:hover{border-color:var(--yeet);color:var(--yeet);}
-.tag-count{font-size:11px;color:var(--muted);margin-left:4px;}
-.pwa-banner{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:200;}
-.pwa-banner.hidden{display:none;}
-.btn-install{background:var(--yeet);color:#000;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;}
-.btn-later{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;}
-.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;}
-.mob-overlay.active{display:block;}
-@media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px;}}
-@media(max-width:900px){.sidebar-right{display:none;}.layout{grid-template-columns:180px 1fr;}}
+:root{--yeet:#c8f026;--bg:#0a0a0a;--card:#111;--border:#222;--text:#e8e8e8;--muted:#666;--green:#26f075;--red:#ff4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+/* TICKER */
+.ticker{background:#0f0f0f;border-bottom:1px solid var(--border);height:36px;overflow:hidden;display:flex;align-items:center}
+.ticker-inner{display:flex;animation:scroll 30s linear infinite;white-space:nowrap}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
+.tick .sym{color:var(--muted)}
+.up{color:var(--green)}.dn{color:var(--red)}
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:12px}
+.logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:var(--yeet);text-decoration:none;flex-shrink:0}
+.logo svg{width:28px;height:28px}
+.search{flex:1;max-width:420px}
+.search input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none}
+.search input:focus{border-color:var(--yeet)}
+.btn-wallet{margin-left:auto;background:transparent;border:1px solid var(--yeet);color:var(--yeet);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-wallet:hover{background:var(--yeet);color:#000}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px}
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr 300px;max-width:1200px;margin:0 auto;min-height:calc(100vh - 92px)}
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--border);padding:12px 0;position:sticky;top:92px;height:calc(100vh - 92px);overflow-y:auto}
+.nav-section{padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;border-left:3px solid transparent;cursor:pointer}
+.nav-link:hover,.nav-link.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet)}
+.badge{margin-left:auto;background:var(--yeet);color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
+/* MAIN */
+.main{border-right:1px solid var(--border)}
+.feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.feed-header h2{font-size:18px;font-weight:800}
+.btn-sm{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
+.btn-sm:hover{border-color:var(--yeet);color:var(--yeet)}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.tab.active{color:var(--yeet);border-bottom-color:var(--yeet)}
+/* COMPOSER */
+.composer{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px}
+.avatar{width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
+.composer-body{flex:1}
+.composer-body textarea{width:100%;background:none;border:none;color:var(--text);font-size:15px;resize:none;outline:none;min-height:60px;font-family:inherit}
+.composer-footer{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
+.icon-btn:hover{color:var(--yeet)}
+.btn-yeet{margin-left:auto;background:var(--yeet);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer}
+/* EMPTY STATE */
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty .icon{font-size:48px;margin-bottom:16px}
+/* RIGHT SIDEBAR */
+.sidebar-right{padding:16px}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.widget-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.coin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.coin-row:last-child{border-bottom:none}
+.coin-left{display:flex;align-items:center;gap:8px}
+.coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px}
+.coin-name{font-size:14px;font-weight:700}
+.coin-sym{font-size:11px;color:var(--muted)}
+.coin-price{font-size:14px;font-weight:700;text-align:right}
+.coin-chg{font-size:12px;text-align:right}
+.tag{display:inline-flex;padding:5px 10px;background:#1a1a1a;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;border:1px solid var(--border)}
+.tag:hover{border-color:var(--yeet);color:var(--yeet)}
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99}
+.overlay.on{display:block}
+/* PWA */
+.pwa{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:200}
+.pwa.hide{display:none}
+/* RESPONSIVE */
+@media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px}}
+@media(max-width:900px){.sidebar-right{display:none}.layout{grid-template-columns:180px 1fr}}
 @media(max-width:700px){
-  .sidebar-left{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:70px;overflow-y:auto;}
-  .sidebar-left.open{display:block;}
-  .layout{grid-template-columns:1fr;}
-  .hamburger{display:flex;}
-  .nav-search{display:none;}
+  .sidebar{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:64px;overflow-y:auto}
+  .sidebar.open{display:block}
+  .layout{grid-template-columns:1fr}
+  .hamburger{display:flex}
+  .search{display:none}
 }
-@media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:11px;}.feed-header h2{font-size:15px;}}
+@media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:12px}}
 </style>
 </head>
 <body>
-<div class="ticker-wrap">
-  <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item"><span class="sym">BTC</span><span id="tBtcP">---</span>&nbsp;<span id="tBtcC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">ETH</span><span id="tEthP">---</span>&nbsp;<span id="tEthC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">BNB</span><span id="tBnbP">---</span>&nbsp;<span id="tBnbC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">SOL</span><span id="tSolP">---</span>&nbsp;<span id="tSolC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">MATIC</span><span id="tMaticP">---</span>&nbsp;<span id="tMaticC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">YEET</span><span>$0.0042</span>&nbsp;<span class="up">+12.4%</span></span>
+
+<div class="ticker">
+  <div class="ticker-inner" id="tickerInner">
+    <div class="tick"><span class="sym">BTC</span><span id="pBTC">---</span><span id="cBTC" class="up"></span></div>
+    <div class="tick"><span class="sym">ETH</span><span id="pETH">---</span><span id="cETH" class="up"></span></div>
+    <div class="tick"><span class="sym">BNB</span><span id="pBNB">---</span><span id="cBNB" class="up"></span></div>
+    <div class="tick"><span class="sym">SOL</span><span id="pSOL">---</span><span id="cSOL" class="up"></span></div>
+    <div class="tick"><span class="sym">MATIC</span><span id="pMATIC">---</span><span id="cMATIC" class="up"></span></div>
+    <div class="tick"><span class="sym">YEET</span><span>$0.0042</span><span class="up">+12.4%</span></div>
   </div>
 </div>
+
 <nav>
-  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+  <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
-  <a class="nav-logo" href="/">
-    <svg width="28" height="28" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
+  <a class="logo" href="/">
+    <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
     YEET
   </a>
-  <div class="nav-search">
-    <input type="text" placeholder="&#128269; Search posts, users, tags&hellip;">
-  </div>
-  <button class="btn-wallet" onclick="connectWallet()">CONNECT WALLET</button>
+  <div class="search"><input type="text" placeholder="Search posts, users, tags..."></div>
+  <button class="btn-wallet" id="walletBtn" onclick="connectWallet()">CONNECT WALLET</button>
 </nav>
-<div class="mob-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="overlay" id="overlay" onclick="toggleNav()"></div>
+
 <div class="layout">
-  <aside class="sidebar-left" id="sidebarLeft">
-    <a class="nav-item active" href="#">&#127968; Global Feed</a>
-    <a class="nav-item" href="#">&#128100; Following</a>
-    <a class="nav-item" href="#">&#11088; Trending <span class="nav-badge">HOT</span></a>
+  <aside class="sidebar" id="sidebar">
+    <a class="nav-link active" href="#">&#127968; Global Feed</a>
+    <a class="nav-link" href="#">&#128100; Following</a>
+    <a class="nav-link" href="#">&#11088; Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
-    <a class="nav-item" href="#">&#128247; NFT Posts</a>
-    <a class="nav-item" href="#">&#9889; Token Tips</a>
-    <a class="nav-item" href="#">&#128250; Webboards</a>
-    <a class="nav-item" href="#">&#128286; 18+ Content</a>
+    <a class="nav-link" href="#">&#128247; NFT Posts</a>
+    <a class="nav-link" href="#">&#9889; Token Tips</a>
+    <a class="nav-link" href="#">&#128250; Webboards</a>
+    <a class="nav-link" href="#">&#128286; 18+ Content</a>
     <div class="nav-section">Account</div>
-    <a class="nav-item" href="#">&#128100; Profile</a>
-    <a class="nav-item" href="#">&#9881; Settings</a>
+    <a class="nav-link" href="#">&#128100; Profile</a>
+    <a class="nav-link" href="#">&#9881; Settings</a>
   </aside>
+
   <main class="main">
     <div class="feed-header">
       <h2>Global Feed</h2>
-      <button class="btn-refresh" onclick="loadFeed()">&#8635; REFRESH</button>
+      <button class="btn-sm">&#8635; REFRESH</button>
     </div>
-    <div class="feed-tabs">
-      <div class="feed-tab active" onclick="switchTab(this)">FOR YOU</div>
-      <div class="feed-tab" onclick="switchTab(this)">FOLLOWING</div>
-      <div class="feed-tab" onclick="switchTab(this)">NFT &#10024;</div>
-      <div class="feed-tab" onclick="switchTab(this)">18+ &#128293;</div>
-    </div>
-    <div class="composer">
-      <div class="composer-avatar">&#128100;</div>
-      <div cplyatshso=n"3c o-m p<o<s e'rP-YbEoOdFy'"
->h
-t m l   =   ' ' '<<t!eDxOtCaTrYePaE  ihdt=m"lp>o
-s<thTtemxlt "l apnlga=c"edheo"l>d
-e<rh=e"aWdh>a
-t< maertea  ycohua ryseeett=i"nUgT?F -D8i"s>a
-p<pmeeatras  nianm e2=4"hv&iheewlploirpt;""  croonwtse=n"t2="">w<i/dttehx=tdaerveiac>e
-- w i d t h , i n<idtiiva lc-lsacsasl=e"=c1o,mvpioeswepro-rfto-oftietr="c>o
-v e r " > 
- < m e t a< bnuatmteo=n" tchleamses-=c"ocloomrp"o sceorn-tiecnotn="" #t0iat0lae0=a""I>m
-a<gtei"t>l&e#>1Y2E8E2T4 8&;m<d/absuht;t oWne>b
-3   S o c i a l < / t<ibtultet>o
-n< sctlyalses>=
-":croomopto{s-e-ry-eiecto:n#"c 8tfi0t2l6e;=-"-NbFgT:"#>0&a#01a208a1;4-2-;c<a/rbdu:t#t1o1n1>;
-- - b o r d e r : # 2<2b2u;t-t-otne xctl:a#ses8=e"8ceo8m;p-o-smeurt-eidc:o#n6"6 6t;i-t-lree=d":P#afyf-4p4e4r4-;v-i-egwr"e>e&n#:1#22862f7047;5<;/}b
-u*t{tboonx>-
-s i z i n g : b o r d<ebru-tbtooxn; mcalragsisn=:"0c;opmapdodsienrg-:i0c;o}n
-"b otdiyt{lbea=c"kTgirpo"u>n&d#:9v8a8r9(;-<-/bbgu)t;tcoonl>o
-r : v a r ( - - t e x<tb)u;tftoonnt -cflaamsisl=y":b-tanp-pyleee-ts"y sotnecml,iBclki=n"ksMuabcmSiytsPtoesmtF(o)n"t>,Y"ESEeTg oIeT <U/Ib"u,tstaonns>-
-s e r i f ; m i n<-/hdeiivg>h
-t : 1 0 0 v h<;/odvievr>f
-l o w - x<:/hdiidvd>e
-n ; } 
- .<tdiicvk ecrl-awsrsa=p"{pboasctk-germoputnyd":>#
-0 f 0 f 0 f ;<bdoirvd esrt-ybloet=t"ofmo:n1tp-xs iszoel:i4d8 pvxa;rm(a-r-gbionr-dbeort)t;oomv:e1r6fplxo"w>:&h#i1d2d8e2n9;3h;e<i/gdhitv:>3
-6 p x ; d i s<pdliavy :sftlyelxe;=a"lfiognnt--istiezmes::1c6epnxt;efro;n}t
--.wteiicgkhetr:-7t0r0a;cmka{rdgiisnp-lbaoyt:tfolme:x8;paxn"i>mNaot ipoons:ttsi cykeetr.  3B5es  tlhien efairr sitn ftion iYteee;tw!h<i/tdei-vs>p
-a c e : n o w<rdaipv; }s
-t.ytliec=k"efro-nttr-ascikz:eh:o1v3eprx{"a>nCiomnanteicotn -ypoluary -wsatlalteet: ptaou ssetda;r}t
- @pkoesytfirnagm<e/sd itvi>c
-k e r { 0<%/{dtirva>n
-s f o<r/mm:atirna>n
-s l a<taesXi(d0e) }c1l0a0s%s{=t"rsaindsefboarrm-:rtirgahnts"l>a
-t e X ( -<5d0i%v) }c}l
-a.stsi=c"kweird-giette"m>{
-d i s p l a y<:diinvl icnlea-sfsl=e"xw;iadlgiegtn--tiittelmes":>c&e#n1t2e8r2;0g0a;p :L6ipvxe; pCaodidni nPgr:i0c e2s0<p/xd;ifvo>n
-t - s i z e :<1d2ipvx ;ifdo=n"tc-owieniPgrhitc:e6s0"0>;<}d
-i.vt isctkyelre-=i"tceoml o.rs:yvma{rc(o-l-omru:tveadr)(;-f-omnutt-esdi)z;e}:
-1.3uppx{;cpoaldodri:nvga:r8(p-x-"g>rLeoeand)i;n}g
- .pdrni{cceosl&ohre:lvlairp(;-<-/rdeidv)>;<}/
-dniavv>{
-p o s i t<i/odni:vs>t
-i c k y ;<tdoipv: 0c;lza-sisn=d"ewxi:d1g0e0t;"b>a
-c k g r o u n<dd:irvg bcal(a1s0s,=1"0w,i1d0g,e.t9-5t)i;tblaec"k>d&r#o1p2-8f2i9l3t;e rT:rbelnudri(n1g2 pTxa)g;sb<o/rddievr>-
-b o t t o m :<1dpixv >s
-o l i d   v a r (<-s-pbaonr dcelra)s;sp=a"dtdaign-gi:t0e m1"6>p#xY;eheetiTgohkte:n5<6sppxa;nd icslpalsasy=:"ftlaegx-;caoluingtn"->i1t.e2mKs<:/csepnatne>r<;/gsappa:n1>2
-p x ; } 
- . n a v<-slpoagno {cdliasspsl=a"yt:afgl-eixt;eaml"i>g#nB-SiCt<esmpsa:nc ecnltaesrs;=g"atpa:g8-pcxo;ufnotn"t>-8w4e0i<g/hstp:a9n0>0<;/fsopnatn->s
-i z e : 2 0 p x ;<csoplaonr :cvlaars(s-=-"yteaegt-)i;tteemx"t>-#dWeecbo3rSaotciioanl:<nsopnaen; fclleaxs-ss=h"rtiangk-:c0o;u}n
-t."n>a6v2-0s<e/asrpcahn{>f<l/esxp:a1n;>m
-a x - w i d t h :<4s2p0apnx ;c}l
-a.snsa=v"-tsaega-ricthe mi"n>p#uNtF{TwDirdotph<:s1p0a0n% ;cblaacsksg=r"otuangd-:c#o1uan1ta"1>a4;4b5o<r/dsepra:n1>p<x/ sspoalni>d
-  v a r ( - - b o<rsdpearn) ;cbloarsdse=r"-traagd-iiutse:m2"0>p#xD;epFaid<dsipnagn: 8cplxa s1s6=p"xt;acgo-lcooru:nvta"r>(3-1-2t<e/xstp)a;nf>o<n/ts-psainz>e
-: 1 4 p x ; o u t<lsipnaen: ncolnaes;s}=
-".tnaagv--isteeamr"c>h# BiNnBp<ustp:afno cculsa{sbso=r"dtearg--ccooluonrt:"v>a2r9(0-<-/ysepeatn)>;<}/
-s.pbatnn>-
-w a l l e t {<b/adcikvg>r
-o u n d :<t/rdainvs>p
-a r e n t<;dbiovr dcelra:s1sp=x" wsiodlgiedt "v>a
-r ( - - y e e<tb)u;tctoolno rs:tvyalre(=-"-wyiedetth):;1p0a0d%d;ibnagc:k8gprxo u1n4dp:xv;abro(r-d-eyre-erta)d;icuosl:o2r0:p#x0;0f0o;nbto-rsdiezre::n1o3npex;;pfaodndti-nwge:i1g0hptx:;7b0o0r;dceurr-sroard:ipuosi:n8tpexr;;fmoanrtg-iwne-ilgehftt::8a0u0t;of;ownhti-tsei-zsep:a1c4ep:xn;ocwurraspo;r}:
-p.obitnnt-ewra;l"l>e&t#:1h2o8v6e4r0{;b aIcnksgtraoluln dY:EvEaTr (A-p-py<e/ebtu)t;tcoonl>o
-r : # 0 0<0/;d}i
-v.>h
-a m b<u/ragseird{ed>i
-s<p/ldaiyv:>n
-o<ndei;vf lcelxa-sdsi=r"epcwtai-obna:ncnoelru mhni;dgdaepn:"5 pixd;=c"uprwsaoBra:npnoeirn"t>e
-r ; p<addidvi nsgt:y4lpex=;"bfaocnktg-rsoiuzned::2n8opnxe";>b&o#r9d8e8r9:;n<o/ndei;v}>
-
-. h a<mdbiuvr gsetry lsep=a"nf{ldeixs:p1l"a>y<:dbilvo cskt;ywlied=t"hf:o2n2tp-xs;ihzeei:g1h4tp:x2;pfxo;nbta-cwkegirgohutn:d7:0v0a"r>(I-n-stteaxltl) ;YbEoErTd eArp-pr<a/ddiiuvs>:<2dpixv; tsrtaynlsei=t"ifoonn:t.-3ssi;z}e
-:.1l2apyxo;ucto{ldoirs:pvlaary(:-g-rmiudt;egdr)i"d>-Atdedm ptloa tHeo-mceo lSucmrnese:n2 2&0mpdxa s1hf;r  n3o0 0Appxp; mSatxo-rwei dntehe:d1e2d0<0/pdxi;vm>a<r/gdiinv:>0
-  a u<tbou;tmtionn- hceliagshst=:"cbatlnc-(l1a0t0evrh"  -o n9c2lpixc)k;=}"
-d.osciudmeebnatr.-gleetfEtl{ebmoerndteBry-Irdi(g\h'tp:w1apBxa nsnoelri\d' )v.acrl(a-s-sbLoirsdte.ra)d;dp(a\d'dhiindgd:e1n6\p'x) "0>;LpAoTsEiRt<i/obnu:tsttoinc>k
-y ; t<obpu:t9t2opnx ;chleaisgsh=t":bctanl-ci(n1s0t0avlhl "-  o9n2cplxi)c;ko=v"eirnfsltoawl-lyP:WaAu(t)o";>}I
-N.SnTaAvL-Ls<e/cbtuitotno{np>a
-d<d/idnigv:>8
-p<xs c1r6ippxt >4
-pcxo;nfsotn tC-OsIiNzSe=:[1{1ipdx:;"fbointtc-owieni"g,hsty:m7:0"0B;TcCo"l,oirc:ovna:r"(&-#-8m3u8t3e;d"),;ctoelx:t"-#tfr7a9n3s1fao"r}m,:{uipdp:e"rectahseer;eluemt"t,esry-ms:p"aEcTiHn"g,:i1cpoxn;:}"
-&.#n9a2v6-;i"t,ecmo{ld:i"s#p6l2a7ye:efal"e}x,;{aildi:g"nb-iintaenmcse:ccoeinnt"e,rs;ygma:p":B1N0Bp"x,;ipcaodnd:i"n&g#:91803p6x; "2,0cpoxl;:c"o#lfo3rb:av2afr"(}-,-{tiedx:t")s;otleaxnta-"d,escyomr:a"tSiOoLn":,niocnoen;:f"oSn"t,-csoilz:e":#1949p4x5;fffo"n}t,-{wiedi:g"hmta:t5i0c0-;nceutrwsoorrk:"p,osiynmt:e"rM;AbToIrCd"e,ri-cloenf:t":M3"p,xc oslo:l"i#d8 2t4r7aen5s"p}a]r;e
-nftu;ntcrtainosni tfimotn(:n.)2{si;f}(
-n.>n=a1v0-0i0t)erme:thuorvne"r$,".+nna.vt-oiLtoecma.laecSttirvien{gb(a"cekng"r,o{umnadx:i#m1u6m1F6r1a6c;tbioorndDeirg-iltesf:t0-}c)o;liofr(:nv>a=r1()-r-eyteuertn)";$c"o+lno.rt:ovFairx(e-d-(y2e)e;tr)e;t}u
-r.nn"a$v"-+bna.dtgoeF{imxaerdg(i4n)-;l}e
-fftu:nacuttioo;nb acchkgg(rco)u{ncdo:nvsatr (u-=-cy>e=e0t;)r;ectoulronr{:c#l0s0:0u;?f"ounpt"-:s"idzne":,1t0xptx:;(fuo?n"t+-"w:e"i"g)h+tc:.8t0o0F;ipxaeddd(i2n)g+:"2%p"x} ;6}p
-xa;sbyonrcd efru-nrcatdiiouns :f8eptxc;h}P
-r.imcaeisn({)b{o
-r d etrr-yr{i
-g h t : 1cpoxn ssto liidds =vCaOrI(N-S-.bmoarpd(ecr=)>;c}.
-i.df)e.ejdo-ihne(a"d,e"r){;p
-a d d i ncgo:n1s6tp xd =2a0wpaxi;tb ofredtecrh-(b"ohttttopms::1/p/xa psio.lciodi nvgaerc(k-o-.bcoormd/earp)i;/dvi3s/psliamyp:lfel/epxr;iaclei?gind-si=t"e+misd:sc+e"n&tvesr_;cjuursrteinfcyi-ecso=nutsedn&ti:nscplaucdee-_b2e4thwre_ecnh;a}n
-g.ef=eterdu-eh"e)a.dtehre nh(2r{=f>orn.tj-ssoinz(e):)1;8
-p x ; f olnett- whe=i"g"h;t
-: 8 0 0 ;C}O
-I.NbSt.nf-orreEfarcehs(hc{=b>a{cckognrsotu npd=:dn[ocn.ei;db]o;ridfe(r!:p1)prxe tsuorlni;dc ovnasrt( -{-cblosr,dtexrt)};=ccohlgo(rp:.vuasrd(_-2-4mhu_tcehda)n;gpea|d|d0i)n;gh:+6=p`x< d1i2vp xc;lbaosrsd=e"rc-oriand-iruosw:"8>p<xd;ifvo nctl-assisz=e":c1o2ipnx-;lceufrts"o>r<:dpiovi nctlears;s}=
-".cbotinn--riecforne"s hs:thyolvee=r"{bbaocrkdgerro-ucnodl:o$r{:cv.acro(l-}-2y2e;ecto)l;ocro:l$o{rc:.vcaorl(}-"->y$e{ect.)i;c}o
-n.}f<e/eddi-vt>a<bdsi{vd>i<sdpilva yc:lfalsesx=;"bcooridne-rn-abmoet"t>o$m{:c1.psxy ms}o<l/iddi vv>a<rd(i-v- bcolradsesr=)";c}o
-i.nf-eseydm-"t>a$b{{cf.liedx.:r1e;pplaadcdei(n/g-:/1g2,p"x ;"t)e.xtto-UaplpiegrnC:acseen(t)e.rs;lfiocnet(-0s,i1z0e):}1<3/pdxi;vf>o<n/td-iwve>i<g/hdti:v6>0<0d;icvo lsotry:lvea=r"(t-e-xmtu-taeldi)g;nc:urrisgohrt:"p>o<idnitve rc;lbaosrsd=e"rc-obiont-tpormi:c2ep"x> $s{oflmitd( pt.ruasnds)p}a<r/ednitv;>t<rdainvs ictliaosns:=."2cso;i}n
--.cfheaendg-et a$b{.calcst}i"v>e${{ctoxlto}r<:/vdairv(>-<-/ydeievt>)<;/bdoirvd>e`r;-}b)o;t
-t o m - cho+l=o`r<:dviavr (c-l-aysese=t")c;o}i
-n.-croomwp"o>s<edri{vp acdldaisnsg=:"1c6opixn -2l0epfxt;"b>o<rddievr -cbloatstso=m":c1opixn -siocloind"  vsatry(l-e-=b"obradcekrg)r;oduinsdp:l#acy8:ff0l2e6x2;2g;acpo:l1o2rp:x#;c}8
-f.0c2o6m"p>o&s#e9r8-8a9v;a<t/adri{vw>i<ddtihv:>4<0dpixv; hceliagshst=:"4c0opixn;-bnoarmdee"r>-YrEaEdTi<u/sd:i5v0>%<;dbiavc kcglraosusn=d":c#o1ian1-as1yam;"b>oYrEdEeTr :T2OpKxE Ns<o/ldiidv >v<a/rd(i-v->b<o/rddievr>)<;dfilve xs-tsyhlrei=n"kt:e0x;td-iaslpilgany::rfilgehxt;"a>l<idginv- ictleamsss:=c"ecnotienr-;pjruisctei"f>y$-0c.o0n0t4e2n<t/:dcievn>t<edri;vc oclloars:sv=a"rc(o-i-nm-uctheadn)g;e} 
-u.pc"o>m+p1o2s.e4r%-<b/oddiyv{>f<l/edxi:v1>;<}/
-d.icvo>m`p;o
-s e r - bdoodcyu mteenxtt.agreetaE{lweimdetnht:B1y0I0d%(;"bcaocikngPrroiucneds:"n)o.nien;nbeorrHdTeMrL:=nho;n
-e ; c o lcoorn:svta rm(a-p-=t{etxBtt)c;Pf:o"nbti-tsciozien:"1,5tpExt;hrPe:s"iezteh:enroenuem;"o,uttBlnibnPe::"nboinnea;nmcienc-ohieni"g,httS:o6l0Pp:x";sfoolnatn-af"a,mtiMlayt:iicnPh:e"rmiatt;i}c
--.nceotmwpoorske"r}-;f
-o o t e rO{bdjiescptl.aeyn:tfrlieexs;(amlaipg)n.-fiotreEmasc:hc(e(n[tpeird;,giadp]:)8=p>x{;cpoandsdti npg=-dt[oipd:]8;pixf;(b!opr)dreert-utronp;:c1opnxs ts oplei=dd ovcaurm(e-n-tb.ogredteErl)e;mmeanrtgBiynI-dt(oppi:d8)p;xc;o}n
-s.tc ocmep=odsoecru-miecnotn.{gbeatcEklgermoeunntdB:ynIodn(ep;ibdo.rrdeeprl:ancoen(e";Pc"o,l"oCr":)v)a;ri(f-(-pmeu)tpeed.)t;ecxutrCsoonrt:epnoti=nftmetr(;pf.ounstd-)s;iizfe(:c1e6)p{xc;o}n
-s.tc o{mcploss,etrx-ti}c=ocnh:gh(opv.eurs{dc_o2l4ohr_:cvhaarn(g-e-|y|e0e)t;)c;e}.
-t.ebxttnC-oyneteetn{tm=atrxgti;nc-el.ecflta:sasuNtaom;eb=acclksg;r}o}u)n;d
-: v a r (c-o-nysete tt)=;dcoocluomre:n#t0.0g0e;tbEolredmeern:tnBoynIed;(p"atdidciknegr:T8rpaxc k2"0)p;xi;fb(otr&d&e!rt-.rdaadtiausse:t2.0dpuxp;)f{otn.ti-nwneeirgHhTtM:L8+0=0t;.fionnnte-rsHiTzMeL:;1t4.pdxa;tcausresto.rd:uppo=i"n1t"e;r};
-} 
- .}pcoasttc-he(mep)t{yd{opcaudmdeinntg.:g6e0tpExl e2m0epnxt;BtyeIxdt(-"acloiignnP:rciecnetse"r);.cionlnoerr:HvTaMrL(=-\-'m<udtievd )s;t}y
-l.es=i"dceoblaorr-:rviagrh(t-{-pmaudtdeidn)g;:f1o6nptx-;soivzeer:f1l3opwx-;yp:aadudtion;g}:
-8.pwxi"d>g&e#t9{8b8a8c;k gPrroiucned :dvaatra( -u-ncaavradi)l;abbolred<e/rd:i1vp>x\ 's;o}l
-i}d
- fveatrc(h-P-rbiocredse(r));;sbeotrIdnetre-rrvaadli(ufse:t1c2hpPxr;ipcaedsd,i6n0g0:0106)p;x
-;fmuanrcgtiino-nb ottotgogml:e1S6ipdxe;b}a
-r.(w)i{dcgoents-tt ist=ldeo{cfuomnetn-ts.igzeet:E1l3epmxe;nftoBnytI-dw(e"isgihdte:b8a0r0L;ecfotl"o)r;:cvoanrs(t- -om=udtoecdu)m;etnetx.tg-ettrEalnesmfeonrtmB:yuIpdp(e"rocvaesrel;alye"t)t;ecro-nsspta coipnegn:=.s8.pcxl;amsasrLgiisnt-.btootgtgolme:(1"2oppxe;n}"
-).;coo.icnl-arsoswL{idsits.ptloagyg:lfel(e"xa;catliivgen"-,iotpeemns):;cdeonctuemre;njtu.sbtoidfyy.-sctoynltee.notv:esrpfalcoew-=boeptewne?e"nh;ipdaddedni"n:g":"8;p}x
- f0u;nbcotridoenr -sbwoitttcohmT:a1bp(xt )s{odloicdu mveanrt(.-q-ubeorrydSeerl)e;c}t
-o.rcAoliln(-"r.ofwe:elda-stta-bc"h)i.lfdo{rbEoarcdhe(rx-=b>oxt.tcolma:snsoLnies;t}.
-r.ecmooivne-(l"eafctt{idvies"p)l)a;yt:.fclleaxs;saLliisgtn.-aidtde(m"sa:ccteinvtee"r);;g}a
-pa:s8ypnxc; }f
-u.nccotiino-ni ccoonn{nweicdttWha:l2l8eptx(;)h{eiifg(hwti:n2d8opwx.;ebtohredreeru-mr)a{dtiruys{:c5o0n%s;td ias=palwaayi:tf lweixn;daolwi.gent-hietreemusm:.creenqtueers;tj(u{smteitfhyo-dc:o"nettehn_tr:ecqeunetsetrA;cfcoonutn-tssi"z}e):;1d3opcxu;m}e
-n.tc.oqiune-rnyaSmeel{efcotnotr-(s"i.zbet:n1-4wpaxl;lfeotn"t)-.wteeixgthCto:n7t0e0n;t}=
-a.[c0o]i.ns-lsiycme{(f0o,n6t)-+s"i.z.e.:"1+1ap[x0;]c.oslloirc:ev(a-r4()-;-}mcuattecdh)(;e})
-{.}c}oeilns-ep{railceer{tf(o"nPtl-esaiszee :i1n4sptxa;lflo nMte-twaeMiagshkt :o7r0 0u;s}e
- .tchoei nY-EcEhTa nmgoeb{ifloen ta-pspi!z"e):;1}2}p
-xf;u}n
-c.ttiaogn- istuebmm{idtiPsopslta(y):{icnolnisnte -tf=ldeoxc;upmaedndti.ngge:t6Eplxe m1e2nptxB;ybIadc(k"gproosutnTde:x#t1"a)1.av1aal;ubeo.rtdreirm-(r)a;diifu(s!:t2)0rpext;ufronn;ta-lseirzte(:"1C3opnxn;emcatr gyionu:r4 pwxa;lcluerts otro: ppooisntt!e"r);;b}o
-rfduenrc:t1ipoxn  sloolaiddF eveadr(()-{-fbeotrcdhe(r")/;a}p
-i./tva1g/-piotsetms:"h)o.vceart{cbho(r(d)e=r>-{c}o)l;o}r
-:lveatr (d-e-fyeererte)d;Pcroolmoprt:;v
-awri(n-d-oywe.eatd)d;E}v
-e.nttaLgi-sctoeunnetr{(f"obnetf-osriezien:s1t1aplxl;pcroolmoprt:"v,aer=(>-{-em.uptreedv)e;nmtaDregfianu-llte(f)t;:d4epfxe;r}r
-e.dpPwrao-mbpatn=nee;rd{opcousmietnito.ng:eftiExleedm;ebnottBtyoImd:(0";plweafBta:n0n;erri"g)h.tc:l0a;sbsaLciksgtr.oruenmdo:v#e1(1"1h;ibdodredne"r)-;t}o)p;:
-1fpuxn cstoiloind  ivnasrt(a-l-lbPoWrAd(e)r{)i;fp(addedfienrgr:e1d2Pprxo m1p6tp)xd;edfiesrprleadyP:rfolmepxt;.aplriogmnp-ti(t)e;mdso:ccuemnetnetr.;ggeatpE:l1e2mpexn;tzB-yiIndd(e"xp:w2a0B0a;n}n
-e.rp"w)a.-cblaansnseLri.shti.daddedn({"dhiisdpdleany":)n;o}n
-ei;f}(
-w.ibntdno-wi.nmsattaclhlM{ebdaicak(g"r(oduinsdp:lvaayr-(m-o-dyee:e ts)t;acnodlaolro:n#e0)0"0);.bmoartdcehre:sn)odnoec;upmaedndti.ngge:t8Eplxe m1e6nptxB;ybIodr(d"eprw-arBaadninuesr:"8)p.xc;lfaosnstL-iwseti.gahdtd:(7"0h0i;dfdoennt"-)s;i
-z<e/:s1c3rpixp;tc>u
-r<s/obro:dpyo>i
-n<t/ehrt;m}l
->.'b't'n
--
-lwaittehr {obpaecnk(g'r/otumnpd/:ynco3n/ef;rboonrtdeenrd:/1ipnxd esxo.lhitdm lv'a,r'(w-'-)b oarsd efr:)
-; c o l ofr.:wvrairt(e-(-hmtumtle)d
-)p;rpiandtd(ifn"gW:r8iptxt e1n6:p x{;lbeonr(dhetrm-lr)a}d ibuyst:e8sp xt;of o/nttm-ps/iyzce3:/1f3rpoxn;tceunrds/oirn:dpeoxi.nhttemrl;"})
-
-.PmYoEbO-Fo
-verlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;}
-.mob-overlay.active{display:block;}
-@media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px;}}
-@media(max-width:900px){.sidebar-right{display:none;}.layout{grid-template-columns:180px 1fr;}}
-@media(max-width:700px){
-  .sidebar-left{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:70px;overflow-y:auto;}
-  .sidebar-left.open{display:block;}
-  .layout{grid-template-columns:1fr;}
-  .hamburger{display:flex;}
-  .nav-search{display:none;}
-}
-@media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:11px;}.feed-header h2{font-size:15px;}}
-</style>
-</head>
-<body>
-<div class="ticker-wrap">
-  <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item"><span class="sym">BTC</span><span id="tBtcP">---</span>&nbsp;<span id="tBtcC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">ETH</span><span id="tEthP">---</span>&nbsp;<span id="tEthC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">BNB</span><span id="tBnbP">---</span>&nbsp;<span id="tBnbC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">SOL</span><span id="tSolP">---</span>&nbsp;<span id="tSolC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">MATIC</span><span id="tMaticP">---</span>&nbsp;<span id="tMaticC" class="up"></span></span>
-    <span class="ticker-item"><span class="sym">YEET</span><span>$0.0042</span>&nbsp;<span class="up">+12.4%</span></span>
-  </div>
-</div>
-<nav>
-  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
-    <span></span><span></span><span></span>
-  </button>
-  <a class="nav-logo" href="/">
-    <svg width="28" height="28" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
-    YEET
-  </a>
-  <div class="nav-search">
-    <input type="text" placeholder="&#128269; Search posts, users, tags&hellip;">
-  </div>
-  <button class="btn-wallet" onclick="connectWallet()">CONNECT WALLET</button>
-</nav>
-<div class="mob-overlay" id="overlay" onclick="toggleSidebar()"></div>
-<div class="layout">
-  <aside class="sidebar-left" id="sidebarLeft">
-    <a class="nav-item active" href="#">&#127968; Global Feed</a>
-    <a class="nav-item" href="#">&#128100; Following</a>
-    <a class="nav-item" href="#">&#11088; Trending <span class="nav-badge">HOT</span></a>
-    <div class="nav-section">Discover</div>
-    <a class="nav-item" href="#">&#128247; NFT Posts</a>
-    <a class="nav-item" href="#">&#9889; Token Tips</a>
-    <a class="nav-item" href="#">&#128250; Webboards</a>
-    <a class="nav-item" href="#">&#128286; 18+ Content</a>
-    <div class="nav-section">Account</div>
-    <a class="nav-item" href="#">&#128100; Profile</a>
-    <a class="nav-item" href="#">&#9881; Settings</a>
-  </aside>
-  <main class="main">
-    <div class="feed-header">
-      <h2>Global Feed</h2>
-      <button class="btn-refresh" onclick="loadFeed()">&#8635; REFRESH</button>
-    </div>
-    <div class="feed-tabs">
-      <div class="feed-tab active" onclick="switchTab(this)">FOR YOU</div>
-      <div class="feed-tab" onclick="switchTab(this)">FOLLOWING</div>
-      <div class="feed-tab" onclick="switchTab(this)">NFT &#10024;</div>
-      <div class="feed-tab" onclick="switchTab(this)">18+ &#128293;</div>
+    <div class="tabs">
+      <div class="tab active" onclick="setTab(this)">FOR YOU</div>
+      <div class="tab" onclick="setTab(this)">FOLLOWING</div>
+      <div class="tab" onclick="setTab(this)">NFT &#10024;</div>
+      <div class="tab" onclick="setTab(this)">18+ &#128293;</div>
     </div>
     <div class="composer">
-      <div class="composer-avatar">&#128100;</div>
+      <div class="avatar">&#128100;</div>
       <div class="composer-body">
-        <textarea id="postText" placeholder="What are you yeeting? Disappears in 24h&hellip;" rows="2"></textarea>
+        <textarea id="postTxt" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
         <div class="composer-footer">
-          <button class="composer-icon" title="Image">&#128248;</button>
-          <button class="composer-icon" title="NFT">&#128142;</button>
-          <button class="composer-icon" title="Pay-per-view">&#128274;</button>
-          <button class="composer-icon" title="Tip">&#9889;</button>
-          <button class="btn-yeet" onclick="submitPost()">YEET IT</button>
+          <button class="icon-btn">&#128248;</button>
+          <button class="icon-btn">&#128142;</button>
+          <button class="icon-btn">&#128274;</button>
+          <button class="icon-btn">&#9889;</button>
+          <button class="btn-yeet" onclick="post()">YEET IT</button>
         </div>
       </div>
     </div>
-    <div class="post-empty">
-      <div style="font-size:48px;margin-bottom:16px">&#128293;</div>
-      <div style="font-size:16px;font-weight:700;margin-bottom:8px">No posts yet. Be the first to Yeet!</div>
-      <div style="font-size:13px">Connect your wallet to start posting</div>
+    <div class="empty">
+      <div class="icon">&#128293;</div>
+      <strong>No posts yet. Be the first to Yeet!</strong>
+      <p style="margin-top:8px;font-size:13px">Connect your wallet to start posting</p>
     </div>
   </main>
+
   <aside class="sidebar-right">
     <div class="widget">
-      <div class="widget-title">&#128200; Live Coin Prices</div>
-      <div id="coinPrices"><div style="color:var(--muted);font-size:13px;padding:8px">Loading prices&hellip;</div></div>
+      <div class="widget-title">&#128200; Live Prices</div>
+      <div id="prices"><p style="color:var(--muted);font-size:13px">Loading...</p></div>
     </div>
     <div class="widget">
-      <div class="widget-title">&#128293; Trending Tags</div>
-      <div>
-        <span class="tag-item">#YeetToken<span class="tag-count">1.2K</span></span>
-        <span class="tag-item">#BSC<span class="tag-count">840</span></span>
-        <span class="tag-item">#Web3Social<span class="tag-count">620</span></span>
-        <span class="tag-item">#NFTDrop<span class="tag-count">445</span></span>
-        <span class="tag-item">#DeFi<span class="tag-count">312</span></span>
-        <span class="tag-item">#BNB<span class="tag-count">290</span></span>
-      </div>
+      <div class="widget-title">&#128293; Trending</div>
+      <span class="tag">#YeetToken <span style="color:var(--muted);font-size:11px">1.2K</span></span>
+      <span class="tag">#BSC <span style="color:var(--muted);font-size:11px">840</span></span>
+      <span class="tag">#Web3Social <span style="color:var(--muted);font-size:11px">620</span></span>
+      <span class="tag">#NFTDrop <span style="color:var(--muted);font-size:11px">445</span></span>
+      <span class="tag">#DeFi <span style="color:var(--muted);font-size:11px">312</span></span>
     </div>
     <div class="widget">
-      <button style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer;">&#128640; Install YEET App</button>
+      <button style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer">&#128640; Install YEET App</button>
     </div>
   </aside>
 </div>
-<div class="pwa-banner hidden" id="pwaBanner">
+
+<div class="pwa hide" id="pwa">
   <div style="font-size:28px">&#9889;</div>
-  <div style="flex:1"><div style="font-size:14px;font-weight:700">Install YEET App</div><div style="font-size:12px;color:var(--muted)">Add to Home Screen &mdash; no App Store needed</div></div>
-  <button class="btn-later" onclick="document.getElementById('pwaBanner').classList.add('hidden')">LATER</button>
-  <button class="btn-install" onclick="installPWA()">INSTALL</button>
+  <div style="flex:1">
+    <div style="font-size:14px;font-weight:700">Install YEET App</div>
+    <div style="font-size:12px;color:var(--muted)">Add to Home Screen</div>
+  </div>
+  <button onclick="document.getElementById('pwa').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">Later</button>
+  <button onclick="installPWA()" style="background:var(--yeet);color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
 </div>
+
 <script>
-const COINS=[{id:"bitcoin",sym:"BTC",icon:"&#8383;",col:"#f7931a"},{id:"ethereum",sym:"ETH",icon:"&#926;",col:"#627eea"},{id:"binancecoin",sym:"BNB",icon:"&#9836;",col:"#f3ba2f"},{id:"solana",sym:"SOL",icon:"S",col:"#9945ff"},{id:"matic-network",sym:"MATIC",icon:"M",col:"#8247e5"}];
-function fmt(n){if(n>=1000)return"$"+n.toLocaleString("en",{maximumFractionDigits:0});if(n>=1)return"$"+n.toFixed(2);return"$"+n.toFixed(4);}
-function chg(c){const u=c>=0;return{cls:u?"up":"dn",txt:(u?"+":"")+c.toFixed(2)+"%"};}
-async function fetchPrices(){
+const COINS=[
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'&#8383;'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'&#926;'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'&#9836;'},
+  {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
+  {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
+];
+function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0}):n>=1?'$'+n.toFixed(2):'$'+n.toFixed(4)}
+function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
+async function loadPrices(){
   try{
-    const ids=COINS.map(c=>c.id).join(",");
-    const d=await fetch("https://api.coingecko.com/api/v3/simple/price?ids="+ids+"&vs_currencies=usd&include_24hr_change=true").then(r=>r.json());
-    let h="";
-    COINS.forEach(c=>{const p=d[c.id];if(!p)return;const {cls,txt}=chg(p.usd_24h_change||0);h+=`<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:${c.col}22;color:${c.col}">${c.icon}</div><div><div class="coin-name">${c.sym}</div><div class="coin-sym">${c.id.replace(/-/g," ").toUpperCase().slice(0,10)}</div></div></div><div style="text-align:right"><div class="coin-price">${fmt(p.usd)}</div><div class="coin-change ${cls}">${txt}</div></div></div>`;});
-    h+=`<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">&#9889;</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div style="text-align:right"><div class="coin-price">$0.0042</div><div class="coin-change up">+12.4%</div></div></div>`;
-    document.getElementById("coinPrices").innerHTML=h;
-    const map={tBtcP:"bitcoin",tEthP:"ethereum",tBnbP:"binancecoin",tSolP:"solana",tMaticP:"matic-network"};
-    Object.entries(map).forEach(([pid,id])=>{const p=d[id];if(!p)return;const pe=document.getElementById(pid);const ce=document.getElementById(pid.replace("P","C"));if(pe)pe.textContent=fmt(p.usd);if(ce){const {cls,txt}=chg(p.usd_24h_change||0);ce.textContent=txt;ce.className=cls;}});
-    const t=document.getElementById("tickerTrack");if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup="1";}
-  }catch(e){document.getElementById("coinPrices").innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px">&#9888; Price data unavailable</div>';}
+    const ids=COINS.map(c=>c.id).join(',');
+    const d=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids+'&vs_currencies=usd&include_24hr_change=true').then(r=>r.json());
+    let h='';
+    COINS.forEach(c=>{
+      const p=d[c.id];if(!p)return;
+      const {cls,txt}=pc(p.usd_24h_change||0);
+      h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:'+c.col+'22;color:'+c.col+'">'+c.icon+'</div><div><div class="coin-name">'+c.sym+'</div><div class="coin-sym">'+c.id.toUpperCase().slice(0,8)+'</div></div></div><div><div class="coin-price">'+pf(p.usd)+'</div><div class="coin-chg '+cls+'">'+txt+'</div></div></div>';
+      const pe=document.getElementById('p'+c.sym),ce=document.getElementById('c'+c.sym);
+      if(pe)pe.textContent=pf(p.usd);
+      if(ce){ce.textContent=txt;ce.className=cls;}
+    });
+    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">&#9889;</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
+    document.getElementById('prices').innerHTML=h;
+    const t=document.getElementById('tickerInner');
+    if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
+  }catch(e){document.getElementById('prices').innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
 }
-fetchPrices();setInterval(fetchPrices,60000);
-function toggleSidebar(){const s=document.getElementById("sidebarLeft");const o=document.getElementById("overlay");const open=s.classList.toggle("open");o.classList.toggle("active",open);document.body.style.overflow=open?"hidden":"";}
-function switchTab(t){document.querySelectorAll(".feed-tab").forEach(x=>x.classList.remove("active"));t.classList.add("active");}
-async function connectWallet(){if(window.ethereum){try{const a=await window.ethereum.request({method:"eth_requestAccounts"});document.querySelector(".btn-wallet").textContent=a[0].slice(0,6)+"..."+a[0].slice(-4);}catch(e){}}else{alert("Please install MetaMask or use the YEET mobile app!");}}
-function submitPost(){const t=document.getElementById("postText").value.trim();if(!t)return;alert("Connect your wallet to post!");}
-function loadFeed(){fetch("/api/v1/posts").catch(()=>{});}
-let deferredPrompt;
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;document.getElementById("pwaBanner").classList.remove("hidden");});
-function installPWA(){if(deferredPrompt)deferredPrompt.prompt();document.getElementById("pwaBanner").classList.add("hidden");}
-if(window.matchMedia("(display-mode: standalone)").matches)document.getElementById("pwaBanner").classList.add("hidden");
+loadPrices();setInterval(loadPrices,60000);
+function toggleNav(){
+  const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
+  const open=s.classList.toggle('open');
+  o.classList.toggle('on',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function setTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')}
+async function connectWallet(){
+  if(window.ethereum){try{const a=await window.ethereum.request({method:'eth_requestAccounts'});document.getElementById('walletBtn').textContent=a[0].slice(0,6)+'...'+a[0].slice(-4);}catch(e){}}
+  else alert('Install MetaMask or use the YEET mobile app!')
+}
+function post(){if(!document.getElementById('postTxt').value.trim())return;alert('Connect your wallet to post!')}
+let dp;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('pwa').classList.remove('hide')});
+function installPWA(){if(dp)dp.prompt();document.getElementById('pwa').classList.add('hide')}
+if(window.matchMedia('(display-mode:standalone)').matches)document.getElementById('pwa').classList.add('hide');
 </script>
 </body>
 </html>
