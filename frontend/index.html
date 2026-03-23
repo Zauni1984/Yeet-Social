@@ -303,7 +303,7 @@ loadPrices();setInterval(loadPrices,60000);
 // ====== WALLET CONNECTION ======
 let connectedWallet=null,connectedAddress=null;
 
-function openWalletModal(){document.getElementById('walletModal').classList.add('on')}
+function openWalletModal(){document.getElementById('pwaModal').classList.remove('on');document.getElementById('walletModal').classList.add('on')}
 function closeWalletModal(e){if(!e||e.target===document.getElementById('walletModal'))document.getElementById('walletModal').classList.remove('on')}
 
 function onConnected(address,walletName){
@@ -323,17 +323,29 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  if(window.ethereum){
+  // MetaMask injects window.ethereum asynchronously — wait up to 1s
+  const eth=await new Promise(res=>{
+    if(window.ethereum)return res(window.ethereum);
+    let t=0;
+    const iv=setInterval(()=>{if(window.ethereum){clearInterval(iv);res(window.ethereum);}else if((t+=50)>1000){clearInterval(iv);res(null);}},50);
+  });
+  if(eth&&(eth.isMetaMask||eth.providers?.some(p=>p.isMetaMask))){
+    const provider=eth.providers?.find(p=>p.isMetaMask)||eth;
     try{
-      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      // Switch to BSC if needed
-      try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
+      const accs=await provider.request({method:'eth_requestAccounts'});
+      // Add BSC Testnet (chainId 97 = 0x61)
+      try{await provider.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
       onConnected(accs[0],'MetaMask');
     }catch(e){showToast('MetaMask: '+e.message);}
+  }else if(eth){
+    // ethereum exists but not MetaMask — try anyway
+    try{
+      const accs=await eth.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Wallet');
+    }catch(e){showToast('Wallet error: '+e.message);}
   }else{
-    // MetaMask not installed - open install page
-    showToast('MetaMask not found. Opening install page...');
-    setTimeout(()=>window.open('https://metamask.io/download/','_blank'),1000);
+    showToast('MetaMask not detected. Please install or unlock MetaMask.');
+    setTimeout(()=>window.open('https://metamask.io/download/','_blank'),1500);
   }
 }
 
