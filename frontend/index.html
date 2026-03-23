@@ -9,7 +9,6 @@
 :root{--yeet:#c8f026;--bg:#0a0a0a;--card:#111;--border:#222;--text:#e8e8e8;--muted:#666;--green:#26f075;--red:#ff4444}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
-/* TICKER */
 .ticker{background:#0f0f0f;border-bottom:1px solid var(--border);height:36px;overflow:hidden;display:flex;align-items:center}
 .ticker-inner{display:flex;animation:scroll 30s linear infinite;white-space:nowrap}
 .ticker-inner:hover{animation-play-state:paused}
@@ -17,7 +16,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
 .tick .sym{color:var(--muted)}
 .up{color:var(--green)}.dn{color:var(--red)}
-/* NAV */
 nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:12px}
 .logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:var(--yeet);text-decoration:none;flex-shrink:0}
 .logo svg{width:28px;height:28px}
@@ -25,18 +23,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .search input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none}
 .search input:focus{border-color:var(--yeet)}
 .btn-wallet{margin-left:auto;background:transparent;border:1px solid var(--yeet);color:var(--yeet);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.btn-wallet:hover{background:var(--yeet);color:#000}
+.btn-wallet:hover,.btn-wallet.connected{background:var(--yeet);color:#000}
 .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px}
 .hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px}
-/* LAYOUT */
 .layout{display:grid;grid-template-columns:220px 1fr 300px;max-width:1200px;margin:0 auto;min-height:calc(100vh - 92px)}
-/* SIDEBAR */
 .sidebar{border-right:1px solid var(--border);padding:12px 0;position:sticky;top:92px;height:calc(100vh - 92px);overflow-y:auto}
 .nav-section{padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 .nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;border-left:3px solid transparent;cursor:pointer}
 .nav-link:hover,.nav-link.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet)}
 .badge{margin-left:auto;background:var(--yeet);color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
-/* MAIN */
 .main{border-right:1px solid var(--border)}
 .feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .feed-header h2{font-size:18px;font-weight:800}
@@ -45,7 +40,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .tabs{display:flex;border-bottom:1px solid var(--border)}
 .tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
 .tab.active{color:var(--yeet);border-bottom-color:var(--yeet)}
-/* COMPOSER */
 .composer{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px}
 .avatar{width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
 .composer-body{flex:1}
@@ -54,10 +48,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
 .icon-btn:hover{color:var(--yeet)}
 .btn-yeet{margin-left:auto;background:var(--yeet);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer}
-/* EMPTY STATE */
 .empty{padding:60px 20px;text-align:center;color:var(--muted)}
 .empty .icon{font-size:48px;margin-bottom:16px}
-/* RIGHT SIDEBAR */
 .sidebar-right{padding:16px}
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
 .widget-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
@@ -71,13 +63,36 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .coin-chg{font-size:12px;text-align:right}
 .tag{display:inline-flex;padding:5px 10px;background:#1a1a1a;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;border:1px solid var(--border)}
 .tag:hover{border-color:var(--yeet);color:var(--yeet)}
-/* OVERLAY */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99}
 .overlay.on{display:block}
-/* PWA */
-.pwa{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:200}
-.pwa.hide{display:none}
-/* RESPONSIVE */
+/* WALLET MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#111;border:1px solid var(--border);border-radius:16px;padding:24px;width:360px;max-width:90vw}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.wallet-option{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:10px;transition:.2s;background:#161616}
+.wallet-option:hover{border-color:var(--yeet);background:#1a1a0a}
+.wallet-option img{width:36px;height:36px;border-radius:8px}
+.wallet-option .wname{font-size:15px;font-weight:700}
+.wallet-option .wdesc{font-size:12px;color:var(--muted)}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-wrap{position:relative}
+/* PWA MODAL */
+.pwa-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
+.pwa-modal.on{display:flex}
+.pwa-box{background:#111;border:1px solid var(--border);border-radius:16px;padding:28px;width:360px;max-width:90vw;text-align:center}
+.pwa-box .icon{font-size:48px;margin-bottom:12px}
+.pwa-box h3{font-size:20px;font-weight:800;margin-bottom:8px}
+.pwa-box p{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.pwa-steps{text-align:left;margin-bottom:20px}
+.pwa-steps li{font-size:13px;margin-bottom:8px;padding-left:4px;color:var(--muted)}
+.pwa-steps li strong{color:var(--text)}
+.btn-primary{background:var(--yeet);color:#000;border:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-bottom:8px}
+.btn-secondary{background:none;color:var(--muted);border:1px solid var(--border);padding:10px 24px;border-radius:12px;font-size:14px;cursor:pointer;width:100%}
+.pwa-banner{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:150}
+.pwa-banner.hide{display:none}
 @media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px}}
 @media(max-width:900px){.sidebar-right{display:none}.layout{grid-template-columns:180px 1fr}}
 @media(max-width:700px){
@@ -92,6 +107,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 </head>
 <body>
 
+<!-- TICKER -->
 <div class="ticker">
   <div class="ticker-inner" id="tickerInner">
     <div class="tick"><span class="sym">BTC</span><span id="pBTC">---</span><span id="cBTC" class="up"></span></div>
@@ -103,6 +119,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   </div>
 </div>
 
+<!-- NAV -->
 <nav>
   <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
     <span></span><span></span><span></span>
@@ -112,11 +129,80 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     YEET
   </a>
   <div class="search"><input type="text" placeholder="Search posts, users, tags..."></div>
-  <button class="btn-wallet" id="walletBtn" onclick="connectWallet()">CONNECT WALLET</button>
+  <button class="btn-wallet" id="walletBtn" onclick="openWalletModal()">CONNECT WALLET</button>
 </nav>
 
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
 
+<!-- WALLET MODAL -->
+<div class="modal-bg" id="walletModal" onclick="closeWalletModal(event)">
+  <div class="modal modal-wrap">
+    <button class="modal-close" onclick="closeWalletModal()">&#10005;</button>
+    <h3>&#128279; Connect Wallet</h3>
+    <p>Choose your wallet to sign in to YEET Social</p>
+
+    <div class="wallet-option" onclick="connectMetaMask()">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" onerror="this.style.background='#e2761b';this.src=''" alt="MetaMask">
+      <div>
+        <div class="wname">MetaMask</div>
+        <div class="wdesc">Browser extension &amp; mobile wallet</div>
+      </div>
+    </div>
+
+    <div class="wallet-option" onclick="connectTrustWallet()">
+      <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" onerror="this.style.background='#3375BB';this.src=''" alt="Trust Wallet" style="border-radius:50%">
+      <div>
+        <div class="wname">Trust Wallet</div>
+        <div class="wdesc">Mobile wallet by Binance</div>
+      </div>
+    </div>
+
+    <div class="wallet-option" onclick="connectLedger()">
+      <img src="https://cdn.worldvectorlogo.com/logos/ledger-2.svg" onerror="this.style.background='#142533';this.src=''" alt="Ledger" style="padding:4px;background:#142533;border-radius:8px">
+      <div>
+        <div class="wname">Ledger</div>
+        <div class="wdesc">Hardware wallet &mdash; connect via USB/Bluetooth</div>
+      </div>
+    </div>
+
+    <div class="wallet-option" onclick="connectWalletConnect()">
+      <img src="https://walletconnect.com/static/favicon.png" onerror="this.src=''" alt="WalletConnect" style="background:#3b99fc;border-radius:8px;padding:4px">
+      <div>
+        <div class="wname">WalletConnect</div>
+        <div class="wdesc">Scan QR code with any compatible wallet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PWA INSTALL MODAL -->
+<div class="pwa-modal" id="pwaModal" onclick="closePwaModal(event)">
+  <div class="pwa-box">
+    <div class="icon">&#9889;</div>
+    <h3>Install YEET App</h3>
+    <p>Get the full YEET Social experience on your device &mdash; no App Store needed.</p>
+    <ul class="pwa-steps">
+      <li><strong>Android:</strong> Tap the browser menu &rarr; "Add to Home Screen"</li>
+      <li><strong>iPhone/iPad:</strong> Tap Share &#128279; &rarr; "Add to Home Screen"</li>
+      <li><strong>Desktop:</strong> Click the install icon in the address bar</li>
+    </ul>
+    <button class="btn-primary" id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none">&#128640; Install Now</button>
+    <button class="btn-secondary" onclick="closePwaModal()">Close</button>
+  </div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-banner hide" id="pwaBanner">
+  <div style="font-size:28px">&#9889;</div>
+  <div style="flex:1">
+    <div style="font-size:14px;font-weight:700">Install YEET App</div>
+    <div style="font-size:12px;color:var(--muted)">Add to Home Screen &mdash; no App Store needed</div>
+  </div>
+  <button onclick="document.getElementById('pwaBanner').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">Later</button>
+  <button onclick="triggerPwaInstall()" style="background:var(--yeet);color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
+</div>
+
+<!-- LAYOUT -->
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <a class="nav-link active" href="#">&#127968; Global Feed</a>
@@ -148,11 +234,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="composer-body">
         <textarea id="postTxt" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
         <div class="composer-footer">
-          <button class="icon-btn">&#128248;</button>
-          <button class="icon-btn">&#128142;</button>
-          <button class="icon-btn">&#128274;</button>
-          <button class="icon-btn">&#9889;</button>
-          <button class="btn-yeet" onclick="post()">YEET IT</button>
+          <button class="icon-btn" title="Image">&#128248;</button>
+          <button class="icon-btn" title="NFT">&#128142;</button>
+          <button class="icon-btn" title="Pay-per-view">&#128274;</button>
+          <button class="icon-btn" title="Tip">&#9889;</button>
+          <button class="btn-yeet" onclick="submitPost()">YEET IT</button>
         </div>
       </div>
     </div>
@@ -177,22 +263,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <span class="tag">#DeFi <span style="color:var(--muted);font-size:11px">312</span></span>
     </div>
     <div class="widget">
-      <button style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer">&#128640; Install YEET App</button>
+      <button onclick="openPwaModal()" style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px">&#128640; Install YEET App</button>
     </div>
   </aside>
 </div>
 
-<div class="pwa hide" id="pwa">
-  <div style="font-size:28px">&#9889;</div>
-  <div style="flex:1">
-    <div style="font-size:14px;font-weight:700">Install YEET App</div>
-    <div style="font-size:12px;color:var(--muted)">Add to Home Screen</div>
-  </div>
-  <button onclick="document.getElementById('pwa').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">Later</button>
-  <button onclick="installPWA()" style="background:var(--yeet);color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
-</div>
-
 <script>
+// ====== COINGECKO PRICES ======
 const COINS=[
   {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'&#8383;'},
   {id:'ethereum',sym:'ETH',col:'#627eea',icon:'&#926;'},
@@ -222,6 +299,118 @@ async function loadPrices(){
   }catch(e){document.getElementById('prices').innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
 }
 loadPrices();setInterval(loadPrices,60000);
+
+// ====== WALLET CONNECTION ======
+let connectedWallet=null,connectedAddress=null;
+
+function openWalletModal(){document.getElementById('walletModal').classList.add('on')}
+function closeWalletModal(e){if(!e||e.target===document.getElementById('walletModal'))document.getElementById('walletModal').classList.remove('on')}
+
+function onConnected(address,walletName){
+  connectedAddress=address;connectedWallet=walletName;
+  const short=address.slice(0,6)+'...'+address.slice(-4);
+  const btn=document.getElementById('walletBtn');
+  btn.textContent=short;btn.classList.add('connected');
+  document.getElementById('walletModal').classList.remove('on');
+  showToast('Connected: '+walletName+' ('+short+')');
+}
+
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#e8e8e8;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;border:1px solid #333;transition:opacity .3s';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  setTimeout(()=>t.style.opacity='0',3000);
+}
+
+async function connectMetaMask(){
+  if(window.ethereum){
+    try{
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      // Switch to BSC if needed
+      try{await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
+      onConnected(accs[0],'MetaMask');
+    }catch(e){showToast('MetaMask: '+e.message);}
+  }else{
+    // MetaMask not installed - open install page
+    showToast('MetaMask not found. Opening install page...');
+    setTimeout(()=>window.open('https://metamask.io/download/','_blank'),1000);
+  }
+}
+
+async function connectTrustWallet(){
+  // Trust Wallet injects window.ethereum on mobile
+  if(window.ethereum&&window.ethereum.isTrust){
+    try{
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Trust Wallet');
+    }catch(e){showToast('Trust Wallet: '+e.message);}
+  }else if(window.ethereum){
+    // Fallback: use available provider (could be Trust Wallet on mobile)
+    try{
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Trust Wallet');
+    }catch(e){showToast('Trust Wallet: '+e.message);}
+  }else{
+    showToast('Open this page in Trust Wallet browser or install Trust Wallet');
+    setTimeout(()=>window.open('https://trustwallet.com/download','_blank'),1000);
+  }
+}
+
+async function connectLedger(){
+  // Check for WebUSB/WebHID support
+  if(!navigator.hid&&!navigator.usb){
+    showToast('Ledger requires Chrome with WebUSB/WebHID support');
+    return;
+  }
+  showToast('Connecting Ledger... Please approve on your device');
+  try{
+    // Use eth_requestAccounts via MetaMask + Ledger hardware key
+    if(window.ethereum){
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Ledger via MetaMask');
+    }else{
+      // Deep link to Ledger Live
+      showToast('Please install Ledger Live and connect via MetaMask');
+      setTimeout(()=>window.open('https://www.ledger.com/ledger-live','_blank'),1000);
+    }
+  }catch(e){showToast('Ledger: '+e.message);}
+}
+
+function connectWalletConnect(){
+  // WalletConnect v2 QR modal - show instructions since no relay is set up
+  showToast('WalletConnect: Opening QR flow...');
+  // For production: integrate @walletconnect/web3-provider
+  // For now show instructions modal
+  document.getElementById('walletModal').classList.remove('on');
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
+  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">&#128242;</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
+  d.onclick=e=>{if(e.target===d)d.remove()};
+  document.body.appendChild(d);
+}
+
+// ====== PWA INSTALL ======
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  document.getElementById('pwaBanner').classList.remove('hide');
+  document.getElementById('pwaInstallBtn').style.display='block';
+});
+function openPwaModal(){document.getElementById('pwaModal').classList.add('on')}
+function closePwaModal(e){if(!e||e.target===document.getElementById('pwaModal'))document.getElementById('pwaModal').classList.remove('on')}
+function triggerPwaInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')document.getElementById('pwaBanner').classList.add('hide');deferredPrompt=null;});
+  }else{
+    openPwaModal();
+  }
+}
+if(window.matchMedia('(display-mode:standalone)').matches){
+  document.getElementById('pwaBanner').classList.add('hide');
+}
+
+// ====== UI ======
 function toggleNav(){
   const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
   const open=s.classList.toggle('open');
@@ -229,14 +418,15 @@ function toggleNav(){
   document.body.style.overflow=open?'hidden':'';
 }
 function setTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')}
-async function connectWallet(){
-  if(window.ethereum){try{const a=await window.ethereum.request({method:'eth_requestAccounts'});document.getElementById('walletBtn').textContent=a[0].slice(0,6)+'...'+a[0].slice(-4);}catch(e){}}
-  else alert('Install MetaMask or use the YEET mobile app!')
+function submitPost(){
+  if(!connectedAddress){openWalletModal();return;}
+  const txt=document.getElementById('postTxt').value.trim();
+  if(!txt)return;
+  showToast('Posting to /api/v1/posts...');
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('jwt')},body:JSON.stringify({content:txt})})
+    .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
+    .catch(()=>showToast('Connect wallet first to sign in'));
 }
-function post(){if(!document.getElementById('postTxt').value.trim())return;alert('Connect your wallet to post!')}
-let dp;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;document.getElementById('pwa').classList.remove('hide')});
-function installPWA(){if(dp)dp.prompt();document.getElementById('pwa').classList.add('hide')}
-if(window.matchMedia('(display-mode:standalone)').matches)document.getElementById('pwa').classList.add('hide');
 </script>
 </body>
 </html>
