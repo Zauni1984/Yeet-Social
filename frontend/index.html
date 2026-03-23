@@ -306,13 +306,35 @@ let connectedWallet=null,connectedAddress=null;
 function openWalletModal(){document.getElementById('pwaModal').classList.remove('on');document.getElementById('walletModal').classList.add('on')}
 function closeWalletModal(e){if(!e||e.target===document.getElementById('walletModal'))document.getElementById('walletModal').classList.remove('on')}
 
-function onConnected(address,walletName){
+async function onConnected(address,walletName,provider){
   connectedAddress=address;connectedWallet=walletName;
   const short=address.slice(0,6)+'...'+address.slice(-4);
   const btn=document.getElementById('walletBtn');
-  btn.textContent=short;btn.classList.add('connected');
+  btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  showToast('Connected: '+walletName+' ('+short+')');
+  // EIP-191: get nonce → sign → verify → JWT
+  try{
+    const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
+    const nonceD=await nonceR.json();
+    if(!nonceD.success) throw new Error('Nonce error');
+    const {nonce,message}=nonceD.data;
+    const signature=await provider.request({method:'personal_sign',params:[message,address]});
+    const verR=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address,signature,message,nonce})});
+    const verD=await verR.json();
+    if(verD.success&&verD.data?.token){
+      localStorage.setItem('yeet_jwt',verD.data.token);
+      localStorage.setItem('yeet_address',address);
+      btn.textContent=short;
+      showToast('✅ Signed in: '+walletName+' ('+short+')');
+    }else{
+      btn.textContent=short;
+      showToast('Connected (no JWT): '+short);
+    }
+  }catch(e){
+    btn.textContent=short;
+    if(e.code===4001) showToast('Signature rejected');
+    else showToast('Auth error: '+e.message.slice(0,40));
+  }
 }
 
 function showToast(msg){
@@ -323,7 +345,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously — wait up to 1s
+  // MetaMask injects window.ethereum asynchronously â wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -335,13 +357,13 @@ async function connectMetaMask(){
       const accs=await provider.request({method:'eth_requestAccounts'});
       // Add BSC Testnet (chainId 97 = 0x61)
       try{await provider.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
-      onConnected(accs[0],'MetaMask');
+      onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask — try anyway
+    // ethereum exists but not MetaMask â try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
-      onConnected(accs[0],'Wallet');
+      onConnected(accs[0],'Wallet',eth);
     }catch(e){showToast('Wallet error: '+e.message);}
   }else{
     showToast('MetaMask not detected. Please install or unlock MetaMask.');
@@ -354,7 +376,7 @@ async function connectTrustWallet(){
   if(window.ethereum&&window.ethereum.isTrust){
     try{
       const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      onConnected(accs[0],'Trust Wallet');
+      onConnected(accs[0],'Trust Wallet',eth);
     }catch(e){showToast('Trust Wallet: '+e.message);}
   }else if(window.ethereum){
     // Fallback: use available provider (could be Trust Wallet on mobile)
@@ -435,7 +457,7 @@ function submitPost(){
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast('Posting to /api/v1/posts...');
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('jwt')},body:JSON.stringify({content:txt})})
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
     .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
