@@ -221,7 +221,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   <main class="main">
     <div class="feed-header">
       <h2>Global Feed</h2>
-      <button class="btn-sm">&#8635; REFRESH</button>
+      <button class="btn-sm" onclick="loadFeed()">&#8635; REFRESH</button>
     </div>
     <div class="tabs">
       <div class="tab active" onclick="setTab(this)">FOR YOU</div>
@@ -298,7 +298,7 @@ async function loadPrices(){
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
   }catch(e){document.getElementById('prices').innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
 }
-loadPrices();setInterval(loadPrices,60000);
+loadPrices();setInterval(loadPrices,60000);loadFeed();setInterval(loadFeed,30000);
 
 // ====== WALLET CONNECTION ======
 let connectedWallet=null,connectedAddress=null;
@@ -312,7 +312,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce → sign → verify → JWT
+  // EIP-191: get nonce â sign â verify â JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -325,7 +325,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('✅ Signed in: '+walletName+' ('+short+')');
+      showToast('â Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);
@@ -345,7 +345,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously â wait up to 1s
+  // MetaMask injects window.ethereum asynchronously Ã¢ÂÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -360,7 +360,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask â try anyway
+    // ethereum exists but not MetaMask Ã¢ÂÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
