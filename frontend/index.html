@@ -298,6 +298,39 @@ async function loadPrices(){
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
   }catch(e){document.getElementById('prices').innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
 }
+async function loadFeed(){
+  try{
+    const r=await fetch('/api/v1/feed');
+    const d=await r.json();
+    const empty=document.querySelector('.empty');
+    const old=document.getElementById('feed-posts');
+    if(old)old.remove();
+    if(d.data&&d.data.length>0){
+      if(empty)empty.style.display='none';
+      const wrap=document.createElement('div');
+      wrap.id='feed-posts';
+      for(const p of d.data){
+        const addr=(p.author&&p.author.wallet_address)||'0x???';
+        const short=addr.slice(0,6)+'...'+addr.slice(-4);
+        const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
+        const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+        const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
+        const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const el=document.createElement('div');
+        el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>&#128100;</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; &#9889; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>&#10084; '+(p.like_count||0)+'</span><span>&#128172; '+(p.comment_count||0)+'</span></div>';
+        wrap.appendChild(el);
+      }
+      const c=document.querySelector('.composer');
+      if(c)c.after(wrap);
+    }else{if(empty)empty.style.display='';}
+  }catch(e){console.error('Feed:',e);}
+}
+async function likePost(id){
+  const jwt=localStorage.getItem('yeet_jwt');
+  await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+  loadFeed();
+}
 loadPrices();setInterval(loadPrices,60000);loadFeed();setInterval(loadFeed,30000);
 
 // ====== WALLET CONNECTION ======
