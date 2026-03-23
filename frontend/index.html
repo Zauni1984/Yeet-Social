@@ -254,6 +254,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="widget-title">&#128200; Live Prices</div>
       <div id="prices"><p style="color:var(--muted);font-size:13px">Loading...</p></div>
     </div>
+    <div class="widget" id="profileWidget" style="display:none">
+      <div class="widget-title">&#128100; My Profile</div>
+      <div id="profileInfo"></div>
+    </div>
     <div class="widget">
       <div class="widget-title">&#128293; Trending</div>
       <span class="tag">#YeetToken <span style="color:var(--muted);font-size:11px">1.2K</span></span>
@@ -292,11 +296,29 @@ async function loadPrices(){
       if(pe)pe.textContent=pf(p.usd);
       if(ce){ce.textContent=txt;ce.className=cls;}
     });
-    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">&#9889;</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
-    document.getElementById('prices').innerHTML=h;
+    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">&#9889;</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
+    const pricesEl=document.getElementById('prices');
+    if(pricesEl)pricesEl.innerHTML=h;
     const t=document.getElementById('tickerInner');
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
-  }catch(e){document.getElementById('prices').innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
+  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
+}
+async function loadProfile(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
+  try{
+    const r=await fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(!d.success)return;
+    const u=d.data;
+    const addr=u.wallet_address||connectedAddress||'';
+    const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):'';
+    const pw=document.getElementById('profileWidget');
+    const pi=document.getElementById('profileInfo');
+    if(pw)pw.style.display='';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">&#128100;</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
+  }catch(e){}
 }
 async function loadFeed(){
   try{
@@ -331,7 +353,7 @@ async function likePost(id){
   await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
   loadFeed();
 }
-loadPrices();setInterval(loadPrices,60000);loadFeed();setInterval(loadFeed,30000);
+loadPrices();setInterval(loadPrices,60000);loadFeed();setInterval(loadFeed,30000);if(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
 
 // ====== WALLET CONNECTION ======
 let connectedWallet=null,connectedAddress=null;
@@ -345,7 +367,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce â sign â verify â JWT
+  // EIP-191: get nonce Ã¢ÂÂ sign Ã¢ÂÂ verify Ã¢ÂÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -358,10 +380,10 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('â Signed in: '+walletName+' ('+short+')');
+      showToast('Ã¢ÂÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
-      showToast('Connected (no JWT): '+short);
+      showToast('Connected (no JWT): '+short);loadProfile();
     }
   }catch(e){
     btn.textContent=short;
@@ -378,7 +400,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously Ã¢ÂÂ wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂ¢ÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -393,7 +415,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask Ã¢ÂÂ try anyway
+    // ethereum exists but not MetaMask ÃÂ¢ÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
