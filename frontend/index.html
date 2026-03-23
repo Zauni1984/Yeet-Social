@@ -175,6 +175,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   </div>
 </div>
 
+<!-- TIP MODAL -->
+<div class="modal-bg" id="tipModal" onclick="closeTipModal(event)">
+  <div class="modal modal-wrap">
+    <button class="modal-close" onclick="closeTipModal()">&#10005;</button>
+    <h3>&#9889; Tip YEET Tokens</h3>
+    <p>Send YEET tokens to support this creator</p>
+    <div id="tipTarget" style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--muted)">Select a post to tip</div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Amount (YEET)</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button onclick="setTipAmt(1)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">1</button>
+        <button onclick="setTipAmt(5)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">5</button>
+        <button onclick="setTipAmt(10)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">10</button>
+        <button onclick="setTipAmt(100)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">100</button>
+      </div>
+      <input id="tipAmount" type="number" value="5" min="0.1" step="0.1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:16px;outline:none">
+    </div>
+    <button onclick="sendTip()" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer">&#9889; Send Tip</button>
+  </div>
+</div>
+
 <!-- PWA INSTALL MODAL -->
 <div class="pwa-modal" id="pwaModal" onclick="closePwaModal(event)">
   <div class="pwa-box">
@@ -367,7 +388,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce Ã¢ÂÂ sign Ã¢ÂÂ verify Ã¢ÂÂ JWT
+  // EIP-191: get nonce ÃÂ¢ÃÂÃÂ sign ÃÂ¢ÃÂÃÂ verify ÃÂ¢ÃÂÃÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -380,7 +401,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('Ã¢ÂÂ Signed in: '+walletName+' ('+short+')');
+      showToast('ÃÂ¢ÃÂÃÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -400,7 +421,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously ÃÂ¢ÃÂÃÂ wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -415,7 +436,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask ÃÂ¢ÃÂÃÂ try anyway
+    // ethereum exists but not MetaMask ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
@@ -500,6 +521,39 @@ if(window.matchMedia('(display-mode:standalone)').matches){
 }
 
 // ====== UI ======
+function openTipModal(postId,toAddr){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){openWalletModal();return;}
+  document.getElementById('tipModal').classList.add('on');
+  document.getElementById('tipModal').dataset.postId=postId;
+  document.getElementById('tipModal').dataset.toAddr=toAddr;
+  document.getElementById('tipTarget').innerHTML='Tipping to: <b>'+toAddr.slice(0,6)+'...'+toAddr.slice(-4)+'</b>';
+}
+function closeTipModal(e){if(!e||e.target===document.getElementById('tipModal'))document.getElementById('tipModal').classList.remove('on');}
+function setTipAmt(n){document.getElementById('tipAmount').value=n;}
+async function sendTip(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
+  const modal=document.getElementById('tipModal');
+  const postId=modal.dataset.postId;
+  const toAddr=modal.dataset.toAddr;
+  const amount=parseFloat(document.getElementById('tipAmount').value)||0;
+  if(amount<=0){showToast('Enter a valid amount');return;}
+  try{
+    const r=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
+    const d=await r.json();
+    if(r.ok){showToast('&#9889; Tip sent: '+amount+' YEET!');closeTipModal();}
+    else showToast('Tip error: '+(d.error||d.message||r.status));
+  }catch(e){showToast('Tip error: '+e.message.slice(0,40));}
+}
+async function deletePost(id){
+  if(!confirm('Delete this Yeet?'))return;
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
+  const r=await fetch('/api/v1/posts/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
+  if(r.ok){showToast('Yeet deleted');loadFeed();}
+  else showToast('Delete failed: '+r.status);
+}
 function toggleNav(){
   const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
   const open=s.classList.toggle('open');
