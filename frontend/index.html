@@ -281,11 +281,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     </div>
     <div class="widget">
       <div class="widget-title">&#128293; Trending</div>
-      <span class="tag">#YeetToken <span style="color:var(--muted);font-size:11px">1.2K</span></span>
-      <span class="tag">#BSC <span style="color:var(--muted);font-size:11px">840</span></span>
-      <span class="tag">#Web3Social <span style="color:var(--muted);font-size:11px">620</span></span>
-      <span class="tag">#NFTDrop <span style="color:var(--muted);font-size:11px">445</span></span>
-      <span class="tag">#DeFi <span style="color:var(--muted);font-size:11px">312</span></span>
+      <div id="trendingTags">
+        <span class="tag">#YeetToken <span style="color:var(--muted);font-size:11px">1.2K</span></span>
+        <span class="tag">#BSC <span style="color:var(--muted);font-size:11px">840</span></span>
+        <span class="tag">#Web3Social <span style="color:var(--muted);font-size:11px">620</span></span>
+        <span class="tag">#NFTDrop <span style="color:var(--muted);font-size:11px">445</span></span>
+        <span class="tag">#DeFi <span style="color:var(--muted);font-size:11px">312</span></span>
+      </div>
     </div>
     <div class="widget">
       <button onclick="openPwaModal()" style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px">&#128640; Install YEET App</button>
@@ -323,6 +325,31 @@ async function loadPrices(){
     const t=document.getElementById('tickerInner');
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
   }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">&#9888; Prices unavailable</p>';}
+}
+async function loadTrendingTags(){
+  try{
+    // Trending aus Backend-Posts extrahieren oder statische Fallback-Tags
+    const r=await fetch('/api/v1/feed?limit=50');
+    const d=await r.json();
+    const tagCounts={};
+    if(d.success&&d.data){
+      d.data.forEach(p=>{
+        const tags=(p.content.match(/#\w+/g)||[]);
+        tags.forEach(t=>{tagCounts[t]=(tagCounts[t]||0)+1;});
+      });
+    }
+    const sorted=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const el=document.getElementById('trendingTags');
+    if(!el)return;
+    if(sorted.length>0){
+      el.innerHTML=sorted.map(([t,c])=>'<span class="tag" onclick="searchTag(''+t+'')">'+t+' <span style="color:var(--muted);font-size:11px">'+c+'</span></span>').join('');
+    }
+  }catch(e){}
+}
+function searchTag(tag){
+  document.getElementById('postTxt').value=tag+' ';
+  document.getElementById('postTxt').focus();
+  showToast('Search: '+tag);
 }
 async function loadProfile(){
   const jwt=localStorage.getItem('yeet_jwt');
@@ -374,7 +401,7 @@ async function likePost(id){
   await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
   loadFeed();
 }
-loadPrices();setInterval(loadPrices,60000);loadFeed();setInterval(loadFeed,30000);if(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
+loadPrices();setInterval(loadPrices,60000);loadFeed();setInterval(loadFeed,30000);loadTrendingTags();if(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
 
 // ====== WALLET CONNECTION ======
 let connectedWallet=null,connectedAddress=null;
@@ -388,7 +415,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce ÃÂ¢ÃÂÃÂ sign ÃÂ¢ÃÂÃÂ verify ÃÂ¢ÃÂÃÂ JWT
+  // EIP-191: get nonce ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ sign ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ verify ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -401,7 +428,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('ÃÂ¢ÃÂÃÂ Signed in: '+walletName+' ('+short+')');
+      showToast('ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -421,7 +448,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -436,7 +463,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ try anyway
+    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
@@ -560,7 +587,48 @@ function toggleNav(){
   o.classList.toggle('on',open);
   document.body.style.overflow=open?'hidden':'';
 }
-function setTab(t){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active')}
+function setTab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const label=t.textContent.trim();
+  if(label.includes('18+')){ check18Plus(); return; }
+  if(label.includes('NFT')){ loadFeedFiltered('nft'); return; }
+  if(label.includes('FOLLOWING')){ loadFeedFiltered('following'); return; }
+  loadFeed();
+}
+function loadFeedFiltered(filter){
+  const jwt=localStorage.getItem('yeet_jwt');
+  const headers={'Content-Type':'application/json'};
+  if(jwt)headers['Authorization']='Bearer '+jwt;
+  fetch('/api/v1/feed?filter='+filter,{headers})
+    .then(r=>r.json())
+    .then(d=>{
+      const old=document.getElementById('feed-posts');if(old)old.remove();
+      const empty=document.querySelector('.empty');
+      if(d.success&&d.data&&d.data.length>0){
+        if(empty)empty.style.display='none';
+        const wrap=document.createElement('div');wrap.id='feed-posts';
+        for(const p of d.data){
+          const addr=(p.author&&p.author.wallet_address)||'0x???';
+          const short=addr.slice(0,6)+'...'+addr.slice(-4);
+          const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
+          const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+          const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
+          const el=document.createElement('div');
+          el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">&#128100;</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; &#9889; '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          wrap.appendChild(el);
+        }
+        const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
+      }else{if(empty)empty.style.display='';}
+    }).catch(()=>{});
+}
+function check18Plus(){
+  if(localStorage.getItem('yeet_adult')==='1'){ loadFeedFiltered('adult'); return; }
+  const ok=confirm('&#128286; 18+ Content\n\nThis section contains adult content. Are you 18 or older?');
+  if(ok){localStorage.setItem('yeet_adult','1');loadFeedFiltered('adult');}
+  else{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelector('.tab').classList.add('active');loadFeed();}
+}
 function submitPost(){
   if(!connectedAddress){openWalletModal();return;}
   const txt=document.getElementById('postTxt').value.trim();
