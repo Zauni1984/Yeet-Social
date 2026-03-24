@@ -625,7 +625,7 @@ function loadFeedFiltered(filter){
 }
 function check18Plus(){
   if(localStorage.getItem('yeet_adult')==='1'){ loadFeedFiltered('adult'); return; }
-  const ok=confirm('&#128286; 18+ Content\n\nThis section contains adult content. Are you 18 or older?');
+  const ok=confirm('18+ Content: This section contains adult content. Are you 18 or older?');
   if(ok){localStorage.setItem('yeet_adult','1');loadFeedFiltered('adult');}
   else{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelector('.tab').classList.add('active');loadFeed();}
 }
