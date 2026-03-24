@@ -358,9 +358,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <script>
 // ====== COINGECKO PRICES ======
 const COINS=[
-  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'ÃÂ¢ÃÂÃÂ¿'},
-  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ÃÂÃÂ'},
-  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'ÃÂ¢ÃÂÃÂ¬'},
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ¿'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ÃÂÃÂÃÂÃÂ'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ¬'},
   {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
   {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
 ];
@@ -379,12 +379,12 @@ async function loadPrices(){
       if(pe)pe.textContent=pf(p.usd);
       if(ce){ce.textContent=txt;ce.className=cls;}
     });
-    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">ÃÂ¢ÃÂÃÂ¡</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
+    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ¡</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
     const pricesEl=document.getElementById('prices');
     if(pricesEl)pricesEl.innerHTML=h;
     const t=document.getElementById('tickerInner');
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
-  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">ÃÂ¢ÃÂÃÂ  Prices unavailable</p>';}
+  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ  Prices unavailable</p>';}
 }
 async function loadTrendingTags(){
   try{
@@ -426,7 +426,7 @@ async function loadProfile(){
     const pw=document.getElementById('profileWidget');
     const pi=document.getElementById('profileInfo');
     if(pw)pw.style.display='';
-    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">ÃÂ°ÃÂÃÂÃÂ¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
   }catch(e){}
 }
 async function loadFeed(){
@@ -449,7 +449,7 @@ async function loadFeed(){
         const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>ÃÂ°ÃÂÃÂÃÂ¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; ÃÂ¢ÃÂÃÂ¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>ÃÂ¢ÃÂÃÂ¤ '+(p.like_count||0)+'</span><span>ÃÂ°ÃÂÃÂÃÂ¬ '+(p.comment_count||0)+'</span></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ¤ '+(p.like_count||0)+'</span><span>ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¬ '+(p.comment_count||0)+'</span></div>';
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -477,7 +477,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ sign ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ verify ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ JWT
+  // EIP-191: get nonce ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ sign ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ verify ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -490,7 +490,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
+      showToast('ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -510,7 +510,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -525,7 +525,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
+    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
@@ -583,7 +583,7 @@ function connectWalletConnect(){
   document.getElementById('walletModal').classList.remove('on');
   const d=document.createElement('div');
   d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
-  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">ÃÂ°ÃÂÃÂÃÂ²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
+  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
   d.onclick=e=>{if(e.target===d)d.remove()};
   document.body.appendChild(d);
 }
@@ -628,13 +628,53 @@ async function sendTip(){
   const toAddr=modal.dataset.toAddr;
   const amount=parseFloat(document.getElementById('tipAmount').value)||0;
   if(amount<=0){showToast('Enter a valid amount');return;}
+
+  const btn=modal.querySelector('button[onclick="sendTip()"]');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+
+  // Try on-chain first if MetaMask available
+  if(window.ethereum&&connectedAddress){
+    try{
+      const chainId=await window.ethereum.request({method:'eth_chainId'});
+      if(chainId!=='0x61'){
+        // Switch to BSC Testnet
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
+          if(e2.code===4902){
+            await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
+          }
+        });
+      }
+      // ERC-20 transfer: transfer(address,uint256)
+      const YEET_ADDR='0x0f1963829c6cc7A925E2F46949C3b248D69297c7';
+      const amtWei='0x'+BigInt(Math.floor(amount*1e18)).toString(16);
+      // transfer(address to, uint256 amount) selector = 0xa9059cbb
+      const toHex=toAddr.replace('0x','').toLowerCase().padStart(64,'0');
+      const amtHex=amtWei.replace('0x','').padStart(64,'0');
+      const data='0xa9059cbb'+toHex+amtHex;
+      const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:connectedAddress,to:YEET_ADDR,data:data,gas:'0x15F90'}]});
+      showToast('Tip sent on-chain! TX: '+txHash.slice(0,12)+'...');
+      if(btn){btn.disabled=false;btn.textContent='Send Tip';}
+      closeTipModal();
+      // Also notify backend
+      fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId,tx_hash:txHash})}).catch(function(){});
+      return;
+    }catch(err){
+      if(err.code===4001){showToast('Transaction cancelled');if(btn){btn.disabled=false;btn.textContent='Send Tip';}return;}
+      // Fall through to backend-only tip
+      console.warn('On-chain tip failed, using backend:',err.message);
+    }
+  }
+
+  // Backend-only tip (no MetaMask or chain switch failed)
   try{
-    const r=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
-    const d=await r.json();
-    if(r.ok){showToast('ÃÂ¢ÃÂÃÂ¡ Tip sent: '+amount+' YEET!');closeTipModal();}
-    else showToast('Tip error: '+(d.error||d.message||r.status));
+    const res=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
+    const dd=await res.json();
+    if(res.ok){showToast(amount+' YEET tip sent!');closeTipModal();}
+    else showToast('Tip failed: '+(dd.error||dd.message||res.status));
   }catch(e){showToast('Tip error: '+e.message.slice(0,40));}
+  if(btn){btn.disabled=false;btn.textContent='Send Tip';}
 }
+
 async function deletePost(id){
   if(!confirm('Delete this Yeet?'))return;
   const jwt=localStorage.getItem('yeet_jwt');
@@ -775,7 +815,7 @@ function loadFeedFiltered(filter){
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
           const el=document.createElement('div');
           el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">ÃÂ°ÃÂÃÂÃÂ¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; ÃÂ¢ÃÂÃÂ¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
           wrap.appendChild(el);
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
