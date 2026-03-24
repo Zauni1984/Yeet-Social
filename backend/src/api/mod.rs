@@ -6,3 +6,5 @@ pub mod posts;
 pub mod tips;
 pub mod tokens;
 pub mod users;
+pub mod boards;
+pub mod notifications;
