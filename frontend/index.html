@@ -623,24 +623,38 @@ async function loadRSS(url,name){
   document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--muted)">Loading feed...</p>';
   try{
     const proxy='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=10';
-    const d2=await fetch(proxy).then(r2=>r2.json());
+    const d2=await fetch(proxy).then(function(r2){return r2.json();});
     document.getElementById('wbFeedTitle').textContent=(d2.feed&&d2.feed.title)||name;
     const items=d2.items||[];
+    const container=document.getElementById('wbFeedItems');
     if(items.length>0){
-      document.getElementById('wbFeedItems').innerHTML=items.map(function(item){
-        var dt=new Date(item.pubDate).toLocaleDateString();
+      container.innerHTML='';
+      items.forEach(function(item){
+        var el=document.createElement('div');
+        el.style.cssText='padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer';
+        el.dataset.url=String(item.link);
         var title=String(item.title).replace(/</g,'&lt;');
-        var link=String(item.link);
-        return '<div style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" data-url="'+link+'" onclick="window.open(this.dataset.url,'_blank')"><div style="font-weight:700;font-size:13px;margin-bottom:4px">'+title+'</div><div style="font-size:11px;color:var(--muted)">'+dt+'</div></div>';
-      }).join('');
+        var dt=new Date(item.pubDate).toLocaleDateString();
+        el.innerHTML='<div style="font-weight:700;font-size:13px;margin-bottom:4px">'+title+'</div><div style="font-size:11px;color:var(--muted)">'+dt+'</div>';
+        el.addEventListener('click',function(){window.open(this.dataset.url,'_blank');});
+        container.appendChild(el);
+      });
     }else{
-      document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--muted)">No items</p>';
+      container.innerHTML='<p style="color:var(--muted)">No items found</p>';
     }
-    document.getElementById('wbFeedTitle').innerHTML+=' <span onclick="document.getElementById('wbList').style.display='';document.getElementById('wbFeed').style.display='none';" style="cursor:pointer;font-size:12px;color:var(--muted);margin-left:8px">Back</span>';
+    var backBtn=document.createElement('span');
+    backBtn.textContent=' Back';
+    backBtn.style.cssText='cursor:pointer;font-size:12px;color:var(--muted);margin-left:8px';
+    backBtn.addEventListener('click',function(){
+      document.getElementById('wbList').style.display='';
+      document.getElementById('wbFeed').style.display='none';
+    });
+    document.getElementById('wbFeedTitle').appendChild(backBtn);
   }catch(ex){
     document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--red)">Error loading feed</p>';
   }
 }
+
 function toggleNav(){
   const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
   const open=s.classList.toggle('open');
