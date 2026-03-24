@@ -342,7 +342,8 @@ async function loadTrendingTags(){
     const el=document.getElementById('trendingTags');
     if(!el)return;
     if(sorted.length>0){
-      el.innerHTML=sorted.map(([t,c])=>'<span class="tag" onclick="searchTag(''+t+'')">'+t+' <span style="color:var(--muted);font-size:11px">'+c+'</span></span>').join('');
+            el.innerHTML=sorted.map(([t,cnt])=>'<span class="tag" data-tag="'+t+'">'+t+' <span style="color:var(--muted);font-size:11px">'+cnt+'</span></span>').join('');
+    el.onclick=function(e){const span=e.target.closest('[data-tag]');if(span)searchTag(span.dataset.tag);};
     }
   }catch(e){}
 }
