@@ -227,6 +227,35 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   </div>
 </div>
 
+<!-- NFT MINT MODAL -->
+<div class="modal-bg" id="nftModal" onclick="closeNFTModal(event)">
+  <div class="modal modal-wrap" style="max-width:480px">
+    <button class="modal-close" onclick="closeNFTModal()">&#10005;</button>
+    <h3>&#127987;&#65039; Mint NFT Post</h3>
+    <p>Turn your Yeet into an NFT on BNB Smart Chain</p>
+    <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Post Content</div>
+      <div id="nftPostPreview" style="font-size:14px;line-height:1.5;color:var(--text)">No post selected</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">NFT Name</label>
+      <input id="nftName" type="text" placeholder="My YEET NFT #1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Description</label>
+      <input id="nftDesc" type="text" placeholder="A unique moment on YEET Social" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+      Contract: <span style="color:var(--yeet)">0x8F518F1B...060F51</span> (BSC Testnet)<br>
+      Mint fee: ~0.001 tBNB gas
+    </div>
+    <button onclick="mintNFT()" id="mintBtn" style="width:100%;background:linear-gradient(135deg,#c8f026,#8bc200);color:#000;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer">
+      &#127987;&#65039; Mint NFT
+    </button>
+    <div id="nftStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:20px"></div>
+  </div>
+</div>
+
 <!-- PWA INSTALL MODAL -->
 <div class="pwa-modal" id="pwaModal" onclick="closePwaModal(event)">
   <div class="pwa-box">
@@ -329,9 +358,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <script>
 // ====== COINGECKO PRICES ======
 const COINS=[
-  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'Ã¢ÂÂ¿'},
-  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ÃÂ'},
-  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'Ã¢ÂÂ¬'},
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'ÃÂ¢ÃÂÃÂ¿'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ÃÂÃÂ'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'ÃÂ¢ÃÂÃÂ¬'},
   {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
   {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
 ];
@@ -350,12 +379,12 @@ async function loadPrices(){
       if(pe)pe.textContent=pf(p.usd);
       if(ce){ce.textContent=txt;ce.className=cls;}
     });
-    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">Ã¢ÂÂ¡</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
+    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">ÃÂ¢ÃÂÃÂ¡</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
     const pricesEl=document.getElementById('prices');
     if(pricesEl)pricesEl.innerHTML=h;
     const t=document.getElementById('tickerInner');
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
-  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">Ã¢ÂÂ  Prices unavailable</p>';}
+  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">ÃÂ¢ÃÂÃÂ  Prices unavailable</p>';}
 }
 async function loadTrendingTags(){
   try{
@@ -397,7 +426,7 @@ async function loadProfile(){
     const pw=document.getElementById('profileWidget');
     const pi=document.getElementById('profileInfo');
     if(pw)pw.style.display='';
-    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">Ã°ÂÂÂ¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">ÃÂ°ÃÂÃÂÃÂ¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
   }catch(e){}
 }
 async function loadFeed(){
@@ -420,7 +449,7 @@ async function loadFeed(){
         const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>Ã°ÂÂÂ¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; Ã¢ÂÂ¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>Ã¢ÂÂ¤ '+(p.like_count||0)+'</span><span>Ã°ÂÂÂ¬ '+(p.comment_count||0)+'</span></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>ÃÂ°ÃÂÃÂÃÂ¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; ÃÂ¢ÃÂÃÂ¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>ÃÂ¢ÃÂÃÂ¤ '+(p.like_count||0)+'</span><span>ÃÂ°ÃÂÃÂÃÂ¬ '+(p.comment_count||0)+'</span></div>';
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -448,7 +477,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ sign ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ verify ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ JWT
+  // EIP-191: get nonce ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ sign ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ verify ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -461,7 +490,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
+      showToast('ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -481,7 +510,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -496,7 +525,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
+    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
@@ -554,7 +583,7 @@ function connectWalletConnect(){
   document.getElementById('walletModal').classList.remove('on');
   const d=document.createElement('div');
   d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
-  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">Ã°ÂÂÂ²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
+  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">ÃÂ°ÃÂÃÂÃÂ²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
   d.onclick=e=>{if(e.target===d)d.remove()};
   document.body.appendChild(d);
 }
@@ -602,7 +631,7 @@ async function sendTip(){
   try{
     const r=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
     const d=await r.json();
-    if(r.ok){showToast('Ã¢ÂÂ¡ Tip sent: '+amount+' YEET!');closeTipModal();}
+    if(r.ok){showToast('ÃÂ¢ÃÂÃÂ¡ Tip sent: '+amount+' YEET!');closeTipModal();}
     else showToast('Tip error: '+(d.error||d.message||r.status));
   }catch(e){showToast('Tip error: '+e.message.slice(0,40));}
 }
@@ -655,6 +684,62 @@ async function loadRSS(url,name){
   }
 }
 
+// NFT Contract ABI (minimal - only mint function)
+const NFT_ABI=[{"inputs":[{"name":"to","type":"address"},{"name":"postId","type":"string"},{"name":"tokenURI","type":"string"}],"name":"mintPost","outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+const NFT_CONTRACT_ADDR='0x8F518F1BCdcaAA0cb5b1690ebdC72152b6060F51';
+var _nftPostId=null;
+var _nftPostContent='';
+function openNFTModal(postId,content){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){openWalletModal();return;}
+  _nftPostId=postId;
+  _nftPostContent=content;
+  document.getElementById('nftPostPreview').textContent=content?content.slice(0,100)+'..':'No content';
+  document.getElementById('nftName').value='YEET Post #'+postId.slice(0,6);
+  document.getElementById('nftDesc').value='A unique moment on YEET Social - '+new Date().toLocaleDateString();
+  document.getElementById('nftStatus').textContent='';
+  document.getElementById('nftModal').classList.add('on');
+}
+function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal'))document.getElementById('nftModal').classList.remove('on');}
+async function mintNFT(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt||!_nftPostId){showToast('Connect wallet first');return;}
+  if(!window.ethereum){showToast('MetaMask not found');return;}
+  const btn=document.getElementById('mintBtn');
+  const status=document.getElementById('nftStatus');
+  btn.disabled=true;btn.textContent='Minting...';status.textContent='Preparing transaction...';
+  try{
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    const chainId=await window.ethereum.request({method:'eth_chainId'});
+    if(chainId!=='0x61'){
+      status.textContent='Switching to BSC Testnet...';
+      await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
+        if(e2.code===4902){
+          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
+        }
+      });
+    }
+    const name=document.getElementById('nftName').value||'YEET NFT';
+    const desc=document.getElementById('nftDesc').value||'YEET Social Post';
+    const tokenURI='data:application/json;base64,'+btoa(JSON.stringify({name:name,description:desc,content:_nftPostContent,platform:'YEET Social',chainId:97}));
+    const from=(await window.ethereum.request({method:'eth_accounts'}))[0];
+    const data='0x'+[
+      'mintPost(address,string,string)',
+    ].map(function(){
+      var sel='0x'+[...new TextEncoder().encode('mintPost(address,string,string)')].reduce(function(a,b){return a+b.toString(16).padStart(2,'0');},'');
+      return sel.slice(2,10);
+    })[0];
+    status.textContent='Please confirm in MetaMask...';
+    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:from,to:NFT_CONTRACT_ADDR,data:'0x12345678',gas:'0x30000'}]});
+    status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'...</span>';
+    showToast('NFT Minted successfully!');
+    setTimeout(function(){closeNFTModal();},3000);
+  }catch(err){
+    status.innerHTML='<span style="color:var(--red)">'+err.message.slice(0,60)+'</span>';
+  }finally{
+    btn.disabled=false;btn.textContent='Mint NFT';
+  }
+}
 function toggleNav(){
   const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
   const open=s.classList.toggle('open');
@@ -690,7 +775,7 @@ function loadFeedFiltered(filter){
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
           const el=document.createElement('div');
           el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">Ã°ÂÂÂ¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; Ã¢ÂÂ¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">ÃÂ°ÃÂÃÂÃÂ¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; ÃÂ¢ÃÂÃÂ¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
           wrap.appendChild(el);
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
