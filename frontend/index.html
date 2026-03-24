@@ -196,6 +196,37 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   </div>
 </div>
 
+<!-- WEBBOARDS MODAL -->
+<div class="modal-bg" id="webboardsModal" onclick="closeWebboardsModal(event)">
+  <div class="modal modal-wrap" style="max-width:500px;width:95vw">
+    <button class="modal-close" onclick="closeWebboardsModal()">&#10005;</button>
+    <h3>&#128250; Webboards</h3>
+    <p>RSS feeds from your favorite Web3 communities</p>
+    <div id="wbList" style="margin-bottom:16px">
+      <div class="wallet-option" onclick="loadRSS('https://cointelegraph.com/rss','CoinTelegraph')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#f7931a22;display:flex;align-items:center;justify-content:center;font-size:20px">&#128302;</div>
+        <div><div class="wname">CoinTelegraph</div><div class="wdesc">Crypto news</div></div>
+      </div>
+      <div class="wallet-option" onclick="loadRSS('https://decrypt.co/feed','Decrypt')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#00d5ff22;display:flex;align-items:center;justify-content:center;font-size:20px">&#128240;</div>
+        <div><div class="wname">Decrypt</div><div class="wdesc">Web3 news &amp; analysis</div></div>
+      </div>
+      <div class="wallet-option" onclick="loadRSS('https://thedefiant.io/feed','The Defiant')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#c8f02622;display:flex;align-items:center;justify-content:center;font-size:20px">&#128176;</div>
+        <div><div class="wname">The Defiant</div><div class="wdesc">DeFi news</div></div>
+      </div>
+      <div class="wallet-option" onclick="loadRSS('https://nftnow.com/feed','NFT Now')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#8247e522;display:flex;align-items:center;justify-content:center;font-size:20px">&#127760;</div>
+        <div><div class="wname">NFT Now</div><div class="wdesc">NFT news &amp; drops</div></div>
+      </div>
+    </div>
+    <div id="wbFeed" style="max-height:300px;overflow-y:auto;display:none">
+      <div id="wbFeedTitle" style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--yeet)"></div>
+      <div id="wbFeedItems"></div>
+    </div>
+  </div>
+</div>
+
 <!-- PWA INSTALL MODAL -->
 <div class="pwa-modal" id="pwaModal" onclick="closePwaModal(event)">
   <div class="pwa-box">
@@ -232,7 +263,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div class="nav-section">Discover</div>
     <a class="nav-link" href="#">&#128247; NFT Posts</a>
     <a class="nav-link" href="#">&#9889; Token Tips</a>
-    <a class="nav-link" href="#">&#128250; Webboards</a>
+    <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
     <a class="nav-link" href="#">&#128286; 18+ Content</a>
     <div class="nav-section">Account</div>
     <a class="nav-link" href="#">&#128100; Profile</a>
@@ -298,9 +329,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <script>
 // ====== COINGECKO PRICES ======
 const COINS=[
-  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'₿'},
-  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'Ξ'},
-  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'♬'},
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'â¿'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'Î'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'â¬'},
   {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
   {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
 ];
@@ -319,12 +350,12 @@ async function loadPrices(){
       if(pe)pe.textContent=pf(p.usd);
       if(ce){ce.textContent=txt;ce.className=cls;}
     });
-    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">⚡</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
+    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">â¡</div><div><div class="coin-name">YEET</div><div class="coin-sym">YEET TOKEN</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
     const pricesEl=document.getElementById('prices');
     if(pricesEl)pricesEl.innerHTML=h;
     const t=document.getElementById('tickerInner');
     if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
-  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">⚠ Prices unavailable</p>';}
+  }catch(e){const el=document.getElementById('prices');if(el)el.innerHTML='<p style="color:var(--muted);font-size:13px">â  Prices unavailable</p>';}
 }
 async function loadTrendingTags(){
   try{
@@ -366,7 +397,7 @@ async function loadProfile(){
     const pw=document.getElementById('profileWidget');
     const pi=document.getElementById('profileInfo');
     if(pw)pw.style.display='';
-    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">👤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">ð¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
   }catch(e){}
 }
 async function loadFeed(){
@@ -389,7 +420,7 @@ async function loadFeed(){
         const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>👤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; ⚡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>❤ '+(p.like_count||0)+'</span><span>💬 '+(p.comment_count||0)+'</span></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>ð¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; â¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>â¤ '+(p.like_count||0)+'</span><span>ð¬ '+(p.comment_count||0)+'</span></div>';
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -417,7 +448,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ sign ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ verify ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ JWT
+  // EIP-191: get nonce ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ sign ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ verify ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -430,7 +461,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
+      showToast('ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -450,7 +481,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -465,7 +496,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
+    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
@@ -523,7 +554,7 @@ function connectWalletConnect(){
   document.getElementById('walletModal').classList.remove('on');
   const d=document.createElement('div');
   d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
-  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">📲</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
+  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">ð²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
   d.onclick=e=>{if(e.target===d)d.remove()};
   document.body.appendChild(d);
 }
@@ -571,7 +602,7 @@ async function sendTip(){
   try{
     const r=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
     const d=await r.json();
-    if(r.ok){showToast('⚡ Tip sent: '+amount+' YEET!');closeTipModal();}
+    if(r.ok){showToast('â¡ Tip sent: '+amount+' YEET!');closeTipModal();}
     else showToast('Tip error: '+(d.error||d.message||r.status));
   }catch(e){showToast('Tip error: '+e.message.slice(0,40));}
 }
@@ -618,7 +649,7 @@ function loadFeedFiltered(filter){
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
           const el=document.createElement('div');
           el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">👤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; ⚡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">ð¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; â¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
           wrap.appendChild(el);
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
