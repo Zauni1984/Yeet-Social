@@ -433,7 +433,7 @@ function pc(c){const u=c>=0;return{cls:u?async function loadPrices(){
       });
     }
     const colors={BTC:'#f7931a',ETH:'#627eea',BNB:'#f0b90b',SOL:'#9945ff',MATIC:'#8247e5'};
-    const icons={BTC:'&#x20BF;',ETH:'&#x25C6;',BNB:'&#x25C6;',SOL:'&#x25B2;',MATIC:'&#x25B2;'};
+    const icons={BTC:'₿',ETH:'◆',BNB:'◆',SOL:'▲',MATIC:'▲'};
     let h='';
     Object.entries(prices).forEach(function([sym,p]){
       if(!p||!p.usd)return;
