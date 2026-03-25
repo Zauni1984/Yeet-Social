@@ -79,6 +79,13 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         patch(api::users::update_profile))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
         .route("/api/v1/users/:address/follow",   post(api::users::follow_user))
+        // Boards / Webboards
+        .route("/api/v1/boards",                    get(api::boards::get_boards))
+        .route("/api/v1/boards/:id",                get(api::boards::get_board))
+        .route("/api/v1/webboards",                 get(api::boards::get_boards))
+        // Notifications
+        .route("/api/v1/notifications",             get(api::notifications::get_notifications))
+        .route("/api/v1/notifications/read",        post(api::notifications::mark_notifications_read))
         .route("/api/v1/users/:address/unfollow", post(api::users::unfollow_user))
         // Tips & Tokens
         .route("/api/v1/tips",             post(api::tips::send_tip))
