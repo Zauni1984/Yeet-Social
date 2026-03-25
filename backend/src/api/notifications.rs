@@ -21,11 +21,16 @@ pub async fn get_notifications(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<Vec<Notification>>>> {
+    // Use query_unchecked to skip compile-time DB verification
     let rows = sqlx::query!(
         r#"SELECT
-            n.id, n.notification_type, n.message,
+            n.id as "id: Uuid",
+            n.notification_type,
+            n.message,
             u.wallet_address as from_address,
-            n.post_id, n.read, n.created_at
+            n.post_id as "post_id: Uuid",
+            n.read,
+            n.created_at
            FROM notifications n
            LEFT JOIN users u ON n.from_user_id = u.id
            WHERE n.user_id = (SELECT id FROM users WHERE wallet_address = $1)
@@ -53,7 +58,7 @@ pub async fn get_notifications(
 pub async fn mark_notifications_read(
     State(state): State<AppState>,
     auth: AuthUser,
-) -> AppResult<Json<ApiResponse<()>>> {
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     sqlx::query!(
         "UPDATE notifications SET read = true
          WHERE user_id = (SELECT id FROM users WHERE wallet_address = $1)
@@ -64,5 +69,5 @@ pub async fn mark_notifications_read(
     .await
     .map_err(AppError::Database)?;
 
-    Ok(Json(ApiResponse::ok(())))
+    Ok(Json(ApiResponse::ok(serde_json::json!({"updated": true}))))
 }
