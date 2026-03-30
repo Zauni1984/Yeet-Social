@@ -1510,7 +1510,7 @@ document.getElementById('authModal').addEventListener('click',e=>{if(e.target===
 
 <script>
 // ====== COINGECKO PRICES ======
-const COINS = [];
+
 function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0}):n>=1?'$'+n.toFixed(2):'$'+n.toFixed(4)}
 function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
 async function loadPrices(){
