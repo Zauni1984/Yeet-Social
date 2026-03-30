@@ -8,3 +8,4 @@ pub mod tokens;
 pub mod users;
 pub mod boards;
 pub mod notifications;
+pub mod email_auth;
