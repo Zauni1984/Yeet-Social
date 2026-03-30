@@ -103,15 +103,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   .search{display:none}
 }
 @media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:12px}}
+
+.ticker:empty, .ticker-inner:empty { display: none !important; }
+.ticker { display: none !important; }
 </style>
 </head>
 <body>
 
 <!-- TICKER -->
-<div class="ticker" style="background:transparent;border-bottom:none;height:auto;overflow:visible;animation:none">
-      <div class="ticker-inner" style="animation:none;transform:none;white-space:nowrap;display:flex;align-items:center;gap:0">
-        <div class="yeet-widget" onclick="window.toggleCur ? toggleCur() : null" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,240,38,.08);border:1px solid rgba(200,240,38,.25);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;margin:4px 8px">
-          <div style="width:22px;height:22px;background:var(--yeet);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0">Y</div>
+
           <div style="line-height:1.2">
             <div id="yPriceVal" style="font-size:13px;font-weight:700;color:var(--yeet)">$0.00100</div>
             <div id="yPriceChg" style="font-size:11px;color:var(--muted)">+2.4% 24h</div>
