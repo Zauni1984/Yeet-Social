@@ -1255,5 +1255,257 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+
+<!-- AUTH MODAL -->
+<div id="authModal" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
+<div style="background:#111;border:1px solid var(--border);border-radius:16px;padding:28px;width:min(440px,95vw);position:relative;max-height:90vh;overflow-y:auto">
+  <button onclick="closeAuthModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">&#10005;</button>
+  <h2 id="mTitle" style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px">Welcome back</h2>
+  <p id="mSub" style="color:var(--muted);font-size:13px;margin-bottom:20px">Connect wallet or use email to continue</p>
+  <div style="display:flex;gap:6px;margin-bottom:20px">
+    <button class="atab active" id="atLogin" onclick="switchAuthTab('login')">Login</button>
+    <button class="atab" id="atReg" onclick="switchAuthTab('register')">Register</button>
+  </div>
+  <button class="wbtn" onclick="connectMetaMaskAuth()">&#129418; MetaMask</button>
+  <button class="wbtn" onclick="alert('WalletConnect coming soon')">&#128279; WalletConnect</button>
+  <div class="or-div">or use email</div>
+  <div id="mErr" class="merr"></div>
+  <div id="mOk" class="mok"></div>
+  <div id="loginForm">
+    <div class="ff"><label>Email</label><input type="email" id="lEmail" placeholder="you@example.com"></div>
+    <div class="ff"><label>Password</label><input type="password" id="lPass" placeholder="Password"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="doEmailLogin()">Login</button>
+  </div>
+  <div id="regStep1" style="display:none">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
+      <div class="sdot on"></div><div class="sdot"></div><div class="sdot"></div>
+    </div>
+    <div class="ff"><label>Username</label><input type="text" id="rUser" placeholder="satoshi_yeet" maxlength="32"></div>
+    <div class="ff"><label>Email</label><input type="email" id="rEmail" placeholder="you@example.com"></div>
+    <div class="ff"><label>Password</label><input type="password" id="rPass" placeholder="Min. 8 characters"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue &#8594;</button>
+  </div>
+  <div id="regStep2" style="display:none">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
+      <div class="sdot done"></div><div class="sdot on"></div><div class="sdot"></div>
+    </div>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Recovery Phrase</h3>
+    <div style="background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:12px;margin:10px 0;font-size:12px;color:#ffd700">
+      &#9888; <strong>Never share your seed phrase.</strong> YEET will never ask for it. Store it offline safely.
+    </div>
+    <div id="seedGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn-sm" style="flex:1" onclick="copySeedAuth()">&#128203; Copy</button>
+      <button class="btn-yeet" style="flex:1;padding:10px" onclick="regNext2()">Saved &#8594;</button>
+    </div>
+  </div>
+  <div id="regStep3" style="display:none">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
+      <div class="sdot done"></div><div class="sdot done"></div><div class="sdot on"></div>
+    </div>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Verify Phrase</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Enter the words at the requested positions.</p>
+    <div id="verifyInputs"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="completeReg()">Create Account</button>
+  </div>
+</div>
+</div>
+
+<style>
+.atab{flex:1;padding:9px;text-align:center;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.atab.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
+.wbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:#1a1a1a;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:8px;font-weight:700}
+.wbtn:hover{border-color:var(--yeet)}
+.or-div{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
+.or-div::before,.or-div::after{content:"";flex:1;height:1px;background:var(--border)}
+.merr{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:8px;padding:9px 13px;color:#f55;font-size:12px;display:none;margin-bottom:10px}
+.merr.show{display:block}
+.mok{background:rgba(38,240,117,.1);border:1px solid rgba(38,240,117,.3);border-radius:8px;padding:9px 13px;color:var(--yeet);font-size:12px;display:none;margin-bottom:10px}
+.mok.show{display:block}
+.ff{margin-bottom:14px}
+.ff label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ff input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+.ff input:focus{border-color:var(--yeet)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--border);display:inline-block}
+.sdot.on{background:var(--yeet)}.sdot.done{background:#26a05a}
+.yeet-widget{display:inline-flex;align-items:center;gap:8px;background:rgba(38,240,117,.08);border:1px solid rgba(38,240,117,.25);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer}
+.yeet-widget:hover{border-color:var(--yeet)}
+.yeet-icon{width:22px;height:22px;background:var(--yeet);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000}
+.cur-tog{display:flex;gap:2px;margin-left:4px}
+.cur-tog button{background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer}
+.cur-tog button.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
+.btn-login{background:none;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;cursor:pointer}
+.btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
+.btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
+.addr-pill{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer}
+</style>
+
+<script>
+(function() {
+  // BIP39 wordlist (subset)
+  var _BIP39 = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','balance','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brave','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz'];
+
+  var _yState = {usd:.001,eur:.00092,chg:2.4,cur:'USD',eurRate:.92};
+  var _seedWords = [];
+  var _verifyIdx = [];
+  var _regData = {};
+
+  function _genSeed(){var w=[];while(w.length<12)w.push(_BIP39[Math.floor(Math.random()*_BIP39.length)]);return w}
+  function _genWallet(words){var h=0,s=words.join(' ');for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}var a='0x';for(var j=0;j<40;j++){h=(h*1664525+1013904223)&0xffffffff;a+=(Math.abs(h)%16).toString(16)}return a}
+
+  function _showErr(m){var e=document.getElementById('mErr');if(e){e.textContent=m;e.classList.add('show')}var o=document.getElementById('mOk');if(o)o.classList.remove('show')}
+  function _showOk(m){var e=document.getElementById('mOk');if(e){e.textContent=m;e.classList.add('show')}var er=document.getElementById('mErr');if(er)er.classList.remove('show')}
+  function _clearMsg(){var e=document.getElementById('mErr'),o=document.getElementById('mOk');if(e)e.classList.remove('show');if(o)o.classList.remove('show')}
+
+  function _updatePrice(){
+    var s=_yState.cur==='USD'?'$':'&#8364;';
+    var p=_yState.cur==='USD'?_yState.usd:_yState.eur;
+    var fmt=p<.01?p.toFixed(6):p.toFixed(4);
+    var el=document.getElementById('yPriceVal');if(el)el.innerHTML=s+fmt;
+    var cel=document.getElementById('yPriceChg');
+    if(cel){cel.textContent=(_yState.chg>=0?'+':'')+_yState.chg.toFixed(2)+'% 24h';cel.style.color=_yState.chg>=0?'var(--green)':'var(--red)'}
+    var u=document.getElementById('btnUSD'),v=document.getElementById('btnEUR');
+    if(u)u.classList.toggle('active',_yState.cur==='USD');
+    if(v)v.classList.toggle('active',_yState.cur==='EUR');
+  }
+
+  async function _fetchEur(){try{var r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');if(r.ok){var d=await r.json();_yState.eurRate=d.rates.EUR||.92;_yState.eur=+(_yState.usd*_yState.eurRate).toFixed(8);_updatePrice()}}catch(e){}}
+
+  function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
+
+  function _setLoggedIn(tok,user,wallet){
+    localStorage.setItem('yeetToken',tok);
+    localStorage.setItem('yeetUser',JSON.stringify(user));
+    if(wallet)localStorage.setItem('yeetWallet',wallet);
+    _updateAuthUI(user,wallet);
+  }
+
+  function _updateAuthUI(user,wallet){
+    var aa=document.getElementById('authArea'),wa=document.getElementById('walletArea');
+    if(!aa||!wa)return;
+    aa.style.display='none';wa.style.display='flex';
+    var ap=document.getElementById('addrPill');
+    if(ap&&wallet)ap.textContent=wallet.slice(0,6)+'...'+wallet.slice(-4);
+  }
+
+  //  GLOBAL FUNCTIONS (called from HTML) 
+  window.openAuthModal = function(tab){
+    var m=document.getElementById('authModal');if(m)m.style.display='flex';
+    window.switchAuthTab(tab||'login');
+  };
+  window.closeAuthModal = function(){
+    var m=document.getElementById('authModal');if(m)m.style.display='none';
+  };
+  window.switchAuthTab = function(t){
+    var isL=t==='login';
+    document.getElementById('atLogin').classList.toggle('active',isL);
+    document.getElementById('atReg').classList.toggle('active',!isL);
+    document.getElementById('loginForm').style.display=isL?'block':'none';
+    document.getElementById('regStep1').style.display=!isL?'block':'none';
+    document.getElementById('regStep2').style.display='none';
+    document.getElementById('regStep3').style.display='none';
+    document.getElementById('mTitle').textContent=isL?'Welcome back':'Create Account';
+    document.getElementById('mSub').textContent=isL?'Sign in to YEET Social':'Join YEET - get your Web3 wallet instantly';
+    _clearMsg();
+  };
+  window.setCur = function(c){_yState.cur=c;localStorage.setItem('yeetCur',c);_updatePrice()};
+  window.toggleCur = function(){window.setCur(_yState.cur==='USD'?'EUR':'USD')};
+  window.doLogout = function(){
+    localStorage.removeItem('yeetToken');localStorage.removeItem('yeetUser');localStorage.removeItem('yeetWallet');
+    var aa=document.getElementById('authArea'),wa=document.getElementById('walletArea');
+    if(aa)aa.style.display='flex';if(wa)wa.style.display='none';
+    _toast('Disconnected');
+  };
+  window.copyAuthAddr = function(){navigator.clipboard?.writeText(localStorage.getItem('yeetWallet')||'');_toast('Address copied')};
+  window.connectMetaMaskAuth = async function(){
+    if(!window.ethereum){_showErr('MetaMask not found. Please install it.');return}
+    try{
+      var acc=await window.ethereum.request({method:'eth_requestAccounts'});
+      var addr=acc[0];
+      try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]})}
+      catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18}}]})}
+      var nr=await fetch('/api/v1/auth/nonce?address='+addr);
+      if(!nr.ok)throw new Error('Nonce failed');
+      var nd=await nr.json();
+      var msg='Sign in to YEET Social\nNonce: '+nd.nonce;
+      var sig=await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
+      var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,message:msg})});
+      if(!vr.ok){var ve=await vr.json();throw new Error(ve.message||'Auth failed')}
+      var vd=await vr.json();
+      _setLoggedIn(vd.token,vd.user,addr);window.closeAuthModal();_toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
+    }catch(e){_showErr(e.message)}
+  };
+  window.doEmailLogin = async function(){
+    var email=document.getElementById('lEmail').value.trim();
+    var pass=document.getElementById('lPass').value;
+    if(!email||!pass){_showErr('Fill all fields');return}
+    try{
+      var r=await fetch('/api/v1/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+      var d=await r.json();
+      if(!r.ok)throw new Error(d.message||d.error||'Login failed');
+      _setLoggedIn(d.token,d.user,d.wallet_address);window.closeAuthModal();_toast('Welcome back, @'+d.user.username);
+    }catch(e){_showErr(e.message)}
+  };
+  window.regNext1 = function(){
+    var u=document.getElementById('rUser').value.trim();
+    var e=document.getElementById('rEmail').value.trim();
+    var p=document.getElementById('rPass').value;
+    if(!u||!e||!p){_showErr('Fill all fields');return}
+    if(u.length<3){_showErr('Username min 3 chars');return}
+    if(p.length<8){_showErr('Password min 8 chars');return}
+    if(!/\S+@\S+\.\S+/.test(e)){_showErr('Invalid email');return}
+    _seedWords=_genSeed();
+    var wallet=_genWallet(_seedWords);
+    _regData={username:u,email:e,password:p,wallet_address:wallet};
+    var grid=document.getElementById('seedGrid');
+    grid.innerHTML=_seedWords.map(function(w,i){return '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;display:flex;gap:5px"><span style="color:var(--muted);font-size:10px;min-width:16px">'+(i+1)+'.</span><span style="color:var(--yeet);font-weight:700">'+w+'</span></div>'}).join('');
+    document.getElementById('regStep1').style.display='none';
+    document.getElementById('regStep2').style.display='block';
+    _clearMsg();
+  };
+  window.regNext2 = function(){
+    var pos=[];while(pos.length<3){var p=Math.floor(Math.random()*12);if(pos.indexOf(p)<0)pos.push(p)}
+    pos.sort(function(a,b){return a-b});_verifyIdx=pos;
+    document.getElementById('verifyInputs').innerHTML=pos.map(function(i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="font-size:12px;color:var(--muted);min-width:60px">Word #'+(i+1)+'</label><input type="text" id="vi'+i+'" placeholder="word '+(i+1)+'" autocomplete="off" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none"></div>'}).join('');
+    document.getElementById('regStep2').style.display='none';
+    document.getElementById('regStep3').style.display='block';
+    _clearMsg();
+  };
+  window.completeReg = async function(){
+    for(var k=0;k<_verifyIdx.length;k++){
+      var i=_verifyIdx[k];
+      var v=(document.getElementById('vi'+i)||{}).value||'';
+      if(v.trim().toLowerCase()!==_seedWords[i]){_showErr('Word #'+(i+1)+' is incorrect');return}
+    }
+    _showOk('Verified! Creating account...');
+    try{
+      var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
+      var d=await r.json();
+      if(!r.ok)throw new Error(d.message||d.error||'Registration failed');
+      _setLoggedIn(d.token,d.user,_regData.wallet_address);window.closeAuthModal();_toast('Welcome to YEET, @'+_regData.username);
+    }catch(e){_showErr(e.message)}
+  };
+  window.copySeedAuth = function(){navigator.clipboard?.writeText(_seedWords.join(' '));_toast('Seed phrase copied - store offline!')};
+
+  // Init on load
+  document.addEventListener('DOMContentLoaded',function(){
+    _yState.cur=localStorage.getItem('yeetCur')||'USD';
+    _updatePrice();
+    _fetchEur();
+    setInterval(_fetchEur,60000);
+    // Check saved session
+    var tok=localStorage.getItem('yeetToken');
+    var user=JSON.parse(localStorage.getItem('yeetUser')||'null');
+    var wallet=localStorage.getItem('yeetWallet');
+    if(tok&&user)_updateAuthUI(user,wallet);
+    // Close modal on backdrop click
+    var m=document.getElementById('authModal');
+    if(m)m.addEventListener('click',function(e){if(e.target===m)window.closeAuthModal()});
+    // Escape key
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')window.closeAuthModal()});
+  });
+})();
+</script>
 </body>
 </html>
