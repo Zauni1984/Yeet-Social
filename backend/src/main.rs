@@ -61,6 +61,8 @@ fn build_router(state: AppState) -> Router {
         // Auth — wallet login (web + Android + iOS)
         .route("/api/v1/auth/nonce",       post(api::auth::get_nonce))
         .route("/api/v1/auth/verify",      post(api::auth::verify_signature))
+        .route("/api/v1/auth/email-register", post(api::email_auth::register))
+        .route("/api/v1/auth/email-login",     post(api::email_auth::login))
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
         // Feed
         .route("/api/v1/feed",             get(api::feed::get_feed))
