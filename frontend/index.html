@@ -108,9 +108,23 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <body>
 
 <!-- TICKER -->
-<div class="ticker">
-  <div class="ticker-inner" id="tickerInner">
-    <div class="tick"><span class="sym">BTC</span><span id="pBTC">---</span><span id="cBTC" class="up"></span></div>
+<div class="ticker" style="background:transparent;border-bottom:none;height:auto;overflow:visible;animation:none">
+      <div class="ticker-inner" style="animation:none;transform:none;white-space:nowrap;display:flex;align-items:center;gap:0">
+        <div class="yeet-widget" onclick="window.toggleCur ? toggleCur() : null" style="display:inline-flex;align-items:center;gap:8px;background:rgba(200,240,38,.08);border:1px solid rgba(200,240,38,.25);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;margin:4px 8px">
+          <div style="width:22px;height:22px;background:var(--yeet);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0">Y</div>
+          <div style="line-height:1.2">
+            <div id="yPriceVal" style="font-size:13px;font-weight:700;color:var(--yeet)">$0.00100</div>
+            <div id="yPriceChg" style="font-size:11px;color:var(--muted)">+2.4% 24h</div>
+          </div>
+          <div style="display:flex;gap:2px;margin-left:4px" onclick="event.stopPropagation()">
+            <button id="btnUSD" onclick="window.setCur && setCur('USD')" style="background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-weight:700">USD</button>
+            <button id="btnEUR" onclick="window.setCur && setCur('EUR')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer">EUR</button>
+          </div>
+        </div>
+        <span style="color:var(--muted);font-size:11px;padding:0 8px">BSC Testnet</span>
+        <span style="color:var(--muted);font-size:10px;opacity:.5">0x0f19...97c7</span>
+      </div>
+    </div>
     <div class="tick"><span class="sym">ETH</span><span id="pETH">---</span><span id="cETH" class="up"></span></div>
     <div class="tick"><span class="sym">BNB</span><span id="pBNB">---</span><span id="cBNB" class="up"></span></div>
     <div class="tick"><span class="sym">SOL</span><span id="pSOL">---</span><span id="cSOL" class="up"></span></div>
@@ -129,7 +143,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     YEET
   </a>
   <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
-  <button class="btn-wallet" id="walletBtn" onclick="openWalletModal()">CONNECT WALLET</button>
+  <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
+      <button class="btn-login" onclick="openAuthModal('login')">Login</button>
+      <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
+    </div>
+    <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px">
+      <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
+      <button class="btn-login" onclick="doLogout()" style="font-size:11px;padding:4px 10px">Disconnect</button>
+    </div>
+    <button class="btn-wallet" id="walletBtn" style="display:none" onclick="openWalletModal()">CONNECT WALLET</button>
 </nav>
 
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
