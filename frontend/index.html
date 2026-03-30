@@ -151,7 +151,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
       <button class="btn-login" onclick="doLogout()" style="font-size:11px;padding:4px 10px">Disconnect</button>
     </div>
-    <button class="btn-wallet" id="walletBtn" style="display:none" onclick="openWalletModal()">CONNECT WALLET</button>
+    
 </nav>
 
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
@@ -438,7 +438,7 @@ function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0
 function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
 async function loadPrices(){
   try{
-    var r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,matic-network&vs_currencies=usd&include_24hr_change=true',{signal:AbortSignal.timeout(5000)});
+    var r=await fetch('https://DISABLED.invalid/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,matic-network&vs_currencies=usd&include_24hr_change=true',{signal:AbortSignal.timeout(5000)});
     var dd=await r.json();
     var map={BTC:'bitcoin',ETH:'ethereum',BNB:'binancecoin',SOL:'solana',MATIC:'matic-network'};
     var cols={BTC:'#f7931a',ETH:'#627eea',BNB:'#f0b90b',SOL:'#9945ff',MATIC:'#8247e5'};
@@ -462,7 +462,7 @@ async function loadPrices(){
     var el2=document.getElementById('prices');
     if(el2)el2.innerHTML='<p style="color:var(--muted);font-size:13px">Prices unavailable</p>';
     try{
-      var r2=await fetch('https://min-api.cryptocompare.com/data/pricemultifull?fsyms=BTC,ETH,BNB,SOL&tsyms=USD',{signal:AbortSignal.timeout(4000)});
+      var r2=await fetch('https://DISABLED.invalid/data/pricemultifull?fsyms=BTC,ETH,BNB,SOL&tsyms=USD',{signal:AbortSignal.timeout(4000)});
       var d2=await r2.json();
       var raw=(d2.RAW)||{};
       var h2='';
