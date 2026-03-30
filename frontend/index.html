@@ -103,70 +103,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   .search{display:none}
 }
 @media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:12px}}
-
-.yeet-widget{display:inline-flex;align-items:center;gap:8px;background:rgba(38,240,117,.1);border:1px solid rgba(38,240,117,.3);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer;flex-shrink:0}
-.yeet-widget:hover{border-color:var(--yeet)}
-.yeet-icon{width:22px;height:22px;background:var(--yeet);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000}
-.yeet-prc{font-size:13px;font-weight:700;color:var(--yeet);white-space:nowrap}
-.yeet-chg{font-size:11px;color:var(--muted);white-space:nowrap}
-.cur-tog{display:flex;gap:2px;margin-left:2px}
-.cur-tog button{background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer}
-.cur-tog button.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
-.btn-auth-login{background:none;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;cursor:pointer;white-space:nowrap}
-.btn-auth-login:hover{border-color:var(--yeet);color:var(--yeet)}
-.btn-auth-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer;white-space:nowrap}
-.btn-auth-reg:hover{opacity:.85}
-.addr-badge{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer;white-space:nowrap}
-.auth-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(6px)}
-.auth-modal-overlay.open{display:flex}
-.auth-mbox{background:#111;border:1px solid var(--border);border-radius:16px;padding:28px;width:min(440px,95vw);position:relative;max-height:90vh;overflow-y:auto}
-.auth-mbox h2{font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px}
-.auth-sub{color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.4}
-.auth-mclose{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0}
-.auth-tabs{display:flex;gap:6px;margin-bottom:20px}
-.auth-tab{flex:1;padding:9px;text-align:center;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.auth-tab.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
-.auth-field{margin-bottom:14px}
-.auth-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.auth-field input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
-.auth-field input:focus{border-color:var(--yeet)}
-.auth-wbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:#1a1a1a;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:8px;font-weight:700}
-.auth-wbtn:hover{border-color:var(--yeet)}
-.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
-.auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--border)}
-.auth-err{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:8px;padding:9px 13px;color:#f55;font-size:12px;display:none;margin-bottom:10px}
-.auth-err.show{display:block}
-.auth-ok{background:rgba(38,240,117,.1);border:1px solid rgba(38,240,117,.3);border-radius:8px;padding:9px 13px;color:var(--yeet);font-size:12px;display:none;margin-bottom:10px}
-.auth-ok.show{display:block}
-.seed-grid-auth{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0}
-.seed-word-auth{background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;display:flex;gap:5px}
-.seed-num-auth{color:var(--muted);font-size:10px;min-width:16px}
-.seed-txt-auth{color:var(--yeet);font-weight:700}
-.seed-warnbox{background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:12px;margin:10px 0;font-size:12px;color:#ffd700;line-height:1.5}
-.step-dots-auth{display:flex;justify-content:center;gap:5px;margin-bottom:16px}
-.step-dot-auth{width:7px;height:7px;border-radius:50%;background:var(--border)}
-.step-dot-auth.on{background:var(--yeet)}.step-dot-auth.done{background:#26a05a}
-.verify-row-auth{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.verify-row-auth label{font-size:12px;color:var(--muted);min-width:60px}
-.verify-row-auth input{flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none}
-.verify-row-auth input:focus{border-color:var(--yeet)}
-
 </style>
 </head>
 <body>
 
 <!-- TICKER -->
-<div class="yeet-widget" onclick="authToggleCur()">
-      <div class="yeet-icon">Y</div>
-      <div style="line-height:1.2">
-        <div class="yeet-prc" id="authYeetPrice">$0.00100</div>
-        <div class="yeet-chg" id="authYeetChg">+2.4% 24h</div>
-      </div>
-      <div class="cur-tog" onclick="event.stopPropagation()">
-        <button id="authBtnUSD" class="active" onclick="authSetCur('USD')">USD</button>
-        <button id="authBtnEUR" onclick="authSetCur('EUR')">EUR</button>
-      </div>
-    </div>
+<div class="ticker">
+  <div class="ticker-inner" id="tickerInner">
+    <div class="tick"><span class="sym">BTC</span><span id="pBTC">---</span><span id="cBTC" class="up"></span></div>
     <div class="tick"><span class="sym">ETH</span><span id="pETH">---</span><span id="cETH" class="up"></span></div>
     <div class="tick"><span class="sym">BNB</span><span id="pBNB">---</span><span id="cBNB" class="up"></span></div>
     <div class="tick"><span class="sym">SOL</span><span id="pSOL">---</span><span id="cSOL" class="up"></span></div>
@@ -185,15 +129,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     YEET
   </a>
   <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
-  <div id="authLoginArea" style="display:flex;align-items:center;gap:8px">
-      <button class="btn-auth-login" onclick="authOpenModal('login')">Login</button>
-      <button class="btn-auth-reg" onclick="authOpenModal('register')">Register</button>
-    </div>
-    <div id="authWalletArea" style="display:none;align-items:center;gap:8px">
-      <span class="addr-badge" id="authAddrBadge" onclick="authCopyAddr()">0x...</span>
-      <button class="btn-auth-login" onclick="authLogout()" style="font-size:11px;padding:5px 12px">Disconnect</button>
-    </div>
-    <button class="btn-wallet" id="walletBtn" onclick="openWalletModal()">CONNECT WALLET</button>
+  <button class="btn-wallet" id="walletBtn" onclick="openWalletModal()">CONNECT WALLET</button>
 </nav>
 
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
@@ -466,8 +402,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 </div>
 
 <script>
+(function() {
+
 // ====== COINGECKO PRICES ======
-const COINS = [];
+const COINS=[
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¿'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¬'},
+  {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
+  {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
+];
 function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0}):n>=1?'$'+n.toFixed(2):'$'+n.toFixed(4)}
 function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
 async function loadPrices(){
@@ -1017,245 +961,37 @@ function submitPost(){
     .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
+
+  // Expose public functions
+  window.loadProfile = loadProfile;
+  window.loadFeed = loadFeed;
+  window.openWalletModal = openWalletModal;
+  window.closeWalletModal = closeWalletModal;
+  window.showToast = showToast;
+  window.connectMetaMask = connectMetaMask;
+  window.connectTrustWallet = connectTrustWallet;
+  window.connectLedger = connectLedger;
+  window.connectWalletConnect = connectWalletConnect;
+  window.openPwaModal = openPwaModal;
+  window.closePwaModal = closePwaModal;
+  window.triggerPwaInstall = triggerPwaInstall;
+  window.closeTipModal = closeTipModal;
+  window.setTipAmt = setTipAmt;
+  window.sendTip = sendTip;
+  window.openWebboardsModal = openWebboardsModal;
+  window.closeWebboardsModal = closeWebboardsModal;
+  window.loadRSS = loadRSS;
+  window.closeNFTModal = closeNFTModal;
+  window.mintNFT = mintNFT;
+  window.closeSettingsModal = closeSettingsModal;
+  window.applySettings = applySettings;
+  window.disconnectWallet = disconnectWallet;
+  window.updateCharCount = updateCharCount;
+  window.toggleNav = toggleNav;
+  window.setTab = setTab;
+  window.submitPost = submitPost;
+})();
 </script>
-
-<!-- YEET AUTH MODAL -->
-<div class="auth-modal-overlay" id="authModalOverlay">
-<div class="auth-mbox">
-  <button class="auth-mclose" onclick="authCloseModal()">&#10005;</button>
-  <h2 id="authModalTitle">Welcome back</h2>
-  <p class="auth-sub" id="authModalSub">Connect your wallet or use email</p>
-  <div class="auth-tabs">
-    <button class="auth-tab active" id="authTabLogin" onclick="authSwitchTab('login')">Login</button>
-    <button class="auth-tab" id="authTabReg" onclick="authSwitchTab('register')">Register</button>
-  </div>
-  <button class="auth-wbtn" onclick="authConnectMM()">&#129418; MetaMask</button>
-  <button class="auth-wbtn" onclick="alert('WalletConnect coming soon')">&#128279; WalletConnect</button>
-  <div class="auth-divider">or use email</div>
-  <div class="auth-err" id="authErrMsg"></div>
-  <div class="auth-ok" id="authOkMsg"></div>
-
-  <!-- LOGIN -->
-  <div id="authLoginForm">
-    <div class="auth-field"><label>Email</label><input type="email" id="authLEmail" placeholder="you@example.com"></div>
-    <div class="auth-field"><label>Password</label><input type="password" id="authLPass" placeholder="Password"></div>
-    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="authDoLogin()">Login</button>
-  </div>
-
-  <!-- REGISTER STEP 1 -->
-  <div id="authRegStep1" style="display:none">
-    <div class="step-dots-auth"><div class="step-dot-auth on"></div><div class="step-dot-auth"></div><div class="step-dot-auth"></div></div>
-    <div class="auth-field"><label>Username</label><input type="text" id="authRUser" placeholder="satoshi_yeet" maxlength="32"></div>
-    <div class="auth-field"><label>Email</label><input type="email" id="authREmail" placeholder="you@example.com"></div>
-    <div class="auth-field"><label>Password</label><input type="password" id="authRPass" placeholder="Min. 8 characters"></div>
-    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="authRegStep1()">Continue &#8594;</button>
-  </div>
-
-  <!-- REGISTER STEP 2: Seedphrase -->
-  <div id="authRegStep2" style="display:none">
-    <div class="step-dots-auth"><div class="step-dot-auth done"></div><div class="step-dot-auth on"></div><div class="step-dot-auth"></div></div>
-    <h3 style="font-size:15px;font-weight:800;margin-bottom:6px">Your Recovery Phrase</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:4px">Write down all 12 words in order and store safely offline.</p>
-    <div class="seed-warnbox">&#9888; <strong>Never share this phrase.</strong> YEET will never ask for it. Losing it = losing your wallet.</div>
-    <div class="seed-grid-auth" id="authSeedGrid"></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn-sm" style="flex:1" onclick="authCopySeed()">&#128203; Copy</button>
-      <button class="btn-yeet" style="flex:1;padding:10px" onclick="authRegStep2()">Saved it &#8594;</button>
-    </div>
-  </div>
-
-  <!-- REGISTER STEP 3: Verify -->
-  <div id="authRegStep3" style="display:none">
-    <div class="step-dots-auth"><div class="step-dot-auth done"></div><div class="step-dot-auth done"></div><div class="step-dot-auth on"></div></div>
-    <h3 style="font-size:15px;font-weight:800;margin-bottom:6px">Verify Your Phrase</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Enter the words at the given positions.</p>
-    <div id="authVerifyContainer"></div>
-    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="authCompleteReg()">Create Account</button>
-  </div>
-</div>
-</div>
-
-<script>
-//  YEET AUTH MODULE (all vars prefixed with auth_ to avoid conflicts) 
-var AUTH = {
-  cur: localStorage.getItem('yeetCur') || 'USD',
-  eurRate: 0.92,
-  price: 0.001,
-  seedWords: [],
-  verifyIdx: [],
-  regData: {},
-  BIP39: ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','balance','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brave','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz']
-};
-
-// Price widget
-function authUpdatePrice() {
-  var s = AUTH.cur === 'USD' ? '$' : '&#8364;';
-  var p = AUTH.cur === 'USD' ? AUTH.price : +(AUTH.price * AUTH.eurRate).toFixed(8);
-  var fmt = p < 0.01 ? p.toFixed(6) : p.toFixed(4);
-  var el1 = document.getElementById('authYeetPrice');
-  var el2 = document.getElementById('authBtnUSD');
-  var el3 = document.getElementById('authBtnEUR');
-  if (el1) el1.innerHTML = s + fmt;
-  if (el2) el2.classList.toggle('active', AUTH.cur === 'USD');
-  if (el3) el3.classList.toggle('active', AUTH.cur === 'EUR');
-}
-function authSetCur(c) { AUTH.cur = c; localStorage.setItem('yeetCur', c); authUpdatePrice(); }
-function authToggleCur() { authSetCur(AUTH.cur === 'USD' ? 'EUR' : 'USD'); }
-
-// Modal
-function authOpenModal(tab) {
-  document.getElementById('authModalOverlay').classList.add('open');
-  authSwitchTab(tab || 'login');
-}
-function authCloseModal() { document.getElementById('authModalOverlay').classList.remove('open'); }
-function authSwitchTab(t) {
-  var isL = t === 'login';
-  document.getElementById('authTabLogin').classList.toggle('active', isL);
-  document.getElementById('authTabReg').classList.toggle('active', !isL);
-  document.getElementById('authLoginForm').style.display = isL ? 'block' : 'none';
-  document.getElementById('authRegStep1').style.display = !isL ? 'block' : 'none';
-  document.getElementById('authRegStep2').style.display = 'none';
-  document.getElementById('authRegStep3').style.display = 'none';
-  document.getElementById('authModalTitle').textContent = isL ? 'Welcome back' : 'Create Account';
-  document.getElementById('authModalSub').textContent = isL ? 'Sign in to YEET Social' : 'Join YEET - get your Web3 wallet instantly';
-  authClearMsg();
-}
-function authShowErr(m) { var e=document.getElementById('authErrMsg'); e.textContent=m; e.classList.add('show'); document.getElementById('authOkMsg').classList.remove('show'); }
-function authShowOk(m) { var e=document.getElementById('authOkMsg'); e.textContent=m; e.classList.add('show'); document.getElementById('authErrMsg').classList.remove('show'); }
-function authClearMsg() { document.getElementById('authErrMsg').classList.remove('show'); document.getElementById('authOkMsg').classList.remove('show'); }
-
-// Wallet auth state
-function authShowLoggedIn(username, walletAddr) {
-  var la = document.getElementById('authLoginArea');
-  var wa = document.getElementById('authWalletArea');
-  var ab = document.getElementById('authAddrBadge');
-  if (la) la.style.display = 'none';
-  if (wa) wa.style.display = 'flex';
-  if (ab && walletAddr) ab.textContent = walletAddr.slice(0,6)+'...'+walletAddr.slice(-4);
-}
-function authLogout() {
-  localStorage.removeItem('yeetToken');
-  localStorage.removeItem('yeetUser');
-  localStorage.removeItem('yeetWallet');
-  var la = document.getElementById('authLoginArea');
-  var wa = document.getElementById('authWalletArea');
-  if (la) la.style.display = 'flex';
-  if (wa) wa.style.display = 'none';
-  authShowToast('Disconnected');
-}
-function authCopyAddr() { navigator.clipboard && navigator.clipboard.writeText(localStorage.getItem('yeetWallet')||''); authShowToast('Address copied'); }
-function authSetSession(tok, user, wallet) {
-  localStorage.setItem('yeetToken', tok);
-  localStorage.setItem('yeetUser', JSON.stringify(user));
-  if (wallet) localStorage.setItem('yeetWallet', wallet);
-  authShowLoggedIn(user && user.username, wallet);
-}
-
-// MetaMask
-async function authConnectMM() {
-  if (!window.ethereum) { authShowErr('MetaMask not found'); return; }
-  try {
-    var acc = await window.ethereum.request({method:'eth_requestAccounts'});
-    var addr = acc[0];
-    try { await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}); }
-    catch(e) { if(e.code===4902) await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18}}]}); }
-    var nr = await fetch('/api/v1/auth/nonce?address='+addr);
-    if (!nr.ok) throw new Error('Nonce failed');
-    var nd = await nr.json();
-    var msg = 'Sign in to YEET Social
-Nonce: '+nd.nonce;
-    var sig = await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
-    var vr = await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,message:msg})});
-    if (!vr.ok) { var ve=await vr.json(); throw new Error(ve.message||'Auth failed'); }
-    var vd = await vr.json();
-    authSetSession(vd.token, vd.user, addr);
-    authCloseModal();
-    authShowToast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
-  } catch(e) { authShowErr(e.message); }
-}
-
-// Email login
-async function authDoLogin() {
-  var email = document.getElementById('authLEmail').value.trim();
-  var pass = document.getElementById('authLPass').value;
-  if (!email||!pass) { authShowErr('Fill all fields'); return; }
-  try {
-    var r = await fetch('/api/v1/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
-    var d = await r.json();
-    if (!r.ok) throw new Error(d.message||d.error||'Login failed');
-    authSetSession(d.token, d.user, d.wallet_address);
-    authCloseModal();
-    authShowToast('Welcome back, @'+(d.user&&d.user.username));
-  } catch(e) { authShowErr(e.message); }
-}
-
-// Register
-function authGenSeed() { var w=[]; while(w.length<12) w.push(AUTH.BIP39[Math.floor(Math.random()*AUTH.BIP39.length)]); return w; }
-function authGenWallet(words) { var h=0,s=words.join(' '); for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;} var a='0x'; for(var j=0;j<40;j++){h=(h*1664525+1013904223)&0xffffffff;a+=(Math.abs(h)%16).toString(16);} return a; }
-function authRegStep1() {
-  var u=document.getElementById('authRUser').value.trim();
-  var e=document.getElementById('authREmail').value.trim();
-  var p=document.getElementById('authRPass').value;
-  if(!u||!e||!p){authShowErr('Fill all fields');return;}
-  if(u.length<3){authShowErr('Username min 3 chars');return;}
-  if(p.length<8){authShowErr('Password min 8 chars');return;}
-  if(!/\S+@\S+\.\S+/.test(e)){authShowErr('Invalid email');return;}
-  AUTH.seedWords=authGenSeed();
-  AUTH.regData={username:u,email:e,password:p,wallet_address:authGenWallet(AUTH.seedWords)};
-  document.getElementById('authSeedGrid').innerHTML=AUTH.seedWords.map(function(w,i){return'<div class="seed-word-auth"><span class="seed-num-auth">'+(i+1)+'.</span><span class="seed-txt-auth">'+w+'</span></div>';}).join('');
-  document.getElementById('authRegStep1').style.display='none';
-  document.getElementById('authRegStep2').style.display='block';
-  authClearMsg();
-}
-function authRegStep2() {
-  var pos=[]; while(pos.length<3){var p=Math.floor(Math.random()*12);if(!pos.includes(p))pos.push(p);}
-  pos.sort(function(a,b){return a-b;}); AUTH.verifyIdx=pos;
-  document.getElementById('authVerifyContainer').innerHTML=pos.map(function(i){return'<div class="verify-row-auth"><label>Word #'+(i+1)+'</label><input type="text" id="authVI'+i+'" placeholder="word '+(i+1)+'" autocomplete="off"></div>';}).join('');
-  document.getElementById('authRegStep2').style.display='none';
-  document.getElementById('authRegStep3').style.display='block';
-  authClearMsg();
-}
-async function authCompleteReg() {
-  for(var i=0;i<AUTH.verifyIdx.length;i++){
-    var idx=AUTH.verifyIdx[i];
-    var v=(document.getElementById('authVI'+idx)||{value:''}).value.trim().toLowerCase();
-    if(v!==AUTH.seedWords[idx]){authShowErr('Word #'+(idx+1)+' incorrect');return;}
-  }
-  authShowOk('Verified! Creating account...');
-  try {
-    var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(AUTH.regData)});
-    var d=await r.json();
-    if(!r.ok)throw new Error(d.message||d.error||'Registration failed');
-    authSetSession(d.token,d.user,AUTH.regData.wallet_address);
-    authCloseModal();
-    authShowToast('Welcome to YEET, @'+AUTH.regData.username);
-  } catch(e){authShowErr(e.message);}
-}
-function authCopySeed() { navigator.clipboard && navigator.clipboard.writeText(AUTH.seedWords.join(' ')); authShowToast('Seed phrase copied - store it safely!'); }
-function authShowToast(msg) {
-  var t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:999999;font-family:inherit';
-  t.textContent=msg; document.body.appendChild(t); setTimeout(function(){t.remove();},3000);
-}
-
-// Init
-document.addEventListener('DOMContentLoaded', function() {
-  authUpdatePrice();
-  // EUR rate
-  fetch('https://api.exchangerate-api.com/v4/latest/USD').then(function(r){return r.json();}).then(function(d){AUTH.eurRate=d.rates.EUR||0.92;authUpdatePrice();}).catch(function(){});
-  setInterval(function(){ fetch('https://api.exchangerate-api.com/v4/latest/USD').then(function(r){return r.json();}).then(function(d){AUTH.eurRate=d.rates.EUR||0.92;authUpdatePrice();}).catch(function(){}); }, 60000);
-  // Check existing session
-  var tok=localStorage.getItem('yeetToken');
-  var usr=JSON.parse(localStorage.getItem('yeetUser')||'null');
-  var wal=localStorage.getItem('yeetWallet');
-  if(tok&&usr) authShowLoggedIn(usr.username, wal);
-  // Close on overlay click / Escape
-  document.getElementById('authModalOverlay').addEventListener('click',function(e){if(e.target===document.getElementById('authModalOverlay'))authCloseModal();});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')authCloseModal();});
-});
-</script>
-
-
 
 <!-- AUTH MODAL -->
 <div id="authModal" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
