@@ -1069,6 +1069,8 @@ function submitPost(){
 </div>
 
 <script>
+(function(){
+
 //  YEET PRICE 
 const BIP39 = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','balance','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brave','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz'];
 let yState={usd:.001,eur:.00092,chg:2.4,cur:'USD',eurRate:.92};
@@ -2060,6 +2062,48 @@ function submitPost(){
     .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
+
+window.alert = alert;
+window.closeModal = closeModal;
+window.closeNFTModal = closeNFTModal;
+window.closePwaModal = closePwaModal;
+window.closeSettingsModal = closeSettingsModal;
+window.closeTipModal = closeTipModal;
+window.closeWalletModal = closeWalletModal;
+window.closeWebboardsModal = closeWebboardsModal;
+window.completeReg = completeReg;
+window.connectLedger = connectLedger;
+window.connectMM = connectMM;
+window.connectMetaMask = connectMetaMask;
+window.connectTrustWallet = connectTrustWallet;
+window.connectWalletConnect = connectWalletConnect;
+window.copySeed = copySeed;
+window.disconnectWallet = disconnectWallet;
+window.doEmailLogin = doEmailLogin;
+window.loadFeed = loadFeed;
+window.loadProfile = loadProfile;
+window.loadRSS = loadRSS;
+window.mintNFT = mintNFT;
+window.openPwaModal = openPwaModal;
+window.openWalletModal = openWalletModal;
+window.openWebboardsModal = openWebboardsModal;
+window.regNext1 = regNext1;
+window.regNext2 = regNext2;
+window.sendTip = sendTip;
+window.setCur = setCur;
+window.setTab = setTab;
+window.setTipAmt = setTipAmt;
+window.submitPost = submitPost;
+window.switchTab = switchTab;
+window.toggleCur = toggleCur;
+window.toggleNav = toggleNav;
+window.triggerPwaInstall = triggerPwaInstall;
+window.updatePrice = typeof updatePrice !== "undefined" ? updatePrice : function(){};
+window.openAuth = typeof openAuth !== "undefined" ? openAuth : function(){};
+window.doLogout = typeof doLogout !== "undefined" ? doLogout : function(){};
+window.copyAddr = typeof copyAddr !== "undefined" ? copyAddr : function(){};
+window.showLoggedIn = typeof showLoggedIn !== "undefined" ? showLoggedIn : function(){};
+})();
 </script>
 </body>
 </html>
