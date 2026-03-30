@@ -514,7 +514,7 @@ async function loadPrices(){
 async function loadTrendingTags(){
   try{
     // Trending aus Backend-Posts extrahieren oder statische Fallback-Tags
-    const r=await fetch('/api/v1/posts?limit=50');
+    const r=await fetch('/api/v1/feed?limit=50');
     const d=await r.json();
     const tagCounts={};
     if(d.success&&d.data){
@@ -556,7 +556,7 @@ async function loadProfile(){
 }
 async function loadFeed(){
   try{
-    const r=await fetch('/api/v1/posts');
+    const r=await fetch('/api/v1/feed');
     const d=await r.json();
     const empty=document.querySelector('.empty');
     const old=document.getElementById('feed-posts');
@@ -1012,7 +1012,7 @@ function submitPost(){
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast('Posting to /api/v1/posts...');
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
+  fetch('/api/v1/feed',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
     .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
@@ -1570,7 +1570,7 @@ async function loadPrices(){
 async function loadTrendingTags(){
   try{
     // Trending aus Backend-Posts extrahieren oder statische Fallback-Tags
-    const r=await fetch('/api/v1/posts?limit=50');
+    const r=await fetch('/api/v1/feed?limit=50');
     const d=await r.json();
     const tagCounts={};
     if(d.success&&d.data){
@@ -1612,7 +1612,7 @@ async function loadProfile(){
 }
 async function loadFeed(){
   try{
-    const r=await fetch('/api/v1/posts');
+    const r=await fetch('/api/v1/feed');
     const d=await r.json();
     const empty=document.querySelector('.empty');
     const old=document.getElementById('feed-posts');
@@ -2068,7 +2068,7 @@ function submitPost(){
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast('Posting to /api/v1/posts...');
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
+  fetch('/api/v1/feed',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
     .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
