@@ -1,4 +1,5 @@
 //! Email-based authentication handlers.
+//! Built: 2026-03-31 21:39 UTC
 //! Users can register and log in with email + password as an alternative to wallet.
 use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
