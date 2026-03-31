@@ -48,7 +48,7 @@ pub async fn register(
     let exists: Option<Uuid> = sqlx::query_scalar(
         "SELECT id FROM users WHERE email = $1"
     )
-    .bind(&req.email.to_lowercase())
+    .bind(req.email.to_lowercase())
     .fetch_optional(state.db.pool())
     .await
     .map_err(AppError::Database)?;
@@ -79,11 +79,11 @@ pub async fn register(
          ON CONFLICT (email) DO NOTHING
          RETURNING id"
     )
-    .bind(&req.email.to_lowercase())
+    .bind(req.email.to_lowercase())
     .bind(&hash)
     .bind(&salt)
     .bind(&username)
-    .bind(&req.display_name.unwrap_or_else(|| username.clone()))
+    .bind(req.display_name.unwrap_or_else(|| username.clone()))
     .fetch_one(state.db.pool())
     .await
     .map_err(AppError::Database)?;
@@ -111,7 +111,7 @@ pub async fn login(
     let row = sqlx::query_as::<_, (Uuid, String, String)>(
         "SELECT id, password_hash, password_salt FROM users WHERE email = $1"
     )
-    .bind(&req.email.to_lowercase())
+    .bind(req.email.to_lowercase())
     .fetch_optional(state.db.pool())
     .await
     .map_err(AppError::Database)?;
