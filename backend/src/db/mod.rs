@@ -10,10 +10,9 @@ impl Database {
     pub async fn connect(url: &str) -> Result<Self> {
         let pool = PgPoolOptions::new()
             .max_connections(20)
-            .min_connections(2)
-            .acquire_timeout(Duration::from_secs(10))
-            .connect(url)
-            .await
+            .min_connections(0)
+            .acquire_timeout(Duration::from_secs(30))
+            .connect_lazy(url)
             .context("Failed to connect to PostgreSQL")?;
         Ok(Self { pool })
     }
