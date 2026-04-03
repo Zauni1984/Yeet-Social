@@ -57,28 +57,10 @@ services:
     container_name: yeet-nginx
     restart: unless-stopped
     volumes:
-      - nginx_html:/usr/share/nginx/html:ro
-      - nginx_conf:/etc/nginx:ro
+      - /root/yeet-html:/usr/share/nginx/html:ro
+      - /root/yeet-nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "80:80"
-    networks: [yeet-net]
-    depends_on:
-      - nginx-init
-
-  nginx-init:
-    image: alpine:latest
-    container_name: yeet-nginx-init
-    restart: "no"
-    volumes:
-      - nginx_html:/html
-      - nginx_conf:/conf
-    command: >
-      sh -c "
-        wget -qO /html/index.html https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html &&
-        mkdir -p /conf &&
-        wget -qO /conf/nginx.conf https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf &&
-        echo done
-      "
     networks: [yeet-net]
 
 networks:
@@ -88,5 +70,3 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  nginx_html:
-  nginx_conf:
