@@ -60,10 +60,15 @@ pub async fn create_post(
     if req.content.trim().is_empty() || req.content.len() > 280 {
         return Err(AppError::Validation("Post content must be 1-280 chars".into()));
     }
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address)
-        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+    // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
 
     let expires_at = Utc::now() + ChronoDuration::hours(24);
     let media_arr: Vec<String> = req.media_url.into_iter().collect();
@@ -100,10 +105,15 @@ pub async fn delete_post(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address)
-        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+    // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
 
     let result = sqlx::query(
         "UPDATE posts SET deleted_at = NOW() WHERE id = $1 AND author_id = $2 AND is_nft = false AND deleted_at IS NULL"
@@ -122,10 +132,15 @@ pub async fn like_post(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address)
-        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+    // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
 
     let inserted = sqlx::query(
         "INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING"
@@ -145,10 +160,15 @@ pub async fn reshare_post(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address)
-        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+    // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
 
     let new_expiry = Utc::now() + ChronoDuration::hours(24);
     sqlx::query(
@@ -182,10 +202,15 @@ pub async fn add_comment(
     if req.content.trim().is_empty() || req.content.len() > 280 {
         return Err(AppError::Validation("Comment must be 1-280 chars".into()));
     }
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address)
-        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+    // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
 
     let comment_id: Uuid = sqlx::query_scalar(
         "INSERT INTO comments (post_id, author_id, content) VALUES ($1, $2, $3) RETURNING id"
