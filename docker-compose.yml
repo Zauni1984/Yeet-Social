@@ -56,15 +56,29 @@ services:
     image: nginx:alpine
     container_name: yeet-nginx
     restart: unless-stopped
-    entrypoint: >
-      sh -c "
-        apk add --no-cache curl &&
-        curl -sL https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf -o /etc/nginx/nginx.conf &&
-        curl -sL https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html -o /usr/share/nginx/html/index.html &&
-        nginx -g 'daemon off;'
-      "
+    volumes:
+      - nginx_html:/usr/share/nginx/html:ro
+      - nginx_conf:/etc/nginx:ro
     ports:
       - "80:80"
+    networks: [yeet-net]
+    depends_on:
+      - nginx-init
+
+  nginx-init:
+    image: alpine:latest
+    container_name: yeet-nginx-init
+    restart: "no"
+    volumes:
+      - nginx_html:/html
+      - nginx_conf:/conf
+    command: >
+      sh -c "
+        wget -qO /html/index.html https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html &&
+        mkdir -p /conf &&
+        wget -qO /conf/nginx.conf https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf &&
+        echo done
+      "
     networks: [yeet-net]
 
 networks:
@@ -74,3 +88,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  nginx_html:
+  nginx_conf:
