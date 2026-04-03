@@ -1,469 +1,1263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YEET -- Web3 Social</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0a0a">
+<title>YEET &mdash; Web3 Social</title>
 <style>
-:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--border:#2a2a3a;--accent:#00ff88;--accent2:#7c3aed;--text:#e8e8f0;--text2:#888899;--red:#ff4466;--gold:#ffd700;--card:#16161f}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Space Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;gap:12px;flex-wrap:wrap}
-.logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--accent);letter-spacing:-1px;flex-shrink:0}
-.logo span{color:var(--text2);font-weight:400}
-.price-widget{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px}
-.price-icon{width:22px;height:22px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;flex-shrink:0}
-.price-val{font-size:13px;font-weight:700;color:var(--accent);white-space:nowrap}
-.price-change{font-size:11px;color:var(--text2);white-space:nowrap}
-.curr-toggle{display:flex;gap:2px}
-.curr-btn{background:none;border:1px solid var(--border);color:var(--text2);font-family:'Space Mono',monospace;font-size:10px;padding:2px 7px;border-radius:4px;cursor:pointer;transition:all .15s}
-.curr-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
-.top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.btn{padding:7px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;border:none}
-.btn-outline{background:none;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-.btn-primary{background:var(--accent);color:#000}
-.btn-primary:hover{background:#00cc6a}
-.wallet-chip{font-size:11px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);padding:5px 10px;border-radius:6px;cursor:pointer;font-family:'Space Mono',monospace}
-.main{display:grid;grid-template-columns:220px 1fr 280px;gap:16px;max-width:1180px;margin:16px auto;padding:0 16px}
-@media(max-width:900px){.main{grid-template-columns:1fr}.sidebar-l,.sidebar-r{display:none}}
-.sidebar-l,.sidebar-r{display:flex;flex-direction:column;gap:12px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px}
-.card-title{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text2);transition:background .15s}
-.nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--text)}
-.compose-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;display:none}
-.compose-top{display:flex;gap:10px}
-.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:15px;font-family:'Syne',sans-serif;font-weight:800;color:#fff;flex-shrink:0}
-.compose-input{flex:1;background:none;border:none;color:var(--text);font-family:'Space Mono',monospace;font-size:14px;resize:none;outline:none;min-height:56px;line-height:1.5}
-.compose-input::placeholder{color:var(--text2)}
-.compose-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.char{font-size:12px;color:var(--text2)}
-.tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
-.tab{padding:7px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;background:none;border:1px solid var(--border);color:var(--text2);transition:all .15s}
-.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
-.post{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
-.post-hdr{display:flex;gap:10px;margin-bottom:8px}
-.post-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:13px;font-family:'Syne',sans-serif;font-weight:800;color:#fff;flex-shrink:0}
-.post-meta{flex:1}
-.post-author{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
-.post-time{font-size:11px;color:var(--text2)}
-.post-body{font-size:13px;line-height:1.6;margin-bottom:10px;word-break:break-word}
-.post-acts{display:flex;gap:14px}
-.post-act{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text2);cursor:pointer;background:none;border:none;font-family:'Space Mono',monospace;transition:color .15s}
-.post-act:hover{color:var(--accent)}
-.post-act.liked{color:var(--red)}
-.hashtag{color:var(--accent2)}
-.mention{color:var(--accent)}
-.trending-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer}
-.trending-row:last-child{border-bottom:none}
-.t-tag{font-size:13px;color:var(--accent2);font-weight:700}
-.t-cnt{font-size:11px;color:var(--text2)}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
-.overlay.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:460px;position:relative;max-height:90vh;overflow-y:auto}
-.modal h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px}
-.modal-sub{color:var(--text2);font-size:13px;margin-bottom:20px;line-height:1.5}
-.modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;line-height:1}
+:root{--yeet:#c8f026;--bg:#0a0a0a;--card:#111;--border:#222;--text:#e8e8e8;--muted:#666;--green:#26f075;--red:#ff4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
+.ticker{background:#0f0f0f;border-bottom:1px solid var(--border);height:36px;overflow:hidden;display:flex;align-items:center}
+.ticker-inner{display:flex;animation:scroll 30s linear infinite;white-space:nowrap}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
+.tick .sym{color:var(--muted)}
+.up{color:var(--green)}.dn{color:var(--red)}
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:12px}
+.logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:var(--yeet);text-decoration:none;flex-shrink:0}
+.logo svg{width:28px;height:28px}
+.search{flex:1;max-width:420px}
+.search input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none}
+.search input:focus{border-color:var(--yeet)}
+.btn-wallet{margin-left:auto;background:transparent;border:1px solid var(--yeet);color:var(--yeet);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-wallet:hover,.btn-wallet.connected{background:var(--yeet);color:#000}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px}
+.hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px}
+.layout{display:grid;grid-template-columns:220px 1fr 300px;max-width:1200px;margin:0 auto;min-height:calc(100vh - 92px)}
+.sidebar{border-right:1px solid var(--border);padding:12px 0;position:sticky;top:92px;height:calc(100vh - 92px);overflow-y:auto}
+.nav-section{padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;border-left:3px solid transparent;cursor:pointer}
+.nav-link:hover,.nav-link.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet)}
+.badge{margin-left:auto;background:var(--yeet);color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
+.main{border-right:1px solid var(--border)}
+.feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.feed-header h2{font-size:18px;font-weight:800}
+.btn-sm{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
+.btn-sm:hover{border-color:var(--yeet);color:var(--yeet)}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+.tab.active{color:var(--yeet);border-bottom-color:var(--yeet)}
+.composer{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px}
+.avatar{width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)}
+.composer-body{flex:1}
+.composer-body textarea{width:100%;background:none;border:none;color:var(--text);font-size:15px;resize:none;outline:none;min-height:60px;font-family:inherit}
+.composer-footer{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
+.icon-btn:hover{color:var(--yeet)}
+.btn-yeet{margin-left:auto;background:var(--yeet);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer}
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty .icon{font-size:48px;margin-bottom:16px}
+.sidebar-right{padding:16px}
+.widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.widget-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.coin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.coin-row:last-child{border-bottom:none}
+.coin-left{display:flex;align-items:center;gap:8px}
+.coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px}
+.coin-name{font-size:14px;font-weight:700}
+.coin-sym{font-size:11px;color:var(--muted)}
+.coin-price{font-size:14px;font-weight:700;text-align:right}
+.coin-chg{font-size:12px;text-align:right}
+.tag{display:inline-flex;padding:5px 10px;background:#1a1a1a;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;border:1px solid var(--border)}
+.tag:hover{border-color:var(--yeet);color:var(--yeet)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99}
+.overlay.on{display:block}
+/* WALLET MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#111;border:1px solid var(--border);border-radius:16px;padding:24px;width:360px;max-width:90vw}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.wallet-option{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;cursor:pointer;margin-bottom:10px;transition:.2s;background:#161616}
+.wallet-option:hover{border-color:var(--yeet);background:#1a1a0a}
+.wallet-option img{width:36px;height:36px;border-radius:8px}
+.wallet-option .wname{font-size:15px;font-weight:700}
+.wallet-option .wdesc{font-size:12px;color:var(--muted)}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
 .modal-close:hover{color:var(--text)}
-.auth-tabs{display:flex;gap:6px;margin-bottom:20px}
-.auth-tab{flex:1;padding:9px;text-align:center;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text2);font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-.auth-tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
-.fg{margin-bottom:14px}
-.fg label{display:block;font-size:11px;color:var(--text2);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.fg input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color .15s}
-.fg input:focus{border-color:var(--accent)}
-.fg input::placeholder{color:var(--text2)}
-.divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--text2);font-size:12px}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.w-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-family:'Space Mono',monospace;font-size:13px;cursor:pointer;transition:all .15s;margin-bottom:8px;font-weight:700}
-.w-btn:hover{border-color:var(--accent);color:var(--accent)}
-.w-ico{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
-.err{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.3);border-radius:8px;padding:9px 12px;color:var(--red);font-size:12px;margin-bottom:10px;display:none}
-.err.show{display:block}
-.ok-msg{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);border-radius:8px;padding:9px 12px;color:var(--accent);font-size:12px;margin-bottom:10px;display:none}
-.ok-msg.show{display:block}
-.seed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}
-.seed-word{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:12px;display:flex;align-items:center;gap:5px}
-.seed-n{color:var(--text2);font-size:10px;min-width:16px}
-.seed-t{color:var(--accent);font-weight:700}
-.warn-box{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:12px;margin:12px 0;font-size:12px;color:var(--gold);line-height:1.5}
-.steps{display:flex;justify-content:center;gap:5px;margin-bottom:16px}
-.step-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:background .2s}
-.step-dot.active{background:var(--accent)}
-.step-dot.done{background:var(--accent2)}
-.verify-rows{display:flex;flex-direction:column;gap:9px;margin:12px 0}
-.v-row{display:flex;align-items:center;gap:10px}
-.v-row label{font-size:12px;color:var(--text2);min-width:64px}
-.v-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color .15s}
-.v-row input:focus{border-color:var(--accent)}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.empty{text-align:center;padding:48px 20px;color:var(--text2);font-size:14px}
-.empty .ei{font-size:36px;margin-bottom:10px}
-.load{text-align:center;padding:36px;color:var(--text2)}
-.user-card{display:none}
-.token-info{display:grid;grid-template-columns:1fr 1fr;gap:7px;font-size:12px;margin-top:10px}
-.token-cell{background:var(--bg3);border-radius:7px;padding:7px;text-align:center}
-.token-cell-label{color:var(--text2);font-size:10px;margin-bottom:2px}
-.token-cell-val{font-weight:700}
+.modal-wrap{position:relative}
+/* PWA MODAL */
+.pwa-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
+.pwa-modal.on{display:flex}
+.pwa-box{background:#111;border:1px solid var(--border);border-radius:16px;padding:28px;width:360px;max-width:90vw;text-align:center}
+.pwa-box .icon{font-size:48px;margin-bottom:12px}
+.pwa-box h3{font-size:20px;font-weight:800;margin-bottom:8px}
+.pwa-box p{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.pwa-steps{text-align:left;margin-bottom:20px}
+.pwa-steps li{font-size:13px;margin-bottom:8px;padding-left:4px;color:var(--muted)}
+.pwa-steps li strong{color:var(--text)}
+.btn-primary{background:var(--yeet);color:#000;border:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-bottom:8px}
+.btn-secondary{background:none;color:var(--muted);border:1px solid var(--border);padding:10px 24px;border-radius:12px;font-size:14px;cursor:pointer;width:100%}
+.pwa-banner{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:150}
+.pwa-banner.hide{display:none}
+@media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px}}
+@media(max-width:900px){.sidebar-right{display:none}.layout{grid-template-columns:180px 1fr}}
+@media(max-width:700px){
+  .sidebar{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:64px;overflow-y:auto}
+  .sidebar.open{display:block}
+  .layout{grid-template-columns:1fr}
+  .hamburger{display:flex}
+  .search{display:none}
+}
+@media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:12px}}
+
+/* ticker removed */
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="logo">YEET<span>.social</span></div>
-  <div class="price-widget">
-    <div class="price-icon">Y</div>
-    <div>
-      <div class="price-val" id="pv">$0.001000</div>
-      <div class="price-change" id="pc">+2.4% 24h</div>
-    </div>
-    <div class="curr-toggle">
-      <button class="curr-btn active" id="busd" onclick="setCurr('USD')">USD</button>
-      <button class="curr-btn" id="beur" onclick="setCurr('EUR')">EUR</button>
-    </div>
-  </div>
-  <div class="top-actions" id="topActs">
-    <button class="btn btn-outline" onclick="openAuth('login')">Login</button>
-    <button class="btn btn-primary" onclick="openAuth('register')">Register</button>
-  </div>
-</div>
 
-<div class="main">
-  <div class="sidebar-l">
-    <div class="card">
-      <div class="nav-item active" onclick="goTab('feed',this)">&#127760; Feed</div>
-      <div class="nav-item" onclick="goTab('nft',this)">&#128444; NFT</div>
-      <div class="nav-item" onclick="goTab('following',this)">&#128101; Following</div>
-      <div class="nav-item" onclick="goTab('boards',this)">&#128240; Boards</div>
+<!-- TICKER REMOVED -->
+
+<!-- NAV -->
+<nav>
+  <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="logo" href="/">
+    <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
+    YEET
+  </a>
+  <div id="yeetPriceWidget" style="display:flex;align-items:center;gap:6px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:20px;padding:4px 12px;margin-left:8px;cursor:default">
+    <div style="line-height:1.2">
+      <div id="yPriceVal" style="font-size:12px;font-weight:700;color:#c8f026">$0.00100</div>
+      <div id="yPriceChg" style="font-size:10px;color:#888">+2.4% 24h</div>
     </div>
-    <div class="card user-card" id="userCard">
-      <div class="card-title">My Account</div>
-      <div style="text-align:center;margin-bottom:10px">
-        <div class="avatar" style="margin:0 auto 7px;width:50px;height:50px;font-size:18px" id="sideAv">?</div>
-        <div style="font-family:'Syne',sans-serif;font-weight:700" id="sideUser">--</div>
-        <div style="font-size:11px;color:var(--text2)" id="sideAddr">--</div>
-      </div>
-      <button class="btn btn-outline" style="width:100%;font-size:11px;margin-bottom:6px" onclick="document.getElementById('settModal').classList.add('open')">&#9881; Settings</button>
-      <button class="btn" style="width:100%;font-size:11px;background:rgba(255,68,102,.15);color:var(--red);border:1px solid rgba(255,68,102,.3)" onclick="doLogout()">Disconnect</button>
+    <div style="display:flex;gap:2px;margin-left:2px" onclick="event.stopPropagation()">
+      <button id="btnUSD" onclick="window.setCur && setCur('USD')" style="background:#c8f026;border:none;color:#000;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-weight:700">USD</button>
+      <button id="btnEUR" onclick="window.setCur && setCur('EUR')" style="background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer">EUR</button>
     </div>
   </div>
+  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
+  <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
+      <button class="btn-login" onclick="openAuthModal('login')">Login</button>
+      <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
+    </div>
+    <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px">
+      <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
+      <button class="btn-login" onclick="doLogout()" style="font-size:11px;padding:4px 10px">Disconnect</button>
+    </div>
+    
+</nav>
 
-  <div>
-    <div class="compose-box" id="compBox">
-      <div class="compose-top">
-        <div class="avatar" id="compAv">?</div>
-        <textarea class="compose-input" id="postTxt" placeholder="What's YEETing today? #web3" maxlength="280" oninput="updChar()"></textarea>
-      </div>
-      <div class="compose-foot">
-        <span class="char" id="charCnt">0/280</span>
-        <button class="btn btn-primary" onclick="doPost()">YEET it</button>
-      </div>
-    </div>
-    <div class="tabs">
-      <button class="tab active" onclick="goTab('feed',this)">Global</button>
-      <button class="tab" onclick="goTab('following',this)">Following</button>
-      <button class="tab" onclick="goTab('nft',this)">NFT</button>
-      <button class="tab" onclick="goTab('boards',this)">Boards</button>
-    </div>
-    <div id="feedArea"><div class="load"><div class="spinner"></div><br><br>Loading...</div></div>
-  </div>
+<div class="overlay" id="overlay" onclick="toggleNav()"></div>
 
-  <div class="sidebar-r">
-    <div class="card">
-      <div class="card-title">YEET Token</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#000">Y</div>
-        <div>
-          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px" id="pvSide">$0.001000</div>
-          <div style="font-size:11px;color:var(--text2)">BSC Testnet</div>
-        </div>
+<!-- WALLET MODAL -->
+<div class="modal-bg" id="walletModal" onclick="closeWalletModal(event)">
+  <div class="modal modal-wrap">
+    <button class="modal-close" onclick="closeWalletModal()">&#10005;</button>
+    <h3>&#128279; Connect Wallet</h3>
+    <p>Choose your wallet to sign in to YEET Social</p>
+
+    <div class="wallet-option" onclick="connectMetaMask()">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" onerror="this.style.background='#e2761b';this.src=''" alt="MetaMask">
+      <div>
+        <div class="wname">MetaMask</div>
+        <div class="wdesc">Browser extension &amp; mobile wallet</div>
       </div>
-      <div class="token-info">
-        <div class="token-cell"><div class="token-cell-label">24h Change</div><div class="token-cell-val" id="chg24" style="color:var(--accent)">+2.4%</div></div>
-        <div class="token-cell"><div class="token-cell-label">Network</div><div class="token-cell-val" style="color:var(--gold)">Testnet</div></div>
-      </div>
-      <div style="margin-top:9px;padding:7px;background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.15);border-radius:7px;font-size:11px;color:var(--text2);text-align:center">Contract: <span style="color:var(--accent);cursor:pointer" onclick="copyCA()">0x0f19...97c7</span></div>
     </div>
-    <div class="card">
-      <div class="card-title">Trending</div>
-      <div class="trending-row"><span class="t-tag">#YEET</span><span class="t-cnt">1.2k posts</span></div>
-      <div class="trending-row"><span class="t-tag">#BNBChain</span><span class="t-cnt">890 posts</span></div>
-      <div class="trending-row"><span class="t-tag">#Web3Social</span><span class="t-cnt">654 posts</span></div>
-      <div class="trending-row"><span class="t-tag">#NFT</span><span class="t-cnt">432 posts</span></div>
+
+    <div class="wallet-option" onclick="connectTrustWallet()">
+      <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" onerror="this.style.background='#3375BB';this.src=''" alt="Trust Wallet" style="border-radius:50%">
+      <div>
+        <div class="wname">Trust Wallet</div>
+        <div class="wdesc">Mobile wallet by Binance</div>
+      </div>
+    </div>
+
+    <div class="wallet-option" onclick="connectLedger()">
+      <img src="https://cdn.worldvectorlogo.com/logos/ledger-2.svg" onerror="this.style.background='#142533';this.src=''" alt="Ledger" style="padding:4px;background:#142533;border-radius:8px">
+      <div>
+        <div class="wname">Ledger</div>
+        <div class="wdesc">Hardware wallet &mdash; connect via USB/Bluetooth</div>
+      </div>
+    </div>
+
+    <div class="wallet-option" onclick="connectWalletConnect()">
+      <img src="https://walletconnect.com/static/favicon.png" onerror="this.src=''" alt="WalletConnect" style="background:#3b99fc;border-radius:8px;padding:4px">
+      <div>
+        <div class="wname">WalletConnect</div>
+        <div class="wdesc">Scan QR code with any compatible wallet</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- AUTH MODAL -->
-<div class="overlay" id="authModal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeM('authModal')">&#10005;</button>
-    <h2 id="authTitle">Welcome back</h2>
-    <p class="modal-sub" id="authSub">Connect wallet or use email</p>
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tLogin" onclick="switchTab('login')">Login</button>
-      <button class="auth-tab" id="tReg" onclick="switchTab('register')">Register</button>
-    </div>
-    <button class="w-btn" onclick="connectMM()"><div class="w-ico" style="background:#f6851b">&#129418;</div>MetaMask</button>
-    <button class="w-btn" onclick="showErr('WalletConnect coming soon')"><div class="w-ico" style="background:#3b99fc">&#128279;</div>WalletConnect</button>
-    <div class="divider">or use email</div>
-    <div class="err" id="authErr"></div>
-    <div class="ok-msg" id="authOk"></div>
-    <!-- login -->
-    <div id="fLogin">
-      <div class="fg"><label>Email</label><input type="email" id="lEmail" placeholder="you@example.com"></div>
-      <div class="fg"><label>Password</label><input type="password" id="lPw" placeholder="Password"></div>
-      <button class="btn btn-primary" style="width:100%;padding:11px;font-size:13px" onclick="doLogin()">Login with Email</button>
-    </div>
-    <!-- register steps -->
-    <div id="fReg" style="display:none">
-      <div id="rS1">
-        <div class="steps"><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div></div>
-        <div class="fg"><label>Username</label><input type="text" id="rUser" placeholder="satoshi_yeet" maxlength="32"></div>
-        <div class="fg"><label>Email</label><input type="email" id="rEmail" placeholder="you@example.com"></div>
-        <div class="fg"><label>Password</label><input type="password" id="rPw" placeholder="Min 8 characters"></div>
-        <button class="btn btn-primary" style="width:100%;padding:11px;font-size:13px" onclick="rNext1()">Continue &#8594;</button>
+<!-- TIP MODAL -->
+<div class="modal-bg" id="tipModal" onclick="closeTipModal(event)">
+  <div class="modal modal-wrap">
+    <button class="modal-close" onclick="closeTipModal()">&#10005;</button>
+    <h3>&#9889; Tip YEET Tokens</h3>
+    <p>Send YEET tokens to support this creator</p>
+    <div id="tipTarget" style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--muted)">Select a post to tip</div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Amount (YEET)</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button onclick="setTipAmt(1)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">1</button>
+        <button onclick="setTipAmt(5)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">5</button>
+        <button onclick="setTipAmt(10)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">10</button>
+        <button onclick="setTipAmt(100)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">100</button>
       </div>
-      <div id="rS2" style="display:none">
-        <div class="steps"><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div></div>
-        <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:6px">Secret Recovery Phrase</h3>
-        <p style="color:var(--text2);font-size:12px;margin-bottom:4px">A wallet has been generated. Write down these 12 words and keep them safe.</p>
-        <div class="warn-box">&#9888; Never share your seed phrase. YEET will never ask for it. Losing it means losing wallet access forever.</div>
-        <div class="seed-grid" id="seedGrid"></div>
-        <div style="display:flex;gap:7px;margin-top:7px">
-          <button class="btn btn-outline" style="flex:1;font-size:11px" onclick="copySeed()">Copy phrase</button>
-          <button class="btn btn-primary" style="flex:1;font-size:11px" onclick="rNext2()">Saved it &#8594;</button>
-        </div>
+      <input id="tipAmount" type="number" value="5" min="0.1" step="0.1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:16px;outline:none">
+    </div>
+    <button onclick="sendTip()" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer">&#9889; Send Tip</button>
+  </div>
+</div>
+
+<!-- WEBBOARDS MODAL -->
+<div class="modal-bg" id="webboardsModal" onclick="closeWebboardsModal(event)">
+  <div class="modal modal-wrap" style="max-width:500px;width:95vw">
+    <button class="modal-close" onclick="closeWebboardsModal()">&#10005;</button>
+    <h3>&#128250; Webboards</h3>
+    <p>RSS feeds from your favorite Web3 communities</p>
+    <div id="wbList" style="margin-bottom:16px">
+      <div class="wallet-option" onclick="loadRSS('https://cointelegraph.com/rss','CoinTelegraph')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#f7931a22;display:flex;align-items:center;justify-content:center;font-size:20px">&#128302;</div>
+        <div><div class="wname">CoinTelegraph</div><div class="wdesc">Crypto news</div></div>
       </div>
-      <div id="rS3" style="display:none">
-        <div class="steps"><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div></div>
-        <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:6px">Verify Recovery Phrase</h3>
-        <p style="color:var(--text2);font-size:12px;margin-bottom:4px">Enter the words at these positions to confirm you saved your phrase.</p>
-        <div class="verify-rows" id="verifyRows"></div>
-        <button class="btn btn-primary" style="width:100%;padding:11px;font-size:13px;margin-top:7px" onclick="doRegister()">Create Account</button>
+      <div class="wallet-option" onclick="loadRSS('https://decrypt.co/feed','Decrypt')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#00d5ff22;display:flex;align-items:center;justify-content:center;font-size:20px">&#128240;</div>
+        <div><div class="wname">Decrypt</div><div class="wdesc">Web3 news &amp; analysis</div></div>
+      </div>
+      <div class="wallet-option" onclick="loadRSS('https://thedefiant.io/feed','The Defiant')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#c8f02622;display:flex;align-items:center;justify-content:center;font-size:20px">&#128176;</div>
+        <div><div class="wname">The Defiant</div><div class="wdesc">DeFi news</div></div>
+      </div>
+      <div class="wallet-option" onclick="loadRSS('https://nftnow.com/feed','NFT Now')">
+        <div style="width:36px;height:36px;border-radius:8px;background:#8247e522;display:flex;align-items:center;justify-content:center;font-size:20px">&#127760;</div>
+        <div><div class="wname">NFT Now</div><div class="wdesc">NFT news &amp; drops</div></div>
       </div>
     </div>
+    <div id="wbFeed" style="max-height:300px;overflow-y:auto;display:none">
+      <div id="wbFeedTitle" style="font-weight:800;font-size:15px;margin-bottom:12px;color:var(--yeet)"></div>
+      <div id="wbFeedItems"></div>
+    </div>
+  </div>
+</div>
+
+<!-- NFT MINT MODAL -->
+<div class="modal-bg" id="nftModal" onclick="closeNFTModal(event)">
+  <div class="modal modal-wrap" style="max-width:480px">
+    <button class="modal-close" onclick="closeNFTModal()">&#10005;</button>
+    <h3>&#127987;&#65039; Mint NFT Post</h3>
+    <p>Turn your Yeet into an NFT on BNB Smart Chain</p>
+    <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Post Content</div>
+      <div id="nftPostPreview" style="font-size:14px;line-height:1.5;color:var(--text)">No post selected</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">NFT Name</label>
+      <input id="nftName" type="text" placeholder="My YEET NFT #1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Description</label>
+      <input id="nftDesc" type="text" placeholder="A unique moment on YEET Social" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
+    </div>
+    <div style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+      Contract: <span style="color:var(--yeet)">0x8F518F1B...060F51</span> (BSC Testnet)<br>
+      Mint fee: ~0.001 tBNB gas
+    </div>
+    <button onclick="mintNFT()" id="mintBtn" style="width:100%;background:linear-gradient(135deg,#c8f026,#8bc200);color:#000;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer">
+      &#127987;&#65039; Mint NFT
+    </button>
+    <div id="nftStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:20px"></div>
   </div>
 </div>
 
 <!-- SETTINGS MODAL -->
-<div class="overlay" id="settModal">
-  <div class="modal" style="max-width:380px">
-    <button class="modal-close" onclick="closeM('settModal')">&#10005;</button>
-    <h2 style="margin-bottom:18px">Settings</h2>
-    <div style="border-bottom:1px solid var(--border);padding:10px 0;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:13px;font-weight:700">Network</div><div style="font-size:11px;color:var(--text2)">BSC Testnet (Chain 97)</div></div>
-      <span style="font-size:11px;color:var(--gold);background:rgba(255,215,0,.1);padding:3px 8px;border-radius:4px">Testnet</span>
-    </div>
-    <div style="padding:10px 0;display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:13px;font-weight:700">My Wallet</div><div style="font-size:11px;color:var(--text2)" id="settAddr">Not connected</div></div>
-      <button class="btn btn-outline" style="font-size:11px" onclick="copyWA()">Copy</button>
+<div class="modal-bg" id="settingsModal" onclick="closeSettingsModal(event)">
+  <div class="modal modal-wrap" style="max-width:420px">
+    <button class="modal-close" onclick="closeSettingsModal()">&#10005;</button>
+    <h3>&#9881;&#65039; Settings</h3>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Display</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:14px">Dark Mode</span>
+          <input type="checkbox" id="settingDark" checked onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:14px">Compact Feed</span>
+          <input type="checkbox" id="settingCompact" onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
+        </div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Content</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:14px">18+ Content</span>
+          <input type="checkbox" id="setting18" onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:14px">Auto-load Feed</span>
+          <input type="checkbox" id="settingAutoload" checked onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
+        </div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Network</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:14px">Network</span>
+          <select id="settingNetwork" onchange="applySettings()" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:13px">
+            <option value="97">BSC Testnet</option>
+            <option value="56">BSC Mainnet</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Account</div>
+        <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">Disconnect Wallet</button>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- PWA INSTALL MODAL -->
+<div class="pwa-modal" id="pwaModal" onclick="closePwaModal(event)">
+  <div class="pwa-box">
+    <div class="icon">&#9889;</div>
+    <h3>Install YEET App</h3>
+    <p>Get the full YEET Social experience on your device &mdash; no App Store needed.</p>
+    <ul class="pwa-steps">
+      <li><strong>Android:</strong> Tap the browser menu &rarr; "Add to Home Screen"</li>
+      <li><strong>iPhone/iPad:</strong> Tap Share &#128279; &rarr; "Add to Home Screen"</li>
+      <li><strong>Desktop:</strong> Click the install icon in the address bar</li>
+    </ul>
+    <button class="btn-primary" id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none">&#128640; Install Now</button>
+    <button class="btn-secondary" onclick="closePwaModal()">Close</button>
+  </div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-banner hide" id="pwaBanner">
+  <div style="font-size:28px">&#9889;</div>
+  <div style="flex:1">
+    <div style="font-size:14px;font-weight:700">Install YEET App</div>
+    <div style="font-size:12px;color:var(--muted)">Add to Home Screen &mdash; no App Store needed</div>
+  </div>
+  <button onclick="document.getElementById('pwaBanner').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">Later</button>
+  <button onclick="triggerPwaInstall()" style="background:var(--yeet);color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <a class="nav-link active" href="#">&#127968; Global Feed</a>
+    <a class="nav-link" href="#">&#128100; Following</a>
+    <a class="nav-link" href="#">&#11088; Trending <span class="badge">HOT</span></a>
+    <div class="nav-section">Discover</div>
+    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab')[2].classList.add('active');loadFeedFiltered('nft')">&#128247; NFT Posts</a>
+    <a class="nav-link" href="#">&#9889; Token Tips</a>
+    <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
+    <a class="nav-link" href="#">&#128286; 18+ Content</a>
+    <div class="nav-section">Account</div>
+    <a class="nav-link" href="#" onclick="loadProfile();showToast(connectedAddress?'Profile loaded':'Connect wallet first')">&#128100; Profile</a>
+    <a class="nav-link" href="#">&#9881; Settings</a>
+  </aside>
+
+  <main class="main">
+    <div class="feed-header">
+      <h2>Global Feed</h2>
+      <button class="btn-sm" onclick="loadFeed()">&#8635; REFRESH</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="setTab(this)">FOR YOU</div>
+      <div class="tab" onclick="setTab(this)">FOLLOWING</div>
+      <div class="tab" onclick="setTab(this)">NFT &#10024;</div>
+      <div class="tab" onclick="setTab(this)">18+ &#128293;</div>
+    </div>
+    <div class="composer">
+      <div class="avatar">&#128100;</div>
+      <div class="composer-body">
+        <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
+        <div class="composer-footer">
+          <button class="icon-btn" title="Image">&#128248;</button>
+          <button class="icon-btn" title="NFT">&#128142;</button>
+          <button class="icon-btn" title="Pay-per-view">&#128274;</button>
+          <button class="icon-btn" title="Tip">&#9889;</button>
+          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/280</div><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
+        </div>
+      </div>
+    </div>
+    <div class="empty">
+      <div class="icon">&#128293;</div>
+      <strong>No posts yet. Be the first to Yeet!</strong>
+      <p style="margin-top:8px;font-size:13px">Connect your wallet to start posting</p>
+    </div>
+  </main>
+
+  <aside class="sidebar-right">
+    <div class="widget">
+      <div class="widget-title">&#128200; Live Prices</div>
+      <div id="prices"><p style="color:var(--muted);font-size:13px">Loading...</p></div>
+    </div>
+    <div class="widget" id="profileWidget" style="display:none">
+      <div class="widget-title">&#128100; My Profile</div>
+      <div id="profileInfo"></div>
+    </div>
+    <div class="widget">
+      <div class="widget-title">&#128293; Trending</div>
+      <div id="trendingTags">
+        <span class="tag">#YeetToken <span style="color:var(--muted);font-size:11px">1.2K</span></span>
+        <span class="tag">#BSC <span style="color:var(--muted);font-size:11px">840</span></span>
+        <span class="tag">#Web3Social <span style="color:var(--muted);font-size:11px">620</span></span>
+        <span class="tag">#NFTDrop <span style="color:var(--muted);font-size:11px">445</span></span>
+        <span class="tag">#DeFi <span style="color:var(--muted);font-size:11px">312</span></span>
+      </div>
+    </div>
+    <div class="widget">
+      <button onclick="openAuthModal('login')" style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px">&#128640; Install YEET App</button>
+    </div>
+  </aside>
+</div>
+
 <script>
-const API='/api/v1';
-let S={token:localStorage.getItem('yt'),user:JSON.parse(localStorage.getItem('yu')||'null'),wallet:localStorage.getItem('yw'),curr:localStorage.getItem('yc')||'USD',price:{usd:.001,eur:.00092,chg:2.4},tab:'feed',seeds:[],vidx:[],pend:null,eurRate:.92};
+(function() {
 
-const W=['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome'];
-
-document.addEventListener('DOMContentLoaded',()=>{
-  fetchPrice();setInterval(fetchPrice,60000);
-  if(S.token&&S.user)showIn();else showOut();
-  loadFeed();
-  document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'))});
-});
-
-async function fetchPrice(){
+// ====== COINGECKO PRICES ======
+const COINS=[
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'â¿'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'Î'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'â¬'},
+  {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
+  {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
+];
+function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0}):n>=1?'$'+n.toFixed(2):'$'+n.toFixed(4)}
+function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
+async function loadPrices(){
   try{
-    S.price.chg=+(S.price.chg+(Math.random()-.48)*.5).toFixed(2);
-    try{const r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');if(r.ok){const d=await r.json();S.eurRate=d.rates.EUR||.92;}}catch(e){}
-    S.price.eur=+(S.price.usd*S.eurRate).toFixed(8);
-    updPrice();
+    var r=await fetch('https://DISABLED.invalid/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,matic-network&vs_currencies=usd&include_24hr_change=true',{signal:AbortSignal.timeout(5000)});
+    var dd=await r.json();
+    var map={BTC:'bitcoin',ETH:'ethereum',BNB:'binancecoin',SOL:'solana',MATIC:'matic-network'};
+    var cols={BTC:'#f7931a',ETH:'#627eea',BNB:'#f0b90b',SOL:'#9945ff',MATIC:'#8247e5'};
+    var h='';
+    Object.keys(map).forEach(function(sym){
+      var coin=dd[map[sym]];if(!coin)return;
+      var usd=coin.usd,chg=coin.usd_24h_change||0;
+      var cls=chg>=0?'up':'down';
+      var sign=chg>=0?'+':'';
+      var price=usd>=1000?'$'+usd.toLocaleString('en',{maximumFractionDigits:0}):'$'+usd.toFixed(2);
+      h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:'+cols[sym]+'22;color:'+cols[sym]+'">'+sym[0]+'</div><div><div class="coin-name">'+sym+'</div></div></div><div><div class="coin-price">'+price+'</div><div class="coin-chg '+cls+'">'+sign+chg.toFixed(2)+'%</div></div></div>';
+      var pe=document.getElementById('p'+sym),ce=document.getElementById('c'+sym);
+      if(pe)pe.textContent=price;
+      if(ce){ce.textContent=sign+chg.toFixed(2)+'%';ce.className=cls;}
+    });
+    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">Y</div><div><div class="coin-name">YEET</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
+    var el=document.getElementById('prices');if(el)el.innerHTML=h;
+    var t=document.getElementById('tickerInner');
+    if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
+  }catch(e){
+    var el2=document.getElementById('prices');
+    if(el2)el2.innerHTML='<p style="color:var(--muted);font-size:13px">Prices unavailable</p>';
+    try{
+      var r2=await fetch('https://DISABLED.invalid/data/pricemultifull?fsyms=BTC,ETH,BNB,SOL&tsyms=USD',{signal:AbortSignal.timeout(4000)});
+      var d2=await r2.json();
+      var raw=(d2.RAW)||{};
+      var h2='';
+      ['BTC','ETH','BNB','SOL'].forEach(function(s){
+        if(!raw[s]||!raw[s].USD)return;
+        var usd=raw[s].USD.PRICE,chg=raw[s].USD.CHANGEPCT24HOUR||0;
+        var price=usd>=1000?'$'+usd.toLocaleString('en',{maximumFractionDigits:0}):'$'+usd.toFixed(2);
+        var sign=chg>=0?'+':'';
+        h2+='<div class="coin-row"><div><div class="coin-name">'+s+'</div></div><div><div class="coin-price">'+price+'</div><div class="coin-chg '+(chg>=0?'up':'down')+'">'+sign+chg.toFixed(2)+'%</div></div></div>';
+      });
+      var el3=document.getElementById('prices');if(el3&&h2)el3.innerHTML=h2;
+    }catch(e2){}
+  }
+}
+
+async function loadTrendingTags(){
+  try{
+    // Trending aus Backend-Posts extrahieren oder statische Fallback-Tags
+    const r=await fetch('/api/v1/feed?limit=50');
+    const d=await r.json();
+    const tagCounts={};
+    if(d.success&&d.data){
+      d.data.forEach(p=>{
+        const tags=(p.content.match(/#\w+/g)||[]);
+        tags.forEach(t=>{tagCounts[t]=(tagCounts[t]||0)+1;});
+      });
+    }
+    const sorted=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const el=document.getElementById('trendingTags');
+    if(!el)return;
+    if(sorted.length>0){
+            el.innerHTML=sorted.map(([t,cnt])=>'<span class="tag" data-tag="'+t+'">'+t+' <span style="color:var(--muted);font-size:11px">'+cnt+'</span></span>').join('');
+    el.onclick=function(e){const span=e.target.closest('[data-tag]');if(span)searchTag(span.dataset.tag);};
+    }
   }catch(e){}
 }
-function setCurr(c){S.curr=c;localStorage.setItem('yc',c);document.getElementById('busd').classList.toggle('active',c==='USD');document.getElementById('beur').classList.toggle('active',c==='EUR');updPrice();}
-function updPrice(){
-  const e=S.curr==='EUR',sym=e?'&#8364;':'$',p=e?S.price.eur:S.price.usd,f=p<.01?p.toFixed(6):p.toFixed(4),c=S.price.chg,cs=(c>=0?'+':'')+c.toFixed(2)+'% 24h',col=c>=0?'var(--accent)':'var(--red)';
-  document.getElementById('pv').innerHTML=sym+f;
-  document.getElementById('pvSide').innerHTML=sym+f;
-  document.getElementById('pc').textContent=cs;document.getElementById('pc').style.color=col;
-  document.getElementById('chg24').textContent=cs;document.getElementById('chg24').style.color=col;
+function searchTag(tag){
+  document.getElementById('postTxt').value=tag+' ';
+  document.getElementById('postTxt').focus();
+  showToast('Search: '+tag);
 }
-function copyCA(){navigator.clipboard?.writeText('0x0f1963829c6cc7A925E2F46949C3b248D69297c7');toast('Contract copied!');}
-
-function showIn(){
-  const u=S.user,n=u?.username||'anon',a=S.wallet||u?.wallet_address||'';
-  const chipLabel=n&&n!=='anon'?'@'+n:short(a);
-  document.getElementById('topActs').innerHTML=`<div class="wallet-chip" onclick="copyWA()">${chipLabel}</div><button class="btn btn-outline" onclick="document.getElementById('settModal').classList.add('open')">&#9881;</button>`;
-  document.getElementById('compBox').style.display='block';
-  document.getElementById('userCard').style.display='block';
-  const ini=n[0].toUpperCase();
-  document.getElementById('compAv').textContent=ini;
-  document.getElementById('sideAv').textContent=ini;
-  document.getElementById('sideUser').textContent='@'+n;
-  document.getElementById('sideAddr').textContent=short(a);
-  if(document.getElementById('settAddr'))document.getElementById('settAddr').textContent=a||'--';
-}
-function showOut(){
-  document.getElementById('topActs').innerHTML=`<button class="btn btn-outline" onclick="openAuth('login')">Login</button><button class="btn btn-primary" onclick="openAuth('register')">Register</button>`;
-  document.getElementById('compBox').style.display='none';
-  document.getElementById('userCard').style.display='none';
-}
-function short(a){return a?a.slice(0,6)+'...'+a.slice(-4):'';}
-function doLogout(){localStorage.removeItem('yt');localStorage.removeItem('yu');localStorage.removeItem('yw');S.token=null;S.user=null;S.wallet=null;showOut();closeM('settModal');toast('Disconnected');}
-function copyWA(){navigator.clipboard?.writeText(S.wallet||'');toast('Address copied');}
-
-function openAuth(t){document.getElementById('authModal').classList.add('open');switchTab(t);}
-function switchTab(t){
-  const l=t==='login';
-  document.getElementById('tLogin').classList.toggle('active',l);
-  document.getElementById('tReg').classList.toggle('active',!l);
-  document.getElementById('fLogin').style.display=l?'block':'none';
-  document.getElementById('fReg').style.display=!l?'block':'none';
-  document.getElementById('authTitle').textContent=l?'Welcome back':'Create Account';
-  document.getElementById('authSub').textContent=l?'Connect wallet or use email':'Join YEET -- get your Web3 wallet instantly';
-  clrMsgs();if(!l)showStep(1);
-}
-function clrMsgs(){document.getElementById('authErr').classList.remove('show');document.getElementById('authOk').classList.remove('show');}
-function showErr(m){const e=document.getElementById('authErr');e.textContent=m;e.classList.add('show');}
-function showOk(m){const e=document.getElementById('authOk');e.textContent=m;e.classList.add('show');}
-
-async function connectMM(){
-  if(!window.ethereum){showErr('MetaMask not found. Please install it.');return;}
+async function loadProfile(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
   try{
-    const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-    const addr=accs[0];
-    try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]});}
-    catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18},blockExplorerUrls:['https://testnet.bscscan.com']}]});}
-    const nr=await fetch(API+'/auth/nonce?address='+addr);
-    if(!nr.ok)throw new Error('Nonce failed');
-    const {nonce}=await nr.json();
-    const msg='Sign in to YEET Social
-Nonce: '+nonce;
-    const sig=await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
-    const vr=await fetch(API+'/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,message:msg})});
-    if(!vr.ok){const e=await vr.json();throw new Error(e.message||'Auth failed');}
-    const data=await vr.json();
-    setAuth(data.token,data.user,addr);closeM('authModal');toast('Connected: '+short(addr));loadFeed();
-  }catch(e){showErr(e.message);}
+    const r=await fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}});
+    if(!r.ok)return;
+    const d=await r.json();
+    if(!d.success)return;
+    const u=d.data;
+    const addr=u.wallet_address||connectedAddress||'';
+    const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):'';
+    const pw=document.getElementById('profileWidget');
+    const pi=document.getElementById('profileInfo');
+    if(pw)pw.style.display='';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">ð¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
+  }catch(e){}
 }
-
-async function doLogin(){
-  const email=document.getElementById('lEmail').value.trim(),pw=document.getElementById('lPw').value;
-  if(!email||!pw){showErr('Fill in all fields.');return;}
-  try{
-    const r=await fetch(API+'/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
-    const d=await r.json();if(!r.ok)throw new Error(d.message||d.error||'Login failed');
-    setAuth(d.token,d.user,d.wallet_address);closeM('authModal');toast('Welcome back, @'+d.user.username);loadFeed();
-  }catch(e){showErr(e.message);}
-}
-
-function genSeed(){const w=[];while(w.length<12)w.push(W[Math.floor(Math.random()*W.length)]);return w;}
-function genWallet(words){
-  const seed=words.join(' ');let h=0;
-  for(let i=0;i<seed.length;i++){h=((h<<5)-h)+seed.charCodeAt(i);h|=0;}
-  let a='0x';let x=Math.abs(h);
-  for(let i=0;i<40;i++){x=(x*1664525+1013904223)&0xffffffff;a+=(Math.abs(x)%16).toString(16);}
-  return a;
-}
-function rNext1(){
-  clrMsgs();
-  const u=document.getElementById('rUser').value.trim(),e=document.getElementById('rEmail').value.trim(),p=document.getElementById('rPw').value;
-  if(!u||!e||!p){showErr('Fill in all fields.');return;}
-  if(u.length<3){showErr('Username min 3 chars.');return;}
-  if(p.length<8){showErr('Password min 8 chars.');return;}
-  if(!/\S+@\S+\.\S+/.test(e)){showErr('Invalid email.');return;}
-  S.seeds=genSeed();const wa=genWallet(S.seeds);
-  S.pend={username:u,email:e,password:p,wallet_address:wa};
-  document.getElementById('seedGrid').innerHTML=S.seeds.map((w,i)=>`<div class="seed-word"><span class="seed-n">${i+1}.</span><span class="seed-t">${w}</span></div>`).join('');
-  showStep(2);
-}
-function rNext2(){
-  clrMsgs();
-  const pos=[];while(pos.length<3){const p=Math.floor(Math.random()*12);if(!pos.includes(p))pos.push(p);}
-  pos.sort((a,b)=>a-b);S.vidx=pos;
-  document.getElementById('verifyRows').innerHTML=pos.map(i=>`<div class="v-row"><label>Word #${i+1}</label><input type="text" id="vi_${i}" placeholder="word ${i+1}" autocomplete="off"></div>`).join('');
-  showStep(3);
-}
-async function doRegister(){
-  clrMsgs();
-  for(const i of S.vidx){
-    const v=document.getElementById('vi_'+i)?.value.trim().toLowerCase();
-    if(v!==S.seeds[i]){showErr('Word #'+(i+1)+' is wrong. Check your seed phrase.');return;}
-  }
-  showOk('Verified! Creating account...');
-  const d=S.pend;
-  try{
-    const r=await fetch(API+'/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:d.username,email:d.email,password:d.password,wallet_address:d.wallet_address})});
-    const data=await r.json();if(!r.ok)throw new Error(data.message||data.error||'Registration failed');
-    setAuth(data.token,data.user,d.wallet_address);closeM('authModal');toast('Welcome to YEET, @'+d.username);loadFeed();
-  }catch(e){showErr(e.message);}
-}
-function copySeed(){navigator.clipboard?.writeText(S.seeds.join(' '));toast('Seed phrase copied -- keep it safe!');}
-function showStep(n){for(let i=1;i<=3;i++)document.getElementById('rS'+i).style.display=n===i?'block':'none';clrMsgs();}
-function setAuth(token,user,wallet){S.token=token;S.user=user;S.wallet=wallet;localStorage.setItem('yt',token);localStorage.setItem('yeet_jwt',token);localStorage.setItem('yeetToken',token);localStorage.setItem('yu',JSON.stringify(user));if(wallet)localStorage.setItem('yw',wallet);showIn();}
-
 async function loadFeed(){
-  const el=document.getElementById('feedArea');
-  el.innerHTML='<div class="load"><div class="spinner"></div><br><br>Loading...</div>';
   try{
-    const H=S.token?{'Authorization':'Bearer '+S.token}:{};
-    const url=S.tab==='following'?API+'/feed/following':S.tab==='boards'?null:API+'/feed';
-    if(!url){loadBoards();return;}
-    const r=await fetch(url,{headers:H});if(!r.ok)throw new Error();
-    const data=await r.json();const posts=data.posts||data||[];
-    if(!posts.length){el.innerHTML='<div class="empty"><div class="ei">&#128640;</div>No posts yet. Be the first to YEET!</div>';return;}
-    el.innerHTML=posts.map(renderPost).join('');
-  }catch(e){el.innerHTML='<div class="empty"><div class="ei">&#127760;</div>Could not load feed.<br>Be the first to YEET!</div>';}
+    const r=await fetch('/api/v1/feed');
+    const d=await r.json();
+    const empty=document.querySelector('.empty');
+    const old=document.getElementById('feed-posts');
+    if(old)old.remove();
+    if(d.data&&d.data.length>0){
+      if(empty)empty.style.display='none';
+      const wrap=document.createElement('div');
+      wrap.id='feed-posts';
+      for(const p of d.data){
+        const addr=(p.author&&p.author.wallet_address)||'0x???';
+        const short=addr.slice(0,6)+'...'+addr.slice(-4);
+        const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
+        const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+        const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
+        const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const el=document.createElement('div');
+        el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>ð¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; â¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>â¤ '+(p.like_count||0)+'</span><span>ð¬ '+(p.comment_count||0)+'</span></div>';
+        wrap.appendChild(el);
+      }
+      const c=document.querySelector('.composer');
+      if(c)c.after(wrap);
+    }else{if(empty)empty.style.display='';}
+  }catch(e){console.error('Feed:',e);}
 }
-function renderPost(p){
-  const c=(p.content||'').replace(/#(\w+)/g,'<span class="hashtag">#$1</span>').replace(/@(\w+)/g,'<span class="mention">@$1</span>');
-  const n=p.author?.username||p.username||short(p.author?.wallet_address||'');
-  const t=p.created_at?new Date(p.created_at).toLocaleString():'';
-  return `<div class="post"><div class="post-hdr"><div class="post-av">${(n[0]||'?').toUpperCase()}</div><div class="post-meta"><div class="post-author">@${n}</div><div class="post-time">${t}</div></div></div><div class="post-body">${c}</div><div class="post-acts"><button class="post-act ${p.liked?'liked':''}" onclick="likePost('${p.id}',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="${p.liked?'currentColor':'none'}" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>${p.likes||0}</button><button class="post-act" onclick="toast('Reshared!')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>${p.reshares||0}</button><button class="post-act" onclick="toast('Tip via YEET token coming soon')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Tip</button></div></div>`;
+async function likePost(id){
+  const jwt=localStorage.getItem('yeet_jwt');
+  await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+  loadFeed();
 }
-async function likePost(id){if(!S.token){openAuth('login');return;}try{await fetch(API+'/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+S.token}});loadFeed();}catch(e){}}
-async function doPost(){
-  if(!S.token){openAuth('login');return;}
-  const c=document.getElementById('postTxt').value.trim();if(!c)return;
-  try{
-    const r=await fetch(API+'/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.token},body:JSON.stringify({content:c,media_url:null,is_adult:false})});
-    const rd=await r.json();if(!r.ok&&rd.error)throw new Error(rd.error.message||'Post failed');else if(!r.ok)throw new Error('Post failed');
-    document.getElementById('postTxt').value='';updChar();loadFeed();toast('YEETed!');
-  }catch(e){toast('Error: '+e.message,true);}
-}
-function updChar(){const l=document.getElementById('postTxt').value.length;const el=document.getElementById('charCnt');el.textContent=l+'/280';el.style.color=l>270?'var(--red)':l>250?'var(--gold)':'var(--text2)';}
+let connectedWallet=null,connectedAddress=null;
+loadPrices();setInterval(loadPrices,60000);loadFeed();loadTrendingTags();if(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
 
-async function loadBoards(){
-  const el=document.getElementById('feedArea');
-  el.innerHTML='<div class="load"><div class="spinner"></div><br><br>Loading boards...</div>';
+// ====== WALLET CONNECTION ======
+
+
+function openWalletModal(){document.getElementById('pwaModal').classList.remove('on');document.getElementById('walletModal').classList.add('on')}
+function closeWalletModal(e){if(!e||e.target===document.getElementById('walletModal'))document.getElementById('walletModal').classList.remove('on')}
+
+async function onConnected(address,walletName,provider){
+  connectedAddress=address;connectedWallet=walletName;
+  const short=address.slice(0,6)+'...'+address.slice(-4);
+  const btn=document.getElementById('walletBtn');
+  btn.textContent='Signing...';btn.classList.add('connected');
+  document.getElementById('walletModal').classList.remove('on');
+  // EIP-191: get nonce â sign â verify â JWT
   try{
-    const r=await fetch(API+'/boards');if(!r.ok)throw new Error();
-    const data=await r.json();const items=data.items||data||[];
-    if(!items.length){el.innerHTML='<div class="empty"><div class="ei">&#128240;</div>No board items yet.</div>';return;}
-    el.innerHTML='<div class="card"><div class="card-title">Web Boards</div>'+items.map(it=>`<div style="padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="window.open('${it.url||'#'}','_blank')"><div style="font-size:13px;margin-bottom:3px">${it.title||'Untitled'}</div><div style="font-size:11px;color:var(--text2)">${it.source||''}</div></div>`).join('')+'</div>';
-  }catch(e){el.innerHTML='<div class="empty"><div class="ei">&#128240;</div>Could not load boards.</div>';}
+    const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
+    const nonceD=await nonceR.json();
+    if(!nonceD.success) throw new Error('Nonce error');
+    const {nonce,message}=nonceD.data;
+    const signature=await provider.request({method:'personal_sign',params:[message,address]});
+    const verR=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address,signature,message,nonce})});
+    const verD=await verR.json();
+    if(verD.success&&verD.data?.token){
+      localStorage.setItem('yeet_jwt',verD.data.token);
+      localStorage.setItem('yeet_address',address);
+      btn.textContent=short;
+      showToast('â Signed in: '+walletName+' ('+short+')');
+    }else{
+      btn.textContent=short;
+      showToast('Connected (no JWT): '+short);loadProfile();
+    }
+  }catch(e){
+    btn.textContent=short;
+    if(e.code===4001) showToast('Signature rejected');
+    else showToast('Auth error: '+e.message.slice(0,40));
+  }
 }
 
-function goTab(t,btn){
-  S.tab=t;
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  if(t==='boards')loadBoards();else loadFeed();
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#e8e8e8;padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;border:1px solid #333;transition:opacity .3s';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  setTimeout(()=>t.style.opacity='0',3000);
 }
-function closeM(id){document.getElementById(id).classList.remove('open');}
-function toast(msg,err){
-  const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:20px;right:20px;background:'+(err?'var(--red)':'var(--accent)')+';color:'+(err?'#fff':'#000')+';padding:10px 18px;border-radius:9px;font-size:13px;font-weight:700;z-index:9999;font-family:Space Mono,monospace';
-  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+
+async function connectMetaMask(){
+  // MetaMask injects window.ethereum asynchronously â wait up to 1s
+  const eth=await new Promise(res=>{
+    if(window.ethereum)return res(window.ethereum);
+    let t=0;
+    const iv=setInterval(()=>{if(window.ethereum){clearInterval(iv);res(window.ethereum);}else if((t+=50)>1000){clearInterval(iv);res(null);}},50);
+  });
+  if(eth&&(eth.isMetaMask||eth.providers?.some(p=>p.isMetaMask))){
+    const provider=eth.providers?.find(p=>p.isMetaMask)||eth;
+    try{
+      const accs=await provider.request({method:'eth_requestAccounts'});
+      // Add BSC Testnet (chainId 97 = 0x61)
+      try{await provider.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
+      onConnected(accs[0],'MetaMask',provider);
+    }catch(e){showToast('MetaMask: '+e.message);}
+  }else if(eth){
+    // ethereum exists but not MetaMask â try anyway
+    try{
+      const accs=await eth.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Wallet',eth);
+    }catch(e){showToast('Wallet error: '+e.message);}
+  }else{
+    showToast('MetaMask not detected. Please install or unlock MetaMask.');
+    setTimeout(()=>window.open('https://metamask.io/download/','_blank'),1500);
+  }
 }
-const s=document.createElement('style');s.textContent='@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}';document.head.appendChild(s);
+
+async function connectTrustWallet(){
+  // Trust Wallet injects window.ethereum on mobile
+  if(window.ethereum&&window.ethereum.isTrust){
+    try{
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Trust Wallet',eth);
+    }catch(e){showToast('Trust Wallet: '+e.message);}
+  }else if(window.ethereum){
+    // Fallback: use available provider (could be Trust Wallet on mobile)
+    try{
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Trust Wallet');
+    }catch(e){showToast('Trust Wallet: '+e.message);}
+  }else{
+    showToast('Open this page in Trust Wallet browser or install Trust Wallet');
+    setTimeout(()=>window.open('https://trustwallet.com/download','_blank'),1000);
+  }
+}
+
+async function connectLedger(){
+  // Check for WebUSB/WebHID support
+  if(!navigator.hid&&!navigator.usb){
+    showToast('Ledger requires Chrome with WebUSB/WebHID support');
+    return;
+  }
+  showToast('Connecting Ledger... Please approve on your device');
+  try{
+    // Use eth_requestAccounts via MetaMask + Ledger hardware key
+    if(window.ethereum){
+      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+      onConnected(accs[0],'Ledger via MetaMask');
+    }else{
+      // Deep link to Ledger Live
+      showToast('Please install Ledger Live and connect via MetaMask');
+      setTimeout(()=>window.open('https://www.ledger.com/ledger-live','_blank'),1000);
+    }
+  }catch(e){showToast('Ledger: '+e.message);}
+}
+
+function connectWalletConnect(){
+  // WalletConnect v2 QR modal - show instructions since no relay is set up
+  showToast('WalletConnect: Opening QR flow...');
+  // For production: integrate @walletconnect/web3-provider
+  // For now show instructions modal
+  document.getElementById('walletModal').classList.remove('on');
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
+  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">ð²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
+  d.onclick=e=>{if(e.target===d)d.remove()};
+  document.body.appendChild(d);
+}
+
+// ====== PWA INSTALL ======
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  document.getElementById('pwaBanner').classList.remove('hide');
+  document.getElementById('pwaInstallBtn').style.display='block';
+});
+function openPwaModal(){document.getElementById('pwaModal').classList.add('on')}
+function closePwaModal(e){if(!e||e.target===document.getElementById('pwaModal'))document.getElementById('pwaModal').classList.remove('on')}
+function triggerPwaInstall(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')document.getElementById('pwaBanner').classList.add('hide');deferredPrompt=null;});
+  }else{
+    openPwaModal();
+  }
+}
+if(window.matchMedia('(display-mode:standalone)').matches){
+  document.getElementById('pwaBanner').classList.add('hide');
+}
+
+// ====== UI ======
+function openTipModal(postId,toAddr){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){openWalletModal();return;}
+  document.getElementById('tipModal').classList.add('on');
+  document.getElementById('tipModal').dataset.postId=postId;
+  document.getElementById('tipModal').dataset.toAddr=toAddr;
+  document.getElementById('tipTarget').innerHTML='Tipping to: <b>'+toAddr.slice(0,6)+'...'+toAddr.slice(-4)+'</b>';
+}
+function closeTipModal(e){if(!e||e.target===document.getElementById('tipModal'))document.getElementById('tipModal').classList.remove('on');}
+function setTipAmt(n){document.getElementById('tipAmount').value=n;}
+async function sendTip(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
+  const modal=document.getElementById('tipModal');
+  const postId=modal.dataset.postId;
+  const toAddr=modal.dataset.toAddr;
+  const amount=parseFloat(document.getElementById('tipAmount').value)||0;
+  if(amount<=0){showToast('Enter a valid amount');return;}
+
+  const btn=modal.querySelector('button[onclick="sendTip()"]');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+
+  // Try on-chain first if MetaMask available
+  if(window.ethereum&&connectedAddress){
+    try{
+      const chainId=await window.ethereum.request({method:'eth_chainId'});
+      if(chainId!=='0x61'){
+        // Switch to BSC Testnet
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
+          if(e2.code===4902){
+            await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
+          }
+        });
+      }
+      // ERC-20 transfer: transfer(address,uint256)
+      const YEET_ADDR='0x0f1963829c6cc7A925E2F46949C3b248D69297c7';
+      const amtWei='0x'+BigInt(Math.floor(amount*1e18)).toString(16);
+      // transfer(address to, uint256 amount) selector = 0xa9059cbb
+      const toHex=toAddr.replace('0x','').toLowerCase().padStart(64,'0');
+      const amtHex=amtWei.replace('0x','').padStart(64,'0');
+      const data='0xa9059cbb'+toHex+amtHex;
+      const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:connectedAddress,to:YEET_ADDR,data:data,gas:'0x15F90'}]});
+      showToast('Tip sent on-chain! TX: '+txHash.slice(0,12)+'...');
+      if(btn){btn.disabled=false;btn.textContent='Send Tip';}
+      closeTipModal();
+      // Also notify backend
+      fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId,tx_hash:txHash})}).catch(function(){});
+      return;
+    }catch(err){
+      if(err.code===4001){showToast('Transaction cancelled');if(btn){btn.disabled=false;btn.textContent='Send Tip';}return;}
+      // Fall through to backend-only tip
+      console.warn('On-chain tip failed, using backend:',err.message);
+    }
+  }
+
+  // Backend-only tip (no MetaMask or chain switch failed)
+  try{
+    const res=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
+    const dd=await res.json();
+    if(res.ok){showToast(amount+' YEET tip sent!');closeTipModal();}
+    else showToast('Tip failed: '+(dd.error||dd.message||res.status));
+  }catch(e){showToast('Tip error: '+e.message.slice(0,40));}
+  if(btn){btn.disabled=false;btn.textContent='Send Tip';}
+}
+
+async function deletePost(id){
+  if(!confirm('Delete this Yeet?'))return;
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
+  const r=await fetch('/api/v1/posts/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
+  if(r.ok){showToast('Yeet deleted');loadFeed();}
+  else showToast('Delete failed: '+r.status);
+}
+function openWebboardsModal(){document.getElementById('webboardsModal').classList.add('on');}
+function closeWebboardsModal(e){if(!e||e.target===document.getElementById('webboardsModal'))document.getElementById('webboardsModal').classList.remove('on');}
+async function loadRSS(url,name){
+  document.getElementById('wbList').style.display='none';
+  document.getElementById('wbFeed').style.display='';
+  document.getElementById('wbFeedTitle').textContent=name+' - Loading...';
+  document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--muted)">Loading feed...</p>';
+  try{
+    const proxy='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=10';
+    const d2=await fetch(proxy).then(function(r2){return r2.json();});
+    document.getElementById('wbFeedTitle').textContent=(d2.feed&&d2.feed.title)||name;
+    const items=d2.items||[];
+    const container=document.getElementById('wbFeedItems');
+    if(items.length>0){
+      container.innerHTML='';
+      items.forEach(function(item){
+        var el=document.createElement('div');
+        el.style.cssText='padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer';
+        el.dataset.url=String(item.link);
+        var title=String(item.title).replace(/</g,'&lt;');
+        var dt=new Date(item.pubDate).toLocaleDateString();
+        el.innerHTML='<div style="font-weight:700;font-size:13px;margin-bottom:4px">'+title+'</div><div style="font-size:11px;color:var(--muted)">'+dt+'</div>';
+        el.addEventListener('click',function(){window.open(this.dataset.url,'_blank');});
+        container.appendChild(el);
+      });
+    }else{
+      container.innerHTML='<p style="color:var(--muted)">No items found</p>';
+    }
+    var backBtn=document.createElement('span');
+    backBtn.textContent=' Back';
+    backBtn.style.cssText='cursor:pointer;font-size:12px;color:var(--muted);margin-left:8px';
+    backBtn.addEventListener('click',function(){
+      document.getElementById('wbList').style.display='';
+      document.getElementById('wbFeed').style.display='none';
+    });
+    document.getElementById('wbFeedTitle').appendChild(backBtn);
+  }catch(ex){
+    document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--red)">Error loading feed</p>';
+  }
+}
+
+// NFT Contract ABI (minimal - only mint function)
+const NFT_ABI=[{"inputs":[{"name":"to","type":"address"},{"name":"postId","type":"string"},{"name":"tokenURI","type":"string"}],"name":"mintPost","outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"name":"","type":"string"}],"stateMutability":"view","type":"function"}];
+const NFT_CONTRACT_ADDR='0x8F518F1BCdcaAA0cb5b1690ebdC72152b6060F51';
+var _nftPostId=null;
+var _nftPostContent='';
+function openNFTModal(postId,content){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){openWalletModal();return;}
+  _nftPostId=postId;
+  _nftPostContent=content;
+  document.getElementById('nftPostPreview').textContent=content?content.slice(0,100)+'..':'No content';
+  document.getElementById('nftName').value='YEET Post #'+postId.slice(0,6);
+  document.getElementById('nftDesc').value='A unique moment on YEET Social - '+new Date().toLocaleDateString();
+  document.getElementById('nftStatus').textContent='';
+  document.getElementById('nftModal').classList.add('on');
+}
+function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal'))document.getElementById('nftModal').classList.remove('on');}
+async function mintNFT(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt||!_nftPostId){showToast('Connect wallet first');return;}
+  if(!window.ethereum){showToast('MetaMask not found');return;}
+  const btn=document.getElementById('mintBtn');
+  const status=document.getElementById('nftStatus');
+  btn.disabled=true;btn.textContent='Minting...';status.textContent='Preparing transaction...';
+  try{
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    const chainId=await window.ethereum.request({method:'eth_chainId'});
+    if(chainId!=='0x61'){
+      status.textContent='Switching to BSC Testnet...';
+      await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
+        if(e2.code===4902){
+          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
+        }
+      });
+    }
+    const name=document.getElementById('nftName').value||'YEET NFT';
+    const desc=document.getElementById('nftDesc').value||'YEET Social Post';
+    const tokenURI='data:application/json;base64,'+btoa(JSON.stringify({name:name,description:desc,content:_nftPostContent,platform:'YEET Social',chainId:97}));
+    const from=(await window.ethereum.request({method:'eth_accounts'}))[0];
+    const data='0x'+[
+      'mintPost(address,string,string)',
+    ].map(function(){
+      var sel='0x'+[...new TextEncoder().encode('mintPost(address,string,string)')].reduce(function(a,b){return a+b.toString(16).padStart(2,'0');},'');
+      return sel.slice(2,10);
+    })[0];
+    status.textContent='Please confirm in MetaMask...';
+    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:from,to:NFT_CONTRACT_ADDR,data:'0x12345678',gas:'0x30000'}]});
+    status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'...</span>';
+    showToast('NFT Minted successfully!');
+    setTimeout(function(){closeNFTModal();},3000);
+  }catch(err){
+    status.innerHTML='<span style="color:var(--red)">'+err.message.slice(0,60)+'</span>';
+  }finally{
+    btn.disabled=false;btn.textContent='Mint NFT';
+  }
+}
+function openSettingsModal(){
+  // Load saved settings
+  const s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
+  if(document.getElementById('setting18'))document.getElementById('setting18').checked=s.adult===true||localStorage.getItem('yeet_adult')==='1';
+  if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=s.compact===true;
+  if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=s.autoload!==false;
+  document.getElementById('settingsModal').classList.add('on');
+}
+function closeSettingsModal(e){if(!e||e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('on');}
+function applySettings(){
+  const adult=document.getElementById('setting18')&&document.getElementById('setting18').checked;
+  const compact=document.getElementById('settingCompact')&&document.getElementById('settingCompact').checked;
+  const autoload=document.getElementById('settingAutoload')&&document.getElementById('settingAutoload').checked;
+  const network=document.getElementById('settingNetwork')&&document.getElementById('settingNetwork').value;
+  const s={adult,compact,autoload,network:network||'97'};
+  localStorage.setItem('yeet_settings',JSON.stringify(s));
+  if(adult)localStorage.setItem('yeet_adult','1');
+  else localStorage.removeItem('yeet_adult');
+  // Apply compact mode
+  document.body.classList.toggle('compact',compact);
+  showToast('Settings saved');
+}
+function disconnectWallet(){
+  localStorage.removeItem('yeet_jwt');
+  localStorage.removeItem('yeet_address');
+  localStorage.removeItem('yeet_adult');
+  connectedAddress=null;connectedWallet=null;
+  const btn=document.getElementById('walletBtn');
+  if(btn){btn.textContent='CONNECT WALLET';btn.classList.remove('connected');}
+  const pw=document.getElementById('profileWidget');
+  if(pw)pw.style.display='none';
+  closeSettingsModal();
+  showToast('Wallet disconnected');
+  loadFeed();
+}
+function updateCharCount(){
+  var ta=document.getElementById('postTxt');
+  var cc=document.getElementById('charCount');
+  if(!ta||!cc)return;
+  var len=ta.value.length;
+  cc.textContent=len;
+  cc.style.color=len>250?'#ff4444':len>200?'#f0a500':'var(--muted)';
+}
+function performSearch(q){
+  if(!q||q.trim().length<2){showToast('Type at least 2 characters');return;}
+  q=q.trim();
+  if(q.startsWith('#')){
+    var ta=document.getElementById('postTxt');
+    if(ta){ta.value=q+' ';ta.focus();}
+    showToast('Searching: '+q);
+  }else{
+    showToast('Searching: '+q);
+  }
+}
+function toggleNav(){
+  const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
+  const open=s.classList.toggle('open');
+  o.classList.toggle('on',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function setTab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const label=t.textContent.trim();
+  if(label.includes('18+')){ check18Plus(); return; }
+  if(label.includes('NFT')){ loadFeedFiltered('nft'); return; }
+  if(label.includes('FOLLOWING')){ loadFeedFiltered('following'); return; }
+  loadFeed();
+}
+function loadFeedFiltered(filter){
+  const jwt=localStorage.getItem('yeet_jwt');
+  const headers={'Content-Type':'application/json'};
+  if(jwt)headers['Authorization']='Bearer '+jwt;
+  fetch('/api/v1/feed?filter='+filter,{headers})
+    .then(r=>r.json())
+    .then(d=>{
+      const old=document.getElementById('feed-posts');if(old)old.remove();
+      const empty=document.querySelector('.empty');
+      if(d.success&&d.data&&d.data.length>0){
+        if(empty)empty.style.display='none';
+        const wrap=document.createElement('div');wrap.id='feed-posts';
+        for(const p of d.data){
+          const addr=(p.author&&p.author.wallet_address)||'0x???';
+          const short=addr.slice(0,6)+'...'+addr.slice(-4);
+          const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
+          const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+          const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
+          const el=document.createElement('div');
+          el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">ð¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; â¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          wrap.appendChild(el);
+        }
+        const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
+      }else{if(empty)empty.style.display='';}
+    }).catch(()=>{});
+}
+function check18Plus(){
+  if(localStorage.getItem('yeet_adult')==='1'){ loadFeedFiltered('adult'); return; }
+  const ok=confirm('18+ Content: This section contains adult content. Are you 18 or older?');
+  if(ok){localStorage.setItem('yeet_adult','1');loadFeedFiltered('adult');}
+  else{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelector('.tab').classList.add('active');loadFeed();}
+}
+function submitPost(){
+  var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  if(!jwt&&!connectedAddress){openWalletModal();return;}
+  const txt=document.getElementById('postTxt').value.trim();
+  if(!txt)return;
+  showToast('Posting to /api/v1/posts...');
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
+    .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
+    .catch(()=>showToast('Connect wallet first to sign in'));
+}
+
+  // Expose public functions
+  window.loadProfile = loadProfile;
+  window.loadFeed = loadFeed;
+  window.openWalletModal = openWalletModal;
+  window.closeWalletModal = closeWalletModal;
+  window.showToast = showToast;
+  window.connectMetaMask = connectMetaMask;
+  window.connectTrustWallet = connectTrustWallet;
+  window.connectLedger = connectLedger;
+  window.connectWalletConnect = connectWalletConnect;
+  window.openPwaModal = openPwaModal;
+  window.closePwaModal = closePwaModal;
+  window.triggerPwaInstall = triggerPwaInstall;
+  window.closeTipModal = closeTipModal;
+  window.setTipAmt = setTipAmt;
+  window.sendTip = sendTip;
+  window.openWebboardsModal = openWebboardsModal;
+  window.closeWebboardsModal = closeWebboardsModal;
+  window.loadRSS = loadRSS;
+  window.closeNFTModal = closeNFTModal;
+  window.mintNFT = mintNFT;
+  window.closeSettingsModal = closeSettingsModal;
+  window.applySettings = applySettings;
+  window.disconnectWallet = disconnectWallet;
+  window.updateCharCount = updateCharCount;
+  window.toggleNav = toggleNav;
+  window.setTab = setTab;
+  window.submitPost = submitPost;
+})();
+</script>
+
+<!-- AUTH MODAL -->
+<div id="authModal" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
+<div style="background:#111;border:1px solid var(--border);border-radius:16px;padding:28px;width:min(440px,95vw);position:relative;max-height:90vh;overflow-y:auto">
+  <button onclick="closeAuthModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">&#10005;</button>
+  <h2 id="mTitle" style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px">Welcome back</h2>
+  <p id="mSub" style="color:var(--muted);font-size:13px;margin-bottom:20px">Connect wallet or use email to continue</p>
+  <div style="display:flex;gap:6px;margin-bottom:20px">
+    <button class="atab active" id="atLogin" onclick="switchAuthTab('login')">Login</button>
+    <button class="atab" id="atReg" onclick="switchAuthTab('register')">Register</button>
+  </div>
+  <button class="wbtn" onclick="connectMetaMaskAuth()">&#129418; MetaMask</button>
+  <button class="wbtn" onclick="alert('WalletConnect coming soon')">&#128279; WalletConnect</button>
+  <div class="or-div">or use email</div>
+  <div id="mErr" class="merr"></div>
+  <div id="mOk" class="mok"></div>
+  <div id="loginForm">
+    <div class="ff"><label>Email</label><input type="email" id="lEmail" placeholder="you@example.com"></div>
+    <div class="ff"><label>Password</label><input type="password" id="lPass" placeholder="Password"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="doEmailLogin()">Login</button>
+  </div>
+  <div id="regStep1" style="display:none">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
+      <div class="sdot on"></div><div class="sdot"></div><div class="sdot"></div>
+    </div>
+    <div class="ff"><label>Username</label><input type="text" id="rUser" placeholder="satoshi_yeet" maxlength="32"></div>
+    <div class="ff"><label>Email</label><input type="email" id="rEmail" placeholder="you@example.com"></div>
+    <div class="ff"><label>Password</label><input type="password" id="rPass" placeholder="Min. 8 characters"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue &#8594;</button>
+  </div>
+  <div id="regStep2" style="display:none">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
+      <div class="sdot done"></div><div class="sdot on"></div><div class="sdot"></div>
+    </div>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Recovery Phrase</h3>
+    <div style="background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:12px;margin:10px 0;font-size:12px;color:#ffd700">
+      &#9888; <strong>Never share your seed phrase.</strong> YEET will never ask for it. Store it offline safely.
+    </div>
+    <div id="seedGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn-sm" style="flex:1" onclick="copySeedAuth()">&#128203; Copy</button>
+      <button class="btn-yeet" style="flex:1;padding:10px" onclick="regNext2()">Saved &#8594;</button>
+    </div>
+  </div>
+  <div id="regStep3" style="display:none">
+    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
+      <div class="sdot done"></div><div class="sdot done"></div><div class="sdot on"></div>
+    </div>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Verify Phrase</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Enter the words at the requested positions.</p>
+    <div id="verifyInputs"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="completeReg()">Create Account</button>
+  </div>
+</div>
+</div>
+
+<style>
+.atab{flex:1;padding:9px;text-align:center;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.atab.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
+.wbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:#1a1a1a;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:8px;font-weight:700}
+.wbtn:hover{border-color:var(--yeet)}
+.or-div{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
+.or-div::before,.or-div::after{content:"";flex:1;height:1px;background:var(--border)}
+.merr{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:8px;padding:9px 13px;color:#f55;font-size:12px;display:none;margin-bottom:10px}
+.merr.show{display:block}
+.mok{background:rgba(38,240,117,.1);border:1px solid rgba(38,240,117,.3);border-radius:8px;padding:9px 13px;color:var(--yeet);font-size:12px;display:none;margin-bottom:10px}
+.mok.show{display:block}
+.ff{margin-bottom:14px}
+.ff label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ff input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+.ff input:focus{border-color:var(--yeet)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--border);display:inline-block}
+.sdot.on{background:var(--yeet)}.sdot.done{background:#26a05a}
+.yeet-widget{display:inline-flex;align-items:center;gap:8px;background:rgba(38,240,117,.08);border:1px solid rgba(38,240,117,.25);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer}
+.yeet-widget:hover{border-color:var(--yeet)}
+.yeet-icon{width:22px;height:22px;background:var(--yeet);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000}
+.cur-tog{display:flex;gap:2px;margin-left:4px}
+.cur-tog button{background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer}
+.cur-tog button.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
+.btn-login{background:none;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;cursor:pointer}
+.btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
+.btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
+.addr-pill{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer}
+</style>
+
+<script>
+(function() {
+  // BIP39 wordlist (subset)
+  var _BIP39 = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','balance','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brave','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz'];
+
+  var _yState = {usd:.001,eur:.00092,chg:2.4,cur:'USD',eurRate:.92};
+  var _seedWords = [];
+  var _verifyIdx = [];
+  var _regData = {};
+
+  function _genSeed(){var w=[];while(w.length<12)w.push(_BIP39[Math.floor(Math.random()*_BIP39.length)]);return w}
+  function _genWallet(words){var h=0,s=words.join(' ');for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}var a='0x';for(var j=0;j<40;j++){h=(h*1664525+1013904223)&0xffffffff;a+=(Math.abs(h)%16).toString(16)}return a}
+
+  function _showErr(m){var e=document.getElementById('mErr');if(e){e.textContent=m;e.classList.add('show')}var o=document.getElementById('mOk');if(o)o.classList.remove('show')}
+  function _showOk(m){var e=document.getElementById('mOk');if(e){e.textContent=m;e.classList.add('show')}var er=document.getElementById('mErr');if(er)er.classList.remove('show')}
+  function _clearMsg(){var e=document.getElementById('mErr'),o=document.getElementById('mOk');if(e)e.classList.remove('show');if(o)o.classList.remove('show')}
+
+  function _updatePrice(){
+    var s=_yState.cur==='USD'?'$':'&#8364;';
+    var p=_yState.cur==='USD'?_yState.usd:_yState.eur;
+    var fmt=p<.01?p.toFixed(6):p.toFixed(4);
+    var el=document.getElementById('yPriceVal');if(el)el.innerHTML=s+fmt;
+    var cel=document.getElementById('yPriceChg');
+    if(cel){cel.textContent=(_yState.chg>=0?'+':'')+_yState.chg.toFixed(2)+'% 24h';cel.style.color=_yState.chg>=0?'var(--green)':'var(--red)'}
+    var u=document.getElementById('btnUSD'),v=document.getElementById('btnEUR');
+    if(u)u.classList.toggle('active',_yState.cur==='USD');
+    if(v)v.classList.toggle('active',_yState.cur==='EUR');
+  }
+
+  async function _fetchEur(){try{var r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');if(r.ok){var d=await r.json();_yState.eurRate=d.rates.EUR||.92;_yState.eur=+(_yState.usd*_yState.eurRate).toFixed(8);_updatePrice()}}catch(e){}}
+
+  function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
+
+  function _setLoggedIn(tok,user,wallet){
+    localStorage.setItem('yeetToken',tok);
+    localStorage.setItem('yeet_jwt',tok);
+    localStorage.setItem('yeetUser',JSON.stringify(user));
+    if(wallet)localStorage.setItem('yeetWallet',wallet);
+    _updateAuthUI(user,wallet);
+  }
+
+  function _updateAuthUI(user,wallet){
+    var aa=document.getElementById('authArea'),wa=document.getElementById('walletArea');
+    if(!aa||!wa)return;
+    aa.style.display='none';wa.style.display='flex';
+    var ap=document.getElementById('addrPill');
+    if(ap){if(user&&user.username)ap.textContent='@'+user.username;else if(wallet)ap.textContent=wallet.slice(0,6)+'...'+wallet.slice(-4);}
+  }
+
+  //  GLOBAL FUNCTIONS (called from HTML) 
+  window.openAuthModal = function(tab){
+    var m=document.getElementById('authModal');if(m)m.style.display='flex';
+    window.switchAuthTab(tab||'login');
+  };
+  window.closeAuthModal = function(){
+    var m=document.getElementById('authModal');if(m)m.style.display='none';
+  };
+  window.switchAuthTab = function(t){
+    var isL=t==='login';
+    document.getElementById('atLogin').classList.toggle('active',isL);
+    document.getElementById('atReg').classList.toggle('active',!isL);
+    document.getElementById('loginForm').style.display=isL?'block':'none';
+    document.getElementById('regStep1').style.display=!isL?'block':'none';
+    document.getElementById('regStep2').style.display='none';
+    document.getElementById('regStep3').style.display='none';
+    document.getElementById('mTitle').textContent=isL?'Welcome back':'Create Account';
+    document.getElementById('mSub').textContent=isL?'Sign in to YEET Social':'Join YEET - get your Web3 wallet instantly';
+    _clearMsg();
+  };
+  window.setCur = function(c){_yState.cur=c;localStorage.setItem('yeetCur',c);_updatePrice()};
+  window.toggleCur = function(){window.setCur(_yState.cur==='USD'?'EUR':'USD')};
+  window.doLogout = function(){
+    localStorage.removeItem('yeetToken');localStorage.removeItem('yeetUser');localStorage.removeItem('yeetWallet');
+    var aa=document.getElementById('authArea'),wa=document.getElementById('walletArea');
+    if(aa)aa.style.display='flex';if(wa)wa.style.display='none';
+    _toast('Disconnected');
+  };
+  window.copyAuthAddr = function(){navigator.clipboard?.writeText(localStorage.getItem('yeetWallet')||'');_toast('Address copied')};
+  window.connectMetaMaskAuth = async function(){
+    if(!window.ethereum){_showErr('MetaMask not found. Please install it.');return}
+    try{
+      var acc=await window.ethereum.request({method:'eth_requestAccounts'});
+      var addr=acc[0];
+      try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]})}
+      catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18}}]})}
+      var nr=await fetch('/api/v1/auth/nonce?address='+addr);
+      if(!nr.ok)throw new Error('Nonce failed');
+      var nd=await nr.json();
+      var msg='Sign in to YEET Social\nNonce: '+nd.nonce;
+      var sig=await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
+      var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,message:msg})});
+      if(!vr.ok){var ve=await vr.json();throw new Error(ve.message||'Auth failed')}
+      var vd=await vr.json();
+      _setLoggedIn(vd.token,vd.user,addr);window.closeAuthModal();_toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
+    }catch(e){_showErr(e.message)}
+  };
+  window.doEmailLogin = async function(){
+    var email=document.getElementById('lEmail').value.trim();
+    var pass=document.getElementById('lPass').value;
+    if(!email||!pass){_showErr('Fill all fields');return}
+    try{
+      var r=await fetch('/api/v1/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
+      var d=await r.json();
+      if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Login failed');
+      var tok=d.token||(d.data&&d.data.access_token)||'';
+      var usr=d.user||(d.data&&d.data.user)||{username:'user'};
+      _setLoggedIn(tok,usr,d.wallet_address);window.closeAuthModal();_toast('Welcome back, @'+(usr.username||'user'));
+    }catch(e){_showErr(e.message)}
+  };
+  window.regNext1 = function(){
+    var u=document.getElementById('rUser').value.trim();
+    var e=document.getElementById('rEmail').value.trim();
+    var p=document.getElementById('rPass').value;
+    if(!u||!e||!p){_showErr('Fill all fields');return}
+    if(u.length<3){_showErr('Username min 3 chars');return}
+    if(p.length<8){_showErr('Password min 8 chars');return}
+    if(!/\S+@\S+\.\S+/.test(e)){_showErr('Invalid email');return}
+    _seedWords=_genSeed();
+    var wallet=_genWallet(_seedWords);
+    _regData={username:u,email:e,password:p,wallet_address:wallet};
+    var grid=document.getElementById('seedGrid');
+    grid.innerHTML=_seedWords.map(function(w,i){return '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;display:flex;gap:5px"><span style="color:var(--muted);font-size:10px;min-width:16px">'+(i+1)+'.</span><span style="color:var(--yeet);font-weight:700">'+w+'</span></div>'}).join('');
+    document.getElementById('regStep1').style.display='none';
+    document.getElementById('regStep2').style.display='block';
+    _clearMsg();
+  };
+  window.regNext2 = function(){
+    var pos=[];while(pos.length<3){var p=Math.floor(Math.random()*12);if(pos.indexOf(p)<0)pos.push(p)}
+    pos.sort(function(a,b){return a-b});_verifyIdx=pos;
+    document.getElementById('verifyInputs').innerHTML=pos.map(function(i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="font-size:12px;color:var(--muted);min-width:60px">Word #'+(i+1)+'</label><input type="text" id="vi'+i+'" placeholder="word '+(i+1)+'" autocomplete="off" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none"></div>'}).join('');
+    document.getElementById('regStep2').style.display='none';
+    document.getElementById('regStep3').style.display='block';
+    _clearMsg();
+  };
+  window.completeReg = async function(){
+    for(var k=0;k<_verifyIdx.length;k++){
+      var i=_verifyIdx[k];
+      var v=(document.getElementById('vi'+i)||{}).value||'';
+      if(v.trim().toLowerCase()!==_seedWords[i]){_showErr('Word #'+(i+1)+' is incorrect');return}
+    }
+    _showOk('Verified! Creating account...');
+    try{
+      var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
+      var d=await r.json();
+      if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Registration failed');
+      var tok=d.token||(d.data&&d.data.access_token)||'';
+      var usr=d.user||(d.data&&d.data.user)||{username:_regData.username};
+      _setLoggedIn(tok,usr,_regData.wallet_address);window.closeAuthModal();_toast('Welcome to YEET, @'+_regData.username);
+    }catch(e){_showErr(e.message)}
+  };
+  window.copySeedAuth = function(){navigator.clipboard?.writeText(_seedWords.join(' '));_toast('Seed phrase copied - store offline!')};
+
+  // Init on load
+  document.addEventListener('DOMContentLoaded',function(){
+    _yState.cur=localStorage.getItem('yeetCur')||'USD';
+    _updatePrice();
+    _fetchEur();
+    setInterval(_fetchEur,60000);
+    // Check saved session
+    var tok=localStorage.getItem('yeetToken');
+    var user=JSON.parse(localStorage.getItem('yeetUser')||'null');
+    var wallet=localStorage.getItem('yeetWallet');
+    if(tok&&user)_updateAuthUI(user,wallet);
+    // Close modal on backdrop click
+    var m=document.getElementById('authModal');
+    if(m)m.addEventListener('click',function(e){if(e.target===m)window.closeAuthModal()});
+    // Escape key
+    document.addEventListener('keydown',function(e){if(e.key==='Escape')window.closeAuthModal()});
+  });
+})();
 </script>
 </body>
 </html>
