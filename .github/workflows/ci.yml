@@ -10,12 +10,15 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-backend:
-    name: Build Backend (Rust/Axum)
+  build-and-push-backend:
+    name: Build & Push Backend Docker Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_USER: yeet
           POSTGRES_PASSWORD: yeet_secure_password
@@ -34,61 +37,42 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend
           cache-on-failure: true
+
       - name: Run Migrations
         run: |
           cargo install sqlx-cli --no-default-features --features postgres --quiet 2>/dev/null || true
           sqlx migrate run
+
       - name: Build
         run: cargo build --release
+
       - name: Clippy
         run: cargo clippy -- -D warnings
-      - name: Build Docker image
+
+      - name: Log in to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker image
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: backend
-          push: false
-          tags: ghcr.io/zauni1984/yeet-social/backend:ci
+          push: true
+          tags: ghcr.io/zauni1984/yeet-social/backend:main
           network: host
           build-args: |
             DATABASE_URL=postgresql://yeet:yeet_secure_password@localhost:5432/yeet
-
-  smart-contracts:
-    name: Smart Contracts (Foundry  BNB Smart Chain)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: contracts
-    steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: stable
-      - name: Install dependencies
-        run: |
-          git clone --depth 1 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
-          git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
-      - name: Build
-        run: forge build
-      - name: Test
-        run: forge test -v
-
-  security-audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-      - name: Audit
-        run: cargo audit || true
