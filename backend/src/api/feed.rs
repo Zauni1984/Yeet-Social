@@ -26,7 +26,7 @@ struct FeedRow {
     expires_at: DateTime<Utc>,
     created_at: DateTime<Utc>,
     author_id: Uuid,
-    wallet_address: String,
+    wallet_address: Option<String>,
     display_name: Option<String>,
     avatar_url: Option<String>,
 }
@@ -69,10 +69,14 @@ pub async fn get_following_feed(
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset   = (page - 1) * per_page;
 
-    let user_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address)
-        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
