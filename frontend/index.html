@@ -130,7 +130,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="btnEUR" onclick="window.setCur && setCur('EUR')" style="background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer">EUR</button>
     </div>
   </div>
-  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
+  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)" onfocus="if(this.dataset.isUser)this.value=''" onblur="if(this.dataset.isUser&&!this.value)this.value='';"></div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
@@ -968,8 +968,8 @@ function submitPost(){
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast('Posting to /api/v1/posts...');
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
-    .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken'))},body:JSON.stringify({content:txt,media_url:null,is_adult:false})})
+    .then(r=>r.json()).then(d=>{if(d.success===false)showToast('Error: '+(d.error&&d.error.message||'Post failed'));else{document.getElementById('postTxt').value='';loadFeed();showToast('Yeeted!');}})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
 
