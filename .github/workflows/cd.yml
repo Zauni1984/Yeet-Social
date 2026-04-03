@@ -36,39 +36,39 @@ jobs:
             set -e
             echo "[CD] Starting deploy at $(date)"
 
-            DEPLOY_DIR=/docker/yeet-social
+            # Find compose dir dynamically
+            DEPLOY_DIR=$(find / -name "docker-compose.yml" -not -path "*/overlay2/*" -not -path "*/proc/*" -not -path "*/root/Yeet/*" -not -path "*/opt/yeet/*" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "")
+            echo "[CD] Found compose at: $DEPLOY_DIR"
 
-            # Pull latest compose from GitHub
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml" \
-              -o $DEPLOY_DIR/docker-compose.yml
+            if [ -z "$DEPLOY_DIR" ]; then
+              echo "[CD] No compose dir found, using /root/yeet-social"
+              DEPLOY_DIR=/root/yeet-social
+              mkdir -p $DEPLOY_DIR
+            fi
 
-            # Pull nginx config
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf" \
-              -o $DEPLOY_DIR/nginx.conf
+            # Pull latest compose and nginx config
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml" -o $DEPLOY_DIR/docker-compose.yml
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf" -o $DEPLOY_DIR/nginx.conf
 
-            # Pull latest backend image
-            docker pull ghcr.io/zauni1984/yeet-social/backend:main || echo "No new image"
+            # Show .env if exists
+            ls -la $DEPLOY_DIR/
 
-            # Recreate postgres if command changed (TCP fix)
             cd $DEPLOY_DIR
-            docker compose up -d --force-recreate postgres
-            echo "[CD] Waiting for postgres to be healthy..."
-            sleep 10
 
-            # Restart backend with new image
+            # Force-recreate postgres with TCP fix, then restart backend
+            docker compose up -d --force-recreate postgres
+            echo "[CD] Waiting for postgres..."
+            sleep 12
+
             docker compose up -d --no-deps --pull always backend
 
-            # Sync frontend files
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html" \
-              -o /home/yeet-frontend/index.html
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/sw.js" \
-              -o /home/yeet-frontend/sw.js 2>/dev/null || true
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/manifest.json" \
-              -o /home/yeet-frontend/manifest.json 2>/dev/null || true
+            # Sync frontend
+            mkdir -p /home/yeet-frontend
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html" -o /home/yeet-frontend/index.html
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/sw.js" -o /home/yeet-frontend/sw.js 2>/dev/null || true
+            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/manifest.json" -o /home/yeet-frontend/manifest.json 2>/dev/null || true
 
-            # Health check
             sleep 8
-            STATUS=$(curl -sk http://127.0.0.1:8080/api/v1/health | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('status','error'))" 2>/dev/null || echo "error")
-            echo "[CD] Health: $STATUS"
-
+            STATUS=$(curl -sk http://127.0.0.1:8080/api/v1/health 2>/dev/null || echo "no-response")
+            echo "[CD] Health response: $STATUS"
             echo "[CD] Deploy complete at $(date)"
