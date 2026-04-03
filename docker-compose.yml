@@ -5,6 +5,7 @@ services:
     image: postgres:16-alpine
     container_name: yeet-postgres
     restart: always
+    command: postgres -h 0.0.0.0
     environment:
       POSTGRES_DB: yeet
       POSTGRES_USER: yeet
