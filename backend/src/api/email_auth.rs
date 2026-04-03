@@ -25,6 +25,7 @@ pub struct TokenResponse {
     pub access_token: String,
     pub refresh_token: String,
     pub token_type: String,
+    pub username: String,
 }
 
 fn hash_password(password: &str, salt: &str) -> String {
@@ -97,6 +98,7 @@ pub async fn register(
         access_token,
         refresh_token,
         token_type: "Bearer".into(),
+        username: username.clone(),
     })))
 }
 
@@ -109,15 +111,15 @@ pub async fn login(
     }
 
     // Fetch user
-    let row = sqlx::query_as::<_, (Uuid, String, String)>(
-        "SELECT id, password_hash, password_salt FROM users WHERE email = $1"
+    let row = sqlx::query_as::<_, (Uuid, String, String, String)>(
+        "SELECT id, password_hash, password_salt, COALESCE(username, 'user') FROM users WHERE email = $1"
     )
     .bind(req.email.to_lowercase())
     .fetch_optional(state.db.pool())
     .await
     .map_err(AppError::Database)?;
 
-    let (user_id, stored_hash, salt) = row
+    let (user_id, stored_hash, salt, username) = row
         .ok_or_else(|| AppError::Unauthorised("Invalid email or password".into()))?;
 
     let hash = hash_password(&req.password, &salt);
@@ -133,5 +135,6 @@ pub async fn login(
         access_token,
         refresh_token,
         token_type: "Bearer".into(),
+        username,
     })))
 }
