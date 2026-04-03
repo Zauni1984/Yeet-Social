@@ -299,7 +299,8 @@ function copyCA(){navigator.clipboard?.writeText('0x0f1963829c6cc7A925E2F46949C3
 
 function showIn(){
   const u=S.user,n=u?.username||'anon',a=S.wallet||u?.wallet_address||'';
-  document.getElementById('topActs').innerHTML=`<div class="wallet-chip" onclick="copyWA()">${short(a)}</div><button class="btn btn-outline" onclick="document.getElementById('settModal').classList.add('open')">&#9881;</button>`;
+  const chipLabel=n&&n!=='anon'?'@'+n:short(a);
+  document.getElementById('topActs').innerHTML=`<div class="wallet-chip" onclick="copyWA()">${chipLabel}</div><button class="btn btn-outline" onclick="document.getElementById('settModal').classList.add('open')">&#9881;</button>`;
   document.getElementById('compBox').style.display='block';
   document.getElementById('userCard').style.display='block';
   const ini=n[0].toUpperCase();
@@ -406,7 +407,7 @@ async function doRegister(){
 }
 function copySeed(){navigator.clipboard?.writeText(S.seeds.join(' '));toast('Seed phrase copied -- keep it safe!');}
 function showStep(n){for(let i=1;i<=3;i++)document.getElementById('rS'+i).style.display=n===i?'block':'none';clrMsgs();}
-function setAuth(token,user,wallet){S.token=token;S.user=user;S.wallet=wallet;localStorage.setItem('yt',token);localStorage.setItem('yu',JSON.stringify(user));if(wallet)localStorage.setItem('yw',wallet);showIn();}
+function setAuth(token,user,wallet){S.token=token;S.user=user;S.wallet=wallet;localStorage.setItem('yt',token);localStorage.setItem('yeet_jwt',token);localStorage.setItem('yeetToken',token);localStorage.setItem('yu',JSON.stringify(user));if(wallet)localStorage.setItem('yw',wallet);showIn();}
 
 async function loadFeed(){
   const el=document.getElementById('feedArea');
@@ -432,8 +433,8 @@ async function doPost(){
   if(!S.token){openAuth('login');return;}
   const c=document.getElementById('postTxt').value.trim();if(!c)return;
   try{
-    const r=await fetch(API+'/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.token},body:JSON.stringify({content:c})});
-    if(!r.ok)throw new Error('Post failed');
+    const r=await fetch(API+'/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.token},body:JSON.stringify({content:c,media_url:null,is_adult:false})});
+    const rd=await r.json();if(!r.ok&&rd.error)throw new Error(rd.error.message||'Post failed');else if(!r.ok)throw new Error('Post failed');
     document.getElementById('postTxt').value='';updChar();loadFeed();toast('YEETed!');
   }catch(e){toast('Error: '+e.message,true);}
 }
