@@ -130,7 +130,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="btnEUR" onclick="window.setCur && setCur('EUR')" style="background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer">EUR</button>
     </div>
   </div>
-  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
+  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." autocomplete="off" onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
@@ -416,9 +416,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 
 // ====== COINGECKO PRICES ======
 const COINS=[
-  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'''},
-  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'''},
-  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'''},
+  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¿'},
+  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ'},
+  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¬'},
   {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
   {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
 ];
@@ -506,7 +506,7 @@ async function loadProfile(){
     const pw=document.getElementById('profileWidget');
     const pi=document.getElementById('profileInfo');
     if(pw)pw.style.display='';
-    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">\u00F0\u009F\u0091\u00A4</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:2px solid var(--yeet);display:flex;align-items:center;justify-content:center">ÃÂÃÂÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¤</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">BSC Testnet</div></div></div><div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px">Posts: '+(u.post_count||0)+' &bull; Joined: '+new Date(u.created_at||Date.now()).toLocaleDateString()+'</div>';
   }catch(e){}
 }
 async function loadFeed(){
@@ -521,15 +521,15 @@ async function loadFeed(){
       const wrap=document.createElement('div');
       wrap.id='feed-posts';
       for(const p of d.data){
-        const addr=(p.author&&p.author.wallet_address)||'0x???';
-        const short=addr.slice(0,6)+'...'+addr.slice(-4);
+        const addr=(p.author&&p.author.wallet_address)||null;
+        const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):(p.author&&(p.author.display_name||p.author.username))||'@user';
         const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
         const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
         const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
         const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>\u00F0\u009F\u0091\u00A4</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; \u00E2\u009A\u00A1 '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>\u00E2\u009D\u00A4 '+(p.like_count||0)+'</span><span>\u00F0\u009F\u0092\u00AC '+(p.comment_count||0)+'</span></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px>ÃÂÃÂÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¤</div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¡ '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")>ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¤ '+(p.like_count||0)+'</span><span>ÃÂÃÂÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¬ '+(p.comment_count||0)+'</span></div>';
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -557,7 +557,7 @@ async function onConnected(address,walletName,provider){
   const btn=document.getElementById('walletBtn');
   btn.textContent='Signing...';btn.classList.add('connected');
   document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce \u00E2\u0086\u0092 sign \u00E2\u0086\u0092 verify \u00E2\u0086\u0092 JWT
+  // EIP-191: get nonce ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ sign ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ verify ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ JWT
   try{
     const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
     const nonceD=await nonceR.json();
@@ -570,7 +570,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_jwt',verD.data.token);
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
-      showToast('\u00E2\u009C\u0085 Signed in: '+walletName+' ('+short+')');
+      showToast('ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Signed in: '+walletName+' ('+short+')');
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -590,7 +590,7 @@ function showToast(msg){
 }
 
 async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously \u00E2\u0080\u0094 wait up to 1s
+  // MetaMask injects window.ethereum asynchronously ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ wait up to 1s
   const eth=await new Promise(res=>{
     if(window.ethereum)return res(window.ethereum);
     let t=0;
@@ -605,7 +605,7 @@ async function connectMetaMask(){
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
-    // ethereum exists but not MetaMask \u00E2\u0080\u0094 try anyway
+    // ethereum exists but not MetaMask ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ try anyway
     try{
       const accs=await eth.request({method:'eth_requestAccounts'});
       onConnected(accs[0],'Wallet',eth);
@@ -663,7 +663,7 @@ function connectWalletConnect(){
   document.getElementById('walletModal').classList.remove('on');
   const d=document.createElement('div');
   d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
-  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">\u00F0\u009F\u0093\u00B2</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
+  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px">ÃÂÃÂÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ²</div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
   d.onclick=e=>{if(e.target===d)d.remove()};
   document.body.appendChild(d);
 }
@@ -949,7 +949,7 @@ function loadFeedFiltered(filter){
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
           const el=document.createElement('div');
           el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">\u00F0\u009F\u0091\u00A4</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; \u00E2\u009A\u00A1 '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">ÃÂÃÂÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¤</div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¡ '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
           wrap.appendChild(el);
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
@@ -968,7 +968,7 @@ function submitPost(){
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast('Posting to /api/v1/posts...');
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('yeet_jwt')},body:JSON.stringify({content:txt})})
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt})})
     .then(r=>r.json()).then(()=>{document.getElementById('postTxt').value='';showToast('Yeeted!');})
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
@@ -977,14 +977,9 @@ function submitPost(){
   window.loadProfile = loadProfile;
   window.loadFeed = loadFeed;
   window.submitPost = submitPost;
-  window.performSearch = performSearch;
   window.updateCharCount = updateCharCount;
   window.switchTab = switchTab;
-  window.likePost = likePost;
-  window.deletePost = deletePost;
-  window.openAuthModal = openAuthModal;
-  window.closeAuthModal = closeAuthModal;
-  window.doLogout = doLogout;
+  window.performSearch = performSearch;
   window.openWalletModal = openWalletModal;
   window.closeWalletModal = closeWalletModal;
   window.showToast = showToast;
@@ -1133,6 +1128,7 @@ function submitPost(){
   function _setLoggedIn(tok,user,wallet){
     localStorage.setItem('yeetToken',tok);
     localStorage.setItem('yeet_jwt',tok);
+    localStorage.setItem('yt',tok);
     localStorage.setItem('yeetUser',JSON.stringify(user));
     if(wallet)localStorage.setItem('yeetWallet',wallet);
     _updateAuthUI(user,wallet);
