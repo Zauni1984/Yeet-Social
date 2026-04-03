@@ -34,34 +34,35 @@ jobs:
           timeout: 300s
           script: |
             set -e
-            echo "[CD] Deploy start: $(date)"
+            echo "[CD] $(date) — Starting deploy"
             DEPLOY_DIR=/root/yeet-social
+            mkdir -p $DEPLOY_DIR
 
-            # Update compose and nginx from GitHub
+            # Pull latest configs
             curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml" -o $DEPLOY_DIR/docker-compose.yml
             curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf" -o $DEPLOY_DIR/nginx.conf
 
+            # Ensure .env exists
+            if [ ! -f $DEPLOY_DIR/.env ]; then
+              echo "ERROR: $DEPLOY_DIR/.env missing! Create it on the VPS first."
+              exit 1
+            fi
+
             cd $DEPLOY_DIR
 
-            # Stop and remove conflicting manually-started containers
-            docker rm -f yeet-postgres yeet-backend yeet-redis yeet-nginx yeet-adminer 2>/dev/null || true
-            sleep 2
+            # Pull latest backend image
+            docker pull ghcr.io/zauni1984/yeet-social/backend:main || true
 
-            # Start full stack via compose (uses .env file on VPS)
-            docker compose up -d
-            echo "[CD] Waiting for stack to be healthy..."
-            sleep 20
+            # Start/update stack
+            docker compose up -d --remove-orphans
 
-            # Sync frontend
-            mkdir -p /home/yeet-frontend
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html" -o /home/yeet-frontend/index.html
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/sw.js" -o /home/yeet-frontend/sw.js 2>/dev/null || true
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/manifest.json" -o /home/yeet-frontend/manifest.json 2>/dev/null || true
+            # Sync frontend into named volume
+            docker run --rm -v yeet-social_frontend_data:/html alpine sh -c \
+              "wget -qO /html/index.html https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html"
 
             # Health check
-            sleep 5
-            STATUS=$(curl -sk http://127.0.0.1:8080/api/v1/health 2>/dev/null || echo "no-response")
+            sleep 15
+            STATUS=$(curl -sk http://127.0.0.1:8080/api/v1/health 2>/dev/null || echo "error")
             echo "[CD] Health: $STATUS"
-            echo "[CD] Done: $(date)"
             docker ps --format "table {{.Names}}\t{{.Status}}"
-# deploy 1775177710
+            echo "[CD] Done: $(date)"
