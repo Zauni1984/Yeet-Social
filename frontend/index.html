@@ -1246,6 +1246,9 @@ function submitPost(){
     _updatePrice();
     _fetchEur();
     setInterval(_fetchEur,60000);
+    // Clear search bar always
+    var sb=document.getElementById('searchInput');
+    if(sb){sb.value='';sb.removeAttribute('value');}
     // Check saved session
     var tok=localStorage.getItem('yeetToken');
     var user=JSON.parse(localStorage.getItem('yeetUser')||'null');
