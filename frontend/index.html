@@ -130,7 +130,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="btnEUR" onclick="window.setCur && setCur('EUR')" style="background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer">EUR</button>
     </div>
   </div>
-  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." onkeydown="if(event.key==='Enter')performSearch(this.value)" onfocus="if(this.dataset.isUser)this.value=''" onblur="if(this.dataset.isUser&&!this.value)this.value='';"></div>
+  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
