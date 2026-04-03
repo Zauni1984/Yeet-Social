@@ -46,7 +46,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         comment_count: r.comment_count as i32,
         is_liked: false, expires_at: r.expires_at, created_at: r.created_at,
         author: FeedPostAuthor {
-            id: r.author_id, wallet_address: r.wallet_address,
+            id: r.author_id, wallet_address: Some(r.wallet_address),
             display_name: r.display_name, avatar_url: r.avatar_url,
         },
     }
