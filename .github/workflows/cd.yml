@@ -43,14 +43,14 @@ jobs:
 
             cd $DEPLOY_DIR
 
-            # Force-recreate postgres so command: postgres -h 0.0.0.0 takes effect
-            docker compose up -d --force-recreate postgres
-            echo "[CD] Waiting for postgres TCP..."
-            sleep 15
+            # Stop and remove conflicting manually-started containers
+            docker rm -f yeet-postgres yeet-backend yeet-redis yeet-nginx yeet-adminer 2>/dev/null || true
+            sleep 2
 
-            # Pull new backend image and restart
-            docker pull ghcr.io/zauni1984/yeet-social/backend:main || true
-            docker compose up -d --no-deps backend
+            # Start full stack via compose (uses .env file on VPS)
+            docker compose up -d
+            echo "[CD] Waiting for stack to be healthy..."
+            sleep 20
 
             # Sync frontend
             mkdir -p /home/yeet-frontend
@@ -59,11 +59,8 @@ jobs:
             curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/manifest.json" -o /home/yeet-frontend/manifest.json 2>/dev/null || true
 
             # Health check
-            sleep 10
+            sleep 5
             STATUS=$(curl -sk http://127.0.0.1:8080/api/v1/health 2>/dev/null || echo "no-response")
             echo "[CD] Health: $STATUS"
             echo "[CD] Done: $(date)"
-
-# triggered: 1775176320
-# trigger 1775176708
-# trigger-vps-key 1775177075
+            docker ps --format "table {{.Names}}\t{{.Status}}"
