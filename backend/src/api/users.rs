@@ -37,7 +37,7 @@ pub async fn get_profile(
     .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
     Ok(Json(ApiResponse::ok(UserProfile {
-        id: r.id, wallet_address: r.wallet_address, display_name: r.display_name,
+        id: r.id, wallet_address: Some(r.wallet_address), display_name: r.display_name,
         bio: r.bio, avatar_url: r.avatar_url,
         follower_count: r.follower_count.unwrap_or(0),
         following_count: r.following_count.unwrap_or(0),
