@@ -7,7 +7,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
     pub id: Uuid,
-    pub wallet_address: String,
+    pub wallet_address: Option<String>,
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
@@ -20,7 +20,7 @@ pub struct User {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserProfile {
     pub id: Uuid,
-    pub wallet_address: String,
+    pub wallet_address: Option<String>,
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
@@ -65,7 +65,7 @@ pub struct FeedPost {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FeedPostAuthor {
     pub id: Uuid,
-    pub wallet_address: String,
+    pub wallet_address: Option<String>,
     pub display_name: Option<String>,
     pub avatar_url: Option<String>,
 }
