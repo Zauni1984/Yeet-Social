@@ -1193,7 +1193,7 @@ function submitPost(){
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Login failed');
       var tok=d.token||(d.data&&d.data.access_token)||'';
-      var usr=d.user||(d.data&&d.data.user)||{username:'user'};
+      var usr=d.user||(d.data&&d.data.user)||{username:(d.data&&d.data.username)||'user'};
       _setLoggedIn(tok,usr,d.wallet_address);window.closeAuthModal();_toast('Welcome back, @'+(usr.username||'user'));
     }catch(e){_showErr(e.message)}
   };
@@ -1234,7 +1234,7 @@ function submitPost(){
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Registration failed');
       var tok=d.token||(d.data&&d.data.access_token)||'';
-      var usr=d.user||(d.data&&d.data.user)||{username:_regData.username};
+      var usr=d.user||(d.data&&d.data.user)||{username:(d.data&&d.data.username)||_regData.username};
       _setLoggedIn(tok,usr,_regData.wallet_address);window.closeAuthModal();_toast('Welcome to YEET, @'+_regData.username);
     }catch(e){_showErr(e.message)}
   };
