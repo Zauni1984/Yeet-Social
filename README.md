@@ -1,52 +1,92 @@
-# Yeet — Decentralized Social Media
+# YEET Social  Web3 Social Media Platform
 
-[![CI](https://github.com/Zauni1984/Yeet-Social/actions/workflows/ci.yml/badge.svg)](https://github.com/Zauni1984/Yeet-Social/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+> Live at **[justyeet.it](https://justyeet.it)**
 
-Decentralized social media platform on Binance Smart Chain.
-Own your content, earn YEET tokens, post as NFTs.
+YEET Social is a Web3-native social media platform where users can post, comment, like, and tip each other with YEET tokens. Built with a Rust backend, PostgreSQL, Redis, and a single-file frontend served via nginx.
+
+---
+
+## Current Status (April 2026)
+
+- **Live & working**  posts, comments, likes, tipping icon all functional
+- **Email login/registration**  fully working
+- **Wallet login**  MetaMask & WalletConnect UI present
+- **Feed**  global feed with FOR YOU / FOLLOWING / NFT / 18+ tabs
+- **Post composer**  text posts with character counter
+- **Comments**  collapsible comment threads per post
+- **Tipping**  tip button visible on posts (YEET token flow in development)
+- **Mobile responsive**  hamburger menu, mobile auth button, responsive layout
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Backend | Rust · Axum · sqlx · PostgreSQL · Redis |
-| Frontend | Rust · Leptos · WebAssembly |
-| Blockchain | BSC · Solidity · ethers-rs · Foundry |
-| Infra | Docker · Nginx · GitHub Actions |
+|-------|-----------|
+| Backend | Rust (Axum) |
+| Database | PostgreSQL 16 |
+| Cache | Redis 7 |
+| Frontend | Single `index.html` (vanilla JS) |
+| Web server | Nginx (Docker) |
+| Hosting | Hostinger VPS (Ubuntu 24.04) |
+| Container registry | `ghcr.io/zauni1984/yeet-social/backend:main` |
 
-## Quick Start
+---
 
-```bash
-cp .env.example .env
-# Fill in .env values
-docker compose up -d postgres redis
-cargo run --bin yeet-server
-# In separate terminal:
-cd frontend && trunk serve
+## Infrastructure
+
+All services run as Docker containers in the `yeet-social_yeet-net` network:
+
+- `yeet-nginx`  serves frontend + proxies `/api/` to backend
+- `yeet-backend`  Rust API on port 8080
+- `yeet-postgres`  PostgreSQL database
+- `yeet-redis`  Redis cache
+
+Persistent config files:
+- `/root/nginx.conf`  nginx config (survives reboots)
+- `/root/nginx.conf`  nginx config with SSL, API proxy
+- `/root/start_backend.sh`  backend start script with env vars
+- `/root/yeet-html/index.html`  frontend (live)
+- `/root/yeet-html/index_good.html`  last known good backup
+
+---
+
+## Environment Variables (Backend)
+
+```
+DATABASE_URL=postgres://yeet:<password>@yeet-postgres:5432/yeet
+REDIS_URL=redis://yeet-redis:6379
+JWT_SECRET=<min 32 chars>
 ```
 
-## Smart Contracts (BSC)
+---
 
-```bash
-cd contracts
-forge install OpenZeppelin/openzeppelin-contracts
-forge test -vvv
-forge script script/Deploy.s.sol:DeployYeet --rpc-url bsc_testnet --broadcast --verify
+## Roadmap
+
+- [ ] Tipping flow  YEET token transfer on-chain
+- [ ] Wallet login (MetaMask / WalletConnect) fully wired
+- [ ] NFT post type
+- [ ] 18+ content gate
+- [ ] CD pipeline (auto-deploy on push)
+- [ ] YEET token smart contract (BNB Chain)
+
+---
+
+## Repository Structure
+
+```
+/
+ backend/          # Rust API (Axum)
+    src/
+        main.rs
+        email_auth.rs
+        posts.rs
+        feed.rs
+        ...
+ frontend/
+     index.html    # Entire frontend in one file
 ```
 
-## Features
+---
 
-- Wallet Login (MetaMask / WalletConnect on BSC)
-- Posts & Feed (Global, Following, Subscriptions, 18+ filter)
-- 24h Auto-Delete (DB timer, reset on reshare — NFT posts permanent)
-- YEET Token BEP-20 (earned by: login, post, comment, reshare, NFT mint)
-- Tipping (YEET/BNB, 10% platform fee)
-- NFT Posts BEP-721 (5 YEET burn fee, IPFS storage)
-- Pay-per-view content
-- Web Board RSS connector
-
-## License
-
-MIT
- 
+*Built by Stefan Zauni  Ostern 2026*
