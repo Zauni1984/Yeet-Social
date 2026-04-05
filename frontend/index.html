@@ -10,6 +10,7 @@ if('serviceWorker' in navigator){
   caches.keys().then(function(keys){
     keys.forEach(function(k){caches.delete(k);});
   });
+  
 }
 </script>
 
@@ -28,7 +29,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
 .tick .sym{color:var(--muted)}
 .up{color:var(--green)}.dn{color:var(--red)}
-nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:12px}
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:12px;overflow:hidden}
 .logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:var(--yeet);text-decoration:none;flex-shrink:0}
 .logo svg{width:28px;height:28px}
 .search{flex:1;max-width:420px}
@@ -109,14 +110,38 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 @media(max-width:900px){.sidebar-right{display:none}.layout{grid-template-columns:180px 1fr}}
 @media(max-width:700px){
   .sidebar{display:none;position:fixed;top:0;left:0;bottom:0;width:280px;z-index:150;background:var(--bg);border-right:1px solid var(--border);padding-top:64px;overflow-y:auto}
-  .sidebar.open{display:block}
+  .sidebar.open{display:block!important}
   .layout{grid-template-columns:1fr}
   .hamburger{display:flex}
   .search{display:none}
+  nav{padding:0 10px;gap:6px}
+  .token-badge{font-size:11px;padding:3px 7px}
+  .token-change{display:none}
+  .currency-toggle{display:none}
+  .btn-wallet{padding:6px 11px;font-size:12px}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;padding:10px 14px;font-size:13px;flex-shrink:0}
+  .composer{padding:12px 14px}
+  .composer-footer{flex-wrap:wrap;gap:6px}
+  .post{padding:14px}
+  #authArea .btn-login,#authArea .btn-reg{display:none!important}
+  #mobileAuthBtn{display:inline-flex!important}
+
+  #walletArea.visible .addr-pill{display:none}
+  #disconnectBtn{font-size:16px!important;padding:4px 6px!important;min-width:30px;max-width:36px}
+}
+@media(max-width:480px){
+  .token-badge{display:none}
+  nav{padding:0 8px}
+  .btn-wallet{padding:5px 10px;font-size:11px}
+  .tab{padding:8px 10px;font-size:12px}
+  .post{padding:12px}
 }
 @media(max-width:400px){.btn-wallet{padding:6px 10px;font-size:12px}}
 
 /* ticker removed */
+
 </style>
 </head>
 <body>
@@ -138,18 +163,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div id="yPriceChg" style="font-size:10px;color:#888">+2.4% 24h</div>
     </div>
     <div style="display:flex;gap:2px;margin-left:2px" onclick="event.stopPropagation()">
-      <button id="btnUSD" onclick="window.setCur && setCur('USD')" style="background:#c8f026;border:none;color:#000;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-weight:700">USD</button>
-      <button id="btnEUR" onclick="window.setCur && setCur('EUR')" style="background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer">EUR</button>
+      <button id="btnUSD" onclick="window.setCur && setCur('USD')" class="cur-btn active">USD</button>
+      <button id="btnEUR" onclick="window.setCur && setCur('EUR')" class="cur-btn">EUR</button>
     </div>
   </div>
   <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." autocomplete="off" onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
+      <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:#000;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center">&#128100;</button>
     </div>
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px">
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
-      <button class="btn-login" onclick="doLogout()" style="font-size:11px;padding:4px 10px">Disconnect</button>
+      <button class="btn-login" onclick="doLogout()" id="disconnectBtn" style="font-size:10px;padding:3px 7px;white-space:nowrap;max-width:90px">&#9211;</button>
     </div>
     
 </nav>
@@ -533,7 +559,7 @@ async function loadFeed(){
       const wrap=document.createElement('div');
       wrap.id='feed-posts';
       for(const p of d.data){
-        const addr=(p.author&&p.author.wallet_address)||null;
+        const addr=null;
         const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):(p.author&&(p.author.display_name||p.author.username))||'@user';
         const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
         const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
@@ -541,7 +567,11 @@ async function loadFeed(){
         const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px_solid_var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull;  '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div style=display:flex;gap:20px;font-size:13px;color:var(--muted)><span style=cursor:pointer onclick=likePost("'+p.id+'")> '+(p.like_count||0)+'</span><span> '+(p.comment_count||0)+'</span></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.querySelector('.like-btn').addEventListener('click',function(){toggleLike(this,p.id);});
+        el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
+        el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
+        el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -551,8 +581,18 @@ async function loadFeed(){
 }
 async function likePost(id){
   const jwt=localStorage.getItem('yeet_jwt');
-  await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
-  loadFeed();
+  if(!jwt){openWalletModal();return;}
+  if(!window._liked) window._liked={};
+  const span=document.querySelector('span[onclick*="likePost(\"'+id+'\")"], span[onclick*="likePost(\''+id+'\'")"]');
+  if(window._liked[id]){
+    await fetch('/api/v1/posts/'+id+'/unlike',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+    window._liked[id]=false;
+    if(span){const n=parseInt(span.textContent)||0;span.innerHTML='&#10084; '+(Math.max(0,n-1));}
+  }else{
+    await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+    window._liked[id]=true;
+    if(span){const n=parseInt(span.textContent)||0;span.innerHTML='&#10084; '+(n+1);}
+  }
 }
 let connectedWallet=null,connectedAddress=null;
 loadPrices();setInterval(loadPrices,60000);loadFeed();loadTrendingTags();if(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
@@ -702,14 +742,15 @@ if(window.matchMedia('(display-mode:standalone)').matches){
 }
 
 // ====== UI ======
-function openTipModal(postId,toAddr){
-  const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt){openWalletModal();return;}
-  document.getElementById('tipModal').classList.add('on');
-  document.getElementById('tipModal').dataset.postId=postId;
-  document.getElementById('tipModal').dataset.toAddr=toAddr;
-  document.getElementById('tipTarget').innerHTML='Tipping to: <b>'+toAddr.slice(0,6)+'...'+toAddr.slice(-4)+'</b>';
-}
+
+  function _tipPick(btn,amount){
+    window._tipSelected=amount;
+    var btns=btn.parentElement.querySelectorAll('button');
+    btns.forEach(function(b){b.style.borderColor='#333';});
+    btn.style.borderColor='var(--yeet)';
+    var inp=document.getElementById('_tipCustom');
+    if(inp)inp.value='';
+  }
 function closeTipModal(e){if(!e||e.target===document.getElementById('tipModal'))document.getElementById('tipModal').classList.remove('on');}
 function setTipAmt(n){document.getElementById('tipAmount').value=n;}
 async function sendTip(){
@@ -954,7 +995,7 @@ function loadFeedFiltered(filter){
         if(empty)empty.style.display='none';
         const wrap=document.createElement('div');wrap.id='feed-posts';
         for(const p of d.data){
-          const addr=(p.author&&p.author.wallet_address)||'0x???';
+          const addr=null;
           const short=addr.slice(0,6)+'...'+addr.slice(-4);
           const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
           const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
@@ -988,9 +1029,10 @@ function submitPost(){
   // Expose public functions
   window.loadProfile = loadProfile;
   window.loadFeed = loadFeed;
+  window.likePost = likePost;
+            window.openComment = function(id){openComment(id);};
   window.submitPost = submitPost;
-  window.updateCharCount = updateCharCount;
-  window.switchTab = switchTab;
+    window.switchTab = setTab;
   window.performSearch = performSearch;
   window.openWalletModal = openWalletModal;
   window.closeWalletModal = closeWalletModal;
@@ -1013,8 +1055,7 @@ function submitPost(){
   window.closeSettingsModal = closeSettingsModal;
   window.applySettings = applySettings;
   window.disconnectWallet = disconnectWallet;
-  window.updateCharCount = updateCharCount;
-  window.toggleNav = toggleNav;
+    window.toggleNav = toggleNav;
   window.setTab = setTab;
   window.submitPost = submitPost;
 })();
@@ -1098,6 +1139,8 @@ function submitPost(){
 .cur-tog{display:flex;gap:2px;margin-left:4px}
 .cur-tog button{background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer}
 .cur-tog button.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
+.cur-btn{background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-weight:600}
+.cur-btn.active{background:var(--yeet)!important;color:#000!important;border-color:var(--yeet)!important}
 .btn-login{background:none;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;cursor:pointer}
 .btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
 .btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
@@ -1149,7 +1192,7 @@ function submitPost(){
   function _updateAuthUI(user,wallet){
     var aa=document.getElementById('authArea'),wa=document.getElementById('walletArea');
     if(!aa||!wa)return;
-    aa.style.display='none';wa.style.display='flex';
+    aa.style.display='none';wa.classList.add('visible');wa.style.display='';
     var ap=document.getElementById('addrPill');
     if(ap){if(user&&user.username)ap.textContent='@'+user.username;else if(wallet)ap.textContent=wallet.slice(0,6)+'...'+wallet.slice(-4);}
   }
@@ -1275,6 +1318,196 @@ function submitPost(){
     document.addEventListener('keydown',function(e){if(e.key==='Escape')window.closeAuthModal()});
   });
 })();
+
+  function openComment(postId){
+    var jwt=localStorage.getItem('yeet_jwt');
+    if(!jwt){openWalletModal();return;}
+    var spans=document.querySelectorAll('span[onclick]');
+    var postEl=null;
+    for(var i=0;i<spans.length;i++){
+      var oc=spans[i].getAttribute('onclick')||'';
+      if(oc.indexOf(postId)>-1){postEl=spans[i].closest('[style*="border-bottom"]');break;}
+    }
+    if(!postEl)return;
+    if(postEl.querySelector('._cbox'))return;
+    var box=document.createElement('div');
+    box.className='_cbox';
+    box.style.cssText='padding:8px 16px 12px';
+    var inp=document.createElement('input');
+    inp.id='_ci_'+postId;
+    inp.placeholder='Write a comment...';
+    inp.style.cssText='flex:1;background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none';
+    var btn=document.createElement('button');
+    btn.textContent='Send';
+    btn.style.cssText='background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px';
+    btn.onclick=function(){_sendComment(postId);};
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;gap:8px;margin-top:8px';
+    row.appendChild(inp);row.appendChild(btn);
+    box.appendChild(row);
+    postEl.appendChild(box);
+    inp.focus();
+  }
+  async function _sendComment(id){
+    const jwt=localStorage.getItem('yeet_jwt');
+    const inp=document.getElementById('_ci_'+id);
+    if(!inp||!inp.value.trim()) return;
+    const btn=inp.nextElementSibling;
+    btn.disabled=true;
+    try{
+      await fetch('/api/v1/posts/'+id+'/comments',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+        body:JSON.stringify({content:inp.value.trim()})
+      });
+      inp.value='';
+      inp.placeholder='Comment sent!';
+      setTimeout(function(){
+        const box=inp.closest('._comment-box');
+        if(box)box.remove();
+      },1500);
+    }catch(e){btn.disabled=false;}
+  }
+
+  async function toggleLike(btn,id){
+    var jwt=localStorage.getItem('yeet_jwt');
+    if(!jwt){openWalletModal();return;}
+    if(!window._liked)window._liked={};
+    var heart=btn.querySelector('.like-heart');
+    var countEl=btn.querySelector('.like-count');
+    var n=parseInt(countEl?countEl.textContent:0)||0;
+    if(window._liked[id]){
+      await fetch('/api/v1/posts/'+id+'/unlike',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+      window._liked[id]=false;
+      if(heart)heart.style.color='';
+      if(countEl)countEl.textContent=Math.max(0,n-1);
+    }else{
+      await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+      window._liked[id]=true;
+      if(heart)heart.style.color='#e0245e';
+      if(countEl)countEl.textContent=n+1;
+    }
+  }
+  function toggleComments(btn,id){
+    var section=document.getElementById('comments-'+id);
+    if(!section)return;
+    if(section.style.display==='block'){
+      section.style.display='none';
+    }else{
+      section.style.display='block';
+      var inp=document.getElementById('cinput-'+id);
+      if(inp)inp.focus();
+      loadComments(id);
+    }
+  }
+  async function submitComment(btn,id){
+    var jwt=localStorage.getItem('yeet_jwt');
+    if(!jwt){openWalletModal();return;}
+    var inp=document.getElementById('cinput-'+id);
+    if(!inp||!inp.value.trim())return;
+    var content=inp.value.trim();
+    btn.disabled=true;
+    try{
+      await fetch('/api/v1/posts/'+id+'/comments',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+        body:JSON.stringify({content:content})
+      });
+      inp.value='';
+      loadComments(id);
+    }catch(e){}
+    btn.disabled=false;
+  }
+  async function loadComments(id){
+    var jwt=localStorage.getItem('yeet_jwt')||'';
+    var list=document.getElementById('clist-'+id);
+    if(!list)return;
+    try{
+      var r=await fetch('/api/v1/posts/'+id+'/comments',{headers:{'Authorization':'Bearer '+jwt}});
+      var d=await r.json();
+      if(d.data&&d.data.length){
+        list.innerHTML=d.data.map(function(c){
+          return '<div style="padding:6px 0;border-top:1px solid #222;font-size:13px">'
+            +'<b style="color:var(--yeet)">@'+(c.author&&c.author.username||'user')+'</b> '
+            +c.content+'</div>';
+        }).join('');
+      }else{
+        list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:6px 0">No comments yet</div>';
+      }
+    }catch(e){}
+  }
+</script>
+
+<script>
+
+function _tipPick(btn,amount){
+  window._tipSelected=amount;
+  ['_tp1','_tp3','_tp5','_tp10'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.borderColor='#333';});
+  btn.style.borderColor='#c8ff00';
+  var inp=document.getElementById('_tipCustom');if(inp)inp.value='';
+}
+</script>
+
+<script>
+function openTipModal(postId,toAddr){
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){alert('Please login to tip');return;}
+  var old=document.getElementById('_tipOv');if(old)old.remove();
+  window._tipSelected=1;window._tipPostId=postId;window._tipToAddr=toAddr;
+  var ov=document.createElement('div');ov.id='_tipOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center';
+  var box=document.createElement('div');
+  box.style.cssText='background:#111;border:1px solid #333;border-radius:16px;padding:24px;width:340px;max-width:92vw';
+  var h3=document.createElement('h3');h3.style.cssText='margin:0 0 6px;color:#fff;font-size:18px';h3.textContent=' Tip YEET Tokens';box.appendChild(h3);
+  var p1=document.createElement('p');p1.style.cssText='color:#888;font-size:13px;margin:0 0 16px';p1.textContent='Support this post with YEET tokens';box.appendChild(p1);
+  var p2=document.createElement('p');p2.style.cssText='color:#888;font-size:12px;margin:0 0 8px';p2.textContent='Quick select:';box.appendChild(p2);
+  var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;margin-bottom:16px';
+  [1,3,5,10].forEach(function(amt,i){
+    var b=document.createElement('button');
+    b.textContent=amt;b.dataset.amt=amt;
+    b.style.cssText='flex:1;padding:10px;background:#1a1a1a;border:2px solid '+(i===0?'#c8ff00':'#333')+';border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:14px';
+    b.onclick=function(){
+      window._tipSelected=amt;
+      row.querySelectorAll('button').forEach(function(x){x.style.borderColor='#333';});
+      b.style.borderColor='#c8ff00';
+      inp.value='';
+    };
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+  var p3=document.createElement('p');p3.style.cssText='color:#888;font-size:12px;margin:0 0 6px';p3.textContent='Or enter amount:';box.appendChild(p3);
+  var inp=document.createElement('input');
+  inp.type='number';inp.min='0.1';inp.step='0.1';inp.placeholder='Custom amount...';
+  inp.style.cssText='width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:16px';
+  inp.oninput=function(){window._tipSelected=parseFloat(inp.value)||0;row.querySelectorAll('button').forEach(function(x){x.style.borderColor='#333';});};
+  box.appendChild(inp);
+  var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:10px';
+  var sendBtn=document.createElement('button');
+  sendBtn.style.cssText='flex:1;padding:12px;background:#c8ff00;color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer';
+  sendBtn.textContent=' Send Tip';
+  sendBtn.onclick=function(){_doTip(window._tipPostId,window._tipToAddr);};
+  var cancelBtn=document.createElement('button');
+  cancelBtn.style.cssText='padding:12px 18px;background:#1a1a1a;color:#888;border:1px solid #333;border-radius:10px;font-size:14px;cursor:pointer';
+  cancelBtn.textContent='Cancel';
+  cancelBtn.onclick=function(){ov.remove();};
+  btnRow.appendChild(sendBtn);btnRow.appendChild(cancelBtn);box.appendChild(btnRow);
+  ov.appendChild(box);
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  document.body.appendChild(ov);
+}
+
+async function _doTip(postId,toAddr){
+  var jwt=localStorage.getItem('yeet_jwt');
+  var amt=window._tipSelected||1;
+  if(!amt||amt<=0){alert('Please select an amount');return;}
+  var ov=document.getElementById('_tipOv');
+  try{
+    var r=await fetch('/api/v1/tip',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})});
+    var d=await r.json();
+    if(r.ok){alert('Tip sent! '+amt+' YEET');if(ov)ov.remove();}
+    else alert('Error: '+(d.error||d.message||'Tip failed'));
+}catch(e){alert("Error sending tip");}
+}
 </script>
 </body>
 </html>
