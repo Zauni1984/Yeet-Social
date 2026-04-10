@@ -1,4 +1,4 @@
-//! Feed handlers — global + following feed.
+//! Feed handlers  global + following feed.
 use axum::{extract::{Query, State}, Json};
 use serde::Deserialize;
 use chrono::{DateTime, Utc};
@@ -36,18 +36,19 @@ pub async fn get_feed(
     State(state): State<AppState>,
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
-    let page     = q.page.unwrap_or(1).max(1);
+    let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
-    let offset   = (page - 1) * per_page;
+    let offset = (page - 1) * per_page;
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
-                p.like_count, p.reshare_count, p.comment_count,
-                p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.tip_total_yeet
-         FROM posts p JOIN users u ON p.author_id = u.id
-         WHERE p.expires_at > NOW() AND p.deleted_at IS NULL
-         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
+            p.like_count, p.reshare_count, p.comment_count,
+            p.expires_at, p.created_at,
+            u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
+            COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet
+        FROM posts p JOIN users u ON p.author_id = u.id
+        WHERE p.expires_at > NOW() AND p.deleted_at IS NULL
+        ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
     )
     .bind(per_page).bind(offset)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
@@ -66,9 +67,9 @@ pub async fn get_following_feed(
     auth: AuthUser,
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
-    let page     = q.page.unwrap_or(1).max(1);
+    let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
-    let offset   = (page - 1) * per_page;
+    let offset = (page - 1) * per_page;
 
     let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
         uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
@@ -81,21 +82,21 @@ pub async fn get_following_feed(
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
-                p.like_count, p.reshare_count, p.comment_count,
-                p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.tip_total_yeet
-         FROM posts p
-         JOIN users u ON p.author_id = u.id
-         JOIN follows f ON f.following_id = p.author_id
-         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL
-         ORDER BY p.created_at DESC LIMIT $2 OFFSET $3"
+            p.like_count, p.reshare_count, p.comment_count,
+            p.expires_at, p.created_at,
+            u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
+            COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet
+        FROM posts p JOIN users u ON p.author_id = u.id
+        JOIN follows f ON f.following_id = p.author_id
+        WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL
+        ORDER BY p.created_at DESC LIMIT $2 OFFSET $3"
     )
     .bind(user_id).bind(per_page).bind(offset)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN follows f ON f.following_id = p.author_id
-         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
+        WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
     )
     .bind(user_id)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
