@@ -23,6 +23,11 @@ pub async fn send_tip(
         return Err(AppError::Validation("Currency must be BNB or YEET".into()));
     }
 
+    let amount_val: f64 = req.amount.parse().unwrap_or(0.0);
+    if amount_val <= 0.0 {
+        return Err(AppError::Validation("Amount must be greater than 0".into()));
+    }
+
     // Support both wallet-login (wallet_address) and email-login (email:UUID in sub)
     let from_id: Uuid = if auth.address.starts_with("email:") {
         let id_str = auth.address.trim_start_matches("email:");
@@ -35,6 +40,19 @@ pub async fn send_tip(
             .map_err(AppError::Database)?
             .ok_or_else(|| AppError::NotFound("Sender not found".into()))?
     };
+
+    // Check sender balance
+    let balance: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(yeet_token_balance, 0)::float8 FROM users WHERE id = $1"
+    )
+    .bind(from_id)
+    .fetch_one(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+
+    if balance < amount_val {
+        return Err(AppError::Validation("Insufficient YEET balance".into()));
+    }
 
     // Find recipient by wallet_address or by id if to_address looks like a UUID
     let to_id: Uuid = if let Ok(uid) = Uuid::parse_str(&req.to_address) {
@@ -52,17 +70,31 @@ pub async fn send_tip(
         return Err(AppError::Validation("Cannot tip yourself".into()));
     }
 
+    let creator_amount = amount_val * 0.9;
+    let platform_cut = amount_val * 0.1;
+
     let tip_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO tips (from_user_id, to_user_id, post_id, amount, currency, platform_fee, tx_hash)
-         VALUES ($1, $2, $3, $4, $5, '0.10', $6) RETURNING id"
+        "INSERT INTO tips (from_user_id, to_user_id, post_id, amount, creator_amount, platform_cut, currency, tx_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
     )
     .bind(from_id)
     .bind(to_id)
     .bind(req.post_id)
     .bind(&req.amount)
+    .bind(creator_amount.to_string())
+    .bind(platform_cut.to_string())
     .bind(&req.currency)
     .bind(&req.tx_hash)
     .fetch_one(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+
+    // Debit sender balance
+    sqlx::query(
+        "UPDATE users SET yeet_token_balance = yeet_token_balance - $1 WHERE id = $2"
+    )
+    .bind(amount_val)
+    .bind(from_id)
+    .execute(state.db.pool())
     .await
     .map_err(AppError::Database)?;
 
