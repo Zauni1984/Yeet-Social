@@ -29,6 +29,7 @@ struct FeedRow {
     wallet_address: Option<String>,
     display_name: Option<String>,
     avatar_url: Option<String>,
+    tip_total_yeet: Option<f64>,
 }
 
 pub async fn get_feed(
@@ -123,5 +124,6 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
             display_name: r.display_name,
             avatar_url: r.avatar_url,
         },
+        tip_total_yeet: r.tip_total_yeet,
     }
 }
