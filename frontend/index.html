@@ -1496,18 +1496,7 @@ function openTipModal(postId,toAddr){
   document.body.appendChild(ov);
 }
 
-async function _doTip(postId,toAddr){
-  var jwt=localStorage.getItem('yeet_jwt');
-  var amt=window._tipSelected||1;
-  if(!amt||amt<=0){alert('Please select an amount');return;}
-  var ov=document.getElementById('_tipOv');
-  try{
-    var r=await fetch('/api/v1/tip',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})});
-    var d=await r.json();
-    if(r.ok){alert('Tip sent! '+amt+' YEET');if(ov)ov.remove();}
-    else alert('Error: '+(d.error||d.message||'Tip failed'));
-}catch(e){alert("Error sending tip");}
-}
+async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast('Please log in to send tips','error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast('Please select an amount','error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent='Sending...';}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast('Sent '+amt+' YEET!','success');if(ov)ov.remove();window._tipSelected=0;}else{showToast('Error: '+(res.d.error&&res.d.error.message||res.d.message||'Tip failed'),'error');if(btn){btn.disabled=false;btn.textContent='Send Tip';}}}).catch(function(){showToast('Network error','error');if(btn){btn.disabled=false;btn.textContent='Send Tip';}});}
 </script>
 </body>
 </html>
