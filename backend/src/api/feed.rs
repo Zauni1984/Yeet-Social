@@ -44,7 +44,7 @@ pub async fn get_feed(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
                 p.like_count, p.reshare_count, p.comment_count,
                 p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url
+                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.tip_total_yeet
          FROM posts p JOIN users u ON p.author_id = u.id
          WHERE p.expires_at > NOW() AND p.deleted_at IS NULL
          ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
@@ -83,7 +83,7 @@ pub async fn get_following_feed(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
                 p.like_count, p.reshare_count, p.comment_count,
                 p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url
+                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.tip_total_yeet
          FROM posts p
          JOIN users u ON p.author_id = u.id
          JOIN follows f ON f.following_id = p.author_id
