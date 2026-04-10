@@ -49,6 +49,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
             id: r.author_id, wallet_address: Some(r.wallet_address),
             display_name: r.display_name, avatar_url: r.avatar_url,
         },
+        tip_total_yeet: None,
     }
 }
 
