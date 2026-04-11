@@ -387,7 +387,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab')[2].classList.add('active');loadFeedFiltered('nft')">&#128247; NFT Posts</a>
     <a class="nav-link" href="#">&#9889; Token Tips</a>
     <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
-    <a class="nav-link" href="#">&#128286; 18+ Content</a>
+    <a class="nav-link" href="#" onclick="check18Plus();return false;">&#128286; 18+ Content</a>
     <div class="nav-section">Account</div>
     <a class="nav-link" href="#" onclick="loadProfile();showToast(connectedAddress?'Profile loaded':'Connect wallet first')">&#128100; Profile</a>
     <a class="nav-link" href="#">&#9881; Settings</a>
@@ -1101,12 +1101,7 @@ function loadFeedFiltered(filter){
       }else{if(empty)empty.style.display='';}
     }).catch(()=>{});
 }
-function check18Plus(){
-  if(localStorage.getItem('yeet_adult')==='1'){ loadFeedFiltered('adult'); return; }
-  const ok=confirm('18+ Content: This section contains adult content. Are you 18 or older?');
-  if(ok){localStorage.setItem('yeet_adult','1');loadFeedFiltered('adult');}
-  else{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelector('.tab').classList.add('active');loadFeed();}
-}
+// check18Plus: see face scan implementation below
 function submitPost(){
   var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
   if(!jwt&&!connectedAddress){openWalletModal();return;}
@@ -1350,7 +1345,7 @@ async function doFaceScan(){
   var hasImage=nonBlack>(c.width*c.height*0.1);
   if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
   document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
-  localStorage.setItem('yeet_18plus_verified','1');
+  localStorage.setItem('yeet_18plus_verified','1');localStorage.setItem('yeet_adult','1');
   setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
 }
 function closeFaceScan(){
