@@ -13,6 +13,9 @@ pub struct CreatePostRequest {
     pub content: String,
     pub media_url: Option<String>,
     pub is_adult: Option<bool>,
+    pub is_nft: Option<bool>,
+    pub nft_price_yeet: Option<f64>,
+    pub is_permanent: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -74,10 +77,16 @@ pub async fn create_post(
     let expires_at = Utc::now() + ChronoDuration::hours(24);
     let media_arr: Vec<String> = req.media_url.into_iter().collect();
     let post_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO posts (author_id, content, media_urls, expires_at)
-         VALUES ($1, $2, $3, $4) RETURNING id"
+        "INSERT INTO posts (author_id, content, media_urls, media_url, expires_at, is_adult, is_nft, nft_price_yeet, is_permanent)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id"
     )
-    .bind(user_id).bind(&req.content).bind(&media_arr).bind(expires_at)
+    .bind(user_id).bind(&req.content).bind(&media_arr)
+    .bind(req.media_url.as_deref())
+    .bind(expires_at)
+    .bind(req.is_adult.unwrap_or(false))
+    .bind(req.is_nft.unwrap_or(false))
+    .bind(req.nft_price_yeet)
+    .bind(req.is_permanent.unwrap_or(false))
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let _ = tokens::grant_reward(&state.db, user_id, RewardAction::PostCreated, rewards::POST_CREATED).await;
