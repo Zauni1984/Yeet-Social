@@ -408,9 +408,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="avatar">&#128100;</div>
       <div class="composer-body">
         <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
+        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128142; NFT &mdash; Preis: <span id="nftPriceVal">5</span> YEET</div>
         <div class="composer-footer">
-          <button class="icon-btn" title="Image">&#128248;</button>
-          <button class="icon-btn" title="NFT">&#128142;</button>
+          <button class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
+          <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
+          <button class="icon-btn" id="nftToggleBtn" title="Als NFT markieren" onclick="toggleNFT()">&#128142;</button>
           <button class="icon-btn" title="Pay-per-view">&#128274;</button>
           <button class="icon-btn" title="Tip">&#9889;</button>
           <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/280</div><label id="adultToggleLabel" style="display:none;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
@@ -1117,11 +1119,15 @@ function submitPost(){
   var _tabIs18=(_activeTab&&_activeTab.textContent&&_activeTab.textContent.indexOf('18')!==-1)||false;
   var _checkboxIs18=!!(document.getElementById('adultToggle')&&document.getElementById('adultToggle').checked);
   var isAdult=_tabIs18||_checkboxIs18;
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult})})
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:window._postImageB64||null,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false})})
     .then(r=>r.json()).then(d=>{
       if(d.success===false)showToast('Error: '+(d.error&&d.error.message||'Post failed'));
       else{
         document.getElementById('postTxt').value='';
+        window._postImageB64=null;window._postIsNFT=false;window._postNFTPrice=null;
+        var pw=document.getElementById('imgPreviewWrap');if(pw)pw.style.display='none';
+        var nd=document.getElementById('nftPriceDisplay');if(nd)nd.style.display='none';
+        var nb=document.getElementById('nftToggleBtn');if(nb)nb.style.color='';
         showToast('Yeeted!');
         if(isAdult)loadFeedFiltered('adult');
         else loadFeed();
