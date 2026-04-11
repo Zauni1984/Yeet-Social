@@ -629,10 +629,27 @@ async function loadFeed(){
         const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
         const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
         const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
-        const txt=String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const rawContent=String(p.content||'');
+        const foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
+        let txt=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        txt=txt.replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
+               .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
+        txt=txt.replace(/(https?:\/\/[^\s<"]+)/g,function(u){
+          var disp=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
+          if(disp.length>45)disp=disp.slice(0,45)+'\u2026';
+          return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+disp+'</a>';
+        });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
         el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        if(foundUrls.length>0){
+          var warnEl=document.createElement('div');
+          warnEl.style.cssText='margin:0 16px 10px;padding:9px 12px;border:1px solid #2a2a2a;border-radius:12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer';
+          warnEl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link &mdash; Vorsicht beim Öffnen</span>';
+          warnEl._warnUrl=foundUrls[0];
+          warnEl.addEventListener('click',function(ev){ev.stopPropagation();showExternalLinkWarning(ev,this._warnUrl);});
+          el.appendChild(warnEl);
+        }
         el.querySelector('.like-btn').addEventListener('click',function(){toggleLike(this,p.id);});
         el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
         el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
