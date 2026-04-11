@@ -159,7 +159,7 @@ function renderPosts(){
   grid.innerHTML = posts.map(function(p){
     var age = timeAgo(p.created_at);
     var cls = p.is_removed?'removed':p.is_flagged?'flagged':'';
-    var imgHtml = p.media_url ? '<img class="post-img" src="'+esc(p.media_url)+'" onerror="this.style.display='none'">' : '';
+    var imgHtml = p.media_url ? '<img class="post-img" src="'+esc(p.media_url)+'" onerror="this.style.display=&quot;none&quot;">' : '';
     return '<div class="post-card '+cls+'" id="card-'+p.id+'">'
       +'<div class="post-meta">'
       +'<span class="author">@'+(p.author_name||'unknown')+'</span>'
