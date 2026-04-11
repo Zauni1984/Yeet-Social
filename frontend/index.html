@@ -573,6 +573,7 @@ async function loadTrendingFeedPosts(){
         loadLinkPreview(foundUrls[0], previewDiv);
       }
       wrap.appendChild(div);
+    });
     var composer=document.querySelector('.composer');
     if(composer)composer.after(wrap);
   }catch(e){console.error('Trending:',e);}
