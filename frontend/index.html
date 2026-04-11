@@ -410,7 +410,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
         <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128142; NFT &mdash; Preis: <span id="nftPriceVal">5</span> YEET</div>
         <div class="composer-footer">
-          <button class="icon-btn" title="Foto hinzuf�gen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
+          <button class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
           <button class="icon-btn" id="nftToggleBtn" title="Als NFT markieren" onclick="toggleNFT()">&#128142;</button>
           <button class="icon-btn" title="Pay-per-view">&#128274;</button>
@@ -1172,6 +1172,13 @@ function submitPost(){
   window.reportPost = reportPost;
   window.submitReport = submitReport;
   window.check18Plus = check18Plus;
+  window.handleImageSelect = handleImageSelect;
+  window.removeImage = removeImage;
+  window.toggleNFT = toggleNFT;
+  window.openNFTPriceModal = openNFTPriceModal;
+  window.selectNFTPrice = selectNFTPrice;
+  window.confirmNFTPrice = confirmNFTPrice;
+  window.clearNFTPresets = clearNFTPresets;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
   window.setTab = setTab;
@@ -1377,6 +1384,100 @@ function closeFaceScan(){
   if(faceStream){faceStream.getTracks().forEach(function(t){t.stop();});faceStream=null;}
   document.getElementById('faceScanModal')?.remove();
 }
+
+// ── IMAGE UPLOAD ──────────────────────────────────────────────────────────
+function handleImageSelect(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var allowed = ['image/jpeg','image/jpg','image/png','image/webp','image/gif'];
+  if (!allowed.includes(file.type)) {
+    showToast('Nur JPG, PNG, WebP, GIF erlaubt', 'error'); input.value=''; return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Bild zu gross (max. 5MB)', 'error'); input.value=''; return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    window._postImageB64 = e.target.result;
+    var preview = document.getElementById('imgPreview');
+    var wrap = document.getElementById('imgPreviewWrap');
+    if (preview) preview.src = e.target.result;
+    if (wrap) wrap.style.display = 'block';
+    showToast('Bild ausgewaehlt', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+function removeImage() {
+  window._postImageB64 = null;
+  var wrap = document.getElementById('imgPreviewWrap');
+  if (wrap) wrap.style.display = 'none';
+  var inp = document.getElementById('imgInput');
+  if (inp) inp.value = '';
+}
+
+// ── NFT TOGGLE + PRICE POPUP ──────────────────────────────────────────────
+function toggleNFT() {
+  if (window._postIsNFT) {
+    window._postIsNFT = false; window._postNFTPrice = null;
+    var btn = document.getElementById('nftToggleBtn');
+    if (btn) btn.style.color = '';
+    var nd = document.getElementById('nftPriceDisplay');
+    if (nd) nd.style.display = 'none';
+    return;
+  }
+  openNFTPriceModal();
+}
+function openNFTPriceModal() {
+  var modal = document.createElement('div');
+  modal.id = 'nftModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  var presets = [5,10,50,100];
+  var presetBtns = presets.map(function(v){
+    return '<button onclick="selectNFTPrice('+v+',this)" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;cursor:pointer;font-size:15px;font-weight:700">'+v+' YEET</button>';
+  }).join('');
+  modal.innerHTML = '<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:340px;width:100%">'
+    +'<h3 style="margin:0 0 6px;font-size:16px">&#128142; Als NFT verkaufen</h3>'
+    +'<p style="color:#666;font-size:12px;margin-bottom:16px">Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).</p>'
+    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">Preis in YEET:</p>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+presetBtns+'</div>'
+    +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">'
+    +'<input type="number" id="nftCustomPrice" placeholder="Freie Eingabe..." min="1" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearNFTPresets()">'
+    +'<span style="color:#c6f135;font-weight:700">YEET</span>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="document.getElementById(\'nftModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">Abbrechen</button>'
+    +'<button onclick="confirmNFTPrice()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">Bestaetigen</button>'
+    +'</div></div>';
+  modal.addEventListener('click', function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(modal);
+}
+var _nftSelectedPreset = null;
+function selectNFTPrice(val, btn) {
+  _nftSelectedPreset = val;
+  document.querySelectorAll('#nftModal button[onclick^="selectNFTPrice"]').forEach(function(b){
+    b.style.borderColor='#333'; b.style.color='#fff';
+  });
+  btn.style.borderColor='#c6f135'; btn.style.color='#c6f135';
+  var ci=document.getElementById('nftCustomPrice');if(ci)ci.value='';
+}
+function clearNFTPresets() {
+  _nftSelectedPreset=null;
+  document.querySelectorAll('#nftModal button[onclick^="selectNFTPrice"]').forEach(function(b){
+    b.style.borderColor='#333'; b.style.color='#fff';
+  });
+}
+function confirmNFTPrice() {
+  var price = _nftSelectedPreset;
+  if (!price) { var ci=document.getElementById('nftCustomPrice'); price=ci?parseFloat(ci.value):null; }
+  if (!price||price<=0){showToast('Bitte Preis eingeben','error');return;}
+  document.getElementById('nftModal')?.remove();
+  window._postIsNFT=true; window._postNFTPrice=price;
+  var btn=document.getElementById('nftToggleBtn');if(btn)btn.style.color='#c6f135';
+  var nd=document.getElementById('nftPriceDisplay');
+  if(nd){nd.style.display='block';document.getElementById('nftPriceVal').textContent=price;}
+  showToast('NFT-Preis: '+price+' YEET','success');
+}
+
 function showExternalLinkWarning(e,url){
   e.preventDefault();
   var existing=document.getElementById('ext-link-modal');
@@ -1386,12 +1487,12 @@ function showExternalLinkWarning(e,url){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   m.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:12px">&#128279;</div>'
-    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlÃ¤sst YEET</h3>'
-    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link fÃ¼hrt zu einer externen Seite. YEET Ã¼bernimmt keine Verantwortung fÃ¼r externe Inhalte.</p>'
+    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlÃÂ¤sst YEET</h3>'
+    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link fÃÂ¼hrt zu einer externen Seite. YEET ÃÂ¼bernimmt keine Verantwortung fÃÂ¼r externe Inhalte.</p>'
     +'<div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left">'+url+'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
     +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">Abbrechen</button>'
-    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">Ãffnen</button>'
+    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">ÃÂffnen</button>'
     +'</div></div>';
   m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
   document.body.appendChild(m);
