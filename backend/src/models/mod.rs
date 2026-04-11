@@ -62,6 +62,9 @@ pub struct FeedPost {
     pub author: FeedPostAuthor,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tip_total_yeet: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nft_price_yeet: Option<f64>,
+    pub is_permanent: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
