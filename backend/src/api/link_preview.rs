@@ -19,27 +19,26 @@ pub struct LinkPreview {
 pub async fn get_link_preview(Query(params): Query<PreviewQuery>) -> impl IntoResponse {
     let url = params.url.clone();
 
-    // Basic URL validation
     if !url.starts_with("http://") && !url.starts_with("https://") {
-        return Json(LinkPreview {
-            url,
-            title: None,
-            description: None,
-            image: None,
-            site_name: None,
-        });
+        return Json(LinkPreview { url, title: None, description: None, image: None, site_name: None });
     }
 
     match fetch_og_tags(&url).await {
         Ok(preview) => Json(preview),
-        Err(_) => Json(LinkPreview {
-            url,
-            title: None,
-            description: None,
-            image: None,
-            site_name: None,
-        }),
+        Err(_) => Json(LinkPreview { url, title: None, description: None, image: None, site_name: None }),
     }
+}
+
+fn extract_hostname(url: &str) -> Option<String> {
+    // Strip protocol
+    let without_proto = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))?;
+    // Take up to first slash or end
+    let host = without_proto.split('/').next()?;
+    // Strip www.
+    let host = host.strip_prefix("www.").unwrap_or(host);
+    Some(host.to_string())
 }
 
 async fn fetch_og_tags(url: &str) -> Result<LinkPreview, Box<dyn std::error::Error + Send + Sync>> {
@@ -70,7 +69,11 @@ async fn fetch_og_tags(url: &str) -> Result<LinkPreview, Box<dyn std::error::Err
     let title = og.get("og:title")
         .or_else(|| og.get("twitter:title"))
         .cloned()
-        .or_else(|| document.select(&title_sel).next().map(|t| t.text().collect::<String>().trim().to_string()));
+        .or_else(|| {
+            document.select(&title_sel)
+                .next()
+                .map(|t| t.text().collect::<String>().trim().to_string())
+        });
 
     let description = og.get("og:description")
         .or_else(|| og.get("twitter:description"))
@@ -81,11 +84,9 @@ async fn fetch_og_tags(url: &str) -> Result<LinkPreview, Box<dyn std::error::Err
         .or_else(|| og.get("twitter:image"))
         .cloned();
 
-    let site_name = og.get("og:site_name").cloned()
-        .or_else(|| {
-            url::Url::parse(url).ok()
-                .and_then(|u| u.host_str().map(|h| h.trim_start_matches("www.").to_string()))
-        });
+    let site_name = og.get("og:site_name")
+        .cloned()
+        .or_else(|| extract_hostname(url));
 
     Ok(LinkPreview {
         url: url.to_string(),
