@@ -413,7 +413,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
           <button class="icon-btn" title="NFT">&#128142;</button>
           <button class="icon-btn" title="Pay-per-view">&#128274;</button>
           <button class="icon-btn" title="Tip">&#9889;</button>
-          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/280</div><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
+          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/280</div><label id="adultToggleLabel" style="display:none;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
         </div>
       </div>
     </div>
@@ -1346,7 +1346,7 @@ async function doFaceScan(){
   var hasImage=nonBlack>(c.width*c.height*0.1);
   if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
   document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
-  localStorage.setItem('yeet_18plus_verified','1');localStorage.setItem('yeet_adult','1');var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';
+  localStorage.setItem('yeet_18plus_verified','1');localStorage.setItem('yeet_adult','1');var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';
   setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
 }
 function closeFaceScan(){
