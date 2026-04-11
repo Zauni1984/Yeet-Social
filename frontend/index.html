@@ -519,21 +519,28 @@ async function loadTrendingFeedPosts(){
     const old=document.getElementById('feed-posts');
     if(old)old.remove();
     if(!d.success||!d.data){return;}
-    // Filter: nur Posts mit tip_total_yeet >= 1, sortiert absteigend
-    const posts=d.data
-      .filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;})
-      .sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);});
-    if(posts.length===0){
-      if(empty){empty.style.display='';empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128184;</div><p style="color:var(--muted);margin-top:12px">No trending posts yet.<br>Be the first to tip!</p></div>';}
+    const allPosts=d.data.filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;}).sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);});
+    if(allPosts.length===0){
+      if(empty){empty.style.display='';empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128184;</div><p style="color:var(--muted);margin-top:12px">No trending posts yet</p></div>';}
       return;
     }
     if(empty)empty.style.display='none';
     const wrap=document.createElement('div');
     wrap.id='feed-posts';
-    window._renderPosts(posts,wrap);
-    const main=document.querySelector('main.main')||document.querySelector('main')||document.querySelector('.main');
+    for(const p of allPosts){
+      const addr=null;
+      const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):(p.author&&(p.author.display_name||p.author.username))||'@user';
+      const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
+      const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+      const ttl=p.expires_at?Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000)):24;
+      const el=document.createElement('div');
+      el.className='post';
+      el.innerHTML='<div class="post-header"><div class="avatar"></div><div class="post-meta"><span class="username">'+short+'</span><span class="post-time">'+ago+' ago • '+ttl+'h</span></div></div><div class="post-content">'+(p.content||'')+'</div><div class="post-actions"><button class="action-btn like-btn" data-id="'+p.id+'" onclick="likePost(''+p.id+'')">&#10084; '+(p.like_count||0)+'</button><button class="action-btn">&#128172; '+(p.comment_count||0)+'</button><button class="tip-btn action-btn" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0).toFixed(0)+'</span></button></div>';
+      wrap.appendChild(el);
+    }
+    const main=document.querySelector('main.main')||document.querySelector('main');
     if(main)main.appendChild(wrap);
-  }catch(e){console.error('loadTrendingFeedPosts error:',e);}
+  }catch(e){console.error('loadTrendingFeedPosts:',e);}
 }
 
 async function loadTrendingTags(){
