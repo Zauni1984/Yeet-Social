@@ -6,82 +6,80 @@
 <title>YEET Admin</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif;min-height:100vh}
+body{background:#0a0a0a;color:#e0e0e0;font-family:system-ui,sans-serif}
 .login{display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login-box{background:#111;border:1px solid #222;border-radius:16px;padding:40px;width:340px;text-align:center}
-.login-box h1{color:#c6f135;font-size:24px;margin-bottom:8px}
-.login-box p{color:#666;font-size:13px;margin-bottom:24px}
-input{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;color:#fff;font-size:14px;outline:none;margin-bottom:12px}
+.box{background:#111;border:1px solid #222;border-radius:16px;padding:40px;width:340px;text-align:center}
+.box h1{color:#c6f135;font-size:24px;margin-bottom:8px}
+.box p{color:#666;font-size:13px;margin-bottom:24px}
+input[type=password],input[type=text]{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;color:#fff;font-size:14px;outline:none;margin-bottom:12px;display:block}
 input:focus{border-color:#c6f135}
-button{background:#c6f135;color:#000;border:none;border-radius:8px;padding:12px 24px;font-weight:700;cursor:pointer;width:100%;font-size:14px}
-button:hover{opacity:.9}
-button.danger{background:#ff4444;color:#fff}
-button.warn{background:#f5a623;color:#000}
-button.ok{background:#22c55e;color:#000}
-button.sm{padding:6px 12px;font-size:12px;width:auto;border-radius:6px}
-.panel{display:none;padding:24px}
-.header{display:flex;align-items:center;justify-content:between;gap:16px;margin-bottom:24px;border-bottom:1px solid #222;padding-bottom:16px}
+.btn{background:#c6f135;color:#000;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;font-size:14px}
+.btn:hover{opacity:.9}
+.btn.danger{background:#ff4444;color:#fff}
+.btn.ok{background:#22c55e;color:#000}
+.btn.warn{background:#f5a623;color:#000}
+.btn.sm{padding:5px 11px;font-size:12px;border-radius:6px}
+.btn.ghost{background:transparent;border:1px solid #444;color:#fff}
+.panel{display:none;padding:24px;max-width:1200px;margin:0 auto}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #222}
 .header h1{color:#c6f135;font-size:20px;flex:1}
-.tabs{display:flex;gap:8px;margin-bottom:20px}
-.tab{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#888}
-.tab.active{background:#c6f135;color:#000;border-color:#c6f135;font-weight:700}
-.badge{background:#ff4444;color:#fff;border-radius:999px;padding:2px 7px;font-size:11px;font-weight:700;margin-left:6px}
-.posts-grid{display:flex;flex-direction:column;gap:12px}
-.post-card{background:#111;border:1px solid #222;border-radius:12px;padding:16px}
-.post-card.flagged{border-color:#f5a623}
-.post-card.removed{border-color:#333;opacity:.5}
-.post-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:#666}
-.post-meta .author{color:#c6f135;font-weight:600}
-.post-meta .reports{background:#ff4444;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700}
-.post-content{font-size:14px;color:#ccc;margin-bottom:10px;line-height:1.5;word-break:break-word}
-.post-img{max-width:200px;max-height:150px;border-radius:8px;margin-bottom:8px;object-fit:cover}
-.post-actions{display:flex;gap:8px;flex-wrap:wrap}
-.post-id{font-family:monospace;font-size:10px;color:#444;margin-top:6px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .stat{background:#111;border:1px solid #222;border-radius:10px;padding:16px;text-align:center}
 .stat .num{font-size:28px;font-weight:800;color:#c6f135}
-.stat .label{font-size:12px;color:#666;margin-top:4px}
+.stat .lbl{font-size:12px;color:#666;margin-top:4px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;color:#888}
+.tab.active{background:#c6f135;color:#000;font-weight:700}
+.badge{background:#ff4444;color:#fff;border-radius:999px;padding:2px 7px;font-size:11px;font-weight:700;margin-left:6px}
+.search{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:13px;outline:none;margin-bottom:16px;display:block}
+.search:focus{border-color:#c6f135}
+.card{background:#111;border:1px solid #222;border-radius:12px;padding:16px;margin-bottom:12px}
+.card.flagged{border-color:#f5a623}
+.card.removed{opacity:.5;border-color:#333}
+.meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:#666;flex-wrap:wrap}
+.author{color:#c6f135;font-weight:600}
+.rpill{background:#ff4444;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700}
+.content{font-size:14px;color:#ccc;margin-bottom:10px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.pid{font-family:monospace;font-size:10px;color:#333;margin-top:6px}
 .empty{text-align:center;padding:40px;color:#444}
-.toast{position:fixed;top:20px;right:20px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px 20px;font-size:13px;z-index:999;display:none}
+.toast{position:fixed;top:20px;right:20px;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px 20px;font-size:13px;z-index:999;display:none;min-width:200px}
 .toast.ok{border-color:#22c55e;color:#22c55e}
 .toast.err{border-color:#ff4444;color:#ff4444}
-.search{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px 14px;color:#fff;font-size:13px;outline:none;margin-bottom:16px}
-.search:focus{border-color:#c6f135}
 </style>
 </head>
 <body>
 
 <div class="login" id="loginView">
-  <div class="login-box">
+  <div class="box">
     <h1>⚡ YEET Admin</h1>
     <p>Moderations-Dashboard</p>
     <input type="password" id="secretInput" placeholder="Admin Secret" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">Einloggen</button>
+    <button class="btn" style="width:100%" onclick="doLogin()">Einloggen</button>
   </div>
 </div>
 
 <div class="panel" id="adminPanel">
   <div class="header">
     <h1>⚡ YEET Admin</h1>
-    <button class="sm warn" onclick="loadData()">↻ Refresh</button>
-    <button class="sm" onclick="logout()" style="background:#333;color:#fff">Logout</button>
+    <button class="btn sm warn" onclick="loadData()">↻ Refresh</button>
+    <button class="btn sm ghost" onclick="logout()">Logout</button>
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="num" id="statTotal">—</div><div class="label">Posts gesamt</div></div>
-    <div class="stat"><div class="num" id="statFlagged" style="color:#f5a623">—</div><div class="label">Gemeldet</div></div>
-    <div class="stat"><div class="num" id="statRemoved" style="color:#ff4444">—</div><div class="label">Entfernt</div></div>
-    <div class="stat"><div class="num" id="statActive" style="color:#22c55e">—</div><div class="label">Aktiv</div></div>
+    <div class="stat"><div class="num" id="sTotal">—</div><div class="lbl">Posts gesamt</div></div>
+    <div class="stat"><div class="num" id="sFlagged" style="color:#f5a623">—</div><div class="lbl">Gemeldet</div></div>
+    <div class="stat"><div class="num" id="sRemoved" style="color:#ff4444">—</div><div class="lbl">Entfernt</div></div>
+    <div class="stat"><div class="num" id="sActive" style="color:#22c55e">—</div><div class="lbl">Aktiv</div></div>
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('reports')">🚩 Gemeldet <span class="badge" id="reportsBadge">0</span></div>
-    <div class="tab" onclick="switchTab('all')">📋 Alle Posts</div>
+    <div class="tab active" id="tab-reports" onclick="switchTab('reports')">🚩 Gemeldet <span class="badge" id="badge">0</span></div>
+    <div class="tab" id="tab-all" onclick="switchTab('all')">📋 Alle Posts</div>
   </div>
 
-  <input class="search" type="text" id="searchInput" placeholder="Suche nach Inhalt oder Author..." oninput="filterPosts()">
-
-  <div class="posts-grid" id="postsGrid"></div>
+  <input class="search" type="text" id="searchInput" placeholder="Suche..." oninput="renderPosts()">
+  <div id="grid"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -91,139 +89,218 @@ var SECRET = '';
 var allPosts = [];
 var currentTab = 'reports';
 
-function doLogin(){
+function doLogin() {
   var s = document.getElementById('secretInput').value.trim();
-  if(!s) return;
+  if (!s) return;
   SECRET = s;
   loadData();
 }
 
-function logout(){
+function logout() {
   SECRET = '';
-  document.getElementById('loginView').style.display='flex';
-  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('loginView').style.display = 'flex';
+  document.getElementById('adminPanel').style.display = 'none';
 }
 
-async function loadData(){
-  try{
-    var r = await fetch('/api/v1/admin/posts?secret='+encodeURIComponent(SECRET));
-    if(r.status===401){showToast('Falsches Admin-Passwort','err');return;}
+async function loadData() {
+  try {
+    var r = await fetch('/api/v1/admin/posts?secret=' + encodeURIComponent(SECRET));
+    if (r.status === 401) { showToast('Falsches Passwort', 'err'); return; }
     var d = await r.json();
-    if(!d.success){showToast('Fehler: '+d.error?.message,'err');return;}
+    if (!d.success) { showToast('Fehler: ' + (d.error && d.error.message), 'err'); return; }
     allPosts = d.data || [];
-    document.getElementById('loginView').style.display='none';
-    document.getElementById('adminPanel').style.display='block';
+    document.getElementById('loginView').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
     updateStats();
     renderPosts();
-  }catch(e){showToast('Netzwerkfehler: '+e.message,'err');}
+  } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
 }
 
-function updateStats(){
-  var total = allPosts.length;
-  var flagged = allPosts.filter(p=>p.is_flagged&&!p.is_removed).length;
-  var removed = allPosts.filter(p=>p.is_removed).length;
-  var active = allPosts.filter(p=>!p.is_removed&&!p.is_flagged).length;
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statFlagged').textContent = flagged;
-  document.getElementById('statRemoved').textContent = removed;
-  document.getElementById('statActive').textContent = active;
-  document.getElementById('reportsBadge').textContent = flagged;
+function updateStats() {
+  var flagged = allPosts.filter(function(p){return p.is_flagged && !p.is_removed;}).length;
+  var removed = allPosts.filter(function(p){return p.is_removed;}).length;
+  var active = allPosts.filter(function(p){return !p.is_removed && !p.is_flagged;}).length;
+  document.getElementById('sTotal').textContent = allPosts.length;
+  document.getElementById('sFlagged').textContent = flagged;
+  document.getElementById('sRemoved').textContent = removed;
+  document.getElementById('sActive').textContent = active;
+  document.getElementById('badge').textContent = flagged;
 }
 
-function switchTab(tab){
+function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll('.tab').forEach(function(t,i){
-    t.classList.toggle('active', (i===0&&tab==='reports')||(i===1&&tab==='all'));
-  });
+  document.getElementById('tab-reports').classList.toggle('active', tab === 'reports');
+  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
   renderPosts();
 }
 
-function filterPosts(){renderPosts();}
-
-function renderPosts(){
+function renderPosts() {
   var search = document.getElementById('searchInput').value.toLowerCase();
-  var posts = allPosts.filter(function(p){
-    if(currentTab==='reports' && (!p.is_flagged || p.is_removed)) return false;
-    if(search){
-      var content = (p.content||'').toLowerCase();
-      var author = (p.author_name||'').toLowerCase();
-      if(!content.includes(search)&&!author.includes(search)) return false;
+  var posts = allPosts.filter(function(p) {
+    if (currentTab === 'reports' && (!p.is_flagged || p.is_removed)) return false;
+    if (search) {
+      var c = (p.content || '').toLowerCase();
+      var a = (p.author_name || '').toLowerCase();
+      if (!c.includes(search) && !a.includes(search)) return false;
     }
     return true;
   });
-  var grid = document.getElementById('postsGrid');
-  if(posts.length===0){
-    grid.innerHTML='<div class="empty">'+(currentTab==='reports'?'🎉 Keine gemeldeten Posts':'Keine Posts gefunden')+'</div>';
+
+  var grid = document.getElementById('grid');
+  if (posts.length === 0) {
+    grid.innerHTML = '';
+    var empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = currentTab === 'reports' ? '🎉 Keine gemeldeten Posts' : 'Keine Posts gefunden';
+    grid.appendChild(empty);
     return;
   }
-  grid.innerHTML = posts.map(function(p){
-    var age = timeAgo(p.created_at);
-    var cls = p.is_removed?'removed':p.is_flagged?'flagged':'';
-    var imgHtml = p.media_url ? '<img class="post-img" src="'+esc(p.media_url)+'" onerror="this.style.display=&quot;none&quot;">' : '';
-    return '<div class="post-card '+cls+'" id="card-'+p.id+'">'
-      +'<div class="post-meta">'
-      +'<span class="author">@'+(p.author_name||'unknown')+'</span>'
-      +'<span>'+age+'</span>'
-      +(p.report_count>0?'<span class="reports">'+p.report_count+' Meldungen</span>':'')
-      +(p.is_removed?'<span style="color:#ff4444">🗑 Entfernt</span>':'')
-      +(p.is_flagged&&!p.is_removed?'<span style="color:#f5a623">🚩 Gemeldet</span>':'')
-      +'</div>'
-      +imgHtml
-      +'<div class="post-content">'+esc(p.content)+'</div>'
-      +(p.removed_reason?'<div style="font-size:11px;color:#666;margin-bottom:8px">Grund: '+esc(p.removed_reason)+'</div>':'')
-      +'<div class="post-actions">'
-      +(!p.is_removed?'<button class="sm danger" onclick="removePost(''+p.id+'',false)">🗑 Soft Remove</button>':'')
-      +(!p.is_removed?'<button class="sm danger" onclick="removePost(''+p.id+'',true)" style="background:#880000">💀 Hard Delete</button>':'')
-      +(p.is_flagged&&!p.is_removed?'<button class="sm ok" onclick="unflagPost(''+p.id+'')">✓ Freigeben</button>':'')
-      +'</div>'
-      +'<div class="post-id">'+p.id+'</div>'
-      +'</div>';
-  }).join('');
+
+  grid.innerHTML = '';
+  posts.forEach(function(p) {
+    var card = document.createElement('div');
+    card.className = 'card' + (p.is_removed ? ' removed' : p.is_flagged ? ' flagged' : '');
+    card.id = 'card-' + p.id;
+
+    // Meta row
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    var author = document.createElement('span');
+    author.className = 'author';
+    author.textContent = '@' + (p.author_name || 'unknown');
+    meta.appendChild(author);
+    var age = document.createElement('span');
+    age.textContent = timeAgo(p.created_at);
+    meta.appendChild(age);
+    if (p.report_count > 0) {
+      var rpill = document.createElement('span');
+      rpill.className = 'rpill';
+      rpill.textContent = p.report_count + ' Meldungen';
+      meta.appendChild(rpill);
+    }
+    if (p.is_removed) {
+      var rs = document.createElement('span');
+      rs.style.color = '#ff4444';
+      rs.textContent = '🗑 Entfernt';
+      meta.appendChild(rs);
+    } else if (p.is_flagged) {
+      var fs = document.createElement('span');
+      fs.style.color = '#f5a623';
+      fs.textContent = '🚩 Gemeldet';
+      meta.appendChild(fs);
+    }
+    card.appendChild(meta);
+
+    // Image
+    if (p.media_url) {
+      var img = document.createElement('img');
+      img.src = p.media_url;
+      img.style.cssText = 'max-width:200px;max-height:150px;border-radius:8px;margin-bottom:8px;object-fit:cover;display:block';
+      img.onerror = function() { this.style.display = 'none'; };
+      card.appendChild(img);
+    }
+
+    // Content
+    var content = document.createElement('div');
+    content.className = 'content';
+    content.textContent = p.content || '';
+    card.appendChild(content);
+
+    if (p.removed_reason) {
+      var rr = document.createElement('div');
+      rr.style.cssText = 'font-size:11px;color:#666;margin-bottom:8px';
+      rr.textContent = 'Grund: ' + p.removed_reason;
+      card.appendChild(rr);
+    }
+
+    // Actions
+    var actions = document.createElement('div');
+    actions.className = 'actions';
+    if (!p.is_removed) {
+      var softBtn = document.createElement('button');
+      softBtn.className = 'btn sm danger';
+      softBtn.textContent = '🗑 Entfernen';
+      softBtn.onclick = (function(pid){ return function(){ removePost(pid, false); }; })(p.id);
+      actions.appendChild(softBtn);
+
+      var hardBtn = document.createElement('button');
+      hardBtn.className = 'btn sm danger';
+      hardBtn.style.background = '#880000';
+      hardBtn.textContent = '💀 Hard Delete';
+      hardBtn.onclick = (function(pid){ return function(){ removePost(pid, true); }; })(p.id);
+      actions.appendChild(hardBtn);
+    }
+    if (p.is_flagged && !p.is_removed) {
+      var okBtn = document.createElement('button');
+      okBtn.className = 'btn sm ok';
+      okBtn.textContent = '✓ Freigeben';
+      okBtn.onclick = (function(pid){ return function(){ unflagPost(pid); }; })(p.id);
+      actions.appendChild(okBtn);
+    }
+    card.appendChild(actions);
+
+    var pid = document.createElement('div');
+    pid.className = 'pid';
+    pid.textContent = p.id;
+    card.appendChild(pid);
+
+    grid.appendChild(card);
+  });
 }
 
-async function removePost(id, hard){
-  var reason = prompt(hard?'Grund für permanentes Löschen:':'Grund für Entfernung (optional):');
-  if(reason === null) return;
-  var url = hard ? '/api/v1/admin/posts/'+id+'/hard' : '/api/v1/admin/posts/'+id;
-  var r = await fetch(url, {method:'DELETE',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({secret:SECRET,reason:reason||'Verstoß gegen Nutzungsbedingungen'})});
+async function removePost(id, hard) {
+  var reason = prompt(hard ? 'Grund für permanentes Löschen:' : 'Grund für Entfernung:') || '';
+  if (reason === null) return;
+  var url = hard ? '/api/v1/admin/posts/' + id + '/hard' : '/api/v1/admin/posts/' + id;
+  var r = await fetch(url, {
+    method: 'DELETE',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({secret: SECRET, reason: reason || 'Verstoß gegen Nutzungsbedingungen'})
+  });
   var d = await r.json();
-  if(d.success){
-    showToast(hard?'Post permanent gelöscht':'Post entfernt','ok');
-    if(hard){allPosts=allPosts.filter(p=>p.id!==id);}
-    else{var p=allPosts.find(p=>p.id===id);if(p){p.is_removed=true;p.removed_reason=reason;}}
-    updateStats();renderPosts();
-  }else showToast('Fehler: '+d.error?.message,'err');
+  if (d.success) {
+    showToast(hard ? 'Permanent gelöscht' : 'Post entfernt', 'ok');
+    if (hard) { allPosts = allPosts.filter(function(p){ return p.id !== id; }); }
+    else { var p = allPosts.find(function(p){ return p.id === id; }); if(p){ p.is_removed = true; p.removed_reason = reason; } }
+    updateStats(); renderPosts();
+  } else showToast('Fehler: ' + (d.error && d.error.message), 'err');
 }
 
-async function unflagPost(id){
-  var r = await fetch('/api/v1/admin/posts/'+id+'/unflag',{method:'POST',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({secret:SECRET})});
+async function unflagPost(id) {
+  var r = await fetch('/api/v1/admin/posts/' + id + '/unflag', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({secret: SECRET})
+  });
   var d = await r.json();
-  if(d.success){
-    showToast('Post freigegeben','ok');
-    var p=allPosts.find(p=>p.id===id);if(p){p.is_flagged=false;p.report_count=0;}
-    updateStats();renderPosts();
-  }else showToast('Fehler','err');
+  if (d.success) {
+    showToast('Post freigegeben', 'ok');
+    var p = allPosts.find(function(p){ return p.id === id; });
+    if (p) { p.is_flagged = false; p.report_count = 0; }
+    updateStats(); renderPosts();
+  } else showToast('Fehler', 'err');
 }
 
-function showToast(msg,type){
-  var t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast '+(type||'ok');t.style.display='block';
-  setTimeout(function(){t.style.display='none';},3000);
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type || 'ok');
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display = 'none'; }, 3000);
 }
 
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-function timeAgo(iso){
-  if(!iso)return'';
-  var s=Math.floor((Date.now()-new Date(iso))/1000);
-  if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';
-  if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';
+function timeAgo(iso) {
+  if (!iso) return '';
+  var s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm';
+  if (s < 86400) return Math.floor(s/3600) + 'h';
+  return Math.floor(s/86400) + 'd';
 }
 
-// Auto-refresh every 30s when logged in
-setInterval(function(){if(SECRET&&document.getElementById('adminPanel').style.display!=='none')loadData();},30000);
+setInterval(function(){
+  if (SECRET && document.getElementById('adminPanel').style.display !== 'none') loadData();
+}, 30000);
 </script>
 </body>
 </html>
