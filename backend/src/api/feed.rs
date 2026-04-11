@@ -47,7 +47,7 @@ pub async fn get_feed(
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet
         FROM posts p JOIN users u ON p.author_id = u.id
-        WHERE p.expires_at > NOW() AND p.deleted_at IS NULL
+        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL
         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
     )
     .bind(per_page).bind(offset)
