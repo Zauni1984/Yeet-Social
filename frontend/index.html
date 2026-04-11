@@ -567,12 +567,10 @@ async function loadTrendingFeedPosts(){
       div.appendChild(contentDiv);
       // External link warning box
       if(foundUrls.length>0){
-        var warnDiv=document.createElement('div');
-        warnDiv.style.cssText='margin-top:8px;padding:9px 12px;border:1px solid #2a2a2a;border-radius:12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer';
-        warnDiv.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link &mdash; Vorsicht</span>';
-        warnDiv._warnUrl=foundUrls[0];
-        warnDiv.addEventListener('click',function(ev){ev.stopPropagation();showExternalLinkWarning(ev,this._warnUrl);});
-        div.appendChild(warnDiv);
+        var previewDiv=document.createElement('div');
+        previewDiv.style.cssText='margin-top:8px';
+        div.appendChild(previewDiv);
+        loadLinkPreview(foundUrls[0], previewDiv);
       }
       wrap.appendChild(div);
     var composer=document.querySelector('.composer');
@@ -645,7 +643,7 @@ async function loadFeed(){
         if(foundUrls.length>0){
           var warnEl=document.createElement('div');
           warnEl.style.cssText='margin:0 16px 10px;padding:9px 12px;border:1px solid #2a2a2a;border-radius:12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer';
-          warnEl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link &mdash; Vorsicht beim �ffnen</span>';
+          warnEl.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link &mdash; Vorsicht beim Öffnen</span>';
           warnEl._warnUrl=foundUrls[0];
           warnEl.addEventListener('click',function(ev){ev.stopPropagation();showExternalLinkWarning(ev,this._warnUrl);});
           el.appendChild(warnEl);
@@ -1145,6 +1143,45 @@ function submitPost(){
   window.submitPost = submitPost;
 })();
 
+
+function loadLinkPreview(url, container) {
+  // Show skeleton first
+  container.innerHTML = '<div style="border:1px solid #2a2a2a;border-radius:12px;padding:12px;background:#0d0d0d;display:flex;align-items:center;gap:8px"><span style="color:#555;font-size:12px">&#128279; Lade Vorschau...</span></div>';
+  fetch('/api/v1/link-preview?url=' + encodeURIComponent(url))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var title = data.title || '';
+      var desc = data.description || '';
+      var img = data.image || '';
+      var site = data.site_name || url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+      if(title.length > 80) title = title.slice(0,80) + '\u2026';
+      if(desc.length > 120) desc = desc.slice(0,120) + '\u2026';
+
+      var card = document.createElement('div');
+      card.style.cssText = 'border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;background:#0d0d0d;cursor:pointer;transition:border-color .2s';
+      card.onmouseover = function(){ this.style.borderColor='#444'; };
+      card.onmouseout  = function(){ this.style.borderColor='#2a2a2a'; };
+      card.addEventListener('click', function(ev){ ev.stopPropagation(); showExternalLinkWarning(ev, url); });
+
+      var inner = '';
+      if(img) {
+        inner += '<img src="'+img+'" onerror="this.style.display=\'none\'" style="width:100%;max-height:180px;object-fit:cover;display:block">';
+      }
+      inner += '<div style="padding:10px 12px">';
+      inner += '<div style="font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">'+escHtml(site)+'</div>';
+      if(title) inner += '<div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px;line-height:1.3">'+escHtml(title)+'</div>';
+      if(desc)  inner += '<div style="font-size:12px;color:#888;line-height:1.4">'+escHtml(desc)+'</div>';
+      inner += '</div>';
+      card.innerHTML = inner;
+      container.innerHTML = '';
+      container.appendChild(card);
+    })
+    .catch(function(){
+      // Fallback: simple link warning
+      container.innerHTML = '<div onclick="event.stopPropagation();showExternalLinkWarning(event,\''+url+'\')" style="border:1px solid #2a2a2a;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#666\" stroke-width=\"2\"><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/><polyline points=\"15 3 21 3 21 9\"/><line x1=\"10\" y1=\"14\" x2=\"21\" y2=\"3\"/></svg><span style=\"color:#666;font-size:12px\">'+url.replace(/^https?:\/\//,'').replace(/\/$/,'')+'</span></div>';
+    });
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showExternalLinkWarning(e,url){
   e.preventDefault();
   var existing=document.getElementById('ext-link-modal');
@@ -1154,12 +1191,12 @@ function showExternalLinkWarning(e,url){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   m.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:12px">&#128279;</div>'
-    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlässt YEET</h3>'
-    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link führt zu einer externen Seite. YEET übernimmt keine Verantwortung für externe Inhalte.</p>'
+    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlÃ¤sst YEET</h3>'
+    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link fÃ¼hrt zu einer externen Seite. YEET Ã¼bernimmt keine Verantwortung fÃ¼r externe Inhalte.</p>'
     +'<div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left">'+url+'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
     +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">Abbrechen</button>'
-    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">Öffnen</button>'
+    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">Ãffnen</button>'
     +'</div></div>';
   m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
   document.body.appendChild(m);
