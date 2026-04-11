@@ -436,12 +436,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div class="widget">
       <div class="widget-title">&#128293; Trending</div>
       <div id="trendingTags">
-        <span class="tag">#YeetToken <span style="color:var(--muted);font-size:11px">1.2K</span></span>
-        <span class="tag">#BSC <span style="color:var(--muted);font-size:11px">840</span></span>
-        <span class="tag">#Web3Social <span style="color:var(--muted);font-size:11px">620</span></span>
-        <span class="tag">#NFTDrop <span style="color:var(--muted);font-size:11px">445</span></span>
-        <span class="tag">#DeFi <span style="color:var(--muted);font-size:11px">312</span></span>
-      </div>
+          <span style="color:var(--muted);font-size:12px">Loading...</span></div>
     </div>
     <div class="widget">
       <button onclick="openAuthModal('login')" style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px">&#128640; Install YEET App</button>
@@ -506,30 +501,34 @@ async function loadPrices(){
 
 async function loadTrendingTags(){
   try{
-    // Trending aus Backend-Posts extrahieren oder statische Fallback-Tags
-    const r=await fetch('/api/v1/feed?limit=50');
+    var jwt=localStorage.getItem('yeet_jwt');
+    var headers=jwt?{'Authorization':'Bearer '+jwt}:{};
+    var timeoutP=new Promise((_,rej)=>setTimeout(()=>rej(new Error('t')),3000));
+    const r=await Promise.race([fetch('/api/v1/feed',{headers:headers}),timeoutP]);
     const d=await r.json();
-    const tagCounts={};
-    if(d.success&&d.data){
-      d.data.forEach(p=>{
-        const tags=(p.content.match(/#\w+/g)||[]);
-        tags.forEach(t=>{tagCounts[t]=(tagCounts[t]||0)+1;});
-      });
+    var el=document.getElementById('trendingTags');
+    if(!el||!d.success||!d.data)return;
+    var posts=d.data
+      .filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;})
+      .sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);})
+      .slice(0,5);
+    if(posts.length===0){
+      el.innerHTML='<span style="color:var(--muted);font-size:12px">No trending posts yet</span>';
+      return;
     }
-    const sorted=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
-    const el=document.getElementById('trendingTags');
-    if(!el)return;
-    if(sorted.length>0){
-            el.innerHTML=sorted.map(([t,cnt])=>'<span class="tag" data-tag="'+t+'">'+t+' <span style="color:var(--muted);font-size:11px">'+cnt+'</span></span>').join('');
-    el.onclick=function(e){const span=e.target.closest('[data-tag]');if(span)searchTag(span.dataset.tag);};
-    }
+    el.innerHTML=posts.map(function(p){
+      var preview=(p.content||'').substring(0,45)+((p.content||'').length>45?'...':'');
+      var amt=(p.tip_total_yeet||0).toFixed(0);
+      var pid=p.id;
+      var waddr=(p.author&&p.author.wallet_address)||'';
+      return '<div style="margin-bottom:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">'+
+        '<div style="font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+preview+'</div>'+
+        '<div style="font-size:11px;color:#f5a623;margin-top:3px">&#128184; '+amt+' YEET</div>'+
+        '</div>';
+    }).join('');
   }catch(e){}
 }
-function searchTag(tag){
-  document.getElementById('postTxt').value=tag+' ';
-  document.getElementById('postTxt').focus();
-  showToast('Search: '+tag);
-}
+
 async function loadProfile(){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt)return;
