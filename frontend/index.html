@@ -640,7 +640,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="follow-btn" data-pid='\'+p.id+\'' data-aid='\'+((p.author&&p.author.id)||'')+'\'' style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px">&#43; <span>Follow</span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -651,6 +651,7 @@ async function loadFeed(){
         el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
         el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
         el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
+        el.querySelector('.follow-btn').addEventListener('click',function(){toggleFollow(this,p.id,p.author);});
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -1058,7 +1059,7 @@ function setTab(t){
   const label=t.textContent.trim();
   if(label.includes('18+')){ check18Plus(); return; }
   if(label.includes('NFT')){ loadFeedFiltered('nft'); return; }
-  if(label.includes('FOLLOWING')){ loadFeedFiltered('following'); return; }
+  if(label.includes('FOLLOWING')){ loadFollowingFeed(); return; }
   loadFeed();
 }
 function loadFeedFiltered(filter){
@@ -1136,6 +1137,8 @@ function submitPost(){
   window.disconnectWallet = disconnectWallet;
     window.toggleNav = toggleNav;
   window.showGlobalFeed = showGlobalFeed;
+  window.loadFollowingFeed = loadFollowingFeed;
+  window.toggleFollow = toggleFollow;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
   window.setTab = setTab;
@@ -1181,6 +1184,73 @@ function loadLinkPreview(url, container) {
     });
 }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleFollow(btn, postId, author) {
+  var jwt = localStorage.getItem('yeet_jwt');
+  if (!jwt) { openAuthModal('login'); return; }
+  // Get current logged-in user ID to prevent self-follow
+  var myId = localStorage.getItem('yeet_user_id') || '';
+  var authorId = (author && author.id) || '';
+  if (myId && authorId && myId === authorId) {
+    showToast('Du kannst dir nicht selbst folgen', 'error');
+    return;
+  }
+  var isFollowing = btn.dataset.following === '1';
+  var targetId = authorId;
+  if (!targetId) { showToast('Benutzer nicht gefunden', 'error'); return; }
+  var url = '/api/v1/users/' + targetId + '/' + (isFollowing ? 'unfollow' : 'follow');
+  btn.disabled = true;
+  fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + jwt } })
+    .then(function(r) {
+      if (r.status === 401) { localStorage.removeItem('yeet_jwt'); openAuthModal('login'); return; }
+      if (!r.ok) { r.json().then(function(e){ showToast(e.error&&e.error.message||'Fehler', 'error'); }); return; }
+      isFollowing = !isFollowing;
+      btn.dataset.following = isFollowing ? '1' : '0';
+      btn.querySelector('span').textContent = isFollowing ? 'Unfollow' : 'Follow';
+      btn.style.color = isFollowing ? '#c6f135' : 'var(--muted)';
+      showToast(isFollowing ? 'Gefolgt!' : 'Entfolgt', 'success');
+    })
+    .catch(function() { showToast('Netzwerkfehler', 'error'); })
+    .finally(function() { btn.disabled = false; });
+}
+
+async function loadFollowingFeed() {
+  var jwt = localStorage.getItem('yeet_jwt');
+  if (!jwt) {
+    var feed = document.getElementById('feed-posts');
+    if (feed) feed.remove();
+    var empty = document.querySelector('.empty');
+    if (empty) {
+      empty.style.display = '';
+      empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Einloggen um den Following Feed zu sehen</p></div>';
+    }
+    return;
+  }
+  try {
+    var r = await fetch('/api/v1/feed/following', { headers: { 'Authorization': 'Bearer ' + jwt } });
+    var d = await r.json();
+    var empty = document.querySelector('.empty');
+    var old = document.getElementById('feed-posts');
+    if (old) old.remove();
+    if (!d.data || d.data.length === 0) {
+      if (empty) {
+        empty.style.display = '';
+        empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Folge anderen Usern um ihre Posts hier zu sehen</p></div>';
+      }
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    var wrap = document.createElement('div');
+    wrap.id = 'feed-posts';
+    for (var p of d.data) {
+      var el = buildPostEl(p);
+      wrap.appendChild(el);
+    }
+    var c = document.querySelector('.composer');
+    if (c) c.after(wrap); else document.querySelector('.feed-container, main, .main').prepend(wrap);
+  } catch(e) { console.error('Following feed:', e); }
+}
+
 function showExternalLinkWarning(e,url){
   e.preventDefault();
   var existing=document.getElementById('ext-link-modal');
