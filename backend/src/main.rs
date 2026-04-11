@@ -56,6 +56,7 @@ fn build_router(state: AppState) -> Router {
 
     Router::new()
         // Health
+        .route("/api/v1/link-preview",  get(api::link_preview::get_link_preview))
         .route("/api/v1/health",           get(health_handler))
         .route("/api/v1/version",          get(version_handler))
         // Auth — wallet login (web + Android + iOS)
