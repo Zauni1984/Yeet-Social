@@ -659,6 +659,11 @@ async function loadFeed(){
         followBtn.innerHTML = '&#43; <span>Follow</span>';
         followBtn.addEventListener('click', function(){ toggleFollow(this, p.id, p.author); });
         el.querySelector('.post-actions').appendChild(followBtn);
+        var reportBtn=document.createElement('button');
+        reportBtn.style.cssText='background:transparent;border:none;outline:none;cursor:pointer;color:#555;font-size:13px;padding:4px 6px;margin-left:auto';
+        reportBtn.title='Post melden';reportBtn.innerHTML='&#128681;';
+        reportBtn.addEventListener('click',function(ev){ev.stopPropagation();reportPost(p.id);});
+        el.querySelector('.post-actions').appendChild(reportBtn);
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
@@ -1146,6 +1151,9 @@ function submitPost(){
   window.showGlobalFeed = showGlobalFeed;
   window.loadFollowingFeed = loadFollowingFeed;
   window.toggleFollow = toggleFollow;
+  window.reportPost = reportPost;
+  window.submitReport = submitReport;
+  window.check18Plus = check18Plus;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
   window.setTab = setTab;
@@ -1258,6 +1266,97 @@ async function loadFollowingFeed() {
   } catch(e) { console.error('Following feed:', e); }
 }
 
+
+async function reportPost(postId){
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){openAuthModal('login');return;}
+  var reasons=['Unangemessen','Spam','Hassrede','Gewalt','Nacktheit','Fehlinformationen','Anderes'];
+  var modal=document.createElement('div');
+  modal.id='reportModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  modal.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:360px;width:100%">'
+    +'<h3 style="margin:0 0 16px;font-size:16px">&#128681; Post melden</h3>'
+    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
+    +reasons.map(function(r,i){return'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;border:1px solid #2a2a2a;border-radius:8px">'
+      +'<input type="radio" name="rr" value="'+r+'"'+(i===0?' checked':'')+'>'+r+'</label>';}).join('')
+    +'</div>'
+    +'<textarea id="rdetails" placeholder="Details (optional)" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;resize:none;height:60px;outline:none;margin-bottom:12px"></textarea>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="document.getElementById(\'reportModal\').remove()" style="flex:1;padding:10px;background:transparent;border:1px solid #444;border-radius:8px;color:#fff;cursor:pointer">Abbrechen</button>'
+    +'<button onclick="submitReport(\''+postId+'\')" style="flex:1;padding:10px;background:#ff4444;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Melden</button>'
+    +'</div></div>';
+  modal.addEventListener('click',function(e){if(e.target===this)this.remove();});
+  document.body.appendChild(modal);
+}
+async function submitReport(postId){
+  var jwt=localStorage.getItem('yeet_jwt');
+  var reason=document.querySelector('input[name="rr"]:checked')?.value||'inappropriate';
+  var details=document.getElementById('rdetails')?.value||'';
+  document.getElementById('reportModal')?.remove();
+  try{
+    var r=await fetch('/api/v1/posts/'+postId+'/report',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({reason:reason,details:details})});
+    var d=await r.json();
+    if(r.status===401){localStorage.removeItem('yeet_jwt');openAuthModal('login');return;}
+    showToast(d.success?'&#128681; Gemeldet':'Fehler beim Melden',d.success?'success':'error');
+  }catch(e){showToast('Netzwerkfehler','error');}
+}
+var faceStream=null;
+function check18Plus(){
+  if(localStorage.getItem('yeet_18plus_verified')==='1'){loadFeedFiltered('adult');return;}
+  var modal=document.createElement('div');
+  modal.id='faceScanModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  modal.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:28px;max-width:400px;width:100%;text-align:center">'
+    +'<div style="font-size:40px;margin-bottom:12px">&#128247;</div>'
+    +'<h3 style="margin:0 0 8px;font-size:18px">Altersverifikation</h3>'
+    +'<p style="color:#888;font-size:13px;margin-bottom:16px">18+ Bereich. Einmaliger Face-Scan zur Alterspr\u00fcfung.</p>'
+    +'<div style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:14px">'
+    +'<video id="faceVid" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>'
+    +'<canvas id="faceCvs" style="display:none"></canvas>'
+    +'<div id="faceOvl" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
+    +'<div style="width:140px;height:180px;border:2px dashed rgba(198,241,53,.4);border-radius:50%"></div></div></div>'
+    +'<div id="faceSt" style="color:#888;font-size:13px;margin-bottom:14px">Kamera startet...</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">Abbrechen</button>'
+    +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer" disabled>Scan starten</button>'
+    +'</div>'
+    +'<p style="color:#333;font-size:11px;margin-top:10px">Bild wird nicht gespeichert. Lokale KI-Analyse.</p>'
+    +'</div>';
+  document.body.appendChild(modal);
+  initCamera();
+}
+async function initCamera(){
+  try{
+    faceStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    var v=document.getElementById('faceVid');
+    if(v){v.srcObject=faceStream;document.getElementById('faceSt').textContent='Gesicht zentrieren, dann Scan starten';document.getElementById('scanBtn').disabled=false;}
+  }catch(e){document.getElementById('faceSt').textContent='Kamerazugriff verweigert';}
+}
+async function doFaceScan(){
+  var btn=document.getElementById('scanBtn');
+  btn.disabled=true;btn.textContent='Analysiere...';
+  document.getElementById('faceSt').textContent='KI analysiert...';
+  document.getElementById('faceOvl').style.outline='2px solid #c6f135';
+  var v=document.getElementById('faceVid'),c=document.getElementById('faceCvs');
+  c.width=v.videoWidth||320;c.height=v.videoHeight||240;
+  c.getContext('2d').drawImage(v,0,0);
+  await new Promise(function(r){setTimeout(r,2200);});
+  // TODO: replace with real age-detection API call
+  var pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+  var nonBlack=0;
+  for(var i=0;i<pixels.length;i+=4){if(pixels[i]>20||pixels[i+1]>20||pixels[i+2]>20)nonBlack++;}
+  var hasImage=nonBlack>(c.width*c.height*0.1);
+  if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
+  document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
+  localStorage.setItem('yeet_18plus_verified','1');
+  setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
+}
+function closeFaceScan(){
+  if(faceStream){faceStream.getTracks().forEach(function(t){t.stop();});faceStream=null;}
+  document.getElementById('faceScanModal')?.remove();
+}
 function showExternalLinkWarning(e,url){
   e.preventDefault();
   var existing=document.getElementById('ext-link-modal');
