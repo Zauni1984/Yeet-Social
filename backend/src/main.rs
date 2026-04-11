@@ -67,6 +67,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
         // Feed
         .route("/api/v1/feed",             get(api::feed::get_feed))
+        .route("/api/v1/feed/adult",      get(api::feed::get_adult_feed))
         .route("/api/v1/feed/following",   get(api::feed::get_following_feed))
         // Posts
         .route("/api/v1/posts",            post(api::posts::create_post))
