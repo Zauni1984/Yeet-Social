@@ -1549,14 +1549,23 @@ function showExternalLinkWarning(e,url){
     var content=inp.value.trim();
     btn.disabled=true;
     try{
-      await fetch('/api/v1/posts/'+id+'/comments',{
+      var r=await fetch('/api/v1/posts/'+id+'/comments',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
         body:JSON.stringify({content:content})
       });
+      if(r.status===401){
+        localStorage.removeItem('yeet_jwt');
+        openAuthModal('login');
+        showToast('Session abgelaufen, bitte erneut einloggen','error');
+        btn.disabled=false;
+        return;
+      }
+      if(!r.ok){showToast('Kommentar konnte nicht gesendet werden','error');btn.disabled=false;return;}
       inp.value='';
       loadComments(id);
-    }catch(e){}
+      showToast('Kommentar gepostet','success');
+    }catch(e){showToast('Netzwerkfehler','error');}
     btn.disabled=false;
   }
   async function loadComments(id){
@@ -1564,18 +1573,24 @@ function showExternalLinkWarning(e,url){
     var list=document.getElementById('clist-'+id);
     if(!list)return;
     try{
-      var r=await fetch('/api/v1/posts/'+id+'/comments',{headers:{'Authorization':'Bearer '+jwt}});
+      var r=await fetch('/api/v1/posts/'+id+'/comments',{headers: jwt ? {'Authorization':'Bearer '+jwt} : {}});
       var d=await r.json();
       if(d.data&&d.data.length){
         list.innerHTML=d.data.map(function(c){
-          return '<div style="padding:6px 0;border-top:1px solid #222;font-size:13px">'
-            +'<b style="color:var(--yeet)">@'+(c.author&&c.author.username||'user')+'</b> '
-            +c.content+'</div>';
+          var name=(c.author&&(c.author.display_name||c.author.username))||'user';
+          var safeContent=String(c.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          var ago=c.created_at?(function(){var s=Math.floor((Date.now()-new Date(c.created_at))/1000);return s<60?s+'s':s<3600?Math.floor(s/60)+'m':Math.floor(s/3600)+'h';})():'';
+          return '<div style="padding:8px 0;border-top:1px solid #1e1e1e;font-size:13px;display:flex;gap:8px;align-items:flex-start">'
+            +'<div style="width:28px;height:28px;border-radius:50%;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:#c6f135">'
+            +name.slice(0,2).toUpperCase()+'</div>'
+            +'<div><div style="margin-bottom:2px"><b style="color:#fff;font-size:13px">'+name+'</b>'
+            +(ago?'<span style="color:#555;font-size:11px;margin-left:6px">'+ago+'</span>':'')+'</div>'
+            +'<div style="color:#ccc">'+safeContent+'</div></div></div>';
         }).join('');
       }else{
-        list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:6px 0">No comments yet</div>';
+        list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">Noch keine Kommentare</div>';
       }
-    }catch(e){}
+    }catch(e){console.error('loadComments:',e);}
   }
 </script>
 
