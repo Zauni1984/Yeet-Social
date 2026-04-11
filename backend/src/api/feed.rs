@@ -106,7 +106,7 @@ pub async fn get_following_feed(
 }
 
 fn row_to_feed_post(r: FeedRow) -> FeedPost {
-    let media_url = r.media_urls.and_then(|v| v.into_iter().next());
+    let media_url = r.media_url.or_else(|| r.media_urls.and_then(|v| v.into_iter().next()));
     FeedPost {
         id: r.id,
         content: r.content,
@@ -126,6 +126,8 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
             avatar_url: r.avatar_url,
         },
         tip_total_yeet: r.tip_total_yeet,
+        nft_price_yeet: r.nft_price_yeet,
+        is_permanent: r.is_permanent.unwrap_or(false),
     }
 }
 
