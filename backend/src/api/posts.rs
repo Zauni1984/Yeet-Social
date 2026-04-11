@@ -53,6 +53,8 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
             display_name: r.display_name, avatar_url: r.avatar_url,
         },
         tip_total_yeet: None,
+        nft_price_yeet: None,
+        is_permanent: false,
     }
 }
 
