@@ -529,7 +529,18 @@ async function loadTrendingFeedPosts(){
       var s=Math.floor((Date.now()-new Date(p.created_at))/1000);
       var ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
       var hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
-      var txt=String(p.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var rawTxt=String(p.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var urlRegex=/(https?:\/\/[^\s<>"]+)/g;
+      var urls=[];
+      var txt=rawTxt.replace(urlRegex,function(url){
+        urls.push(url);
+        var display=url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+        if(display.length>40)display=display.slice(0,40)+'\u2026';
+        return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,\''+url+'\')" style="color:var(--primary,#c6f135);text-decoration:underline;word-break:break-all">'+display+'</a>';
+      });
+      txt=txt.replace(/#(\w+)/g,'<span style="color:var(--primary,#c6f135)">#$1</span>');
+      txt=txt.replace(/@(\w+)/g,'<span style="color:var(--primary,#c6f135)">@$1</span>');
+      var hasLinks=urls.length>0;
       var div=document.createElement('div');
       div.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
       div.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px"></div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; '+hrs+'h &bull; <span style="color:#f5a623">&#128184; '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span></div></div></div><div style="font-size:15px">'+txt+'</div>';
@@ -1086,6 +1097,26 @@ function submitPost(){
   window.setTab = setTab;
   window.submitPost = submitPost;
 })();
+
+function showExternalLinkWarning(e,url){
+  e.preventDefault();
+  var existing=document.getElementById('ext-link-modal');
+  if(existing)existing.remove();
+  var m=document.createElement('div');
+  m.id='ext-link-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  m.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
+    +'<div style="font-size:28px;margin-bottom:12px">&#128279;</div>'
+    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlässt YEET</h3>'
+    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link führt zu einer externen Seite. YEET übernimmt keine Verantwortung für externe Inhalte.</p>'
+    +'<div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left">'+url+'</div>'
+    +'<div style="display:flex;gap:10px;justify-content:center">'
+    +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">Abbrechen</button>'
+    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">Öffnen</button>'
+    +'</div></div>';
+  m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
+  document.body.appendChild(m);
+}
 </script>
 
 <!-- AUTH MODAL -->
