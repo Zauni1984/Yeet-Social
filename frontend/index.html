@@ -539,23 +539,38 @@ async function loadTrendingFeedPosts(){
       var hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
       var rawContent=String(p.content||'');
       var urlRegex=/(https?:\/\/[^\s]+)/g;
-      var urls=rawContent.match(urlRegex)||[];
-      var hasLinks=urls.length>0;
-      // Escape HTML, then linkify and format
-      var txt=rawContent
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        .replace(/(https?:\/\/[^\s]+)/g,function(url){
-          var display=url.replace(/^https?:\/\//,'').replace(/\/$/,'');
-          if(display.length>45)display=display.slice(0,45)+'\u2026';
-          return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+display+'</a>';
+      var foundUrls=rawContent.match(urlRegex)||[];
+      // Build post div via DOM to avoid all string-escaping issues
+      var div=document.createElement('div');
+      div.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
+      // Header row
+      var header=document.createElement('div');
+      header.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
+      header.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px"></div><div><b style="font-size:14px">'+String(short).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; '+hrs+'h &bull; <span style="color:#f5a623">&#128184; '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span></div></div>';
+      div.appendChild(header);
+      // Content with linkified URLs, hashtags, mentions
+      var contentDiv=document.createElement('div');
+      contentDiv.style.cssText='font-size:15px;line-height:1.5;margin-bottom:4px';
+      var safeHtml=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/(https?:\/\/[^\s]+)/g,function(u){
+          var d2=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
+          if(d2.length>45)d2=d2.slice(0,45)+'\u2026';
+          return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+d2+'</a>';
         })
         .replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
         .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
-      var div=document.createElement('div');
-      div.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-      div.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px"></div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; '+hrs+'h &bull; <span style="color:#f5a623">&#128184; '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span></div></div></div><div style="font-size:15px;line-height:1.5">'+txt+'</div>'+(hasLinks?'<div class="ext-link-warn" data-href="'+encodeURIComponent(urls[0])+'" onclick="event.stopPropagation();showExternalLinkWarning(event,decodeURIComponent(this.dataset.href))" style="margin-top:8px;padding:9px 12px;border:1px solid #2a2a2a;border-radius:12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link — Vorsicht</span></div>':'')');
+      contentDiv.innerHTML=safeHtml;
+      div.appendChild(contentDiv);
+      // External link warning box
+      if(foundUrls.length>0){
+        var warnDiv=document.createElement('div');
+        warnDiv.style.cssText='margin-top:8px;padding:9px 12px;border:1px solid #2a2a2a;border-radius:12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer';
+        warnDiv.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link &mdash; Vorsicht</span>';
+        warnDiv._warnUrl=foundUrls[0];
+        warnDiv.addEventListener('click',function(ev){ev.stopPropagation();showExternalLinkWarning(ev,this._warnUrl);});
+        div.appendChild(warnDiv);
+      }
       wrap.appendChild(div);
-    });
     var composer=document.querySelector('.composer');
     if(composer)composer.after(wrap);
   }catch(e){console.error('Trending:',e);}
