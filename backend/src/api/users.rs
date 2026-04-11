@@ -76,18 +76,39 @@ pub async fn update_profile(
     Ok(Json(ApiResponse::ok(())))
 }
 
+// Resolve user UUID from auth (supports both wallet and email users)
+async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid> {
+    if let Some(uuid_str) = auth_address.strip_prefix("email:") {
+        return uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
+    }
+    sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+        .bind(auth_address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))
+}
+
+// Resolve target user UUID from address or user ID string
+async fn resolve_target_id(state: &AppState, address: &str) -> AppResult<Uuid> {
+    // Try as UUID directly (for email users referenced by ID)
+    if let Ok(uuid) = address.parse::<Uuid>() {
+        return Ok(uuid);
+    }
+    sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+        .bind(address.to_lowercase())
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("Target user not found".into()))
+}
+
 pub async fn follow_user(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(address): Path<String>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let follower_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
-    let following_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(address.to_lowercase()).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("Target user not found".into()))?;
-    if follower_id == following_id { return Err(AppError::Validation("Cannot follow yourself".into())); }
+    let follower_id = resolve_user_id(&state, &auth.address).await?;
+    let following_id = resolve_target_id(&state, &address).await?;
+    if follower_id == following_id {
+        return Err(AppError::Validation("Cannot follow yourself".into()));
+    }
     sqlx::query("INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
         .bind(follower_id).bind(following_id)
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
@@ -99,12 +120,8 @@ pub async fn unfollow_user(
     auth: AuthUser,
     Path(address): Path<String>,
 ) -> AppResult<Json<ApiResponse<()>>> {
-    let follower_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(&auth.address).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))?;
-    let following_id: Uuid = sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(address.to_lowercase()).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("Target user not found".into()))?;
+    let follower_id = resolve_user_id(&state, &auth.address).await?;
+    let following_id = resolve_target_id(&state, &address).await?;
     sqlx::query("DELETE FROM follows WHERE follower_id = $1 AND following_id = $2")
         .bind(follower_id).bind(following_id)
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
