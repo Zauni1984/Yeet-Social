@@ -1079,6 +1079,10 @@ function loadFeedFiltered(filter){
   const headers={'Content-Type':'application/json'};
   if(jwt)headers['Authorization']='Bearer '+jwt;
   var url=filter==='adult'?'/api/v1/feed/adult':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
+  // Auto-check 18+ toggle when in adult tab
+  var atog=document.getElementById('adultToggle'),atl=document.getElementById('adultToggleLabel');
+  if(filter==='adult'){if(atl)atl.style.display='flex';if(atog){atog.checked=true;atog.disabled=true;atog.title='Du befindest dich im 18+ Bereich';}}
+  else{if(atog){atog.checked=false;atog.disabled=false;}}
   fetch(url,{headers})
     .then(r=>r.json())
     .then(d=>{
