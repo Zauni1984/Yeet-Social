@@ -47,14 +47,14 @@ pub async fn get_feed(
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet
         FROM posts p JOIN users u ON p.author_id = u.id
-        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL
+        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
     )
     .bind(per_page).bind(offset)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM posts WHERE expires_at > NOW() AND deleted_at IS NULL"
+        "SELECT COUNT(*) FROM posts WHERE expires_at > NOW() AND deleted_at IS NULL AND is_adult = FALSE AND is_removed = FALSE"
     )
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
@@ -88,7 +88,7 @@ pub async fn get_following_feed(
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet
         FROM posts p JOIN users u ON p.author_id = u.id
         JOIN follows f ON f.following_id = p.author_id
-        WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL
+        WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
         ORDER BY p.created_at DESC LIMIT $2 OFFSET $3"
     )
     .bind(user_id).bind(per_page).bind(offset)
