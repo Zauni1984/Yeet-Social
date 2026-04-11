@@ -499,36 +499,43 @@ async function loadPrices(){
 }
 
 function showTrendingFeed(){
-  // Zum Feed-Bereich navigieren
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
-  event&&event.target&&event.target.classList.add('active');
-  // Alle Feed-Tabs deaktivieren
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  // Trending-Tab aktivieren falls vorhanden, sonst FOR YOU
-  var tabs=document.querySelectorAll('.tab');
-  tabs.forEach(function(t){if(t.textContent.trim().toLowerCase().includes('trending'))t.classList.add('active');});
-  // Feed mit Trending-Posts laden
+  var navLinks=document.querySelectorAll('.nav-link');
+  navLinks.forEach(function(x){if(x.textContent.includes('Trending'))x.classList.add('active');});
+  // Feed-Titel auf Trending setzen
+  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
+  if(title)title.textContent='Trending Feed';
+  // Tabs ausblenden
+  document.querySelectorAll('.tab').forEach(x=>x.style.opacity='0.4');
   loadTrendingFeedPosts();
 }
 async function loadTrendingFeedPosts(){
-  var jwt=localStorage.getItem('yeet_jwt');
-  var headers=jwt?{'Authorization':'Bearer '+jwt}:{};
   try{
-    var r=await fetch('/api/v1/feed',{headers:headers});
-    var d=await r.json();
-    if(!d.success||!d.data)return;
-    var posts=d.data
+    var jwt=localStorage.getItem('yeet_jwt');
+    var headers=jwt?{'Authorization':'Bearer '+jwt}:{};
+    const r=await fetch('/api/v1/feed',{headers:headers});
+    const d=await r.json();
+    const empty=document.querySelector('.empty');
+    const old=document.getElementById('feed-posts');
+    if(old)old.remove();
+    if(!d.success||!d.data){return;}
+    // Filter: nur Posts mit tip_total_yeet >= 1, sortiert absteigend
+    const posts=d.data
       .filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;})
       .sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);});
-    var container=document.getElementById('feedContainer');
-    if(!container)return;
     if(posts.length===0){
-      container.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)"><div style="font-size:48px">&#128184;</div><div style="margin-top:12px">No trending posts yet.<br>Be the first to tip a post!</div></div>';
+      if(empty){empty.style.display='';empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128184;</div><p style="color:var(--muted);margin-top:12px">No trending posts yet.<br>Be the first to tip!</p></div>';}
       return;
     }
-    window._renderPosts(posts,container);
-  }catch(e){console.error('Trending feed error:',e);}
+    if(empty)empty.style.display='none';
+    const wrap=document.createElement('div');
+    wrap.id='feed-posts';
+    window._renderPosts(posts,wrap);
+    const main=document.querySelector('.feed-content')||document.querySelector('main')||document.querySelector('.main');
+    if(main)main.appendChild(wrap);
+  }catch(e){console.error('loadTrendingFeedPosts error:',e);}
 }
+
 async function loadTrendingTags(){
   try{
     var jwt=localStorage.getItem('yeet_jwt');
