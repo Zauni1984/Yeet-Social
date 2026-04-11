@@ -128,3 +128,34 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
         tip_total_yeet: r.tip_total_yeet,
     }
 }
+
+pub async fn get_adult_feed(
+    State(state): State<AppState>,
+    Query(q): Query<FeedQuery>,
+) -> AppResult<Json<PagedResponse<FeedPost>>> {
+    let page = q.page.unwrap_or(1).max(1);
+    let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
+    let offset = (page - 1) * per_page;
+
+    let rows = sqlx::query_as::<_, FeedRow>(
+        "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
+            p.like_count, p.reshare_count, p.comment_count,
+            p.expires_at, p.created_at,
+            u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
+            COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet
+        FROM posts p JOIN users u ON p.author_id = u.id
+        WHERE p.expires_at > NOW() AND p.is_removed = FALSE
+          AND p.deleted_at IS NULL AND p.is_adult = TRUE
+        ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
+    )
+    .bind(per_page).bind(offset)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM posts WHERE expires_at > NOW() AND deleted_at IS NULL AND is_adult = TRUE AND is_removed = FALSE"
+    )
+    .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let posts = rows.into_iter().map(row_to_feed_post).collect();
+    Ok(Json(PagedResponse { success: true, data: posts, total, page, per_page }))
+}
