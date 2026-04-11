@@ -1078,7 +1078,8 @@ function loadFeedFiltered(filter){
   const jwt=localStorage.getItem('yeet_jwt');
   const headers={'Content-Type':'application/json'};
   if(jwt)headers['Authorization']='Bearer '+jwt;
-  fetch('/api/v1/feed?filter='+filter,{headers})
+  var url=filter==='adult'?'/api/v1/feed/adult':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
+  fetch(url,{headers})
     .then(r=>r.json())
     .then(d=>{
       const old=document.getElementById('feed-posts');if(old)old.remove();
