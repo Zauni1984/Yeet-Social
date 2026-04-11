@@ -10,3 +10,4 @@ pub mod boards;
 pub mod notifications;
 pub mod email_auth;
 pub mod link_preview;
+pub mod report;
