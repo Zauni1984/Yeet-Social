@@ -1113,8 +1113,19 @@ function submitPost(){
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast('Posting to /api/v1/posts...');
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:(document.getElementById('adultToggle')?.checked||false)})})
-    .then(r=>r.json()).then(d=>{if(d.success===false)showToast('Error: '+(d.error&&d.error.message||'Post failed'));else{document.getElementById('postTxt').value='';loadFeed();showToast('Yeeted!');}})
+  var isAdult=!!(document.getElementById('adultToggle')?.checked);
+  var activeTabLabel=document.querySelector('.tab.active')?.textContent||'';
+  if(activeTabLabel.includes('18'))isAdult=true;
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult})})
+    .then(r=>r.json()).then(d=>{
+      if(d.success===false)showToast('Error: '+(d.error&&d.error.message||'Post failed'));
+      else{
+        document.getElementById('postTxt').value='';
+        showToast('Yeeted!');
+        if(isAdult)loadFeedFiltered('adult');
+        else loadFeed();
+      }
+    })
     .catch(()=>showToast('Connect wallet first to sign in'));
 }
 
@@ -1350,7 +1361,7 @@ async function doFaceScan(){
   var hasImage=nonBlack>(c.width*c.height*0.1);
   if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
   document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
-  localStorage.setItem('yeet_18plus_verified','1');localStorage.setItem('yeet_adult','1');var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';
+  localStorage.setItem('yeet_18plus_verified','1');localStorage.setItem('yeet_adult','1');(function(){var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';})();(function(){var atl=document.getElementById('adultToggleLabel');if(atl)atl.style.display='flex';
   setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
 }
 function closeFaceScan(){
