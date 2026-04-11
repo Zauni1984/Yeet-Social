@@ -380,7 +380,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <!-- LAYOUT -->
 <div class="layout">
   <aside class="sidebar" id="sidebar">
-    <a class="nav-link active" href="#">&#127968; Global Feed</a>
+    <a class="nav-link active" href="#" onclick="showGlobalFeed();return false;">&#127968; Global Feed</a>
     <a class="nav-link" href="#">&#128100; Following</a>
     <a class="nav-link" href="#" onclick="showTrendingFeed();return false;">&#11088; Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
@@ -498,6 +498,14 @@ async function loadPrices(){
   }
 }
 
+function showGlobalFeed(){
+  document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-link')[0].classList.add('active');
+  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
+  if(title)title.textContent='Global Feed';
+  document.querySelectorAll('.tab').forEach(x=>{x.style.opacity='';x.style.display='';});
+  loadFeed();
+}
 function showTrendingFeed(){
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
   var navLinks=document.querySelectorAll('.nav-link');
@@ -529,18 +537,20 @@ async function loadTrendingFeedPosts(){
       var s=Math.floor((Date.now()-new Date(p.created_at))/1000);
       var ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
       var hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
-      var rawTxt=String(p.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      var urlRegex=/(https?:\/\/[^\s<>"]+)/g;
-      var urls=[];
-      var txt=rawTxt.replace(urlRegex,function(url){
-        urls.push(url);
-        var display=url.replace(/^https?:\/\//,'').replace(/\/$/,'');
-        if(display.length>40)display=display.slice(0,40)+'\u2026';
-        return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,\''+url+'\')" style="color:var(--primary,#c6f135);text-decoration:underline;word-break:break-all">'+display+'</a>';
-      });
-      txt=txt.replace(/#(\w+)/g,'<span style="color:var(--primary,#c6f135)">#$1</span>');
-      txt=txt.replace(/@(\w+)/g,'<span style="color:var(--primary,#c6f135)">@$1</span>');
+      var rawContent=String(p.content||'');
+      var urlRegex=/(https?:\/\/[^\s]+)/g;
+      var urls=rawContent.match(urlRegex)||[];
       var hasLinks=urls.length>0;
+      // Escape HTML, then linkify and format
+      var txt=rawContent
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/(https?:\/\/[^\s]+)/g,function(url){
+          var display=url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+          if(display.length>45)display=display.slice(0,45)+'\u2026';
+          return '<a href="'+url+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+display+'</a>';
+        })
+        .replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
+        .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
       var div=document.createElement('div');
       div.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
       div.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px"></div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; '+hrs+'h &bull; <span style="color:#f5a623">&#128184; '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span></div></div></div><div style="font-size:15px;line-height:1.5">'+txt+'</div>'+(hasLinks?'<div onclick="event.stopPropagation();showExternalLinkWarning(event,\'' +urls[0]+ '\'" style="margin-top:8px;padding:9px 12px;border:1px solid #2a2a2a;border-radius:12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px">Externer Link \u2014 Vorsicht</span></div>':'');
