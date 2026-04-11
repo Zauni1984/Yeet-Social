@@ -531,7 +531,7 @@ async function loadTrendingFeedPosts(){
     const wrap=document.createElement('div');
     wrap.id='feed-posts';
     window._renderPosts(posts,wrap);
-    const main=document.querySelector('.feed-content')||document.querySelector('main')||document.querySelector('.main');
+    const main=document.querySelector('main.main')||document.querySelector('main')||document.querySelector('.main');
     if(main)main.appendChild(wrap);
   }catch(e){console.error('loadTrendingFeedPosts error:',e);}
 }
