@@ -538,9 +538,20 @@ async function loadTrendingFeedPosts(){
       var ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
       var hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
       var rawContent=String(p.content||'');
-      var urlRegex=/(https?:\/\/[^\s]+)/g;
-      var foundUrls=rawContent.match(urlRegex)||[];
-      // Build post div via DOM to avoid all string-escaping issues
+      var foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
+      // Step 1: escape HTML
+      var safeHtml=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // Step 2: hashtags and mentions FIRST (before linkify, so regex won't hit style values)
+      safeHtml=safeHtml
+        .replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
+        .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
+      // Step 3: linkify URLs (after hashtag pass, URLs don't contain # so no collision)
+      safeHtml=safeHtml.replace(/(https?:\/\/[^\s<"]+)/g,function(u){
+        var disp=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
+        if(disp.length>45)disp=disp.slice(0,45)+'\u2026';
+        return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+disp+'</a>';
+      });
+      // Build post div via DOM
       var div=document.createElement('div');
       div.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
       // Header row
@@ -551,14 +562,7 @@ async function loadTrendingFeedPosts(){
       // Content with linkified URLs, hashtags, mentions
       var contentDiv=document.createElement('div');
       contentDiv.style.cssText='font-size:15px;line-height:1.5;margin-bottom:4px';
-      var safeHtml=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        .replace(/(https?:\/\/[^\s]+)/g,function(u){
-          var d2=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
-          if(d2.length>45)d2=d2.slice(0,45)+'\u2026';
-          return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+d2+'</a>';
-        })
-        .replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
-        .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
+      // safeHtml built above
       contentDiv.innerHTML=safeHtml;
       div.appendChild(contentDiv);
       // External link warning box
@@ -1117,6 +1121,7 @@ function submitPost(){
   window.applySettings = applySettings;
   window.disconnectWallet = disconnectWallet;
     window.toggleNav = toggleNav;
+  window.showGlobalFeed = showGlobalFeed;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
   window.setTab = setTab;
