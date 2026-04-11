@@ -74,14 +74,20 @@ pub async fn create_post(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
-    let expires_at = Utc::now() + ChronoDuration::hours(24);
+    let is_permanent = req.is_permanent.unwrap_or(false) || req.is_nft.unwrap_or(false);
+    let expires_at = if is_permanent {
+        Utc::now() + ChronoDuration::hours(24 * 365 * 100)
+    } else {
+        Utc::now() + ChronoDuration::hours(24)
+    };
+    let media_url_clone = req.media_url.clone();
     let media_arr: Vec<String> = req.media_url.into_iter().collect();
     let post_id: Uuid = sqlx::query_scalar(
         "INSERT INTO posts (author_id, content, media_urls, media_url, expires_at, is_adult, is_nft, nft_price_yeet, is_permanent)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id"
     )
     .bind(user_id).bind(&req.content).bind(&media_arr)
-    .bind(req.media_url.as_deref())
+    .bind(media_url_clone.as_deref())
     .bind(expires_at)
     .bind(req.is_adult.unwrap_or(false))
     .bind(req.is_nft.unwrap_or(false))
