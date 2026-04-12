@@ -581,6 +581,11 @@ async function loadTrendingFeedPosts(){
       wrap.addEventListener('click', function(e) {
         var rBtn = e.target.closest('.repost-btn');
         if (rBtn) { repostPost(rBtn.dataset.pid, parseInt(rBtn.dataset.reposts||'0')); return; }
+        var mBtn = e.target.closest('.more-btn');
+        if (mBtn) { e.stopPropagation(); openPostMenu(mBtn); return; }
+        var xBtn = e.target.closest('.post-menu-item');
+        if (xBtn) { e.stopPropagation(); return; }
+        if (rBtn) { repostPost(rBtn.dataset.pid, parseInt(rBtn.dataset.reposts||'0')); return; }
         var btn = e.target.closest('.ppv-unlock-btn');
         if (!btn) return;
         var wrap2 = btn.closest('.ppv-wrap');
@@ -656,7 +661,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button></div><button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'">&#128257; <span>'+(p.repost_count||0)+'</span></button><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;gap:2px;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'\'+(p.id)+\'"><span class="like-heart">&#10084;</span> <span class="like-count">\'+(p.like_count||0)+\'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'\'+(p.id)+\'">&#128172; <span>\'+(p.comment_count||0)+\'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'\'+(p.id)+\'">&#127873; <span class="tip-count">\'+(p.tip_total_yeet||0)+\'</span></button><button class="more-btn" data-pid="'\'+(p.id)+\'" data-reposts="\'+(p.repost_count||0)+\'" data-authorid="\'+(p.author?p.author.id:'')+\'" data-authorwallet="\'+(p.author?p.author.wallet_address||p.author.id:'')+\'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:22px;padding:0 8px;margin-left:auto;line-height:0.8;letter-spacing:1px" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -667,19 +672,7 @@ async function loadFeed(){
         el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
         el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
         el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
-        var followBtn = document.createElement('button');
-        followBtn.className = 'follow-btn';
-        followBtn.dataset.aid = (p.author && p.author.id) || '';
-        followBtn.dataset.following = '0';
-        followBtn.style.cssText = 'background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px';
-        followBtn.innerHTML = '&#43; <span>Follow</span>';
-        followBtn.addEventListener('click', function(){ toggleFollow(this, p.id, p.author); });
-        el.querySelector('.post-actions').appendChild(followBtn);
-        var reportBtn=document.createElement('button');
-        reportBtn.style.cssText='background:transparent;border:none;outline:none;cursor:pointer;color:#555;font-size:13px;padding:4px 6px;margin-left:auto';
-        reportBtn.title='Post melden';reportBtn.innerHTML='&#128681;';
-        reportBtn.addEventListener('click',function(ev){ev.stopPropagation();reportPost(p.id);});
-        el.querySelector('.post-actions').appendChild(reportBtn);
+        // author data stored in more-btn data attributes
         wrap.appendChild(el);
       }
       const c=document.querySelector('.composer');
