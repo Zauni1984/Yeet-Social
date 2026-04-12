@@ -88,6 +88,21 @@ pub async fn send_tip(
     .await
     .map_err(AppError::Database)?;
 
+    // Record fee to ledger
+    let _ = sqlx::query(
+        "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
+         VALUES ('tip', $1, $2, $3, $4)"
+    )
+    .bind(tip_id).bind(amount).bind(platform_cut).bind(creator_amount)
+    .execute(state.db.pool()).await;
+
+    // Update fee wallet balance
+    let _ = sqlx::query(
+        "UPDATE fee_wallet_balance SET total_yeet = total_yeet + $1 WHERE id = 1"
+    )
+    .bind(platform_cut)
+    .execute(state.db.pool()).await;
+
     // Debit sender balance
     sqlx::query(
         "UPDATE users SET yeet_token_balance = yeet_token_balance - $1 WHERE id = $2"
