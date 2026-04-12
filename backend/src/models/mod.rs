@@ -65,6 +65,8 @@ pub struct FeedPost {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nft_price_yeet: Option<f64>,
     pub is_permanent: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ppv_price_yeet: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
