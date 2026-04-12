@@ -50,7 +50,7 @@ pub async fn get_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, p.nft_price_yeet, p.is_permanent, p.ppv_price_yeet
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
@@ -91,7 +91,7 @@ pub async fn get_following_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, p.nft_price_yeet, p.is_permanent, p.ppv_price_yeet
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
         FROM posts p JOIN users u ON p.author_id = u.id
         JOIN follows f ON f.following_id = p.author_id
         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
@@ -152,7 +152,7 @@ pub async fn get_adult_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, p.nft_price_yeet, p.is_permanent, p.ppv_price_yeet
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE
           AND p.deleted_at IS NULL AND p.is_adult = TRUE
