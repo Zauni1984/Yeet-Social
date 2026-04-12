@@ -1133,7 +1133,7 @@ function submitPost(){
         else loadFeed();
       }
     })
-    .catch(()=>showToast('Connect wallet first to sign in'));
+    .catch(e=>showToast('Fehler beim Posten: '+(e.message||'Bitte einloggen'), 'error'));
 }
 
   // Expose public functions
