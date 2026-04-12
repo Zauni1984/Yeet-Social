@@ -23,6 +23,7 @@ struct FeedRow {
     nft_token_id: Option<String>,
     nft_price_yeet: Option<f64>,
     is_permanent: Option<bool>,
+    ppv_price_yeet: Option<f64>,
     like_count: i64,
     reshare_count: i64,
     comment_count: i64,
@@ -49,7 +50,7 @@ pub async fn get_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, p.nft_price_yeet, p.is_permanent
+            p.media_url, p.nft_price_yeet, p.is_permanent, p.ppv_price_yeet
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
@@ -90,7 +91,7 @@ pub async fn get_following_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, p.nft_price_yeet, p.is_permanent
+            p.media_url, p.nft_price_yeet, p.is_permanent, p.ppv_price_yeet
         FROM posts p JOIN users u ON p.author_id = u.id
         JOIN follows f ON f.following_id = p.author_id
         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
@@ -133,6 +134,7 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
         tip_total_yeet: r.tip_total_yeet,
         nft_price_yeet: r.nft_price_yeet,
         is_permanent: r.is_permanent.unwrap_or(false),
+        ppv_price_yeet: r.ppv_price_yeet,
     }
 }
 
@@ -150,7 +152,7 @@ pub async fn get_adult_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, p.nft_price_yeet, p.is_permanent
+            p.media_url, p.nft_price_yeet, p.is_permanent, p.ppv_price_yeet
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE
           AND p.deleted_at IS NULL AND p.is_adult = TRUE
