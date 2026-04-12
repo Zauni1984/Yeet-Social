@@ -104,7 +104,8 @@ fn build_router(state: AppState) -> Router {
         .layer(ServiceBuilder::new()
             .layer(TraceLayer::new_for_http())
             .layer(cors)
-            .layer(TimeoutLayer::new(Duration::from_secs(30))))
+            .layer(TimeoutLayer::new(Duration::from_secs(30)))
+        .layer(tower_http::limit::RequestBodyLimitLayer::new(10 * 1024 * 1024)))
         .with_state(state)
 }
 
