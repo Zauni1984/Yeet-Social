@@ -52,7 +52,7 @@ pub async fn get_feed(
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
         FROM posts p JOIN users u ON p.author_id = u.id
-        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
+        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours')
         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
     )
     .bind(per_page).bind(offset)
