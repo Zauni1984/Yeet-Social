@@ -56,6 +56,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         tip_total_yeet: None,
         nft_price_yeet: None,
         is_permanent: false,
+        ppv_price_yeet: None,
     }
 }
 
