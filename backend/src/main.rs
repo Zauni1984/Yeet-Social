@@ -78,6 +78,11 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/posts/:id/comments", get(api::posts::get_comments))
         .route("/api/v1/posts/:id/comments", post(api::posts::add_comment))
         .route("/api/v1/posts/:id/nft",    post(api::posts::mint_nft))
+        .route("/api/v1/posts/:id/repost",  post(api::permanent::repost_post))
+        .route("/api/v1/posts/:id/visibility", patch(api::permanent::update_post_visibility))
+        .route("/api/v1/posts/:id/unlike",  post(api::posts::unlike_post))
+        .route("/api/v1/posts/:id/report",  post(api::report::create_report))
+        .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
         // Users
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))
