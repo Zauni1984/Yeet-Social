@@ -384,7 +384,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#">&#128100; Following</a>
     <a class="nav-link" href="#" onclick="showTrendingFeed();return false;">&#11088; Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
-    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab')[2].classList.add('active');loadFeedFiltered('nft')">&#128247; NFT Posts</a>
+    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.loadPermanentPosts()">&#128204; Permanent Posts</a>
     <a class="nav-link" href="#">&#9889; Token Tips</a>
     <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
     <a class="nav-link" href="#" onclick="check18Plus();return false;">&#128286; 18+ Content</a>
@@ -408,7 +408,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="avatar">&#128100;</div>
       <div class="composer-body">
         <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
-        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128142; NFT &mdash; Preis: <span id="nftPriceVal">5</span> YEET</div>
+        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; Permanent post gesetzt</div>
         <div class="composer-footer">
           <button class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
@@ -1189,7 +1189,8 @@ function submitPost(){
   window.check18Plus = check18Plus;
   window.handleImageSelect = handleImageSelect;
   window.removeImage = removeImage;
-  window.toggleNFT = toggleNFT;
+  window.togglePermanent = togglePermanent;
+  window.toggleNFT = togglePermanent;
   window.openNFTPriceModal = openNFTPriceModal;
   window.selectNFTPrice = selectNFTPrice;
   window.confirmNFTPrice = confirmNFTPrice;
@@ -1438,7 +1439,7 @@ function removeImage() {
 }
 
 // ── NFT TOGGLE + PRICE POPUP ──────────────────────────────────────────────
-function toggleNFT() {
+function togglePermanent() {
   if (window._postIsNFT) {
     window._postIsNFT = false; window._postNFTPrice = null;
     var btn = document.getElementById('nftToggleBtn');
@@ -1592,7 +1593,7 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
       imgEl.style.filter = 'none';
       imgEl.style.transition = 'filter 0.5s ease';
       overlayEl.style.display = 'none';
-      showToast('Entsperrt! '+price+' YEET gesendet', 'success');
+      showToast('Entsperrt! '+price+' YEET gesendet (inkl. 10% Netzwerkgeb�hr)', 'success');
     } else {
       showToast('Fehler: '+(d.error&&d.error.message||'Entsperren fehlgeschlagen'), 'error');
       if(btn){btn.disabled=false; btn.textContent='Entsperren';}
