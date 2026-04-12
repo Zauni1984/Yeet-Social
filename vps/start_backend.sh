@@ -1,7 +1,32 @@
 #!/bin/bash
 # YEET Social — Backend Start Script
+# Includes: pg_hba fix, DB migrations, correct column types
+
+set +H
+
 docker rm -f yeet-backend 2>/dev/null || true
 docker pull ghcr.io/zauni1984/yeet-social/backend:main
+
+# Fix pg_hba.conf (removes scram-sha-256 lines that appear after container restarts)
+docker exec yeet-postgres sh -c "grep -v 'scram-sha-256' /var/lib/postgresql/data/pg_hba.conf > /tmp/f && mv /tmp/f /var/lib/postgresql/data/pg_hba.conf" 2>/dev/null || true
+docker exec yeet-postgres psql -U yeet -d yeet -c "SELECT pg_reload_conf();" 2>/dev/null || true
+
+# Apply all DB migrations (idempotent)
+docker exec yeet-postgres psql -U yeet -d yeet -c "
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_adult BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS media_url TEXT;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_nft BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS nft_price_yeet DOUBLE PRECISION;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_permanent BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS ppv_price_yeet DOUBLE PRECISION;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS reshare_count BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS tip_total_yeet DOUBLE PRECISION;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE posts ALTER COLUMN nft_price_yeet TYPE DOUBLE PRECISION USING nft_price_yeet::DOUBLE PRECISION;
+ALTER TABLE posts ALTER COLUMN ppv_price_yeet TYPE DOUBLE PRECISION USING ppv_price_yeet::DOUBLE PRECISION;
+ALTER TABLE posts ALTER COLUMN tip_total_yeet TYPE DOUBLE PRECISION USING tip_total_yeet::DOUBLE PRECISION;
+" 2>/dev/null || true
+
 docker run -d --name yeet-backend \
   --network yeet-social_yeet-net \
   -p 8080:8080 \
