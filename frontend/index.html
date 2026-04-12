@@ -410,7 +410,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
         <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; Permanent post gesetzt</div>
         <div class="composer-footer">
-          <button class="icon-btn" title="Foto hinzufügen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
+          <button class="icon-btn" title="Foto hinzufÃ¼gen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
           <button class="icon-btn" id="permToggleBtn" title="Als permanenten Post markieren" onclick="togglePermanent()">&#128204;</button>
           <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" onclick="togglePPV()">&#128274;</button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128274; PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
@@ -1408,7 +1408,7 @@ function closeFaceScan(){
   document.getElementById('faceScanModal')?.remove();
 }
 
-// ── IMAGE UPLOAD ──────────────────────────────────────────────────────────
+// ââ IMAGE UPLOAD ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function handleImageSelect(input) {
   var file = input.files[0];
   if (!file) return;
@@ -1438,7 +1438,7 @@ function removeImage() {
   if (inp) inp.value = '';
 }
 
-// ── NFT TOGGLE + PRICE POPUP ──────────────────────────────────────────────
+// ââ NFT TOGGLE + PRICE POPUP ââââââââââââââââââââââââââââââââââââââââââââââ
 function togglePermanent() {
   if (window._postIsNFT) {
     window._postIsNFT = false; window._postNFTPrice = null;
@@ -1502,7 +1502,7 @@ function confirmNFTPrice() {
 }
 
 
-// ── PAY-PER-VIEW (PPV) ────────────────────────────────────────────────────
+// ââ PAY-PER-VIEW (PPV) ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function togglePPV() {
   if (window._postIsPPV) {
     window._postIsPPV = false; window._postPPVPrice = null;
@@ -1567,7 +1567,7 @@ function confirmPPVPrice() {
   showToast('PPV-Preis: '+price+' YEET','success');
 }
 
-// ── PPV UNLOCK in Feed ────────────────────────────────────────────────────
+// ââ PPV UNLOCK in Feed ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
   if (!jwt) { showToast('Bitte einloggen', 'error'); return; }
@@ -1593,7 +1593,7 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
       imgEl.style.filter = 'none';
       imgEl.style.transition = 'filter 0.5s ease';
       overlayEl.style.display = 'none';
-      showToast('Entsperrt! '+price+' YEET gesendet (inkl. 10% Netzwerkgeb�hr)', 'success');
+      showToast('Entsperrt! '+price+' YEET gesendet (inkl. 10% Netzwerkgebühr)', 'success');
     } else {
       showToast('Fehler: '+(d.error&&d.error.message||'Entsperren fehlgeschlagen'), 'error');
       if(btn){btn.disabled=false; btn.textContent='Entsperren';}
@@ -1635,12 +1635,12 @@ function showExternalLinkWarning(e,url){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   m.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:12px">&#128279;</div>'
-    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlÃÂ¤sst YEET</h3>'
-    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link fÃÂ¼hrt zu einer externen Seite. YEET ÃÂ¼bernimmt keine Verantwortung fÃÂ¼r externe Inhalte.</p>'
+    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlÃÂÃÂ¤sst YEET</h3>'
+    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link fÃÂÃÂ¼hrt zu einer externen Seite. YEET ÃÂÃÂ¼bernimmt keine Verantwortung fÃÂÃÂ¼r externe Inhalte.</p>'
     +'<div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left">'+url+'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
     +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">Abbrechen</button>'
-    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">ÃÂffnen</button>'
+    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">ÃÂÃÂffnen</button>'
     +'</div></div>';
   m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
   document.body.appendChild(m);
