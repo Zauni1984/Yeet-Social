@@ -180,11 +180,11 @@ pub async fn unlike_post(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(id): Path<Uuid>,
-) -> AppResult<Json<ApiResponse<()>>> {
+) -> AppResult<Json<ApiResponse<Uuid>>> {
     let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
-        uuid_str.parse().map_err(|_| AppError::Unauthorised("Invalid user ID".into()))?
+        uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
     } else {
-        auth.user_id
+        auth.address.parse::<Uuid>().unwrap_or(Uuid::nil())
     };
 
     sqlx::query(
@@ -196,13 +196,12 @@ pub async fn unlike_post(
     .await
     .map_err(AppError::Database)?;
 
-    sqlx::query("UPDATE posts SET like_count = GREATEST(0, like_count - 1) WHERE id = $1")
+    let _ = sqlx::query("UPDATE posts SET like_count = GREATEST(0, like_count - 1) WHERE id = $1")
         .bind(id)
         .execute(state.db.pool())
-        .await
-        .map_err(AppError::Database)?;
+        .await;
 
-    Ok(Json(ApiResponse::success(())))
+    Ok(Json(ApiResponse::ok(id)))
 }
 
 
