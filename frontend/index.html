@@ -578,6 +578,18 @@ async function loadTrendingFeedPosts(){
     });
     var composer=document.querySelector('.composer');
     if(composer)composer.after(wrap);
+      wrap.addEventListener('click', function(e) {
+        var btn = e.target.closest('.ppv-unlock-btn');
+        if (!btn) return;
+        var wrap2 = btn.closest('.ppv-wrap');
+        if (!wrap2) return;
+        var pid = wrap2.dataset.pid;
+        var aid = wrap2.dataset.aid;
+        var price = parseFloat(wrap2.dataset.price);
+        var img = wrap2.querySelector('img');
+        var overlay = wrap2.querySelector('div[style*="position:absolute"]');
+        unlockPPV(pid, aid, price, img, overlay);
+      });
   }catch(e){console.error('Trending:',e);}
 }
 
@@ -642,7 +654,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+(renderMediaUrl(p)+(p.is_nft?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128142; NFT'+(p.nft_price_yeet?' &bull; '+p.nft_price_yeet+' YEET':'')+'</div>':'')+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_nft?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128142; NFT'+(p.nft_price_yeet?' &bull; '+p.nft_price_yeet+' YEET':'')+'</div>':'')+'</div><div class="post-actions"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -1597,17 +1609,19 @@ function renderMediaUrl(p) {
   if (!p.ppv_price_yeet) {
     return '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   }
-  var unlocked = JSON.parse(localStorage.getItem('ppv_unlocked') || '{}') || {};
+  var unlocked = {};
+  try { unlocked = JSON.parse(localStorage.getItem('ppv_unlocked') || '{}') || {}; } catch(e){}
   if (unlocked[p.id]) {
     return '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   }
   var aid = (p.author && p.author.id) ? p.author.id : '';
-  return '<div style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:inline-block;width:100%">'
-    + '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)" id="ppvimg_' + p.id + '">'
-    + '<div id="ppvoverlay_' + p.id + '" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);gap:10px">'
+  var price = p.ppv_price_yeet;
+  return '<div class="ppv-wrap" data-pid="' + p.id + '" data-aid="' + aid + '" data-price="' + price + '" style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:block">'
+    + '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">'
+    + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);gap:10px">'
     + '<div style="font-size:32px">&#128274;</div>'
-    + '<div style="color:#fff;font-size:14px;font-weight:700">' + p.ppv_price_yeet + ' YEET zum Entsperren</div>'
-    + '<button onclick="unlockPPV(\'' + p.id + '\',\'' + aid + '\',' + p.ppv_price_yeet + ',document.getElementById(\'ppvimg_' + p.id + '\'),document.getElementById(\'ppvoverlay_' + p.id + '\'))" style="background:#c6f135;border:none;border-radius:20px;padding:8px 20px;color:#000;font-weight:700;cursor:pointer;font-size:13px">Entsperren</button>'
+    + '<div style="color:#fff;font-size:14px;font-weight:700">' + price + ' YEET zum Entsperren</div>'
+    + '<button class="ppv-unlock-btn" style="background:#c6f135;border:none;border-radius:20px;padding:8px 20px;color:#000;font-weight:700;cursor:pointer;font-size:13px">Entsperren</button>'
     + '</div></div>';
 }
 
