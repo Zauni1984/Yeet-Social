@@ -93,7 +93,7 @@ pub async fn send_tip(
         "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
          VALUES ('tip', $1, $2, $3, $4)"
     )
-    .bind(tip_id).bind(&req.amount).bind(platform_cut).bind(creator_amount)
+    .bind(tip_id).bind(amount_val).bind(platform_cut).bind(creator_amount)
     .execute(state.db.pool()).await;
 
     // Update fee wallet balance
