@@ -1,0 +1,1 @@
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS ppv_price_yeet NUMERIC(18,4);
