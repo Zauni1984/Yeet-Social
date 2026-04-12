@@ -579,6 +579,8 @@ async function loadTrendingFeedPosts(){
     var composer=document.querySelector('.composer');
     if(composer)composer.after(wrap);
       wrap.addEventListener('click', function(e) {
+        var rBtn = e.target.closest('.repost-btn');
+        if (rBtn) { repostPost(rBtn.dataset.pid, parseInt(rBtn.dataset.reposts||'0')); return; }
         var btn = e.target.closest('.ppv-unlock-btn');
         if (!btn) return;
         var wrap2 = btn.closest('.ppv-wrap');
@@ -1202,6 +1204,8 @@ function submitPost(){
   window.clearPPVPresets = clearPPVPresets;
   window.unlockPPV = unlockPPV;
   window.renderMediaUrl = renderMediaUrl;
+  window.repostPost = repostPost;
+  window.togglePostVisibility = togglePostVisibility;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
   window.setTab = setTab;
@@ -1624,6 +1628,35 @@ function renderMediaUrl(p) {
     + '<div style="color:#fff;font-size:14px;font-weight:700">' + price + ' YEET zum Entsperren</div>'
     + '<button class="ppv-unlock-btn" style="background:#c6f135;border:none;border-radius:20px;padding:8px 20px;color:#000;font-weight:700;cursor:pointer;font-size:13px">Entsperren</button>'
     + '</div></div>';
+}
+
+
+function repostPost(postId, currentReposts) {
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if (!jwt) { showToast('Bitte einloggen', 'error'); return; }
+  if (currentReposts >= 1) { showToast('Max. 1 Repost erlaubt', 'error'); return; }
+  fetch('/api/v1/posts/' + postId + '/repost', {
+    method: 'POST', headers: {'Authorization': 'Bearer ' + jwt}
+  }).then(function(r){return r.json();}).then(function(d){
+    if (d.success) { showToast('Repost erfolgreich! \u21BA', 'success'); loadFeed(); }
+    else showToast((d.error && d.error.message) || 'Fehler', 'error');
+  }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
+}
+
+function togglePostVisibility(postId, currentVis) {
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if (!jwt) { showToast('Bitte einloggen', 'error'); return; }
+  var newVis = currentVis === 'public' ? 'followers' : 'public';
+  fetch('/api/v1/posts/' + postId + '/visibility', {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt},
+    body: JSON.stringify({visibility: newVis})
+  }).then(function(r){return r.json();}).then(function(d){
+    if (d.success) {
+      var label = newVis === 'public' ? '\uD83C\uDF0D Public' : '\uD83D\uDC64 Nur Follower';
+      showToast('Sichtbarkeit: ' + label, 'success'); loadFeed();
+    } else showToast((d.error && d.error.message) || 'Fehler', 'error');
+  }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
 }
 
 function showExternalLinkWarning(e,url){
