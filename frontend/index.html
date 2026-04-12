@@ -1198,6 +1198,9 @@ function submitPost(){
   window.unlockPPV = unlockPPV;
   window.renderMediaUrl = renderMediaUrl;
   window.repostPost = repostPost;
+  window.openPostMenu = openPostMenu;
+  window.sharePost = sharePost;
+  window.toggleFollowById = toggleFollowById;
   window.togglePostVisibility = togglePostVisibility;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
@@ -1649,6 +1652,72 @@ function togglePostVisibility(postId, currentVis) {
       var label = newVis === 'public' ? '\uD83C\uDF0D Public' : '\uD83D\uDC64 Nur Follower';
       showToast('Sichtbarkeit: ' + label, 'success'); loadFeed();
     } else showToast((d.error && d.error.message) || 'Fehler', 'error');
+  }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
+}
+
+
+// POST OVERFLOW MENU
+function openPostMenu(btn) {
+  document.querySelectorAll('.post-menu-popup').forEach(function(m){ m.remove(); });
+  var pid = btn.dataset.pid;
+  var reposts = parseInt(btn.dataset.reposts || '0');
+  var authorId = btn.dataset.authorid || '';
+  var menu = document.createElement('div');
+  menu.className = 'post-menu-popup';
+  menu.style.cssText = 'position:absolute;bottom:calc(100% + 4px);right:0;background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:6px;min-width:190px;z-index:999;box-shadow:0 4px 24px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:2px';
+
+  function menuItem(icon, label, action, danger) {
+    var el = document.createElement('button');
+    el.style.cssText = 'background:transparent;border:none;width:100%;text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;color:' + (danger ? '#ff5555' : '#e0e0e0') + ';font-family:inherit';
+    el.onmouseover = function(){ this.style.background='#262626'; };
+    el.onmouseout = function(){ this.style.background='transparent'; };
+    el.innerHTML = '<span>' + icon + '</span><span>' + label + '</span>';
+    el.addEventListener('click', function(e){ e.stopPropagation(); action(); });
+    return el;
+  }
+
+  menu.appendChild(menuItem('\u21BA', 'Repost' + (reposts >= 1 ? ' (max. 1)' : ''), function(){ repostPost(pid, reposts); menu.remove(); }));
+  menu.appendChild(menuItem('\uD83D\uDCE4', 'Share', function(){ sharePost(pid); menu.remove(); }));
+  menu.appendChild(menuItem('+', 'Follow', function(){ toggleFollowById(authorId); menu.remove(); }));
+
+  var sep = document.createElement('div');
+  sep.style.cssText = 'height:1px;background:#2a2a2a;margin:4px 6px';
+  menu.appendChild(sep);
+
+  menu.appendChild(menuItem('\uD83D\uDEA9', 'Melden', function(){ reportPost(pid); menu.remove(); }, true));
+
+  var actionsDiv = btn.closest('.post-actions');
+  actionsDiv.appendChild(menu);
+
+  function closeMenu(e) {
+    if (!menu.contains(e.target) && e.target !== btn) {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+    }
+  }
+  setTimeout(function(){ document.addEventListener('click', closeMenu); }, 10);
+}
+
+function sharePost(postId) {
+  var url = window.location.origin + '/?post=' + postId;
+  if (navigator.share) {
+    navigator.share({ title: 'YEET Post', url: url }).catch(function(){});
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function(){ showToast('Link kopiert! \uD83D\uDCCB', 'success'); });
+  } else {
+    showToast('Link: ' + url);
+  }
+}
+
+function toggleFollowById(authorId) {
+  var jwt = localStorage.getItem('yeet_jwt');
+  if (!jwt) { openAuthModal('login'); return; }
+  if (!authorId) { showToast('Benutzer nicht gefunden', 'error'); return; }
+  fetch('/api/v1/users/' + authorId + '/follow', {
+    method: 'POST', headers: { 'Authorization': 'Bearer ' + jwt }
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.success) showToast('Gefolgt! \uD83D\uDC4D', 'success');
+    else showToast((d.error && d.error.message) || 'Bereits gefolgt', 'error');
   }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
 }
 
