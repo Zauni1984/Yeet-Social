@@ -176,6 +176,36 @@ pub async fn like_post(
     Ok(Json(ApiResponse::ok(())))
 }
 
+pub async fn unlike_post(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<ApiResponse<()>>> {
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse().map_err(|_| AppError::Unauthorised("Invalid user ID".into()))?
+    } else {
+        auth.user_id
+    };
+
+    sqlx::query(
+        "DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2"
+    )
+    .bind(id)
+    .bind(user_id)
+    .execute(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+
+    sqlx::query("UPDATE posts SET like_count = GREATEST(0, like_count - 1) WHERE id = $1")
+        .bind(id)
+        .execute(state.db.pool())
+        .await
+        .map_err(AppError::Database)?;
+
+    Ok(Json(ApiResponse::success(())))
+}
+
+
 pub async fn reshare_post(
     State(state): State<AppState>,
     auth: AuthUser,
