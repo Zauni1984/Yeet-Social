@@ -81,7 +81,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/posts/:id/repost",  post(api::permanent::repost_post))
         .route("/api/v1/posts/:id/visibility", patch(api::permanent::update_post_visibility))
         .route("/api/v1/posts/:id/unlike",  post(api::posts::unlike_post))
-        .route("/api/v1/posts/:id/report",  post(api::report::create_report))
+        .route("/api/v1/posts/:id/report",  post(api::report::report_post))
         .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
         // Users
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
