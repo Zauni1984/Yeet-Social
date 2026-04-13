@@ -381,7 +381,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <a class="nav-link active" href="#" onclick="showGlobalFeed();return false;">&#127968; Global Feed</a>
-    <a class="nav-link" href="#" onclick="loadFollowingFeed();return false;">&#128100; Following</a>
+    <a class="nav-link" href="#">&#128100; Following</a>
     <a class="nav-link" href="#" onclick="showTrendingFeed();return false;">&#11088; Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
     <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.loadPermanentPosts()">&#128204; Permanent Posts</a>
@@ -582,7 +582,7 @@ async function loadTrendingFeedPosts(){
         var rBtn = e.target.closest('.repost-btn');
         if (rBtn) { repostPost(rBtn.dataset.pid, parseInt(rBtn.dataset.reposts||'0')); return; }
         var mBtn = e.target.closest('.more-btn');
-        if (mBtn) { e.stopPropagation(); openPostMenu(mBtn); return; }
+        if (mBtn) { e.stopPropagation(); e.preventDefault(); openPostMenu(mBtn); return; }
         var xBtn = e.target.closest('.post-menu-item');
         if (xBtn) { e.stopPropagation(); return; }
         if (rBtn) { repostPost(rBtn.dataset.pid, parseInt(rBtn.dataset.reposts||'0')); return; }
@@ -661,7 +661,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;gap:2px;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'\'+(p.id)+\'"><span class="like-heart">&#10084;</span> <span class="like-count">\'+(p.like_count||0)+\'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'\'+(p.id)+\'">&#128172; <span>\'+(p.comment_count||0)+\'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'\'+(p.id)+\'">&#127873; <span class="tip-count">\'+(p.tip_total_yeet||0)+\'</span></button><button class="more-btn" data-pid="'\'+(p.id)+\'" data-reposts="\'+(p.repost_count||0)+\'" data-authorid="\'+(p.author?p.author.id:'')+\'" data-authorwallet="\'+(p.author?p.author.wallet_address||p.author.id:'')+\'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:22px;padding:0 8px;margin-left:auto;line-height:0.8;letter-spacing:1px" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -672,6 +672,12 @@ async function loadFeed(){
         el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
         el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
         el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
+        var _mb = el.querySelector('.more-btn');
+        if (_mb) {
+          _mb.dataset.authorid = (p.author && p.author.id) || '';
+          _mb.dataset.authorwallet = (p.author && (p.author.wallet_address || p.author.id)) || '';
+        }
+        el.querySelector('.more-btn').addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openPostMenu(this);});
         // author data stored in more-btn data attributes
         wrap.appendChild(el);
       }
@@ -1279,56 +1285,39 @@ function toggleFollow(btn, postId, author) {
 
 async function loadFollowingFeed() {
   var jwt = localStorage.getItem('yeet_jwt');
-  var empty = document.querySelector('.empty');
-  var old2 = document.getElementById('feed-posts');
-  if (old2) old2.remove();
   if (!jwt) {
-    if (empty) { empty.style.display=''; empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Einloggen um den Following Feed zu sehen</p></div>'; }
+    var feed = document.getElementById('feed-posts');
+    if (feed) feed.remove();
+    var empty = document.querySelector('.empty');
+    if (empty) {
+      empty.style.display = '';
+      empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Einloggen um den Following Feed zu sehen</p></div>';
+    }
     return;
   }
   try {
     var r = await fetch('/api/v1/feed/following', { headers: { 'Authorization': 'Bearer ' + jwt } });
-    var d2 = await r.json();
-    if (!d2.data || d2.data.length === 0) {
-      if (empty) { empty.style.display=''; empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Folge anderen Usern um ihre Posts hier zu sehen</p></div>'; }
+    var d = await r.json();
+    var empty = document.querySelector('.empty');
+    var old = document.getElementById('feed-posts');
+    if (old) old.remove();
+    if (!d.data || d.data.length === 0) {
+      if (empty) {
+        empty.style.display = '';
+        empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Folge anderen Usern um ihre Posts hier zu sehen</p></div>';
+      }
       return;
     }
     if (empty) empty.style.display = 'none';
     var wrap = document.createElement('div');
     wrap.id = 'feed-posts';
-    for (var p of d2.data) {
-      var el = document.createElement('div');
-      el.style.cssText = 'padding:16px 20px;border-bottom:1px solid var(--border)';
-      var name2 = (p.author && (p.author.display_name || p.author.username)) || 'user';
-      var s2 = Math.floor((Date.now() - new Date(p.created_at)) / 1000);
-      var ago2 = s2<60?s2+'s':s2<3600?Math.floor(s2/60)+'m':s2<86400?Math.floor(s2/3600)+'h':Math.floor(s2/86400)+'d';
-      var hrs2 = Math.max(0, Math.floor((new Date(p.expires_at) - Date.now()) / 3600000));
-      var safe2 = String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      el.innerHTML =
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-        + '<div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">&#128100;</div>'
-        + '<div><b style="font-size:14px">'+name2+'</b>'
-        + '<div style="font-size:12px;color:var(--muted)">'+ago2+' ago &bull; '+hrs2+'h</div></div></div>'
-        + '<div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+safe2+'</div>'
-        + (p.media_url && !p.ppv_price_yeet ? '<img src="'+p.media_url+'" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">' : '')
-        + (p.is_permanent ? '<div style="font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0;display:inline-block">&#128204; Permanent</div>' : '')
-        + '<div class="post-actions" style="display:flex;align-items:center;gap:2px;position:relative">'
-        + '<button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button>'
-        + '<button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#128172; <span>'+(p.comment_count||0)+'</span></button>'
-        + '<button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;color:#f5a623;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px" data-pid="'+p.id+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button>'
-        + '<button class="more-btn" data-pid="'+p.id+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto">&#8942;</button>'
-        + '</div>';
-      var mb2 = el.querySelector('.more-btn');
-      if (mb2 && p.author) { mb2.dataset.authorid = p.author.id||''; mb2.dataset.authorwallet = p.author.wallet_address||p.author.id||''; }
-      el.querySelector('.like-btn').addEventListener('click', (function(pid){ return function(){ toggleLike(this, pid); }; })(p.id));
-      el.querySelector('.comment-btn').addEventListener('click', (function(pid){ return function(){ toggleComments(this, pid); }; })(p.id));
-      el.querySelector('.tip-btn').addEventListener('click', (function(post){ return function(){ openTipModal(post.id, post.author ? post.author.wallet_address||post.author.id : ''); }; })(p));
-      el.querySelector('.more-btn').addEventListener('click', function(e){ e.stopPropagation(); e.preventDefault(); openPostMenu(this); });
+    for (var p of d.data) {
+      var el = buildPostEl(p);
       wrap.appendChild(el);
     }
-    var c2 = document.querySelector('.composer');
-    if (c2) c2.after(wrap); else document.querySelector('main, .feed-container').prepend(wrap);
-  } catch(e2) { console.error('Following feed:', e2); }
+    var c = document.querySelector('.composer');
+    if (c) c.after(wrap); else document.querySelector('.feed-container, main, .main').prepend(wrap);
+  } catch(e) { console.error('Following feed:', e); }
 }
 
 
@@ -1706,13 +1695,16 @@ function openPostMenu(btn) {
   var actionsDiv = btn.closest('.post-actions');
   actionsDiv.appendChild(menu);
 
+  var _menuJustOpened = true;
+  setTimeout(function(){ _menuJustOpened = false; }, 50);
   function closeMenu(e) {
+    if (_menuJustOpened) return;
     if (!menu.contains(e.target) && e.target !== btn) {
       menu.remove();
       document.removeEventListener('click', closeMenu);
     }
   }
-  setTimeout(function(){ document.addEventListener('click', closeMenu); }, 10);
+  setTimeout(function(){ document.addEventListener('click', closeMenu); }, 50);
 }
 
 function sharePost(postId) {
