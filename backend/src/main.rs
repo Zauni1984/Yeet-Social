@@ -97,7 +97,6 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/notifications/read",        post(api::notifications::mark_notifications_read))
         .route("/api/v1/users/:address/unfollow", post(api::users::unfollow_user))
         // Tips & Tokens
-        .route("/api/v1/posts/:id/report",    post(api::report::report_post))
         .route("/api/v1/admin/posts",          get(api::report::admin_list_posts))
         .route("/api/v1/admin/reports",        get(api::report::admin_list_reports))
         .route("/api/v1/admin/posts/:id",      delete(api::report::admin_remove_post))
