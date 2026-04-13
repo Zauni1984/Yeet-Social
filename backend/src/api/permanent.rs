@@ -67,7 +67,21 @@ pub async fn repost_post(
 ) -> AppResult<Json<ApiResponse<SimpleOk>>> {
     let user_id = parse_user_id(&auth)?;
 
-    // Check already reposted
+    // Block reposting a repost — only original posts can be reposted
+    let is_repost: Option<Uuid> = sqlx::query_scalar(
+        "SELECT reposted_from FROM posts WHERE id = $1"
+    )
+    .bind(post_id)
+    .fetch_optional(state.db.pool())
+    .await
+    .map_err(AppError::Database)?
+    .flatten();
+
+    if is_repost.is_some() {
+        return Err(AppError::Conflict("Reposts cannot be reposted — only original posts".into()));
+    }
+
+    // Check user hasn't already reposted this post
     let already: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts WHERE reposted_from = $1 AND author_id = $2"
     )
@@ -78,7 +92,7 @@ pub async fn repost_post(
     .map_err(AppError::Database)?;
 
     if already > 0 {
-        return Err(AppError::Conflict("Already reposted this post".into()));
+        return Err(AppError::Conflict("Du hast diesen Post bereits geteilt (max. 1 Repost)".into()));
     }
 
     // Get original post content
