@@ -27,6 +27,7 @@ pub struct UserProfile {
     pub follower_count: i64,
     pub following_count: i64,
     pub post_count: i64,
+    pub age_verified: bool,
     pub created_at: DateTime<Utc>,
 }
 

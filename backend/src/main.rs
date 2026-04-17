@@ -93,6 +93,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         patch(api::users::update_profile))
         .route("/api/v1/users/me",         delete(api::users::delete_my_account))
         .route("/api/v1/users/me/export",  get(api::users::export_my_data))
+        .route("/api/v1/users/me/verify-age", post(api::users::verify_age))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
         .route("/api/v1/users/:address/posts",     get(api::feed::get_user_posts))
         .route("/api/v1/users/:address/followers", get(api::users::list_followers))
