@@ -21,6 +21,15 @@ pub struct UpdateProfileRequest {
     pub adult_content: Option<bool>,
 }
 
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct FollowEntry {
+    pub id: Uuid,
+    pub wallet_address: Option<String>,
+    pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
+    pub followed_at: DateTime<Utc>,
+}
+
 pub async fn get_profile(
     State(state): State<AppState>,
     Path(address): Path<String>,
@@ -146,4 +155,93 @@ pub async fn unfollow_user(
         .bind(follower_id).bind(following_id)
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(())))
+}
+
+// ---- DSGVO account actions ----
+
+pub async fn export_my_data(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<serde_json::Value>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+
+    let user: Option<serde_json::Value> = sqlx::query_scalar(
+        "SELECT to_jsonb(u) - 'password_hash' - 'password_salt'
+           FROM users u WHERE u.id = $1"
+    )
+    .bind(user_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let posts: Vec<serde_json::Value> = sqlx::query_scalar(
+        "SELECT to_jsonb(p) FROM posts p WHERE p.author_id = $1 ORDER BY p.created_at DESC"
+    )
+    .bind(user_id).fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let settings: Option<serde_json::Value> = sqlx::query_scalar(
+        "SELECT to_jsonb(s) FROM user_settings s WHERE s.user_id = $1"
+    )
+    .bind(user_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let followers: Vec<serde_json::Value> = sqlx::query_scalar(
+        "SELECT to_jsonb(f) FROM follows f WHERE f.following_id = $1"
+    )
+    .bind(user_id).fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let following: Vec<serde_json::Value> = sqlx::query_scalar(
+        "SELECT to_jsonb(f) FROM follows f WHERE f.follower_id = $1"
+    )
+    .bind(user_id).fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+
+    Ok(Json(serde_json::json!({
+        "exported_at": Utc::now(),
+        "user": user,
+        "settings": settings,
+        "posts": posts,
+        "followers": followers,
+        "following": following,
+    })))
+}
+
+pub async fn delete_my_account(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+    sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(user_id)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(serde_json::json!({"deleted": true}))))
+}
+
+pub async fn list_followers(
+    State(state): State<AppState>,
+    Path(address): Path<String>,
+) -> AppResult<Json<ApiResponse<Vec<FollowEntry>>>> {
+    let target_id = resolve_target_id(&state, &address).await?;
+    let rows = sqlx::query_as::<_, FollowEntry>(
+        "SELECT u.id, u.wallet_address, u.display_name, u.avatar_url, f.created_at AS followed_at
+           FROM follows f JOIN users u ON u.id = f.follower_id
+          WHERE f.following_id = $1
+          ORDER BY f.created_at DESC
+          LIMIT 200"
+    )
+    .bind(target_id)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(rows)))
+}
+
+pub async fn list_following(
+    State(state): State<AppState>,
+    Path(address): Path<String>,
+) -> AppResult<Json<ApiResponse<Vec<FollowEntry>>>> {
+    let target_id = resolve_target_id(&state, &address).await?;
+    let rows = sqlx::query_as::<_, FollowEntry>(
+        "SELECT u.id, u.wallet_address, u.display_name, u.avatar_url, f.created_at AS followed_at
+           FROM follows f JOIN users u ON u.id = f.following_id
+          WHERE f.follower_id = $1
+          ORDER BY f.created_at DESC
+          LIMIT 200"
+    )
+    .bind(target_id)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(rows)))
 }

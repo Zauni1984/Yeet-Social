@@ -67,6 +67,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/email-verify",    post(api::email_auth::verify_email))
         .route("/api/v1/auth/email-resend",    post(api::email_auth::resend_verification))
         .route("/api/v1/auth/link-email",      post(api::email_auth::link_email))
+        .route("/api/v1/auth/link-wallet/nonce",  post(api::email_auth::link_wallet_nonce))
+        .route("/api/v1/auth/link-wallet/verify", post(api::email_auth::link_wallet_verify))
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
         // Feed
         .route("/api/v1/feed",             get(api::feed::get_feed))
@@ -89,9 +91,13 @@ fn build_router(state: AppState) -> Router {
         // Users
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))
+        .route("/api/v1/users/me",         delete(api::users::delete_my_account))
+        .route("/api/v1/users/me/export",  get(api::users::export_my_data))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
-        .route("/api/v1/users/:address/posts",    get(api::feed::get_user_posts))
-        .route("/api/v1/users/:address/follow",   post(api::users::follow_user))
+        .route("/api/v1/users/:address/posts",     get(api::feed::get_user_posts))
+        .route("/api/v1/users/:address/followers", get(api::users::list_followers))
+        .route("/api/v1/users/:address/following", get(api::users::list_following))
+        .route("/api/v1/users/:address/follow",    post(api::users::follow_user))
         // Settings
         .route("/api/v1/settings",         get(api::settings::get_settings))
         .route("/api/v1/settings",         patch(api::settings::update_settings))

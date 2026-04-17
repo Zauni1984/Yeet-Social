@@ -4,6 +4,7 @@ use chrono::{Duration as ChronoDuration, Utc};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::time::Duration;
 use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, api::middleware::AuthUser, models::ApiResponse, services::{auth, email as email_svc}};
 
@@ -271,6 +272,75 @@ async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid
         .bind(auth_address)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".into()))
+}
+
+// ---- Wallet linking for email users ----
+
+#[derive(Debug, Deserialize)]
+pub struct LinkWalletNonceRequest { pub address: String }
+
+#[derive(Debug, Serialize)]
+pub struct LinkWalletNonceResponse { pub nonce: String, pub message: String }
+
+#[derive(Debug, Deserialize)]
+pub struct LinkWalletVerifyRequest {
+    pub address: String,
+    pub signature: String,
+    pub nonce: String,
+}
+
+pub async fn link_wallet_nonce(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Json(req): Json<LinkWalletNonceRequest>,
+) -> AppResult<Json<ApiResponse<LinkWalletNonceResponse>>> {
+    let _ = resolve_user_id(&state, &auth.address).await?;
+    let address = req.address.to_lowercase();
+    if !address.starts_with("0x") || address.len() != 42 {
+        return Err(AppError::Validation("Invalid wallet address".into()));
+    }
+    let nonce = auth::generate_nonce();
+    let message = auth::sign_message(&nonce);
+    state.cache.set_nonce(&address, &nonce, Duration::from_secs(600)).await
+        .map_err(|e| AppError::Cache(e.to_string()))?;
+    Ok(Json(ApiResponse::ok(LinkWalletNonceResponse { nonce, message })))
+}
+
+pub async fn link_wallet_verify(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Json(req): Json<LinkWalletVerifyRequest>,
+) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+    let address = req.address.to_lowercase();
+
+    let stored_nonce = state.cache.consume_nonce(&address).await
+        .map_err(|e| AppError::Cache(e.to_string()))?
+        .ok_or_else(|| AppError::Unauthorised("Nonce not found or expired".into()))?;
+    if stored_nonce != req.nonce {
+        return Err(AppError::Unauthorised("Nonce mismatch".into()));
+    }
+    let message = auth::sign_message(&req.nonce);
+    let recovered = auth::recover_signer(&message, &req.signature)
+        .map_err(|e| AppError::Unauthorised(format!("Signature invalid: {e}")))?;
+    if recovered != address {
+        return Err(AppError::Unauthorised("Signature does not match address".into()));
+    }
+
+    let taken: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM users WHERE wallet_address = $1 AND id <> $2"
+    )
+    .bind(&address).bind(user_id)
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    if taken.is_some() {
+        return Err(AppError::Validation("Wallet already linked to another account".into()));
+    }
+
+    sqlx::query("UPDATE users SET wallet_address = $2, updated_at = NOW() WHERE id = $1")
+        .bind(user_id).bind(&address)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
 }
 
 async fn unique_username(state: &AppState, base: &str) -> AppResult<String> {
