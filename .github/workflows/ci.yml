@@ -32,7 +32,6 @@ jobs:
           - 5432:5432
     env:
       DATABASE_URL: postgresql://yeet:yeet_secure_password@localhost:5432/yeet
-      SQLX_OFFLINE: "true"
     defaults:
       run:
         working-directory: backend
@@ -53,10 +52,10 @@ jobs:
           cargo install sqlx-cli --no-default-features --features postgres --quiet 2>/dev/null || true
           sqlx migrate run
 
-      - name: Build (offline sqlx cache)
+      - name: Build
         run: cargo build --release
 
-      - name: Clippy (offline sqlx cache)
+      - name: Clippy
         run: cargo clippy -- -D warnings
 
       - name: Log in to GitHub Container Registry
@@ -75,3 +74,5 @@ jobs:
           push: true
           tags: ghcr.io/zauni1984/yeet-social/backend:main
           network: host
+          build-args: |
+            DATABASE_URL=postgresql://yeet:yeet_secure_password@localhost:5432/yeet
