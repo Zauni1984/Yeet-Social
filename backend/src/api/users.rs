@@ -11,6 +11,7 @@ struct ProfileRow {
     id: Uuid, wallet_address: Option<String>, display_name: Option<String>,
     bio: Option<String>, avatar_url: Option<String>, created_at: DateTime<Utc>,
     follower_count: Option<i64>, following_count: Option<i64>, post_count: Option<i64>,
+    age_verified_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,13 +40,15 @@ pub async fn get_profile(
         "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
-                (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count
+                (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
+                u.age_verified_at
          FROM users u WHERE u.id = $1::uuid"
     } else {
         "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
-                (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count
+                (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
+                u.age_verified_at
          FROM users u WHERE u.wallet_address = $1"
     };
     let bind_val = if address.parse::<Uuid>().is_ok() { address.clone() } else { address.to_lowercase() };
@@ -60,6 +63,7 @@ pub async fn get_profile(
         follower_count: r.follower_count.unwrap_or(0),
         following_count: r.following_count.unwrap_or(0),
         post_count: r.post_count.unwrap_or(0),
+        age_verified: r.age_verified_at.is_some(),
         created_at: r.created_at,
     })))
 }
@@ -199,6 +203,17 @@ pub async fn export_my_data(
         "followers": followers,
         "following": following,
     })))
+}
+
+pub async fn verify_age(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+    sqlx::query("UPDATE users SET age_verified_at = COALESCE(age_verified_at, NOW()) WHERE id = $1")
+        .bind(user_id)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(serde_json::json!({"age_verified": true}))))
 }
 
 pub async fn delete_my_account(

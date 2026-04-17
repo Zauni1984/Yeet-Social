@@ -303,17 +303,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <h3>&#9881;&#65039; Settings</h3>
     <div style="display:flex;flex-direction:column;gap:16px">
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Display</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:14px">Dark Mode</span>
-          <input type="checkbox" id="settingDark" checked onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:14px">Compact Feed</span>
-          <input type="checkbox" id="settingCompact" onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
-        </div>
-      </div>
-      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Content</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <span style="font-size:14px">18+ Content</span>
@@ -692,6 +681,28 @@ async function likePost(id){
   }
 }
 let connectedWallet=null,connectedAddress=null;
+// Apply adult visibility from cached settings immediately, then refine from server
+(function(){
+  try{
+    var s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
+    var adult=s.adult===true||localStorage.getItem('yeet_adult')==='1';
+    if(typeof updateAdultUiVisibility==='function') updateAdultUiVisibility(adult);
+  }catch(e){}
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(jwt){
+    fetch('/api/v1/settings',{headers:{'Authorization':'Bearer '+jwt}})
+      .then(function(r){return r.json();}).then(function(d){
+        if(!d||!d.success||!d.data)return;
+        if(d.data.show_nsfw) localStorage.setItem('yeet_adult','1'); else localStorage.removeItem('yeet_adult');
+        if(typeof updateAdultUiVisibility==='function') updateAdultUiVisibility(!!d.data.show_nsfw);
+      }).catch(function(){});
+    fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}})
+      .then(function(r){return r.json();}).then(function(d){
+        if(!d||!d.success||!d.data)return;
+        if(d.data.age_verified) localStorage.setItem('yeet_18plus_verified','1');
+      }).catch(function(){});
+  }
+})();
 loadPrices();loadFeed();loadTrendingTags();// adultToggleLabel always visible nowif(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
 
 // ====== WALLET CONNECTION ======
@@ -994,7 +1005,6 @@ function openSettingsModal(){
   // Prefill from localStorage first (instant)
   const s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   if(document.getElementById('setting18'))document.getElementById('setting18').checked=s.adult===true||localStorage.getItem('yeet_adult')==='1';
-  if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=s.compact===true;
   if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=s.autoload!==false;
   document.getElementById('settingsModal').classList.add('on');
   // Show "Link Wallet" only for email-only users (no wallet yet)
@@ -1017,8 +1027,9 @@ function openSettingsModal(){
       if(!d||!d.success||!d.data)return;
       const x=d.data;
       if(document.getElementById('setting18'))document.getElementById('setting18').checked=!!x.show_nsfw;
-      if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=!!x.compact_mode;
       if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=x.auto_play_media!==false;
+      if(x.show_nsfw) localStorage.setItem('yeet_adult','1'); else localStorage.removeItem('yeet_adult');
+      updateAdultUiVisibility(!!x.show_nsfw);
     }).catch(()=>{});
 }
 
@@ -1077,24 +1088,38 @@ async function deleteMyAccount(){
 function closeSettingsModal(e){if(!e||e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('on');}
 function applySettings(){
   const adult=document.getElementById('setting18')&&document.getElementById('setting18').checked;
-  const compact=document.getElementById('settingCompact')&&document.getElementById('settingCompact').checked;
   const autoload=document.getElementById('settingAutoload')&&document.getElementById('settingAutoload').checked;
   const network=document.getElementById('settingNetwork')&&document.getElementById('settingNetwork').value;
-  const s={adult,compact,autoload,network:network||'97'};
+  const s={adult,autoload,network:network||'97'};
   localStorage.setItem('yeet_settings',JSON.stringify(s));
   if(adult)localStorage.setItem('yeet_adult','1');
   else localStorage.removeItem('yeet_adult');
-  document.body.classList.toggle('compact',compact);
-  // Persist to backend if authenticated
+  updateAdultUiVisibility(adult);
   const jwt=localStorage.getItem('yeet_jwt');
   if(jwt){
     fetch('/api/v1/settings',{
       method:'PATCH',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
-      body:JSON.stringify({show_nsfw:adult,compact_mode:compact,auto_play_media:autoload})
+      body:JSON.stringify({show_nsfw:adult,auto_play_media:autoload})
     }).catch(()=>{});
   }
   showToast('Settings saved');
+}
+function updateAdultUiVisibility(enabled){
+  var navLink=document.querySelector('.sidebar a.nav-link[onclick*="check18Plus"]');
+  if(navLink) navLink.style.display = enabled ? '' : 'none';
+  var tabs=document.querySelectorAll('.tabs .tab');
+  tabs.forEach(function(t){
+    if(t.textContent && t.textContent.indexOf('18+')!==-1){
+      t.style.display = enabled ? '' : 'none';
+      if(!enabled && t.classList.contains('active')){
+        t.classList.remove('active');
+        var first=document.querySelector('.tabs .tab');
+        if(first) first.classList.add('active');
+        loadFeed();
+      }
+    }
+  });
 }
 function disconnectWallet(){
   localStorage.removeItem('yeet_jwt');
@@ -1650,6 +1675,9 @@ async function submitReport(postId){
 var faceStream=null;
 function check18Plus(){
   if(typeof _exitProfileView==='function') _exitProfileView();
+  var s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
+  var adultEnabled=s.adult===true||localStorage.getItem('yeet_adult')==='1';
+  if(!adultEnabled){showToast('18+ Content in Settings aktivieren');return;}
   if(localStorage.getItem('yeet_18plus_verified')==='1'){loadFeedFiltered('adult');return;}
   var modal=document.createElement('div');
   modal.id='faceScanModal';
@@ -1697,6 +1725,11 @@ async function doFaceScan(){
   if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
   document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
   localStorage.setItem('yeet_18plus_verified','1');
+  // Persist server-side so verification syncs across devices for this account
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(jwt){
+    fetch('/api/v1/users/me/verify-age',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(function(){});
+  }
   setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
 }
 function closeFaceScan(){
