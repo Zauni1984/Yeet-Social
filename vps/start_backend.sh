@@ -1,8 +1,27 @@
 #!/bin/bash
 # YEET Social — Backend Start Script
 # Includes: pg_hba fix, DB migrations, correct column types
+#
+# Reads secrets from /root/yeet-social/.env (override with ENV_FILE=...).
+# Required keys: POSTGRES_PASSWORD, JWT_SECRET, ADMIN_SECRET
+# Optional:     RUST_LOG
 
-set +H
+set -eu +H
+
+ENV_FILE="${ENV_FILE:-/root/yeet-social/.env}"
+if [ ! -f "$ENV_FILE" ]; then
+    echo "ERROR: $ENV_FILE missing. See vps/.env.example." >&2
+    exit 1
+fi
+set -a
+# shellcheck disable=SC1090
+. "$ENV_FILE"
+set +a
+
+: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing in $ENV_FILE}"
+: "${JWT_SECRET:?JWT_SECRET missing in $ENV_FILE}"
+: "${ADMIN_SECRET:?ADMIN_SECRET missing in $ENV_FILE}"
+RUST_LOG="${RUST_LOG:-backend=info,tower_http=warn}"
 
 docker rm -f yeet-backend 2>/dev/null || true
 docker pull ghcr.io/zauni1984/yeet-social/backend:main
@@ -48,11 +67,11 @@ ALTER TABLE posts ALTER COLUMN tip_total_yeet TYPE DOUBLE PRECISION USING tip_to
 docker run -d --name yeet-backend \
   --network yeet-social_yeet-net \
   -p 8080:8080 \
-  -e DATABASE_URL="postgres://yeet:YeetDB_5254a44ceae0a4a7!@yeet-postgres:5432/yeet" \
+  -e DATABASE_URL="postgres://yeet:${POSTGRES_PASSWORD}@yeet-postgres:5432/yeet" \
   -e REDIS_URL="redis://yeet-redis:6379" \
-  -e JWT_SECRET="f270e9a02377765cf70ac4ccf1e35af55be8e7d3bac3c71e08e5e17eed62a6c2310d8a24b3d23e4d" \
-  -e RUST_LOG="backend=info,tower_http=warn" \
-  -e ADMIN_SECRET="yeet_admin_2024" \
+  -e JWT_SECRET="${JWT_SECRET}" \
+  -e RUST_LOG="${RUST_LOG}" \
+  -e ADMIN_SECRET="${ADMIN_SECRET}" \
   ghcr.io/zauni1984/yeet-social/backend:main
 echo "Backend started on :8080"
 sleep 5 && curl -s http://127.0.0.1:8080/api/v1/health

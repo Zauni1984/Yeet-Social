@@ -64,6 +64,9 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/verify",      post(api::auth::verify_signature))
         .route("/api/v1/auth/email-register", post(api::email_auth::register))
         .route("/api/v1/auth/email-login",     post(api::email_auth::login))
+        .route("/api/v1/auth/email-verify",    post(api::email_auth::verify_email))
+        .route("/api/v1/auth/email-resend",    post(api::email_auth::resend_verification))
+        .route("/api/v1/auth/link-email",      post(api::email_auth::link_email))
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
         // Feed
         .route("/api/v1/feed",             get(api::feed::get_feed))
@@ -87,7 +90,11 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
+        .route("/api/v1/users/:address/posts",    get(api::feed::get_user_posts))
         .route("/api/v1/users/:address/follow",   post(api::users::follow_user))
+        // Settings
+        .route("/api/v1/settings",         get(api::settings::get_settings))
+        .route("/api/v1/settings",         patch(api::settings::update_settings))
         // Boards / Webboards
         .route("/api/v1/boards",                    get(api::boards::get_boards))
         .route("/api/v1/boards/:id",                get(api::boards::get_board))

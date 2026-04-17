@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: yeet
       POSTGRES_USER: yeet
-      POSTGRES_PASSWORD: "YeetDB_5254a44ceae0a4a7!"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks: [yeet-net]
@@ -43,10 +43,16 @@ services:
       redis:
         condition: service_healthy
     environment:
-      DATABASE_URL: "postgres://yeet:YeetDB_5254a44ceae0a4a7!@yeet-postgres:5432/yeet"
+      DATABASE_URL: "postgres://yeet:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing in .env}@yeet-postgres:5432/yeet"
       REDIS_URL: "redis://yeet-redis:6379"
-      JWT_SECRET: "f270e9a02377765cf70ac4ccf1e35af55be8e7d3bac3c71e08e5e17eed62a6c2310d8a24b3d23e4d"
-      RUST_LOG: "backend=info,tower_http=warn"
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET missing in .env}
+      RUST_LOG: ${RUST_LOG:-backend=info,tower_http=warn}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://justyeet.it}
     networks: [yeet-net]
     ports:
       - "127.0.0.1:8080:8080"

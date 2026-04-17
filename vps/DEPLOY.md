@@ -38,4 +38,39 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 - Nginx proxies from 80/443 → backend
 - Frontend at `/root/yeet-html/index.html`
 - Network: `yeet-social_yeet-net`
-- JWT Secret: in docker-compose.yml and start_backend.sh
+- Secrets: in `/root/yeet-social/.env` (mode 600, see `vps/.env.example`)
+
+## Secrets / .env (VPS)
+`docker-compose.yml` and `start_backend.sh` both expect these at
+`/root/yeet-social/.env`:
+```
+POSTGRES_PASSWORD=...
+JWT_SECRET=...
+ADMIN_SECRET=...
+RUST_LOG=backend=info,tower_http=warn   # optional
+
+# SMTP for GDPR double-opt-in verification email (Hostinger)
+SMTP_HOST=smtp.hostinger.com
+SMTP_PORT=465
+SMTP_USER=noreply@justyeet.it
+SMTP_PASS=...
+SMTP_FROM=noreply@justyeet.it
+PUBLIC_BASE_URL=https://justyeet.it
+```
+Generate fresh values with `openssl rand -hex 64` and `openssl rand -hex 32`,
+then `chmod 600 /root/yeet-social/.env`. Never commit.
+
+After changing `/root/yeet-social/.env`, restart the backend container:
+```bash
+docker compose -f /root/yeet-social/docker-compose.yml restart yeet-api
+# or, if running via start_backend.sh:
+bash /tmp/start_backend.sh
+```
+
+Migration `0020_email_verification.sql` adds the
+`email_verification_tokens` table and `email_verified_at` / `email_pending`
+columns; it runs automatically on backend start.
+
+To rotate the JWT secret without breaking active sessions, deploy the new
+secret during low-traffic windows  all existing JWTs become invalid and users
+must re-login.
