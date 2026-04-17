@@ -57,8 +57,8 @@ impl AppState {
         };
 
         let email = EmailConfig::from_env().map(Arc::new);
-        if email.is_some() {
-            info!("✅ SMTP configured ({})", email.as_ref().unwrap().host);
+        if let Some(cfg) = &email {
+            info!("✅ SMTP configured ({})", cfg.host);
         } else {
             info!("⚠  SMTP not configured — email verification will fail silently");
         }
