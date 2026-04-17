@@ -3,6 +3,8 @@ use anyhow::{Context, Result};
 use tracing::info;
 use crate::db::Database;
 use crate::services::cache::Cache;
+use crate::services::email::EmailConfig;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct JwtConfig {
@@ -25,6 +27,7 @@ pub struct AppState {
     pub cache: Cache,
     pub jwt: JwtConfig,
     pub blockchain: BlockchainConfig,
+    pub email: Option<Arc<EmailConfig>>,
 }
 
 impl AppState {
@@ -53,7 +56,14 @@ impl AppState {
             minter_privkey: std::env::var("REWARDS_MINTER_PRIVKEY").unwrap_or_default(),
         };
 
-        Ok(Self { db, cache, jwt, blockchain })
+        let email = EmailConfig::from_env().map(Arc::new);
+        if email.is_some() {
+            info!("✅ SMTP configured ({})", email.as_ref().unwrap().host);
+        } else {
+            info!("⚠  SMTP not configured — email verification will fail silently");
+        }
+
+        Ok(Self { db, cache, jwt, blockchain, email })
     }
 }
 

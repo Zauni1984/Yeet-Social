@@ -15,7 +15,13 @@ pub struct NonceResponse { pub nonce: String, pub message: String }
 pub struct VerifyRequest { pub address: String, pub signature: String, pub nonce: String }
 
 #[derive(Debug, Serialize)]
-pub struct TokenResponse { pub access_token: String, pub refresh_token: String, pub token_type: String }
+pub struct TokenResponse {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub token_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub needs_email: Option<bool>,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct RefreshRequest { pub refresh_token: String }
@@ -52,22 +58,35 @@ pub async fn verify_signature(
     if recovered != address {
         return Err(AppError::Unauthorised("Signature does not match address".into()));
     }
-    // Upsert user — use short wallet prefix as username (e.g. "0xabcd...ef12")
-    let username = format!("{}...{}", &address[..6], &address[address.len()-4..]);
+    // Upsert user. For first-time wallet logins we generate a placeholder
+    // username that the onboarding modal will replace.
+    let fallback_username = format!("w_{}", &address[2..10]);
     sqlx::query(
         "INSERT INTO users (wallet_address, username)
          VALUES ($1, $2)
          ON CONFLICT (wallet_address) DO UPDATE SET updated_at = NOW()"
     )
     .bind(&address)
-    .bind(&username)
+    .bind(&fallback_username)
     .execute(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+
+    // Does this user have a verified email? If not -> frontend shows onboarding.
+    let needs_email: bool = sqlx::query_scalar(
+        "SELECT email IS NULL OR email_verified_at IS NULL FROM users WHERE wallet_address = $1"
+    )
+    .bind(&address)
+    .fetch_one(state.db.pool())
     .await
     .map_err(AppError::Database)?;
 
     let (access_token, refresh_token) = auth::issue_token_pair(&address, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(ApiResponse::ok(TokenResponse { access_token, refresh_token, token_type: "Bearer".into() })))
+    Ok(Json(ApiResponse::ok(TokenResponse {
+        access_token, refresh_token, token_type: "Bearer".into(),
+        needs_email: Some(needs_email),
+    })))
 }
 
 pub async fn refresh_token(
@@ -81,7 +100,10 @@ pub async fn refresh_token(
     }
     let (access_token, refresh_token) = auth::issue_token_pair(&claims.sub, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(ApiResponse::ok(TokenResponse { access_token, refresh_token, token_type: "Bearer".into() })))
+    Ok(Json(ApiResponse::ok(TokenResponse {
+        access_token, refresh_token, token_type: "Bearer".into(),
+        needs_email: None,
+    })))
 }
 
 fn is_valid_address(a: &str) -> bool {

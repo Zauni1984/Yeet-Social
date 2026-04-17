@@ -1933,6 +1933,10 @@ function showExternalLinkWarning(e,url){
     <div class="ff"><label>Username</label><input type="text" id="rUser" placeholder="satoshi_yeet" maxlength="32"></div>
     <div class="ff"><label>Email</label><input type="email" id="rEmail" name="email" autocomplete="email" placeholder="you@example.com"></div>
     <div class="ff"><label>Password</label><input type="password" id="rPass" name="new-password" autocomplete="new-password" placeholder="Min. 8 characters"></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.4;cursor:pointer">
+      <input type="checkbox" id="rConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
+      <span>I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+    </label>
     <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue &#8594;</button>
   </div>
   <div id="regStep2" style="display:none">
@@ -1959,6 +1963,30 @@ function showExternalLinkWarning(e,url){
     <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="completeReg()">Create Account</button>
   </div>
 </div>
+</div>
+
+<!-- ONBOARDING MODAL (wallet users without email) -->
+<div id="onboardModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
+<div style="background:#111;border:1px solid var(--border);border-radius:16px;padding:28px;width:min(440px,95vw);position:relative;max-height:90vh;overflow-y:auto">
+  <h2 style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px">One last step</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Add an email for account recovery and verify it (GDPR double opt-in).</p>
+  <div id="obErr" class="merr"></div>
+  <div id="obOk" class="mok"></div>
+  <div class="ff"><label>Email</label><input type="email" id="obEmail" placeholder="you@example.com"></div>
+  <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.4;cursor:pointer">
+    <input type="checkbox" id="obConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
+    <span>I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+  </label>
+  <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="submitOnboarding()">Send verification link</button>
+  <button onclick="skipOnboarding()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline">Skip for now</button>
+</div>
+</div>
+
+<!-- EMAIL VERIFY BANNER -->
+<div id="verifyBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ffd700;color:#000;padding:10px 16px;font-size:13px;font-weight:600;z-index:9998;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+  <span id="verifyBannerText">Please verify your email.</span>
+  <button onclick="resendVerification()" style="margin-left:10px;background:#000;color:#ffd700;border:none;padding:4px 12px;border-radius:4px;font-weight:700;cursor:pointer;font-size:12px">Resend email</button>
+  <button onclick="document.getElementById('verifyBanner').style.display='none'" style="margin-left:6px;background:none;border:none;color:#000;cursor:pointer;font-weight:700;font-size:16px">&times;</button>
 </div>
 
 <style>
@@ -2042,6 +2070,72 @@ function showExternalLinkWarning(e,url){
     if(ap){if(user&&user.username)ap.textContent='@'+user.username;else if(wallet)ap.textContent=wallet.slice(0,6)+'...'+wallet.slice(-4);}
   }
 
+  function _showVerifyBanner(email){
+    var b=document.getElementById('verifyBanner');
+    var t=document.getElementById('verifyBannerText');
+    if(!b)return;
+    if(t&&email)t.textContent='Please verify your email ('+email+'). Check your inbox.';
+    b.style.display='block';
+    document.body.style.paddingTop='44px';
+  }
+  function _hideVerifyBanner(){
+    var b=document.getElementById('verifyBanner');
+    if(b){b.style.display='none';document.body.style.paddingTop=''}
+  }
+  function _showOnboarding(addr){
+    var m=document.getElementById('onboardModal');if(m)m.style.display='flex';
+  }
+  function _closeOnboarding(){
+    var m=document.getElementById('onboardModal');if(m)m.style.display='none';
+  }
+  window.skipOnboarding = function(){_closeOnboarding();_toast('You can add an email later in settings')};
+  window.submitOnboarding = async function(){
+    var email=(document.getElementById('obEmail').value||'').trim();
+    var consent=document.getElementById('obConsent').checked;
+    var err=document.getElementById('obErr'),ok=document.getElementById('obOk');
+    err.classList.remove('show');ok.classList.remove('show');
+    if(!/\S+@\S+\.\S+/.test(email)){err.textContent='Invalid email';err.classList.add('show');return}
+    if(!consent){err.textContent='Please accept the privacy policy';err.classList.add('show');return}
+    var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt');
+    try{
+      var r=await fetch('/api/v1/auth/link-email',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({email:email,consent:true})});
+      var d=await r.json();
+      if(!r.ok)throw new Error((d.error&&d.error.message)||'Failed');
+      ok.textContent='Verification email sent. Check your inbox.';ok.classList.add('show');
+      setTimeout(function(){_closeOnboarding();_showVerifyBanner(email)},1500);
+    }catch(e){err.textContent=e.message;err.classList.add('show')}
+  };
+  window.resendVerification = async function(){
+    var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt');
+    if(!tok){_toast('Please log in first');return}
+    try{
+      var r=await fetch('/api/v1/auth/email-resend',{method:'POST',headers:{'Authorization':'Bearer '+tok}});
+      var d=await r.json();
+      if(!r.ok)throw new Error((d.error&&d.error.message)||'Failed');
+      _toast('Verification email re-sent');
+    }catch(e){_toast(e.message||'Failed to resend')}
+  };
+  async function _handleVerifyUrlParam(){
+    var p=new URLSearchParams(window.location.search);
+    var t=p.get('verify');
+    if(!t)return;
+    try{
+      var r=await fetch('/api/v1/auth/email-verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t})});
+      var d=await r.json();
+      if(!r.ok)throw new Error((d.error&&d.error.message)||'Verification failed');
+      _toast('Email verified! Welcome to YEET.');
+      _hideVerifyBanner();
+      var usr=JSON.parse(localStorage.getItem('yeetUser')||'null');
+      if(usr){usr.email_verified=true;localStorage.setItem('yeetUser',JSON.stringify(usr))}
+    }catch(e){_toast('Verify failed: '+e.message)}
+    finally{
+      p.delete('verify');
+      var q=p.toString();
+      var url=window.location.pathname+(q?'?'+q:'')+window.location.hash;
+      window.history.replaceState({},'',url);
+    }
+  }
+
   //  GLOBAL FUNCTIONS (called from HTML) 
   window.openAuthModal = function(tab){
     var m=document.getElementById('authModal');if(m)m.style.display='flex';
@@ -2075,19 +2169,25 @@ function showExternalLinkWarning(e,url){
     if(!window.ethereum){_showErr('MetaMask not found. Please install it.');return}
     try{
       var acc=await window.ethereum.request({method:'eth_requestAccounts'});
-      var addr=acc[0];
+      var addr=(acc[0]||'').toLowerCase();
       try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]})}
       catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18}}]})}
-      var nr=await fetch('/api/v1/auth/nonce?address='+addr);
-      if(!nr.ok)throw new Error('Nonce failed');
+      var nr=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
       var nd=await nr.json();
-      var msg='Sign in to YEET Social\nNonce: '+nd.nonce;
+      if(!nr.ok)throw new Error((nd.error&&nd.error.message)||'Nonce failed');
+      var nonce=(nd.data&&nd.data.nonce)||nd.nonce;
+      var msg=(nd.data&&nd.data.message)||nd.message;
       var sig=await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
-      var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,message:msg})});
-      if(!vr.ok){var ve=await vr.json();throw new Error(ve.message||'Auth failed')}
+      var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,nonce:nonce})});
       var vd=await vr.json();
-      _setLoggedIn(vd.token,vd.user,addr);window.closeAuthModal();_toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
-    }catch(e){_showErr(e.message)}
+      if(!vr.ok)throw new Error((vd.error&&vd.error.message)||'Auth failed');
+      var payload=vd.data||vd;
+      var tok=payload.access_token||payload.token||'';
+      _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
+      window.closeAuthModal();
+      _toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
+      if(payload.needs_email===true)_showOnboarding(addr);
+    }catch(e){_showErr(e.message||String(e))}
   };
   window.doEmailLogin = async function(){
     var email=document.getElementById('lEmail').value.trim();
@@ -2097,22 +2197,28 @@ function showExternalLinkWarning(e,url){
       var r=await fetch('/api/v1/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Login failed');
-      var tok=d.token||(d.data&&d.data.access_token)||'';
-      var usr=d.user||(d.data&&d.data.user)||{username:'user'};
-      _setLoggedIn(tok,usr,d.wallet_address);window.closeAuthModal();_toast('Welcome back, @'+(usr.username||'user'));
+      var payload=d.data||d;
+      var tok=payload.access_token||payload.token||'';
+      var usr={username:payload.username||'user',email_verified:payload.email_verified===true};
+      _setLoggedIn(tok,usr,null);
+      window.closeAuthModal();
+      _toast('Welcome back, @'+usr.username);
+      if(payload.email_verified===false)_showVerifyBanner(email);
     }catch(e){_showErr(e.message)}
   };
   window.regNext1 = function(){
     var u=document.getElementById('rUser').value.trim();
     var e=document.getElementById('rEmail').value.trim();
     var p=document.getElementById('rPass').value;
+    var c=document.getElementById('rConsent');
     if(!u||!e||!p){_showErr('Fill all fields');return}
     if(u.length<3){_showErr('Username min 3 chars');return}
     if(p.length<8){_showErr('Password min 8 chars');return}
     if(!/\S+@\S+\.\S+/.test(e)){_showErr('Invalid email');return}
+    if(!c||!c.checked){_showErr('Please accept the privacy policy (GDPR)');return}
     _seedWords=_genSeed();
     var wallet=_genWallet(_seedWords);
-    _regData={username:u,email:e,password:p,wallet_address:wallet};
+    _regData={username:u,email:e,password:p,wallet_address:wallet,display_name:u,consent:true};
     var grid=document.getElementById('seedGrid');
     grid.innerHTML=_seedWords.map(function(w,i){return '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;display:flex;gap:5px"><span style="color:var(--muted);font-size:10px;min-width:16px">'+(i+1)+'.</span><span style="color:var(--yeet);font-weight:700">'+w+'</span></div>'}).join('');
     document.getElementById('regStep1').style.display='none';
@@ -2138,9 +2244,13 @@ function showExternalLinkWarning(e,url){
       var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Registration failed');
-      var tok=d.token||(d.data&&d.data.access_token)||'';
-      var usr=d.user||(d.data&&d.data.user)||{username:_regData.username};
-      _setLoggedIn(tok,usr,_regData.wallet_address);window.closeAuthModal();_toast('Welcome to YEET, @'+_regData.username);
+      var payload=d.data||d;
+      var tok=payload.access_token||payload.token||'';
+      var usr={username:payload.username||_regData.username,email_verified:payload.email_verified===true};
+      _setLoggedIn(tok,usr,_regData.wallet_address);
+      window.closeAuthModal();
+      _toast('Welcome to YEET, @'+(payload.username||_regData.username));
+      if(payload.email_verified===false)_showVerifyBanner(_regData.email);
     }catch(e){_showErr(e.message)}
   };
   window.copySeedAuth = function(){navigator.clipboard?.writeText(_seedWords.join(' '));_toast('Seed phrase copied - store offline!')};
@@ -2155,12 +2265,18 @@ function showExternalLinkWarning(e,url){
     var tok=localStorage.getItem('yeetToken');
     var user=JSON.parse(localStorage.getItem('yeetUser')||'null');
     var wallet=localStorage.getItem('yeetWallet');
-    if(tok&&user)_updateAuthUI(user,wallet);
+    if(tok&&user){
+      _updateAuthUI(user,wallet);
+      if(user.email_verified===false)_showVerifyBanner();
+    }
+    _handleVerifyUrlParam();
     // Close modal on backdrop click
     var m=document.getElementById('authModal');
     if(m)m.addEventListener('click',function(e){if(e.target===m)window.closeAuthModal()});
+    var ob=document.getElementById('onboardModal');
+    if(ob)ob.addEventListener('click',function(e){if(e.target===ob)_closeOnboarding()});
     // Escape key
-    document.addEventListener('keydown',function(e){if(e.key==='Escape')window.closeAuthModal()});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'){window.closeAuthModal();_closeOnboarding()}});
   });
 })();
 
