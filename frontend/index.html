@@ -336,7 +336,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Account</div>
+        <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; Wallet verknüpfen</button>
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">Disconnect Wallet</button>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">DSGVO</div>
+        <button onclick="exportMyData()" style="width:100%;background:#1e88e522;color:#64b5f6;border:1px solid #1e88e544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px">&#128190; Daten exportieren (JSON)</button>
+        <button onclick="deleteMyAccount()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">&#128465; Konto endgültig löschen</button>
       </div>
     </div>
   </div>
@@ -991,6 +997,18 @@ function openSettingsModal(){
   if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=s.compact===true;
   if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=s.autoload!==false;
   document.getElementById('settingsModal').classList.add('on');
+  // Show "Link Wallet" only for email-only users (no wallet yet)
+  const lw=document.getElementById('linkWalletBtn');
+  if(lw){
+    const jwtLocal=localStorage.getItem('yeet_jwt');
+    lw.style.display='none';
+    if(jwtLocal){
+      fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwtLocal}})
+        .then(r=>r.json()).then(d=>{
+          if(d&&d.success&&d.data && !d.data.wallet_address) lw.style.display='block';
+        }).catch(()=>{});
+    }
+  }
   // Then overlay with server settings
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt)return;
@@ -1002,6 +1020,59 @@ function openSettingsModal(){
       if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=!!x.compact_mode;
       if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=x.auto_play_media!==false;
     }).catch(()=>{});
+}
+
+async function linkWalletToEmailUser(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){showToast('Nicht eingeloggt');return;}
+  if(!window.ethereum){showToast('MetaMask nicht gefunden');return;}
+  try{
+    const [addr]=await window.ethereum.request({method:'eth_requestAccounts'});
+    if(!addr){showToast('Keine Wallet ausgewählt');return;}
+    const nr=await fetch('/api/v1/auth/link-wallet/nonce',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({address:addr})});
+    const nd=await nr.json();
+    if(!nd.success){showToast('Fehler: '+(nd.error&&nd.error.message||'nonce'));return;}
+    const sig=await window.ethereum.request({method:'personal_sign',params:[nd.data.message,addr]});
+    const vr=await fetch('/api/v1/auth/link-wallet/verify',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({address:addr,signature:sig,nonce:nd.data.nonce})});
+    const vd=await vr.json();
+    if(!vd.success){showToast('Fehler: '+(vd.error&&vd.error.message||'verify'));return;}
+    showToast('Wallet verknüpft');
+    const b=document.getElementById('linkWalletBtn'); if(b) b.style.display='none';
+  }catch(e){showToast('Wallet-Verknüpfung abgebrochen');}
+}
+
+async function exportMyData(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){showToast('Nicht eingeloggt');return;}
+  try{
+    const r=await fetch('/api/v1/users/me/export',{headers:{'Authorization':'Bearer '+jwt}});
+    const d=await r.json();
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='yeet-export-'+Date.now()+'.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);a.remove();},500);
+    showToast('Export heruntergeladen');
+  }catch(e){showToast('Export fehlgeschlagen');}
+}
+
+async function deleteMyAccount(){
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){showToast('Nicht eingeloggt');return;}
+  const phrase=prompt('Konto endgültig löschen?\n\nAlle Posts, Follows und Einstellungen werden gelöscht. Diese Aktion ist unwiderruflich.\n\nTippe "LÖSCHEN" zur Bestätigung:');
+  if(phrase!=='LÖSCHEN'){showToast('Abgebrochen');return;}
+  try{
+    const r=await fetch('/api/v1/users/me',{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
+    const d=await r.json();
+    if(!d.success){showToast('Fehler: '+(d.error&&d.error.message||'delete'));return;}
+    localStorage.clear();
+    location.href='/';
+  }catch(e){showToast('Löschen fehlgeschlagen');}
 }
 function closeSettingsModal(e){if(!e||e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('on');}
 function applySettings(){
@@ -1163,6 +1234,9 @@ function submitPost(){
   window.closeSettingsModal = closeSettingsModal;
   window.applySettings = applySettings;
   window.disconnectWallet = disconnectWallet;
+  window.linkWalletToEmailUser = linkWalletToEmailUser;
+  window.exportMyData = exportMyData;
+  window.deleteMyAccount = deleteMyAccount;
     window.toggleNav = toggleNav;
   window.showGlobalFeed = showGlobalFeed;
   window.loadFollowingFeed = loadFollowingFeed;
@@ -1276,8 +1350,8 @@ function renderProfileHeader(u, own){
     + '</div>'
     + (bio ? '<div style="font-size:14px;line-height:1.6;margin:12px 0;white-space:pre-wrap">'+bio+'</div>' : '')
     + '<div style="display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:8px">'
-      + '<span><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
-      + '<span><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
+      + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
+      + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
       + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> Posts</span>'
     + '</div>';
   // Prefill edit form
@@ -1359,6 +1433,48 @@ async function saveProfile(){
     if(window._currentProfile) showProfile(window._currentProfile.address, window._currentProfile.own);
   }catch(e){ showToast('Save error'); }
 }
+
+async function openFollowList(address, kind){
+  var modal = document.getElementById('followListModal');
+  var title = document.getElementById('followListTitle');
+  var body = document.getElementById('followListBody');
+  if(!modal || !title || !body) return;
+  title.textContent = kind === 'following' ? 'Following' : 'Followers';
+  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">Loading...</div>';
+  modal.style.display = 'flex';
+  try{
+    var r = await fetch('/api/v1/users/'+encodeURIComponent(address)+'/'+kind);
+    var d = await r.json();
+    if(!d.success || !d.data || d.data.length === 0){
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">'
+        + (kind === 'following' ? 'Niemand gefolgt' : 'Keine Follower')
+        + '</div>';
+      return;
+    }
+    body.innerHTML = '';
+    d.data.forEach(function(u){
+      var key = u.wallet_address || u.id;
+      var label = _esc(u.display_name || _shortAddr(u.wallet_address) || '@user');
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;border-bottom:1px solid #1e1e1e';
+      row.innerHTML = '<div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">'
+        + _avatarInner(u)
+        + '</div><div style="flex:1;min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+label+'</b>'
+        + (u.wallet_address ? '<div style="font-size:11px;color:var(--muted)">'+_esc(_shortAddr(u.wallet_address))+'</div>' : '')
+        + '</div>';
+      row.addEventListener('click', function(){ closeFollowList(); showProfile(key); });
+      body.appendChild(row);
+    });
+  }catch(e){
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Fehler beim Laden</div>';
+  }
+}
+function closeFollowList(){
+  var m = document.getElementById('followListModal');
+  if(m) m.style.display = 'none';
+}
+window.openFollowList = openFollowList;
+window.closeFollowList = closeFollowList;
 
 async function toggleFollowProfile(){
   var jwt = localStorage.getItem('yeet_jwt');
@@ -1998,6 +2114,17 @@ function showExternalLinkWarning(e,url){
   <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="submitOnboarding()">Send verification link</button>
   <button onclick="skipOnboarding()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline">Skip for now</button>
 </div>
+</div>
+
+<!-- FOLLOW LIST MODAL -->
+<div id="followListModal" onclick="if(event.target===this)closeFollowList()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px">
+  <div style="background:#16181c;border:1px solid #333;border-radius:16px;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column">
+    <div style="padding:14px 18px;border-bottom:1px solid #2a2a2a;display:flex;align-items:center;gap:10px">
+      <h3 id="followListTitle" style="margin:0;font-size:16px;flex:1">Followers</h3>
+      <button onclick="closeFollowList()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <div id="followListBody" style="overflow-y:auto;padding:8px 0"></div>
+  </div>
 </div>
 
 <!-- EMAIL VERIFY BANNER -->
