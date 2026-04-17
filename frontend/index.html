@@ -388,7 +388,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#" onclick="check18Plus();return false;">&#128286; 18+ Content</a>
     <div class="nav-section">Account</div>
     <a class="nav-link" href="#" onclick="showMyProfile();return false;">&#128100; Profile</a>
-    <a class="nav-link" href="#">&#9881; Settings</a>
+    <a class="nav-link" href="#" onclick="openSettingsModal();return false;">&#9881; Settings</a>
   </aside>
 
   <main class="main">
@@ -1231,6 +1231,7 @@ function submitPost(){
   window.loadRSS = loadRSS;
   window.closeNFTModal = closeNFTModal;
   window.mintNFT = mintNFT;
+  window.openSettingsModal = openSettingsModal;
   window.closeSettingsModal = closeSettingsModal;
   window.applySettings = applySettings;
   window.disconnectWallet = disconnectWallet;
