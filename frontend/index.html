@@ -389,7 +389,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
     <a class="nav-link" href="#" onclick="check18Plus();return false;">&#128286; 18+ Content</a>
     <div class="nav-section">Account</div>
-    <a class="nav-link" href="#" onclick="loadProfile();showToast(connectedAddress?'Profile loaded':'Connect wallet first')">&#128100; Profile</a>
+    <a class="nav-link" href="#" onclick="showMyProfile();return false;">&#128100; Profile</a>
     <a class="nav-link" href="#">&#9881; Settings</a>
   </aside>
 
@@ -423,6 +423,32 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="icon">&#128293;</div>
       <strong>No posts yet. Be the first to Yeet!</strong>
       <p style="margin-top:8px;font-size:13px">Connect your wallet to start posting</p>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div id="profileView" style="display:none">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <button onclick="closeProfile()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:6px 10px" title="Back">&larr;</button>
+        <h2 id="profileHeaderName" style="margin:0;font-size:17px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Profile</h2>
+      </div>
+      <div id="profileHeader" style="padding:20px"></div>
+      <div id="profileEditForm" style="display:none;padding:0 20px 20px">
+        <div style="background:#1a1a1a;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
+          <label style="font-size:12px;color:var(--muted)">Display Name (max 50)</label>
+          <input id="editDisplayName" maxlength="50" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px">
+          <label style="font-size:12px;color:var(--muted)">Bio (max 280)</label>
+          <textarea id="editBio" maxlength="280" rows="3" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px;resize:vertical"></textarea>
+          <label style="font-size:12px;color:var(--muted)">Avatar URL</label>
+          <input id="editAvatarUrl" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px" placeholder="https://...">
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button onclick="saveProfile()" style="flex:1;background:var(--yeet);color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Save</button>
+            <button onclick="toggleProfileEdit(false)" style="flex:1;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Posts</div>
+      <div id="profilePosts"></div>
+      <div id="profileEmpty" class="empty" style="display:none"><div class="icon">&#128293;</div><strong>No posts yet</strong></div>
     </div>
   </main>
 
@@ -608,8 +634,8 @@ async function loadFeed(){
       const wrap=document.createElement('div');
       wrap.id='feed-posts';
       for(const p of d.data){
-        const addr=null;
-        const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):(p.author&&(p.author.display_name||p.author.username))||'@user';
+        const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
+        const short=(p.author&&(p.author.display_name||p.author.username))||(authorAddr?authorAddr.slice(0,6)+'...'+authorAddr.slice(-4):'@user');
         const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
         const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
         const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
@@ -625,7 +651,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div style=width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px></div><div><b style=font-size:14px>'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+authorAddr+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer"></div><div><b onclick="showProfile(\''+authorAddr+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -985,12 +1011,23 @@ async function mintNFT(){
   }
 }
 function openSettingsModal(){
-  // Load saved settings
+  // Prefill from localStorage first (instant)
   const s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   if(document.getElementById('setting18'))document.getElementById('setting18').checked=s.adult===true||localStorage.getItem('yeet_adult')==='1';
   if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=s.compact===true;
   if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=s.autoload!==false;
   document.getElementById('settingsModal').classList.add('on');
+  // Then overlay with server settings
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt)return;
+  fetch('/api/v1/settings',{headers:{'Authorization':'Bearer '+jwt}})
+    .then(r=>r.json()).then(d=>{
+      if(!d||!d.success||!d.data)return;
+      const x=d.data;
+      if(document.getElementById('setting18'))document.getElementById('setting18').checked=!!x.show_nsfw;
+      if(document.getElementById('settingCompact'))document.getElementById('settingCompact').checked=!!x.compact_mode;
+      if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=x.auto_play_media!==false;
+    }).catch(()=>{});
 }
 function closeSettingsModal(e){if(!e||e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('on');}
 function applySettings(){
@@ -1002,8 +1039,16 @@ function applySettings(){
   localStorage.setItem('yeet_settings',JSON.stringify(s));
   if(adult)localStorage.setItem('yeet_adult','1');
   else localStorage.removeItem('yeet_adult');
-  // Apply compact mode
   document.body.classList.toggle('compact',compact);
+  // Persist to backend if authenticated
+  const jwt=localStorage.getItem('yeet_jwt');
+  if(jwt){
+    fetch('/api/v1/settings',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({show_nsfw:adult,compact_mode:compact,auto_play_media:autoload})
+    }).catch(()=>{});
+  }
   showToast('Settings saved');
 }
 function disconnectWallet(){
@@ -1070,13 +1115,14 @@ function loadFeedFiltered(filter){
         if(empty)empty.style.display='none';
         const wrap=document.createElement('div');wrap.id='feed-posts';
         for(const p of d.data){
+          const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
           const short=(p.author&&(p.author.display_name||p.author.username||p.author.wallet_address))||'@user';
           const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
           const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
           const el=document.createElement('div');
           el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px"></div><div><b style="font-size:14px">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull;  '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+authorAddr+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer"></div><div><b onclick="showProfile(\''+authorAddr+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull;  '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
           wrap.appendChild(el);
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
@@ -1176,6 +1222,183 @@ function submitPost(){
   window.setTab = setTab;
   window.submitPost = submitPost;
 })();
+
+
+// ============ PROFILE VIEW ============
+window._currentProfile = null; // {address, own}
+
+function _shortAddr(a){ return a ? (a.length>12 ? a.slice(0,6)+'...'+a.slice(-4) : a) : ''; }
+function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function showMyProfile(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ showToast('Connect wallet first'); if(window.openWalletModal)openWalletModal(); return; }
+  try{
+    var r = await fetch('/api/v1/users/me', {headers:{'Authorization':'Bearer '+jwt}});
+    var d = await r.json();
+    if(!d.success){ showToast('Profile load failed'); return; }
+    var addr = d.data.wallet_address || d.data.id;
+    showProfile(addr, true);
+  }catch(e){ showToast('Profile error'); }
+}
+
+async function showProfile(address, own){
+  if(!address){ showToast('No address'); return; }
+  var m = document.querySelector('.main');
+  // hide feed UI
+  var hide = ['.feed-header', '.tabs', '.composer', '.empty'];
+  hide.forEach(function(sel){ var el = m && m.querySelector(sel); if(el) el.style.display='none'; });
+  var fp = document.getElementById('feed-posts'); if(fp) fp.style.display='none';
+  var pv = document.getElementById('profileView'); if(pv) pv.style.display='';
+  window._currentProfile = { address: address, own: !!own };
+
+  // Fetch profile
+  var me_jwt = localStorage.getItem('yeet_jwt');
+  var headers = {}; if(me_jwt) headers['Authorization'] = 'Bearer '+me_jwt;
+  try{
+    var pr = await fetch('/api/v1/users/'+encodeURIComponent(address), {headers:headers});
+    var pd = await pr.json();
+    if(!pd.success){
+      document.getElementById('profileHeader').innerHTML = '<p style="color:var(--muted)">Profile not found</p>';
+      return;
+    }
+    renderProfileHeader(pd.data, !!own);
+  }catch(e){
+    document.getElementById('profileHeader').innerHTML = '<p style="color:var(--muted)">Error loading profile</p>';
+  }
+  loadUserPosts(address);
+}
+
+function renderProfileHeader(u, own){
+  var addr = u.wallet_address || '';
+  var short = _shortAddr(addr);
+  var name = _esc(u.display_name || short || '@user');
+  var bio = _esc(u.bio || '');
+  var avatar = u.avatar_url ? '<img src="'+_esc(u.avatar_url)+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border)">'
+                             : '<div style="width:80px;height:80px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;border:3px solid var(--border)">'+(name[0]||'Y').toUpperCase()+'</div>';
+  var btn;
+  if(own){
+    btn = '<button onclick="toggleProfileEdit(true)" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">Edit Profile</button>';
+  }else if(localStorage.getItem('yeet_jwt')){
+    btn = '<button id="followBtn" onclick="toggleFollowProfile()" data-follow="0" style="background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">Follow</button>';
+  }else{ btn = ''; }
+
+  document.getElementById('profileHeaderName').textContent = u.display_name || short || 'Profile';
+  document.getElementById('profileHeader').innerHTML =
+    '<div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px">'
+      + avatar
+      + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:20px;font-weight:800;margin-bottom:2px">'+name+'</div>'
+        + (short ? '<div style="font-size:13px;color:var(--muted);word-break:break-all">'+_esc(short)+'</div>' : '')
+      + '</div>'
+      + '<div style="flex-shrink:0">'+btn+'</div>'
+    + '</div>'
+    + (bio ? '<div style="font-size:14px;line-height:1.6;margin:12px 0;white-space:pre-wrap">'+bio+'</div>' : '')
+    + '<div style="display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:8px">'
+      + '<span><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
+      + '<span><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
+      + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> Posts</span>'
+    + '</div>';
+  // Prefill edit form
+  var dn = document.getElementById('editDisplayName'); if(dn) dn.value = u.display_name || '';
+  var ebio = document.getElementById('editBio'); if(ebio) ebio.value = u.bio || '';
+  var eav = document.getElementById('editAvatarUrl'); if(eav) eav.value = u.avatar_url || '';
+}
+
+async function loadUserPosts(address){
+  var wrap = document.getElementById('profilePosts');
+  var em = document.getElementById('profileEmpty');
+  if(!wrap) return;
+  wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading...</div>';
+  if(em) em.style.display = 'none';
+  try{
+    var r = await fetch('/api/v1/users/'+encodeURIComponent(address)+'/posts');
+    var d = await r.json();
+    if(!d.success || !d.data || d.data.length === 0){
+      wrap.innerHTML = '';
+      if(em) em.style.display = '';
+      return;
+    }
+    wrap.innerHTML = '';
+    d.data.forEach(function(p){
+      var s = Math.floor((Date.now() - new Date(p.created_at))/1000);
+      var ago = s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+      var content = _esc(p.content);
+      var el = document.createElement('div');
+      el.style.cssText = 'padding:16px 20px;border-bottom:1px solid var(--border)';
+      el.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+ago+' ago'+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'')+(p.is_permanent?' &bull; <span style="color:#c6f135">Permanent</span>':'')+'</div>'
+        + '<div style="font-size:15px;line-height:1.6">'+content+'</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-top:8px">&#10084; '+(p.like_count||0)+' &nbsp; &#128172; '+(p.comment_count||0)+' &nbsp; &#127873; '+(p.tip_total_yeet||0)+'</div>';
+      wrap.appendChild(el);
+    });
+  }catch(e){
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Error loading posts</div>';
+  }
+}
+
+function closeProfile(){
+  var pv = document.getElementById('profileView'); if(pv) pv.style.display='none';
+  toggleProfileEdit(false);
+  var m = document.querySelector('.main');
+  ['.feed-header', '.tabs', '.composer'].forEach(function(sel){ var el = m && m.querySelector(sel); if(el) el.style.display=''; });
+  var fp = document.getElementById('feed-posts'); if(fp) fp.style.display='';
+  window._currentProfile = null;
+  if(typeof loadFeed === 'function') loadFeed();
+}
+
+function toggleProfileEdit(on){
+  var f = document.getElementById('profileEditForm');
+  if(f) f.style.display = on ? '' : 'none';
+}
+
+async function saveProfile(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ showToast('Not authenticated'); return; }
+  var body = {
+    display_name: document.getElementById('editDisplayName').value.trim() || null,
+    bio: document.getElementById('editBio').value.trim() || null,
+    avatar_url: document.getElementById('editAvatarUrl').value.trim() || null
+  };
+  try{
+    var r = await fetch('/api/v1/users/me', {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body: JSON.stringify(body)
+    });
+    var d = await r.json();
+    if(!d.success){ showToast('Save failed: '+((d.error&&d.error.message)||'')); return; }
+    showToast('Profile saved');
+    toggleProfileEdit(false);
+    if(window._currentProfile) showProfile(window._currentProfile.address, window._currentProfile.own);
+  }catch(e){ showToast('Save error'); }
+}
+
+async function toggleFollowProfile(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ showToast('Connect wallet first'); return; }
+  var p = window._currentProfile;
+  if(!p) return;
+  var btn = document.getElementById('followBtn');
+  var isFollowing = btn && btn.dataset.follow === '1';
+  var method = 'POST';
+  var path = isFollowing ? '/unfollow' : '/follow';
+  try{
+    await fetch('/api/v1/users/'+encodeURIComponent(p.address)+path, {
+      method: method, headers:{'Authorization':'Bearer '+jwt}
+    });
+    if(btn){
+      if(isFollowing){ btn.dataset.follow='0'; btn.textContent='Follow'; btn.style.background='var(--yeet)'; btn.style.color='#000'; }
+      else { btn.dataset.follow='1'; btn.textContent='Following'; btn.style.background='transparent'; btn.style.color='var(--text)'; btn.style.border='1px solid var(--border)'; }
+    }
+  }catch(e){ showToast('Follow error'); }
+}
+
+window.showMyProfile = showMyProfile;
+window.showProfile = showProfile;
+window.closeProfile = closeProfile;
+window.toggleProfileEdit = toggleProfileEdit;
+window.saveProfile = saveProfile;
+window.toggleFollowProfile = toggleFollowProfile;
 
 
 function loadLinkPreview(url, container) {

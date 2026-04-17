@@ -1,7 +1,18 @@
 //! User settings handlers — currency preference, display options, notifications.
 use axum::{extract::State, Json};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, api::middleware::AuthUser, models::ApiResponse};
+
+async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid> {
+    if let Some(uuid_str) = auth_address.strip_prefix("email:") {
+        return uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
+    }
+    sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+        .bind(auth_address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))
+}
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct UserSettings {
@@ -45,12 +56,13 @@ pub async fn get_settings(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<UserSettings>>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
     let settings = sqlx::query_as::<_, UserSettings>(
         "SELECT currency, language, show_nsfw, email_notifications,
                 push_notifications, auto_play_media, compact_mode
          FROM user_settings WHERE user_id = $1"
     )
-    .bind(auth.user_id)
+    .bind(user_id)
     .fetch_optional(state.db.pool())
     .await
     .map_err(AppError::Database)?
@@ -73,6 +85,7 @@ pub async fn update_settings(
         }
     }
 
+    let user_id = resolve_user_id(&state, &auth.address).await?;
     // Upsert settings
     sqlx::query(
         "INSERT INTO user_settings
@@ -91,7 +104,7 @@ pub async fn update_settings(
              compact_mode        = COALESCE($8,  user_settings.compact_mode),
              updated_at          = NOW()"
     )
-    .bind(auth.user_id)
+    .bind(user_id)
     .bind(&req.currency)
     .bind(&req.language)
     .bind(req.show_nsfw)

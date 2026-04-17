@@ -87,7 +87,11 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
+        .route("/api/v1/users/:address/posts",    get(api::feed::get_user_posts))
         .route("/api/v1/users/:address/follow",   post(api::users::follow_user))
+        // Settings
+        .route("/api/v1/settings",         get(api::settings::get_settings))
+        .route("/api/v1/settings",         patch(api::settings::update_settings))
         // Boards / Webboards
         .route("/api/v1/boards",                    get(api::boards::get_boards))
         .route("/api/v1/boards/:id",                get(api::boards::get_board))
