@@ -1107,8 +1107,7 @@ function loadFeedFiltered(filter){
         if(empty)empty.style.display='none';
         const wrap=document.createElement('div');wrap.id='feed-posts';
         for(const p of d.data){
-          const addr=null;
-          const short=addr.slice(0,6)+'...'+addr.slice(-4);
+          const short=(p.author&&(p.author.display_name||p.author.username||p.author.wallet_address))||'@user';
           const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
           const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
@@ -1119,7 +1118,7 @@ function loadFeedFiltered(filter){
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
       }else{if(empty)empty.style.display='';}
-    }).catch(()=>{});
+    }).catch(e=>console.error('loadFeedFiltered:',e));
 }
 // check18Plus: see face scan implementation below
 function submitPost(){
