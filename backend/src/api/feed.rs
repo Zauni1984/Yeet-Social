@@ -4,7 +4,7 @@ use serde::Deserialize;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, models::{FeedPost, FeedPostAuthor, PagedResponse}};
-use crate::api::middleware::AuthUser;
+use crate::api::middleware::{AuthUser, OptionalAuth};
 
 #[derive(Debug, Deserialize)]
 pub struct FeedQuery {
@@ -142,6 +142,7 @@ pub async fn get_user_posts(
     State(state): State<AppState>,
     Path(address): Path<String>,
     Query(q): Query<FeedQuery>,
+    OptionalAuth(viewer): OptionalAuth,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
     let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
@@ -156,7 +157,13 @@ pub async fn get_user_posts(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
-    let rows = sqlx::query_as::<_, FeedRow>(
+    // Viewers that haven't completed the face scan (or are anonymous) never see 18+ posts,
+    // even if they follow the author.
+    let viewer_verified = viewer_is_age_verified(&state, viewer.as_ref()).await;
+    let include_adult_sql = if viewer_verified { "" } else { " AND p.is_adult = FALSE" };
+    let include_adult_count_sql = if viewer_verified { "" } else { " AND is_adult = FALSE" };
+
+    let list_sql = format!(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
             p.like_count, p.reshare_count, p.comment_count,
             p.expires_at, p.created_at,
@@ -165,21 +172,38 @@ pub async fn get_user_posts(
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.author_id = $1 AND p.expires_at > NOW()
-          AND p.is_removed = FALSE AND p.deleted_at IS NULL
-        ORDER BY p.created_at DESC LIMIT $2 OFFSET $3"
-    )
-    .bind(user_id).bind(per_page).bind(offset)
-    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+          AND p.is_removed = FALSE AND p.deleted_at IS NULL{}
+        ORDER BY p.created_at DESC LIMIT $2 OFFSET $3",
+        include_adult_sql
+    );
+    let rows = sqlx::query_as::<_, FeedRow>(&list_sql)
+        .bind(user_id).bind(per_page).bind(offset)
+        .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
-    let total: i64 = sqlx::query_scalar(
+    let count_sql = format!(
         "SELECT COUNT(*) FROM posts
-         WHERE author_id = $1 AND expires_at > NOW() AND deleted_at IS NULL AND is_removed = FALSE"
-    )
-    .bind(user_id)
-    .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+         WHERE author_id = $1 AND expires_at > NOW() AND deleted_at IS NULL AND is_removed = FALSE{}",
+        include_adult_count_sql
+    );
+    let total: i64 = sqlx::query_scalar(&count_sql)
+        .bind(user_id)
+        .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let posts = rows.into_iter().map(row_to_feed_post).collect();
     Ok(Json(PagedResponse { success: true, data: posts, total, page, per_page }))
+}
+
+async fn viewer_is_age_verified(state: &AppState, viewer: Option<&AuthUser>) -> bool {
+    let Some(v) = viewer else { return false; };
+    let key = v.address.strip_prefix("email:").unwrap_or(&v.address);
+    let verified: Option<bool> = if let Ok(uuid) = key.parse::<Uuid>() {
+        sqlx::query_scalar("SELECT age_verified_at IS NOT NULL FROM users WHERE id = $1")
+            .bind(uuid).fetch_optional(state.db.pool()).await.ok().flatten()
+    } else {
+        sqlx::query_scalar("SELECT age_verified_at IS NOT NULL FROM users WHERE wallet_address = $1")
+            .bind(key.to_lowercase()).fetch_optional(state.db.pool()).await.ok().flatten()
+    };
+    verified.unwrap_or(false)
 }
 
 pub async fn get_adult_feed(
