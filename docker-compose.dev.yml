@@ -1,0 +1,55 @@
+# Lokale Dev-Umgebung — Postgres, Redis, Dev-Nginx (Frontend + /api Proxy).
+# Das Rust-Backend läuft NICHT im Container, sondern via `cargo run` auf Host:8080.
+# Start: docker compose -f docker-compose.dev.yml up -d
+# Stop:  docker compose -f docker-compose.dev.yml down
+# Reset (Daten weg): docker compose -f docker-compose.dev.yml down -v
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: yeet-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yeet
+      POSTGRES_USER: yeet
+      POSTGRES_PASSWORD: devpass
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - dev_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yeet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: yeet-dev-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - dev_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  # Dev-Nginx: Frontend statisch ausliefern + /api -> Host-Backend (cargo run :8080)
+  nginx-dev:
+    image: nginx:alpine
+    container_name: yeet-dev-nginx
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  dev_postgres_data:
+  dev_redis_data:
