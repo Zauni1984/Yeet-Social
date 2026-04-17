@@ -155,14 +155,24 @@ pub async fn get_permanent_posts(
         .fetch_one(state.db.pool()).await.unwrap_or(0) > 0
     } else { false };
 
+    // Hide 18+ posts unless the viewer has completed age verification (owner always sees own).
+    let viewer_age_verified: bool = if is_owner {
+        true
+    } else if let Some(vid) = viewer_id {
+        sqlx::query_scalar::<_, bool>("SELECT age_verified_at IS NOT NULL FROM users WHERE id = $1")
+            .bind(vid).fetch_optional(state.db.pool()).await.ok().flatten().unwrap_or(false)
+    } else { false };
+
     let posts = sqlx::query_as::<_, (Uuid, String, Option<String>, String, chrono::DateTime<chrono::Utc>, i64, Option<i32>)>(
         "SELECT id, content, media_url, COALESCE(visibility, 'public'), created_at, like_count, repost_count
          FROM posts WHERE author_id = $1 AND is_permanent = TRUE AND is_removed = FALSE
          AND ($2 = TRUE OR COALESCE(visibility, 'public') = 'public')
+         AND ($3 = TRUE OR is_adult = FALSE)
          ORDER BY created_at DESC"
     )
     .bind(user_id)
     .bind(can_see_followers)
+    .bind(viewer_age_verified)
     .fetch_all(state.db.pool())
     .await
     .map_err(AppError::Database)?;

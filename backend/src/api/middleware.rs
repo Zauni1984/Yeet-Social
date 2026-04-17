@@ -36,3 +36,16 @@ impl FromRequestParts<AppState> for AuthUser {
         Ok(AuthUser { address: claims.sub, jti: claims.jti })
     }
 }
+
+/// Like `AuthUser` but never rejects — unauthenticated requests yield `None`.
+#[derive(Debug, Clone)]
+pub struct OptionalAuth(pub Option<AuthUser>);
+
+#[async_trait]
+impl FromRequestParts<AppState> for OptionalAuth {
+    type Rejection = std::convert::Infallible;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+        Ok(OptionalAuth(AuthUser::from_request_parts(parts, state).await.ok()))
+    }
+}
