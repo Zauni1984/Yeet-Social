@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO posts (\n                id, author_id, content, visibility,\n                source_type, source_domain,\n                expires_at, created_at\n            )\n            VALUES ($1, $2, $3, 'public', 'web_board', $4, NOW() + INTERVAL '24 hours', NOW())\n            ON CONFLICT DO NOTHING\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9ee96a22fca4d48ddad579444fdcc30c2252ba8cf1f99d3422d393efdacccedc"
+}

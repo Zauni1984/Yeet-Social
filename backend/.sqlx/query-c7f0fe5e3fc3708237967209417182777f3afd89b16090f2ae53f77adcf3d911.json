@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE notifications SET read = true\n         WHERE user_id = (SELECT id FROM users WHERE wallet_address = $1)\n         AND read = false",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c7f0fe5e3fc3708237967209417182777f3afd89b16090f2ae53f77adcf3d911"
+}
