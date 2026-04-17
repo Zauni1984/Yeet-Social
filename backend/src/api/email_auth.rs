@@ -208,12 +208,14 @@ pub async fn verify_email(
     Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
 }
 
+type PendingEmailRow = (Option<String>, Option<String>, Option<chrono::DateTime<Utc>>);
+
 pub async fn resend_verification(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<SimpleOk>>> {
     let user_id = resolve_user_id(&state, &auth.address).await?;
-    let row: Option<(Option<String>, Option<String>, Option<chrono::DateTime<Utc>>)> = sqlx::query_as(
+    let row: Option<PendingEmailRow> = sqlx::query_as(
         "SELECT email, email_pending, email_verified_at FROM users WHERE id = $1"
     )
     .bind(user_id)
