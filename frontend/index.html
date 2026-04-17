@@ -1094,10 +1094,9 @@ function loadFeedFiltered(filter){
   const headers={'Content-Type':'application/json'};
   if(jwt)headers['Authorization']='Bearer '+jwt;
   var url=filter==='adult'?'/api/v1/feed/adult':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
-  // Auto-check 18+ toggle when in adult tab
-  var atog=document.getElementById('adultToggle'),atl=document.getElementById('adultToggleLabel');
-  if(filter==='adult'){if(atl)atl.style.display='flex';if(atog){atog.checked=true;atog.disabled=true;atog.title='Du befindest dich im 18+ Bereich';}}
-  else{if(atog){atog.checked=false;atog.disabled=false;}}
+  // Toggle is a composer-only hint  never force it from tab switches.
+  var atl=document.getElementById('adultToggleLabel');
+  if(atl)atl.style.display='flex';
   fetch(url,{headers})
     .then(r=>r.json())
     .then(d=>{
@@ -1403,9 +1402,7 @@ async function doFaceScan(){
   var hasImage=nonBlack>(c.width*c.height*0.1);
   if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
   document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
-  localStorage.setItem('yeet_18plus_verified','1');localStorage.setItem('yeet_adult','1');
-  // adultToggleLabel always visible
-  var _tog=document.getElementById('adultToggle');if(_tog){_tog.checked=true;_tog.disabled=true;}
+  localStorage.setItem('yeet_18plus_verified','1');
   setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
 }
 function closeFaceScan(){
