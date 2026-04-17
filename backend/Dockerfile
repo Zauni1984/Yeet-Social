@@ -7,9 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev libpq-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Accept DATABASE_URL as build argument for sqlx compile-time checks
-ARG DATABASE_URL
-ENV DATABASE_URL=${DATABASE_URL}
+# sqlx uses the committed .sqlx/ offline cache — no DATABASE_URL needed at build time.
+ENV SQLX_OFFLINE=true
 
 # Cache dependency layer
 COPY Cargo.toml ./
@@ -17,7 +16,7 @@ RUN mkdir src && echo 'fn main() {}' > src/main.rs
 RUN cargo build --release --bin yeet-server 2>/dev/null || true
 RUN rm -rf src
 
-# Build real source
+# Build real source (includes .sqlx/ cache).
 COPY . .
 RUN touch src/main.rs
 RUN cargo build --release --bin yeet-server

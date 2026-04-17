@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT p.id, p.content, p.author_id,\n            u.display_name as author_name,\n            p.report_count, p.is_flagged, p.is_removed,\n            p.created_at, p.removed_reason\n           FROM posts p\n           LEFT JOIN users u ON u.id = p.author_id\n           WHERE p.is_flagged = TRUE AND p.is_removed = FALSE\n           ORDER BY p.report_count DESC, p.created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "author_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "author_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "report_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "is_flagged",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "is_removed",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "removed_reason",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "6951276afb2108034cf2c553e70124945bbf977247b3431142cec16555dd7cbd"
+}
