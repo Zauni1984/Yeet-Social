@@ -205,14 +205,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       </div>
     </div>
 
-    <div class="wallet-option" onclick="connectLedger()">
-      <img data-src="https://cdn.worldvectorlogo.com/logos/ledger-2.svg" onerror="this.removeAttribute('src')" alt="Ledger" style="padding:4px;background:#142533;border-radius:8px">
-      <div>
-        <div class="wname">Ledger</div>
-        <div class="wdesc">Hardware wallet &mdash; connect via USB/Bluetooth</div>
-      </div>
-    </div>
-
     <div class="wallet-option" onclick="connectWalletConnect()">
       <img data-src="https://walletconnect.com/static/favicon.png" onerror="this.removeAttribute('src')" alt="WalletConnect" style="background:#3b99fc;border-radius:8px;padding:4px">
       <div>
@@ -784,26 +776,6 @@ async function connectTrustWallet(){
   }
 }
 
-async function connectLedger(){
-  // Check for WebUSB/WebHID support
-  if(!navigator.hid&&!navigator.usb){
-    showToast('Ledger requires Chrome with WebUSB/WebHID support');
-    return;
-  }
-  showToast('Connecting Ledger... Please approve on your device');
-  try{
-    // Use eth_requestAccounts via MetaMask + Ledger hardware key
-    if(window.ethereum){
-      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      onConnected(accs[0],'Ledger via MetaMask');
-    }else{
-      // Deep link to Ledger Live
-      showToast('Please install Ledger Live and connect via MetaMask');
-      setTimeout(()=>window.open('https://www.ledger.com/ledger-live','_blank'),1000);
-    }
-  }catch(e){showToast('Ledger: '+e.message);}
-}
-
 function connectWalletConnect(){
   // WalletConnect v2 QR modal - show instructions since no relay is set up
   showToast('WalletConnect: Opening QR flow...');
@@ -1173,7 +1145,6 @@ function submitPost(){
   window.showToast = showToast;
   window.connectMetaMask = connectMetaMask;
   window.connectTrustWallet = connectTrustWallet;
-  window.connectLedger = connectLedger;
   window.connectWalletConnect = connectWalletConnect;
   window.openPwaModal = openPwaModal;
   window.closePwaModal = closePwaModal;
