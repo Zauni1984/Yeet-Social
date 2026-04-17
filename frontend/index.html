@@ -190,7 +190,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <p>Choose your wallet to sign in to YEET Social</p>
 
     <div class="wallet-option" onclick="connectMetaMask()">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" onerror="this.style.background='#e2761b';this.src=''" alt="MetaMask">
+      <img data-src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" onerror="this.style.background='#e2761b';this.removeAttribute('src')" alt="MetaMask" style="background:#e2761b">
       <div>
         <div class="wname">MetaMask</div>
         <div class="wdesc">Browser extension &amp; mobile wallet</div>
@@ -198,7 +198,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     </div>
 
     <div class="wallet-option" onclick="connectTrustWallet()">
-      <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" onerror="this.style.background='#3375BB';this.src=''" alt="Trust Wallet" style="border-radius:50%">
+      <img data-src="https://trustwallet.com/assets/images/media/assets/TWT.png" onerror="this.style.background='#3375BB';this.removeAttribute('src')" alt="Trust Wallet" style="border-radius:50%;background:#3375BB">
       <div>
         <div class="wname">Trust Wallet</div>
         <div class="wdesc">Mobile wallet by Binance</div>
@@ -206,7 +206,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     </div>
 
     <div class="wallet-option" onclick="connectLedger()">
-      <img src="https://cdn.worldvectorlogo.com/logos/ledger-2.svg" onerror="this.style.background='#142533';this.src=''" alt="Ledger" style="padding:4px;background:#142533;border-radius:8px">
+      <img data-src="https://cdn.worldvectorlogo.com/logos/ledger-2.svg" onerror="this.removeAttribute('src')" alt="Ledger" style="padding:4px;background:#142533;border-radius:8px">
       <div>
         <div class="wname">Ledger</div>
         <div class="wdesc">Hardware wallet &mdash; connect via USB/Bluetooth</div>
@@ -214,7 +214,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     </div>
 
     <div class="wallet-option" onclick="connectWalletConnect()">
-      <img src="https://walletconnect.com/static/favicon.png" onerror="this.src=''" alt="WalletConnect" style="background:#3b99fc;border-radius:8px;padding:4px">
+      <img data-src="https://walletconnect.com/static/favicon.png" onerror="this.removeAttribute('src')" alt="WalletConnect" style="background:#3b99fc;border-radius:8px;padding:4px">
       <div>
         <div class="wname">WalletConnect</div>
         <div class="wdesc">Scan QR code with any compatible wallet</div>
@@ -458,46 +458,10 @@ const COINS=[
 ];
 function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0}):n>=1?'$'+n.toFixed(2):'$'+n.toFixed(4)}
 function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
-async function loadPrices(){
-  try{
-    var r=await fetch('https://DISABLED.invalid/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,matic-network&vs_currencies=usd&include_24hr_change=true',{signal:AbortSignal.timeout(5000)});
-    var dd=await r.json();
-    var map={BTC:'bitcoin',ETH:'ethereum',BNB:'binancecoin',SOL:'solana',MATIC:'matic-network'};
-    var cols={BTC:'#f7931a',ETH:'#627eea',BNB:'#f0b90b',SOL:'#9945ff',MATIC:'#8247e5'};
-    var h='';
-    Object.keys(map).forEach(function(sym){
-      var coin=dd[map[sym]];if(!coin)return;
-      var usd=coin.usd,chg=coin.usd_24h_change||0;
-      var cls=chg>=0?'up':'down';
-      var sign=chg>=0?'+':'';
-      var price=usd>=1000?'$'+usd.toLocaleString('en',{maximumFractionDigits:0}):'$'+usd.toFixed(2);
-      h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:'+cols[sym]+'22;color:'+cols[sym]+'">'+sym[0]+'</div><div><div class="coin-name">'+sym+'</div></div></div><div><div class="coin-price">'+price+'</div><div class="coin-chg '+cls+'">'+sign+chg.toFixed(2)+'%</div></div></div>';
-      var pe=document.getElementById('p'+sym),ce=document.getElementById('c'+sym);
-      if(pe)pe.textContent=price;
-      if(ce){ce.textContent=sign+chg.toFixed(2)+'%';ce.className=cls;}
-    });
-    h+='<div class="coin-row"><div class="coin-left"><div class="coin-icon" style="background:#c8f02622;color:#c8f026">Y</div><div><div class="coin-name">YEET</div></div></div><div><div class="coin-price">$0.0042</div><div class="coin-chg up">+12.4%</div></div></div>';
-    var el=document.getElementById('prices');if(el)el.innerHTML=h;
-    var t=document.getElementById('tickerInner');
-    if(t&&!t.dataset.dup){t.innerHTML+=t.innerHTML;t.dataset.dup='1';}
-  }catch(e){
-    var el2=document.getElementById('prices');
-    if(el2)el2.innerHTML='<p style="color:var(--muted);font-size:13px">Prices unavailable</p>';
-    try{
-      var r2=await fetch('https://DISABLED.invalid/data/pricemultifull?fsyms=BTC,ETH,BNB,SOL&tsyms=USD',{signal:AbortSignal.timeout(4000)});
-      var d2=await r2.json();
-      var raw=(d2.RAW)||{};
-      var h2='';
-      ['BTC','ETH','BNB','SOL'].forEach(function(s){
-        if(!raw[s]||!raw[s].USD)return;
-        var usd=raw[s].USD.PRICE,chg=raw[s].USD.CHANGEPCT24HOUR||0;
-        var price=usd>=1000?'$'+usd.toLocaleString('en',{maximumFractionDigits:0}):'$'+usd.toFixed(2);
-        var sign=chg>=0?'+':'';
-        h2+='<div class="coin-row"><div><div class="coin-name">'+s+'</div></div><div><div class="coin-price">'+price+'</div><div class="coin-chg '+(chg>=0?'up':'down')+'">'+sign+chg.toFixed(2)+'%</div></div></div>';
-      });
-      var el3=document.getElementById('prices');if(el3&&h2)el3.innerHTML=h2;
-    }catch(e2){}
-  }
+// Crypto prices disabled  no external calls.
+function loadPrices(){
+  var el=document.getElementById('prices');
+  if(el&&!el.dataset.init){el.dataset.init='1';el.innerHTML='<p style="color:var(--muted);font-size:13px">Prices unavailable</p>';}
 }
 
 function showGlobalFeed(){
@@ -702,12 +666,12 @@ async function likePost(id){
   }
 }
 let connectedWallet=null,connectedAddress=null;
-loadPrices();setInterval(loadPrices,60000);loadFeed();loadTrendingTags();// adultToggleLabel always visible nowif(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
+loadPrices();loadFeed();loadTrendingTags();// adultToggleLabel always visible nowif(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
 
 // ====== WALLET CONNECTION ======
 
 
-function openWalletModal(){document.getElementById('pwaModal').classList.remove('on');document.getElementById('walletModal').classList.add('on')}
+function openWalletModal(){document.getElementById('pwaModal').classList.remove('on');var m=document.getElementById('walletModal');m.classList.add('on');m.querySelectorAll('img[data-src]').forEach(function(i){i.src=i.dataset.src;i.removeAttribute('data-src');});}
 function closeWalletModal(e){if(!e||e.target===document.getElementById('walletModal'))document.getElementById('walletModal').classList.remove('on')}
 
 async function onConnected(address,walletName,provider){
