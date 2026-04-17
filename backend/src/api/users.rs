@@ -78,13 +78,21 @@ pub async fn update_profile(
             display_name  = COALESCE($2, display_name),
             bio           = COALESCE($3, bio),
             avatar_url    = COALESCE($4, avatar_url),
-            adult_content = COALESCE($5, adult_content),
             updated_at    = NOW()
          WHERE id = $1"
     )
     .bind(user_id).bind(&req.display_name).bind(&req.bio)
-    .bind(&req.avatar_url).bind(req.adult_content)
+    .bind(&req.avatar_url)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    if let Some(nsfw) = req.adult_content {
+        sqlx::query(
+            "INSERT INTO user_settings (user_id, show_nsfw) VALUES ($1, $2)
+             ON CONFLICT (user_id) DO UPDATE SET show_nsfw = $2, updated_at = NOW()"
+        )
+        .bind(user_id).bind(nsfw)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    }
     Ok(Json(ApiResponse::ok(())))
 }
 
