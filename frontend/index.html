@@ -1131,13 +1131,16 @@ function applySettings(){
   showToast('Settings saved');
 }
 function updateAdultUiVisibility(enabled){
+  // Never show 18+ entry points to logged-out visitors, regardless of the cached setting.
+  var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  var show = !!enabled && !!jwt;
   var navLink=document.querySelector('.sidebar a.nav-link[onclick*="check18Plus"]');
-  if(navLink) navLink.style.display = enabled ? '' : 'none';
+  if(navLink) navLink.style.display = show ? '' : 'none';
   var tabs=document.querySelectorAll('.tabs .tab');
   tabs.forEach(function(t){
     if(t.textContent && t.textContent.indexOf('18+')!==-1){
-      t.style.display = enabled ? '' : 'none';
-      if(!enabled && t.classList.contains('active')){
+      t.style.display = show ? '' : 'none';
+      if(!show && t.classList.contains('active')){
         t.classList.remove('active');
         var first=document.querySelector('.tabs .tab');
         if(first) first.classList.add('active');
@@ -1145,14 +1148,18 @@ function updateAdultUiVisibility(enabled){
       }
     }
   });
+  var atl=document.getElementById('adultToggleLabel');
+  if(atl) atl.style.display = show ? 'flex' : 'none';
 }
 function disconnectWallet(){
   localStorage.removeItem('yeet_jwt');
   localStorage.removeItem('yeet_address');
   localStorage.removeItem('yeet_adult');
+  localStorage.removeItem('yeet_18plus_verified');
   connectedAddress=null;connectedWallet=null;
   const btn=document.getElementById('walletBtn');
   if(btn){btn.textContent='CONNECT WALLET';btn.classList.remove('connected');}
+  updateAdultUiVisibility(false);
   const pw=document.getElementById('profileWidget');
   if(pw)pw.style.display='none';
   closeSettingsModal();
@@ -1707,6 +1714,8 @@ async function submitReport(postId){
 var faceStream=null;
 function check18Plus(){
   if(typeof _exitProfileView==='function') _exitProfileView();
+  var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  if(!jwt){ showLoginGate(); return; }
   var s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   var adultEnabled=s.adult===true||localStorage.getItem('yeet_adult')==='1';
   if(!adultEnabled){showToast('18+ Content in Settings aktivieren');return;}
