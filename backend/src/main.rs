@@ -7,7 +7,7 @@ use std::{net::SocketAddr, time::Duration};
 use axum::{extract::{DefaultBodyLimit, State}, http::StatusCode, response::IntoResponse, routing::{get, post, delete, patch}, Json, Router};
 use serde_json::json;
 use tower::ServiceBuilder;
-use tower_http::{cors::{Any, CorsLayer}, timeout::TimeoutLayer, trace::TraceLayer};
+use tower_http::{cors::{Any, CorsLayer}, services::ServeDir, timeout::TimeoutLayer, trace::TraceLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -54,7 +54,13 @@ fn build_router(state: AppState) -> Router {
         .allow_headers(Any)
         .max_age(Duration::from_secs(86400));
 
+    let uploads_dir = api::uploads::uploads_dir();
+    if let Err(e) = std::fs::create_dir_all(&uploads_dir) {
+        tracing::warn!(?e, dir = ?uploads_dir, "failed to ensure uploads dir exists");
+    }
     Router::new()
+        // Static uploaded media (avatars, covers)
+        .nest_service("/uploads", ServeDir::new(uploads_dir))
         // Health
         .route("/api/v1/link-preview",  get(api::link_preview::get_link_preview))
         .route("/api/v1/health",           get(health_handler))
@@ -94,6 +100,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         delete(api::users::delete_my_account))
         .route("/api/v1/users/me/export",  get(api::users::export_my_data))
         .route("/api/v1/users/me/verify-age", post(api::users::verify_age))
+        .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar))
+        .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
         .route("/api/v1/users/:address/posts",     get(api::feed::get_user_posts))
         .route("/api/v1/users/:address/followers", get(api::users::list_followers))

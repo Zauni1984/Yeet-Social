@@ -53,6 +53,9 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://justyeet.it}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - yeet_uploads:/app/uploads
     networks: [yeet-net]
     ports:
       - "127.0.0.1:8080:8080"
@@ -77,3 +80,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  yeet_uploads:

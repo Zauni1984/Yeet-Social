@@ -9,7 +9,7 @@ use crate::api::middleware::AuthUser;
 #[derive(sqlx::FromRow)]
 struct ProfileRow {
     id: Uuid, wallet_address: Option<String>, display_name: Option<String>,
-    bio: Option<String>, avatar_url: Option<String>, created_at: DateTime<Utc>,
+    bio: Option<String>, avatar_url: Option<String>, cover_url: Option<String>, created_at: DateTime<Utc>,
     follower_count: Option<i64>, following_count: Option<i64>, post_count: Option<i64>,
     age_verified_at: Option<DateTime<Utc>>,
 }
@@ -37,14 +37,14 @@ pub async fn get_profile(
 ) -> AppResult<Json<ApiResponse<UserProfile>>> {
     // Accept either a UUID (email-only users) or a wallet address
     let query = if address.parse::<Uuid>().is_ok() {
-        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.created_at,
+        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
                 u.age_verified_at
          FROM users u WHERE u.id = $1::uuid"
     } else {
-        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.created_at,
+        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
@@ -59,7 +59,7 @@ pub async fn get_profile(
 
     Ok(Json(ApiResponse::ok(UserProfile {
         id: r.id, wallet_address: r.wallet_address.clone(), display_name: r.display_name,
-        bio: r.bio, avatar_url: r.avatar_url,
+        bio: r.bio, avatar_url: r.avatar_url, cover_url: r.cover_url,
         follower_count: r.follower_count.unwrap_or(0),
         following_count: r.following_count.unwrap_or(0),
         post_count: r.post_count.unwrap_or(0),
