@@ -1269,6 +1269,28 @@ function submitPost(){
     .catch(e=>showToast('Fehler beim Posten: '+(e.message||'Bitte einloggen'), 'error'));
 }
 
+async function uploadProfileImage(input, kind){
+  var file = input.files && input.files[0];
+  if(!file) return;
+  if(file.size > 8*1024*1024){ showToast('Bild zu gross (max. 8MB)','error'); input.value=''; return; }
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if(!jwt){ showToast('Bitte einloggen','error'); input.value=''; return; }
+  var endpoint = kind === 'cover' ? '/api/v1/users/me/cover' : '/api/v1/users/me/avatar';
+  showToast(kind === 'cover' ? 'Cover wird hochgeladen...' : 'Profilbild wird hochgeladen...');
+  var fd = new FormData(); fd.append('file', file);
+  try{
+    var r = await fetch(endpoint, { method:'POST', headers:{'Authorization':'Bearer '+jwt}, body: fd });
+    if(r.status === 413){ throw new Error('Bild zu gross fuer den Server'); }
+    var ct = r.headers.get('content-type') || '';
+    if(ct.indexOf('application/json') === -1){ throw new Error('Serverfehler ('+r.status+')'); }
+    var d = await r.json();
+    if(!d || !d.success){ throw new Error((d && d.error && d.error.message) || 'Upload fehlgeschlagen'); }
+    showToast(kind === 'cover' ? 'Cover aktualisiert' : 'Profilbild aktualisiert', 'success');
+    if(typeof showMyProfile === 'function') showMyProfile();
+  }catch(e){ showToast('Upload-Fehler: '+(e.message||'unbekannt'),'error'); }
+  finally{ input.value = ''; }
+}
+
   // Expose public functions
   window.loadProfile = loadProfile;
   window.loadFeed = loadFeed;
@@ -1296,6 +1318,7 @@ function submitPost(){
   window.mintNFT = mintNFT;
   window.openSettingsModal = openSettingsModal;
   window.showLoginGate = showLoginGate;
+  window.uploadProfileImage = uploadProfileImage;
   window.closeSettingsModal = closeSettingsModal;
   window.applySettings = applySettings;
   window.disconnectWallet = disconnectWallet;
@@ -1394,8 +1417,32 @@ function renderProfileHeader(u, own){
   var short = _shortAddr(addr);
   var name = _esc(u.display_name || short || '@user');
   var bio = _esc(u.bio || '');
-  var avatar = u.avatar_url ? '<img src="'+_esc(u.avatar_url)+'" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border)">'
-                             : '<div style="width:80px;height:80px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;border:3px solid var(--border)">'+(name[0]||'Y').toUpperCase()+'</div>';
+  var avatarInner = u.avatar_url
+    ? '<img src="'+_esc(u.avatar_url)+'" style="width:100%;height:100%;object-fit:cover">'
+    : '<div style="width:100%;height:100%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">'+(name[0]||'Y').toUpperCase()+'</div>';
+  var avatarExtra = own
+    ? '<div onclick="document.getElementById(\'avatarUploadInput\').click()" style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer" onmouseenter="this.style.display=\'flex\'" onmouseleave="this.style.display=\'none\'">&#128247;</div>'
+    : '';
+  var avatarBlock = '<div style="position:relative;width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid var(--border);'+(own?'cursor:pointer':'')+'" '
+    + (own?'onclick="document.getElementById(\'avatarUploadInput\').click()"':'') + '>'
+    + avatarInner
+    + (own ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;text-align:center;padding:2px 0">Ändern</div>' : '')
+    + '</div>';
+
+  var coverInner = u.cover_url
+    ? '<img src="'+_esc(u.cover_url)+'" style="width:100%;height:100%;object-fit:cover">'
+    : '<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a1a,#2a2a2a)"></div>';
+  var coverBlock = '<div style="position:relative;width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:16px;background:#111;'+(own?'cursor:pointer':'')+'"'
+    + (own?' onclick="document.getElementById(\'coverUploadInput\').click()"':'') + '>'
+    + coverInner
+    + (own ? '<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:6px 12px;border-radius:14px">&#128247; Cover ändern</div>' : '')
+    + '</div>';
+
+  var uploadInputs = own
+    ? '<input type="file" id="avatarUploadInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" onchange="uploadProfileImage(this,\'avatar\')">'
+      +'<input type="file" id="coverUploadInput"  accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" onchange="uploadProfileImage(this,\'cover\')">'
+    : '';
+
   var btn;
   if(own){
     btn = '<button onclick="toggleProfileEdit(true)" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">Edit Profile</button>';
@@ -1405,8 +1452,9 @@ function renderProfileHeader(u, own){
 
   document.getElementById('profileHeaderName').textContent = u.display_name || short || 'Profile';
   document.getElementById('profileHeader').innerHTML =
-    '<div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px">'
-      + avatar
+      coverBlock
+    + '<div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px">'
+      + avatarBlock
       + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:20px;font-weight:800;margin-bottom:2px">'+name+'</div>'
         + (short ? '<div style="font-size:13px;color:var(--muted);word-break:break-all">'+_esc(short)+'</div>' : '')
@@ -1418,7 +1466,8 @@ function renderProfileHeader(u, own){
       + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
       + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
       + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> Posts</span>'
-    + '</div>';
+    + '</div>'
+    + uploadInputs;
   // Prefill edit form
   var dn = document.getElementById('editDisplayName'); if(dn) dn.value = u.display_name || '';
   var ebio = document.getElementById('editBio'); if(ebio) ebio.value = u.bio || '';

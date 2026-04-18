@@ -24,6 +24,7 @@ pub struct UserProfile {
     pub display_name: Option<String>,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
+    pub cover_url: Option<String>,
     pub follower_count: i64,
     pub following_count: i64,
     pub post_count: i64,

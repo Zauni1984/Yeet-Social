@@ -11,10 +11,10 @@ path = "src/main.rs"
 [dependencies]
 ethers = { version = "2", features = ["abigen", "legacy"] }
 # Web framework
-axum             = { version = "0.7", features = ["macros"] }
+axum             = { version = "0.7", features = ["macros", "multipart"] }
 tokio            = { version = "1", features = ["full"] }
 tower            = { version = "0.4", features = ["full"] }
-tower-http       = { version = "0.5", features = ["cors", "trace", "timeout", "limit"] }
+tower-http       = { version = "0.5", features = ["cors", "trace", "timeout", "limit", "fs"] }
 
 # Serialisation
 serde            = { version = "1", features = ["derive"] }
