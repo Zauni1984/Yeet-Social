@@ -300,23 +300,23 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <div class="modal-bg" id="settingsModal" onclick="closeSettingsModal(event)">
   <div class="modal modal-wrap" style="max-width:420px">
     <button class="modal-close" onclick="closeSettingsModal()">&#10005;</button>
-    <h3>&#9881;&#65039; Settings</h3>
+    <h3>&#9881;&#65039; <span data-i18n="settings.title">Settings</span></h3>
     <div style="display:flex;flex-direction:column;gap:16px">
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Content</div>
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.content">Content</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:14px">18+ Content</span>
+          <span style="font-size:14px" data-i18n="settings.adult">18+ content</span>
           <input type="checkbox" id="setting18" onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:14px">Auto-load Feed</span>
+          <span style="font-size:14px" data-i18n="settings.autoload">Auto-load feed</span>
           <input type="checkbox" id="settingAutoload" checked onchange="applySettings()" style="width:18px;height:18px;cursor:pointer">
         </div>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Network</div>
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.network">Network</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:14px">Network</span>
+          <span style="font-size:14px" data-i18n="settings.network">Network</span>
           <select id="settingNetwork" onchange="applySettings()" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:13px">
             <option value="97">BSC Testnet</option>
             <option value="56">BSC Mainnet</option>
@@ -324,14 +324,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         </div>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">Account</div>
-        <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; Wallet verknüpfen</button>
-        <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">Disconnect Wallet</button>
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.language">Language</div>
+        <select id="settingLanguage" onchange="window.setLang(this.value); window.showToast(window.t('toast.languageChanged'),'success')" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px">
+          <option value="en" data-i18n="settings.langEnglish">English</option>
+          <option value="de" data-i18n="settings.langGerman">Deutsch</option>
+        </select>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
-        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">DSGVO</div>
-        <button onclick="exportMyData()" style="width:100%;background:#1e88e522;color:#64b5f6;border:1px solid #1e88e544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px">&#128190; Daten exportieren (JSON)</button>
-        <button onclick="deleteMyAccount()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">&#128465; Konto endgültig löschen</button>
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.account">Account</div>
+        <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; <span data-i18n="settings.linkWallet">Link Wallet</span></button>
+        <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.gdpr">Privacy (GDPR)</div>
+        <button onclick="exportMyData()" style="width:100%;background:#1e88e522;color:#64b5f6;border:1px solid #1e88e544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px">&#128190; <span data-i18n="settings.exportData">Export my data (JSON)</span></button>
+        <button onclick="deleteMyAccount()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">&#128465; <span data-i18n="settings.deleteAccount">Delete account permanently</span></button>
       </div>
     </div>
   </div>
@@ -394,14 +401,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div class="composer">
       <div class="avatar">&#128100;</div>
       <div class="composer-body">
-        <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." rows="2"></textarea>
-        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; Permanent post gesetzt</div>
+        <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." data-i18n-placeholder="composer.placeholder" rows="2"></textarea>
+        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; <span data-i18n="composer.permanentSet">Permanent post set</span></div>
         <div class="composer-footer">
-          <button class="icon-btn" title="Foto hinzufÃ¼gen" onclick="document.getElementById('imgInput').click()">&#128248;</button>
+          <button class="icon-btn" title="Add photo" data-i18n-title="composer.addPhoto" onclick="document.getElementById('imgInput').click()">&#128248;</button>
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
-          <button class="icon-btn" id="permToggleBtn" title="Als permanenten Post markieren" onclick="togglePermanent()">&#128204;</button>
-          <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" onclick="togglePPV()">&#128274;</button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128274; PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
-          <button class="icon-btn" title="Tip">&#9889;</button>
+          <button class="icon-btn" id="permToggleBtn" title="Mark as permanent post" data-i18n-title="composer.markPermanent" onclick="togglePermanent()">&#128204;</button>
+          <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" data-i18n-title="composer.payPerView" onclick="togglePPV()">&#128274;</button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128274; PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
+          <button class="icon-btn" title="Tip" data-i18n-title="composer.tip">&#9889;</button>
           <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/280</div><label id="adultToggleLabel" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
         </div>
       </div>
@@ -457,6 +464,215 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     </div>
   </aside>
 </div>
+
+<!-- ===== i18n RUNTIME (default: English, optional German) ===== -->
+<script>
+(function(){
+  var DICTS = {
+    en: {
+      // generic
+      'common.cancel':'Cancel','common.confirm':'Confirm','common.close':'Close','common.save':'Save',
+      'common.loading':'Loading...','common.error':'Error','common.networkError':'Network error',
+      'common.notLoggedIn':'Not logged in','common.pleaseLogin':'Please log in','common.unknown':'unknown',
+      'common.aborted':'Cancelled','common.report':'Report','common.open':'Open','common.followers':'Followers',
+      'common.following':'Following',
+      // nav
+      'nav.menu':'Menu','nav.search':'Search posts, users, tags...','nav.login':'Login','nav.register':'Register',
+      'nav.globalFeed':'Global Feed','nav.trending':'Trending',
+      // post composer
+      'composer.placeholder':'What are you yeeting? Disappears in 24h...',
+      'composer.addPhoto':'Add photo','composer.markPermanent':'Mark as permanent post',
+      'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.yeetIt':'YEET IT',
+      'composer.permanentSet':'Permanent post set',
+      // toasts
+      'toast.posting':'Posting...','toast.yeeted':'Yeeted!',
+      'toast.postFailed':'Posting failed','toast.imageTooLarge':'Image too large (max 8MB)',
+      'toast.imageTooLarge5':'Image too large (max 5MB)','toast.imageTooLargeServer':'Image too large for the server',
+      'toast.invalidFormat':'Only JPG, PNG, WebP, GIF allowed','toast.imageSelected':'Image selected',
+      'toast.uploadingAvatar':'Uploading profile picture...','toast.uploadingCover':'Uploading cover...',
+      'toast.avatarUpdated':'Profile picture updated','toast.coverUpdated':'Cover updated',
+      'toast.uploadError':'Upload error','toast.uploadFailed':'Upload failed',
+      'toast.linkCopied':'Link copied','toast.alreadyFollowing':'Already following',
+      'toast.followed':'Following!','toast.unfollowed':'Unfollowed','toast.cantFollowSelf':"You can't follow yourself",
+      'toast.userNotFound':'User not found','toast.authorNotFound':'Author not found',
+      'toast.reported':'Reported','toast.reportFailed':'Report failed',
+      'toast.tipSent':'Tip sent','toast.unlocked':'Unlocked! {price} YEET sent (incl. 10% network fee)',
+      'toast.unlockFailed':'Unlock failed','toast.unlocking':'Unlocking...',
+      'toast.repostSuccess':'Reposted!','toast.maxRepost':'Max 1 repost allowed',
+      'toast.visibilityPublic':'Visibility: Public','toast.visibilityFollowers':'Visibility: Followers only',
+      'toast.sessionExpired':'Session expired, please log in again',
+      'toast.commentFailed':'Comment could not be sent','toast.commentPosted':'Comment posted',
+      'toast.priceRequired':'Please enter a price','toast.adultEnable':'Enable 18+ content in Settings',
+      'toast.walletNotFound':'MetaMask not found','toast.noWalletSelected':'No wallet selected',
+      'toast.walletLinked':'Wallet linked','toast.walletLinkAborted':'Wallet link cancelled',
+      'toast.walletDisconnected':'Wallet disconnected','toast.exportDownloaded':'Export downloaded',
+      'toast.exportFailed':'Export failed','toast.deleteFailed':'Delete failed',
+      'toast.search2chars':'Type at least 2 characters','toast.settingsSaved':'Settings saved',
+      'toast.languageChanged':'Language changed',
+      // settings
+      'settings.title':'Settings','settings.content':'Content','settings.adult':'18+ content',
+      'settings.autoload':'Auto-load feed','settings.network':'Network','settings.account':'Account',
+      'settings.linkWallet':'Link Wallet','settings.disconnect':'Disconnect Wallet',
+      'settings.gdpr':'Privacy (GDPR)','settings.exportData':'Export my data (JSON)',
+      'settings.deleteAccount':'Delete account permanently','settings.language':'Language',
+      'settings.langEnglish':'English','settings.langGerman':'Deutsch',
+      // profile
+      'profile.title':'Profile','profile.posts':'Posts','profile.noPosts':'No posts yet',
+      'profile.editAvatar':'Change','profile.editCover':'Change cover',
+      'profile.displayName':'Display Name (max 50)','profile.bio':'Bio (max 280)',
+      'profile.avatarUrl':'Avatar URL',
+      // delete account
+      'delete.prompt':'Delete account permanently?\n\nAll posts, follows and settings will be deleted. This action cannot be undone.\n\nType "DELETE" to confirm:',
+      'delete.keyword':'DELETE',
+      // report
+      'report.title':'Report post','report.detailsPlaceholder':'Details (optional)','report.submit':'Report',
+      'report.reasons':['Inappropriate','Spam','Hate speech','Violence','Nudity','Misinformation','Other'],
+      // 18+ verify
+      'verify.title':'Age verification','verify.subtitle':'18+ area. One-time face scan to verify your age.',
+      'verify.cameraStarting':'Camera starting...','verify.center':'Center your face, then start scan',
+      'verify.start':'Start scan','verify.analyzing':'AI analyzing...','verify.success':'Verification successful!',
+      'verify.cameraDenied':'Camera access denied','verify.noFace':'No face detected','verify.retry':'Retry',
+      'verify.imageNotStored':'Image is not stored. Local AI analysis.',
+      // NFT modal
+      'nft.title':'Sell as NFT','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
+      'nft.priceLabel':'Price in YEET:','nft.customPrice':'Custom amount...','nft.priceSet':'NFT price: {price} YEET',
+      // PPV modal
+      'ppv.title':'Pay-per-View',
+      'ppv.subtitle':'Image is only visible after payment. Earnings go directly to you.',
+      'ppv.unlock':'Unlock','ppv.unlockPrompt':'{price} YEET to unlock','ppv.priceSet':'PPV price: {price} YEET',
+      // external link modal
+      'extlink.title':'You are leaving YEET',
+      'extlink.subtitle':'This link leads to an external site. YEET takes no responsibility for external content.',
+      // post menu
+      'menu.repost':'Repost','menu.share':'Share','menu.follow':'Follow','menu.report':'Report',
+      // empty states
+      'empty.followingLogin':'Log in to see your Following feed',
+      'empty.followingEmpty':'Follow other users to see their posts here',
+      'empty.noTrending':'No trending posts yet','empty.noPosts':'No posts yet. Be the first to Yeet!',
+      'empty.connectToPost':'Connect your wallet to start posting',
+      // comments
+      'comments.placeholder':'Write a comment...','comments.empty':'No comments yet',
+    },
+    de: {
+      'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.close':'Schließen','common.save':'Speichern',
+      'common.loading':'Lädt...','common.error':'Fehler','common.networkError':'Netzwerkfehler',
+      'common.notLoggedIn':'Nicht eingeloggt','common.pleaseLogin':'Bitte einloggen','common.unknown':'unbekannt',
+      'common.aborted':'Abgebrochen','common.report':'Melden','common.open':'Öffnen','common.followers':'Follower',
+      'common.following':'Folgt',
+      'nav.menu':'Menü','nav.search':'Posts, User, Tags suchen...','nav.login':'Login','nav.register':'Registrieren',
+      'nav.globalFeed':'Globaler Feed','nav.trending':'Trending',
+      'composer.placeholder':'Was yeetst du? Verschwindet in 24h...',
+      'composer.addPhoto':'Foto hinzufügen','composer.markPermanent':'Als permanenten Post markieren',
+      'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.yeetIt':'YEET IT',
+      'composer.permanentSet':'Permanenter Post gesetzt',
+      'toast.posting':'Wird gesendet...','toast.yeeted':'Geyeetet!',
+      'toast.postFailed':'Posten fehlgeschlagen','toast.imageTooLarge':'Bild zu groß (max. 8MB)',
+      'toast.imageTooLarge5':'Bild zu groß (max. 5MB)','toast.imageTooLargeServer':'Bild zu groß für den Server',
+      'toast.invalidFormat':'Nur JPG, PNG, WebP, GIF erlaubt','toast.imageSelected':'Bild ausgewählt',
+      'toast.uploadingAvatar':'Profilbild wird hochgeladen...','toast.uploadingCover':'Cover wird hochgeladen...',
+      'toast.avatarUpdated':'Profilbild aktualisiert','toast.coverUpdated':'Cover aktualisiert',
+      'toast.uploadError':'Upload-Fehler','toast.uploadFailed':'Upload fehlgeschlagen',
+      'toast.linkCopied':'Link kopiert','toast.alreadyFollowing':'Bereits gefolgt',
+      'toast.followed':'Gefolgt!','toast.unfollowed':'Entfolgt','toast.cantFollowSelf':'Du kannst dir nicht selbst folgen',
+      'toast.userNotFound':'Benutzer nicht gefunden','toast.authorNotFound':'Autor nicht gefunden',
+      'toast.reported':'Gemeldet','toast.reportFailed':'Fehler beim Melden',
+      'toast.tipSent':'Tip gesendet','toast.unlocked':'Entsperrt! {price} YEET gesendet (inkl. 10% Netzwerkgebühr)',
+      'toast.unlockFailed':'Entsperren fehlgeschlagen','toast.unlocking':'Wird entsperrt...',
+      'toast.repostSuccess':'Repost erfolgreich!','toast.maxRepost':'Max. 1 Repost erlaubt',
+      'toast.visibilityPublic':'Sichtbarkeit: Öffentlich','toast.visibilityFollowers':'Sichtbarkeit: Nur Follower',
+      'toast.sessionExpired':'Session abgelaufen, bitte erneut einloggen',
+      'toast.commentFailed':'Kommentar konnte nicht gesendet werden','toast.commentPosted':'Kommentar gepostet',
+      'toast.priceRequired':'Bitte Preis eingeben','toast.adultEnable':'18+ Content in Settings aktivieren',
+      'toast.walletNotFound':'MetaMask nicht gefunden','toast.noWalletSelected':'Keine Wallet ausgewählt',
+      'toast.walletLinked':'Wallet verknüpft','toast.walletLinkAborted':'Wallet-Verknüpfung abgebrochen',
+      'toast.walletDisconnected':'Wallet getrennt','toast.exportDownloaded':'Export heruntergeladen',
+      'toast.exportFailed':'Export fehlgeschlagen','toast.deleteFailed':'Löschen fehlgeschlagen',
+      'toast.search2chars':'Mind. 2 Zeichen eingeben','toast.settingsSaved':'Einstellungen gespeichert',
+      'toast.languageChanged':'Sprache geändert',
+      'settings.title':'Einstellungen','settings.content':'Inhalt','settings.adult':'18+ Inhalt',
+      'settings.autoload':'Feed automatisch laden','settings.network':'Netzwerk','settings.account':'Konto',
+      'settings.linkWallet':'Wallet verknüpfen','settings.disconnect':'Wallet trennen',
+      'settings.gdpr':'Datenschutz (DSGVO)','settings.exportData':'Daten exportieren (JSON)',
+      'settings.deleteAccount':'Konto endgültig löschen','settings.language':'Sprache',
+      'settings.langEnglish':'English','settings.langGerman':'Deutsch',
+      'profile.title':'Profil','profile.posts':'Posts','profile.noPosts':'Noch keine Posts',
+      'profile.editAvatar':'Ändern','profile.editCover':'Cover ändern',
+      'profile.displayName':'Anzeigename (max. 50)','profile.bio':'Bio (max. 280)',
+      'profile.avatarUrl':'Avatar-URL',
+      'delete.prompt':'Konto endgültig löschen?\n\nAlle Posts, Follows und Einstellungen werden gelöscht. Diese Aktion ist unwiderruflich.\n\nTippe "LÖSCHEN" zur Bestätigung:',
+      'delete.keyword':'LÖSCHEN',
+      'report.title':'Post melden','report.detailsPlaceholder':'Details (optional)','report.submit':'Melden',
+      'report.reasons':['Unangemessen','Spam','Hassrede','Gewalt','Nacktheit','Fehlinformationen','Anderes'],
+      'verify.title':'Altersverifikation','verify.subtitle':'18+ Bereich. Einmaliger Face-Scan zur Altersprüfung.',
+      'verify.cameraStarting':'Kamera startet...','verify.center':'Gesicht zentrieren, dann Scan starten',
+      'verify.start':'Scan starten','verify.analyzing':'KI analysiert...','verify.success':'Verifikation erfolgreich!',
+      'verify.cameraDenied':'Kamerazugriff verweigert','verify.noFace':'Kein Gesicht erkannt','verify.retry':'Erneut',
+      'verify.imageNotStored':'Bild wird nicht gespeichert. Lokale KI-Analyse.',
+      'nft.title':'Als NFT verkaufen','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
+      'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'NFT-Preis: {price} YEET',
+      'ppv.title':'Pay-per-View',
+      'ppv.subtitle':'Bild wird erst nach Bezahlung sichtbar. Einnahmen gehen direkt an dich.',
+      'ppv.unlock':'Entsperren','ppv.unlockPrompt':'{price} YEET zum Entsperren','ppv.priceSet':'PPV-Preis: {price} YEET',
+      'extlink.title':'Du verlässt YEET',
+      'extlink.subtitle':'Dieser Link führt zu einer externen Seite. YEET übernimmt keine Verantwortung für externe Inhalte.',
+      'menu.repost':'Repost','menu.share':'Teilen','menu.follow':'Folgen','menu.report':'Melden',
+      'empty.followingLogin':'Einloggen, um den Following-Feed zu sehen',
+      'empty.followingEmpty':'Folge anderen Usern, um ihre Posts hier zu sehen',
+      'empty.noTrending':'Noch keine Trending-Posts','empty.noPosts':'Noch keine Posts. Sei der Erste!',
+      'empty.connectToPost':'Wallet verbinden, um zu posten',
+      'comments.placeholder':'Kommentar schreiben...','comments.empty':'Noch keine Kommentare',
+    }
+  };
+  function getLang(){
+    var saved = localStorage.getItem('yeet_lang');
+    if(saved && DICTS[saved]) return saved;
+    return 'en';
+  }
+  function t(key, vars){
+    var lang = getLang();
+    var dict = DICTS[lang] || DICTS.en;
+    var v = dict[key];
+    if(v === undefined) v = DICTS.en[key];
+    if(v === undefined) return key;
+    if(vars && typeof v === 'string'){
+      v = v.replace(/\{(\w+)\}/g, function(_,k){ return (vars[k]!=null) ? vars[k] : ''; });
+    }
+    return v;
+  }
+  function applyTranslations(root){
+    root = root || document;
+    root.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key = el.getAttribute('data-i18n');
+      var val = t(key);
+      if(typeof val === 'string') el.textContent = val;
+    });
+    root.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+    });
+    root.querySelectorAll('[data-i18n-title]').forEach(function(el){
+      el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+    });
+    root.querySelectorAll('[data-i18n-aria]').forEach(function(el){
+      el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria')));
+    });
+  }
+  function setLang(lang){
+    if(!DICTS[lang]) return;
+    localStorage.setItem('yeet_lang', lang);
+    document.documentElement.setAttribute('lang', lang);
+    applyTranslations();
+  }
+  window.YEET_I18N = DICTS;
+  window.t = t;
+  window.setLang = setLang;
+  window.getLang = getLang;
+  window.applyTranslations = applyTranslations;
+  document.addEventListener('DOMContentLoaded', function(){
+    document.documentElement.setAttribute('lang', getLang());
+    applyTranslations();
+  });
+})();
+</script>
 
 <script>
 (function() {
@@ -1031,6 +1247,8 @@ function openSettingsModal(){
   const s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   if(document.getElementById('setting18'))document.getElementById('setting18').checked=s.adult===true||localStorage.getItem('yeet_adult')==='1';
   if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=s.autoload!==false;
+  var langSel=document.getElementById('settingLanguage');
+  if(langSel) langSel.value = (window.getLang ? window.getLang() : 'en');
   document.getElementById('settingsModal').classList.add('on');
   // Show "Link Wallet" only for email-only users (no wallet yet)
   const lw=document.getElementById('linkWalletBtn');
@@ -1060,30 +1278,30 @@ function openSettingsModal(){
 
 async function linkWalletToEmailUser(){
   const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt){showToast('Nicht eingeloggt');return;}
-  if(!window.ethereum){showToast('MetaMask nicht gefunden');return;}
+  if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
+  if(!window.ethereum){showToast(window.t('toast.walletNotFound'));return;}
   try{
     const [addr]=await window.ethereum.request({method:'eth_requestAccounts'});
-    if(!addr){showToast('Keine Wallet ausgewählt');return;}
+    if(!addr){showToast(window.t('toast.noWalletSelected'));return;}
     const nr=await fetch('/api/v1/auth/link-wallet/nonce',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
       body:JSON.stringify({address:addr})});
     const nd=await nr.json();
-    if(!nd.success){showToast('Fehler: '+(nd.error&&nd.error.message||'nonce'));return;}
+    if(!nd.success){showToast(window.t('common.error')+': '+(nd.error&&nd.error.message||'nonce'));return;}
     const sig=await window.ethereum.request({method:'personal_sign',params:[nd.data.message,addr]});
     const vr=await fetch('/api/v1/auth/link-wallet/verify',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
       body:JSON.stringify({address:addr,signature:sig,nonce:nd.data.nonce})});
     const vd=await vr.json();
-    if(!vd.success){showToast('Fehler: '+(vd.error&&vd.error.message||'verify'));return;}
-    showToast('Wallet verknüpft');
+    if(!vd.success){showToast(window.t('common.error')+': '+(vd.error&&vd.error.message||'verify'));return;}
+    showToast(window.t('toast.walletLinked'));
     const b=document.getElementById('linkWalletBtn'); if(b) b.style.display='none';
-  }catch(e){showToast('Wallet-Verknüpfung abgebrochen');}
+  }catch(e){showToast(window.t('toast.walletLinkAborted'));}
 }
 
 async function exportMyData(){
   const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt){showToast('Nicht eingeloggt');return;}
+  if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
   try{
     const r=await fetch('/api/v1/users/me/export',{headers:{'Authorization':'Bearer '+jwt}});
     const d=await r.json();
@@ -1093,22 +1311,22 @@ async function exportMyData(){
     a.href=url; a.download='yeet-export-'+Date.now()+'.json';
     document.body.appendChild(a); a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},500);
-    showToast('Export heruntergeladen');
-  }catch(e){showToast('Export fehlgeschlagen');}
+    showToast(window.t('toast.exportDownloaded'));
+  }catch(e){showToast(window.t('toast.exportFailed'));}
 }
 
 async function deleteMyAccount(){
   const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt){showToast('Nicht eingeloggt');return;}
-  const phrase=prompt('Konto endgültig löschen?\n\nAlle Posts, Follows und Einstellungen werden gelöscht. Diese Aktion ist unwiderruflich.\n\nTippe "LÖSCHEN" zur Bestätigung:');
-  if(phrase!=='LÖSCHEN'){showToast('Abgebrochen');return;}
+  if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
+  const phrase=prompt(window.t('delete.prompt'));
+  if(phrase!==window.t('delete.keyword')){showToast(window.t('common.aborted'));return;}
   try{
     const r=await fetch('/api/v1/users/me',{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
     const d=await r.json();
-    if(!d.success){showToast('Fehler: '+(d.error&&d.error.message||'delete'));return;}
+    if(!d.success){showToast(window.t('common.error')+': '+(d.error&&d.error.message||'delete'));return;}
     localStorage.clear();
     location.href='/';
-  }catch(e){showToast('Löschen fehlgeschlagen');}
+  }catch(e){showToast(window.t('toast.deleteFailed'));}
 }
 function closeSettingsModal(e){if(!e||e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('on');}
 function applySettings(){
@@ -1128,7 +1346,7 @@ function applySettings(){
       body:JSON.stringify({show_nsfw:adult,auto_play_media:autoload})
     }).catch(()=>{});
   }
-  showToast('Settings saved');
+  showToast(window.t('toast.settingsSaved'));
 }
 function updateAdultUiVisibility(enabled){
   // Never show 18+ entry points to logged-out visitors, regardless of the cached setting.
@@ -1163,7 +1381,7 @@ function disconnectWallet(){
   const pw=document.getElementById('profileWidget');
   if(pw)pw.style.display='none';
   closeSettingsModal();
-  showToast('Wallet disconnected');
+  showToast(window.t('toast.walletDisconnected'));
   loadFeed();
 }
 function updateCharCount(){
@@ -1175,7 +1393,7 @@ function updateCharCount(){
   cc.style.color=len>250?'#ff4444':len>200?'#f0a500':'var(--muted)';
 }
 function performSearch(q){
-  if(!q||q.trim().length<2){showToast('Type at least 2 characters');return;}
+  if(!q||q.trim().length<2){showToast(window.t('toast.search2chars'));return;}
   q=q.trim();
   if(q.startsWith('#')){
     var ta=document.getElementById('postTxt');
@@ -1239,19 +1457,19 @@ function submitPost(){
   if(!jwt&&!connectedAddress){openWalletModal();return;}
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
-  showToast('Posting to /api/v1/posts...');
+  showToast(window.t('toast.posting'));
   var _activeTab=document.querySelector('.tab.active');
   var _tabIs18=(_activeTab&&_activeTab.textContent&&_activeTab.textContent.indexOf('18')!==-1)||false;
   var _checkboxIs18=!!(document.getElementById('adultToggle')&&document.getElementById('adultToggle').checked);
   var isAdult=_tabIs18||_checkboxIs18;
   fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:window._postImageB64||null,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null})})
     .then(async function(r){
-      if(r.status===413){throw new Error('Bild zu gross fuer den Server');}
+      if(r.status===413){throw new Error(window.t('toast.imageTooLargeServer'));}
       var ct=r.headers.get('content-type')||'';
-      if(ct.indexOf('application/json')===-1){throw new Error('Serverfehler ('+r.status+')');}
+      if(ct.indexOf('application/json')===-1){throw new Error(window.t('common.error')+' ('+r.status+')');}
       return r.json();
     }).then(d=>{
-      if(d.success===false)showToast('Error: '+(d.error&&d.error.message||'Post failed'));
+      if(d.success===false)showToast(window.t('common.error')+': '+(d.error&&d.error.message||window.t('toast.postFailed')));
       else{
         document.getElementById('postTxt').value='';
         window._postImageB64=null;window._postIsNFT=false;window._postNFTPrice=null;
@@ -1261,33 +1479,33 @@ function submitPost(){
         window._postIsPPV=false;window._postPPVPrice=null;
         var pd=document.getElementById('ppvPriceDisplay');if(pd)pd.style.display='none';
         var pb=document.getElementById('ppvToggleBtn');if(pb)pb.style.color='';
-        showToast('Yeeted!');
+        showToast(window.t('toast.yeeted'));
         if(isAdult)loadFeedFiltered('adult');
         else loadFeed();
       }
     })
-    .catch(e=>showToast('Fehler beim Posten: '+(e.message||'Bitte einloggen'), 'error'));
+    .catch(e=>showToast(window.t('toast.postFailed')+': '+(e.message||window.t('common.pleaseLogin')), 'error'));
 }
 
 async function uploadProfileImage(input, kind){
   var file = input.files && input.files[0];
   if(!file) return;
-  if(file.size > 8*1024*1024){ showToast('Bild zu gross (max. 8MB)','error'); input.value=''; return; }
+  if(file.size > 8*1024*1024){ showToast(window.t('toast.imageTooLarge'),'error'); input.value=''; return; }
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
-  if(!jwt){ showToast('Bitte einloggen','error'); input.value=''; return; }
+  if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); input.value=''; return; }
   var endpoint = kind === 'cover' ? '/api/v1/users/me/cover' : '/api/v1/users/me/avatar';
-  showToast(kind === 'cover' ? 'Cover wird hochgeladen...' : 'Profilbild wird hochgeladen...');
+  showToast(window.t(kind === 'cover' ? 'toast.uploadingCover' : 'toast.uploadingAvatar'));
   var fd = new FormData(); fd.append('file', file);
   try{
     var r = await fetch(endpoint, { method:'POST', headers:{'Authorization':'Bearer '+jwt}, body: fd });
-    if(r.status === 413){ throw new Error('Bild zu gross fuer den Server'); }
+    if(r.status === 413){ throw new Error(window.t('toast.imageTooLargeServer')); }
     var ct = r.headers.get('content-type') || '';
-    if(ct.indexOf('application/json') === -1){ throw new Error('Serverfehler ('+r.status+')'); }
+    if(ct.indexOf('application/json') === -1){ throw new Error(window.t('common.error')+' ('+r.status+')'); }
     var d = await r.json();
-    if(!d || !d.success){ throw new Error((d && d.error && d.error.message) || 'Upload fehlgeschlagen'); }
-    showToast(kind === 'cover' ? 'Cover aktualisiert' : 'Profilbild aktualisiert', 'success');
+    if(!d || !d.success){ throw new Error((d && d.error && d.error.message) || window.t('toast.uploadFailed')); }
+    showToast(window.t(kind === 'cover' ? 'toast.coverUpdated' : 'toast.avatarUpdated'), 'success');
     if(typeof showMyProfile === 'function') showMyProfile();
-  }catch(e){ showToast('Upload-Fehler: '+(e.message||'unbekannt'),'error'); }
+  }catch(e){ showToast(window.t('toast.uploadError')+': '+(e.message||window.t('common.unknown')),'error'); }
   finally{ input.value = ''; }
 }
 
@@ -1426,7 +1644,7 @@ function renderProfileHeader(u, own){
   var avatarBlock = '<div style="position:relative;width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid var(--border);'+(own?'cursor:pointer':'')+'" '
     + (own?'onclick="document.getElementById(\'avatarUploadInput\').click()"':'') + '>'
     + avatarInner
-    + (own ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;text-align:center;padding:2px 0">Ändern</div>' : '')
+    + (own ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;text-align:center;padding:2px 0">'+window.t('profile.editAvatar')+'</div>' : '')
     + '</div>';
 
   var coverInner = u.cover_url
@@ -1435,7 +1653,7 @@ function renderProfileHeader(u, own){
   var coverBlock = '<div style="position:relative;width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:16px;background:#111;'+(own?'cursor:pointer':'')+'"'
     + (own?' onclick="document.getElementById(\'coverUploadInput\').click()"':'') + '>'
     + coverInner
-    + (own ? '<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:6px 12px;border-radius:14px">&#128247; Cover ändern</div>' : '')
+    + (own ? '<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:6px 12px;border-radius:14px">&#128247; '+window.t('profile.editCover')+'</div>' : '')
     + '</div>';
 
   var uploadInputs = own
@@ -1664,25 +1882,25 @@ function toggleFollow(btn, postId, author) {
   var myId = localStorage.getItem('yeet_user_id') || '';
   var authorId = (author && author.id) || '';
   if (myId && authorId && myId === authorId) {
-    showToast('Du kannst dir nicht selbst folgen', 'error');
+    showToast(window.t('toast.cantFollowSelf'), 'error');
     return;
   }
   var isFollowing = btn.dataset.following === '1';
   var targetId = authorId;
-  if (!targetId) { showToast('Benutzer nicht gefunden', 'error'); return; }
+  if (!targetId) { showToast(window.t('toast.userNotFound'), 'error'); return; }
   var url = '/api/v1/users/' + targetId + '/' + (isFollowing ? 'unfollow' : 'follow');
   btn.disabled = true;
   fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + jwt } })
     .then(function(r) {
       if (r.status === 401) { localStorage.removeItem('yeet_jwt'); openAuthModal('login'); return; }
-      if (!r.ok) { r.json().then(function(e){ showToast(e.error&&e.error.message||'Fehler', 'error'); }); return; }
+      if (!r.ok) { r.json().then(function(e){ showToast(e.error&&e.error.message||window.t('common.error'), 'error'); }); return; }
       isFollowing = !isFollowing;
       btn.dataset.following = isFollowing ? '1' : '0';
       btn.querySelector('span').textContent = isFollowing ? 'Unfollow' : 'Follow';
       btn.style.color = isFollowing ? '#c6f135' : 'var(--muted)';
-      showToast(isFollowing ? 'Gefolgt!' : 'Entfolgt', 'success');
+      showToast(window.t(isFollowing ? 'toast.followed' : 'toast.unfollowed'), 'success');
     })
-    .catch(function() { showToast('Netzwerkfehler', 'error'); })
+    .catch(function() { showToast(window.t('common.networkError'), 'error'); })
     .finally(function() { btn.disabled = false; });
 }
 
@@ -1695,7 +1913,7 @@ async function loadFollowingFeed() {
     var empty = document.querySelector('.empty');
     if (empty) {
       empty.style.display = '';
-      empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Einloggen um den Following Feed zu sehen</p></div>';
+      empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">'+window.t('empty.followingLogin')+'</p></div>';
     }
     return;
   }
@@ -1708,7 +1926,7 @@ async function loadFollowingFeed() {
     if (!d.data || d.data.length === 0) {
       if (empty) {
         empty.style.display = '';
-        empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">Folge anderen Usern um ihre Posts hier zu sehen</p></div>';
+        empty.innerHTML = '<div style="text-align:center;padding:40px"><div style="font-size:48px">&#128100;</div><p style="color:var(--muted);margin-top:12px">'+window.t('empty.followingEmpty')+'</p></div>';
       }
       return;
     }
@@ -1728,20 +1946,21 @@ async function loadFollowingFeed() {
 async function reportPost(postId){
   var jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){openAuthModal('login');return;}
-  var reasons=['Unangemessen','Spam','Hassrede','Gewalt','Nacktheit','Fehlinformationen','Anderes'];
+  var reasons=window.t('report.reasons');
+  if(!Array.isArray(reasons)) reasons=['Inappropriate','Spam','Hate speech','Violence','Nudity','Misinformation','Other'];
   var modal=document.createElement('div');
   modal.id='reportModal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   modal.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:360px;width:100%">'
-    +'<h3 style="margin:0 0 16px;font-size:16px">&#128681; Post melden</h3>'
+    +'<h3 style="margin:0 0 16px;font-size:16px">&#128681; '+window.t('report.title')+'</h3>'
     +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
     +reasons.map(function(r,i){return'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;border:1px solid #2a2a2a;border-radius:8px">'
       +'<input type="radio" name="rr" value="'+r+'"'+(i===0?' checked':'')+'>'+r+'</label>';}).join('')
     +'</div>'
-    +'<textarea id="rdetails" placeholder="Details (optional)" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;resize:none;height:60px;outline:none;margin-bottom:12px"></textarea>'
+    +'<textarea id="rdetails" placeholder="'+window.t('report.detailsPlaceholder')+'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;resize:none;height:60px;outline:none;margin-bottom:12px"></textarea>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'reportModal\').remove()" style="flex:1;padding:10px;background:transparent;border:1px solid #444;border-radius:8px;color:#fff;cursor:pointer">Abbrechen</button>'
-    +'<button onclick="submitReport(\''+postId+'\')" style="flex:1;padding:10px;background:#ff4444;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Melden</button>'
+    +'<button onclick="document.getElementById(\'reportModal\').remove()" style="flex:1;padding:10px;background:transparent;border:1px solid #444;border-radius:8px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button onclick="submitReport(\''+postId+'\')" style="flex:1;padding:10px;background:#ff4444;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">'+window.t('report.submit')+'</button>'
     +'</div></div>';
   modal.addEventListener('click',function(e){if(e.target===this)this.remove();});
   document.body.appendChild(modal);
@@ -1757,8 +1976,8 @@ async function submitReport(postId){
       body:JSON.stringify({reason:reason,details:details})});
     var d=await r.json();
     if(r.status===401){localStorage.removeItem('yeet_jwt');openAuthModal('login');return;}
-    showToast(d.success?'&#128681; Gemeldet':'Fehler beim Melden',d.success?'success':'error');
-  }catch(e){showToast('Netzwerkfehler','error');}
+    showToast(d.success?window.t('toast.reported'):window.t('toast.reportFailed'),d.success?'success':'error');
+  }catch(e){showToast(window.t('common.networkError'),'error');}
 }
 var faceStream=null;
 function check18Plus(){
@@ -1767,26 +1986,26 @@ function check18Plus(){
   if(!jwt){ showLoginGate(); return; }
   var s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   var adultEnabled=s.adult===true||localStorage.getItem('yeet_adult')==='1';
-  if(!adultEnabled){showToast('18+ Content in Settings aktivieren');return;}
+  if(!adultEnabled){showToast(window.t('toast.adultEnable'));return;}
   if(localStorage.getItem('yeet_18plus_verified')==='1'){loadFeedFiltered('adult');return;}
   var modal=document.createElement('div');
   modal.id='faceScanModal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   modal.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:28px;max-width:400px;width:100%;text-align:center">'
     +'<div style="font-size:40px;margin-bottom:12px">&#128247;</div>'
-    +'<h3 style="margin:0 0 8px;font-size:18px">Altersverifikation</h3>'
-    +'<p style="color:#888;font-size:13px;margin-bottom:16px">18+ Bereich. Einmaliger Face-Scan zur Alterspr\u00fcfung.</p>'
+    +'<h3 style="margin:0 0 8px;font-size:18px">'+window.t('verify.title')+'</h3>'
+    +'<p style="color:#888;font-size:13px;margin-bottom:16px">'+window.t('verify.subtitle')+'</p>'
     +'<div style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:14px">'
     +'<video id="faceVid" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>'
     +'<canvas id="faceCvs" style="display:none"></canvas>'
     +'<div id="faceOvl" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
     +'<div style="width:140px;height:180px;border:2px dashed rgba(198,241,53,.4);border-radius:50%"></div></div></div>'
-    +'<div id="faceSt" style="color:#888;font-size:13px;margin-bottom:14px">Kamera startet...</div>'
+    +'<div id="faceSt" style="color:#888;font-size:13px;margin-bottom:14px">'+window.t('verify.cameraStarting')+'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">Abbrechen</button>'
-    +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer" disabled>Scan starten</button>'
+    +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer" disabled>'+window.t('verify.start')+'</button>'
     +'</div>'
-    +'<p style="color:#333;font-size:11px;margin-top:10px">Bild wird nicht gespeichert. Lokale KI-Analyse.</p>'
+    +'<p style="color:#333;font-size:11px;margin-top:10px">'+window.t('verify.imageNotStored')+'</p>'
     +'</div>';
   document.body.appendChild(modal);
   initCamera();
@@ -1795,13 +2014,13 @@ async function initCamera(){
   try{
     faceStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
     var v=document.getElementById('faceVid');
-    if(v){v.srcObject=faceStream;document.getElementById('faceSt').textContent='Gesicht zentrieren, dann Scan starten';document.getElementById('scanBtn').disabled=false;}
-  }catch(e){document.getElementById('faceSt').textContent='Kamerazugriff verweigert';}
+    if(v){v.srcObject=faceStream;document.getElementById('faceSt').textContent=window.t('verify.center');document.getElementById('scanBtn').disabled=false;}
+  }catch(e){document.getElementById('faceSt').textContent=window.t('verify.cameraDenied');}
 }
 async function doFaceScan(){
   var btn=document.getElementById('scanBtn');
-  btn.disabled=true;btn.textContent='Analysiere...';
-  document.getElementById('faceSt').textContent='KI analysiert...';
+  btn.disabled=true;btn.textContent=window.t('verify.analyzing');
+  document.getElementById('faceSt').textContent=window.t('verify.analyzing');
   document.getElementById('faceOvl').style.outline='2px solid #c6f135';
   var v=document.getElementById('faceVid'),c=document.getElementById('faceCvs');
   c.width=v.videoWidth||320;c.height=v.videoHeight||240;
@@ -1812,8 +2031,8 @@ async function doFaceScan(){
   var nonBlack=0;
   for(var i=0;i<pixels.length;i+=4){if(pixels[i]>20||pixels[i+1]>20||pixels[i+2]>20)nonBlack++;}
   var hasImage=nonBlack>(c.width*c.height*0.1);
-  if(!hasImage){document.getElementById('faceSt').textContent='Kein Gesicht erkannt';btn.disabled=false;btn.textContent='Erneut';return;}
-  document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; Verifikation erfolgreich!</span>';
+  if(!hasImage){document.getElementById('faceSt').textContent=window.t('verify.noFace');btn.disabled=false;btn.textContent=window.t('verify.retry');return;}
+  document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; '+window.t('verify.success')+'</span>';
   localStorage.setItem('yeet_18plus_verified','1');
   // Persist server-side so verification syncs across devices for this account
   var jwt=localStorage.getItem('yeet_jwt');
@@ -1833,10 +2052,10 @@ function handleImageSelect(input) {
   if (!file) return;
   var allowed = ['image/jpeg','image/jpg','image/png','image/webp','image/gif'];
   if (!allowed.includes(file.type)) {
-    showToast('Nur JPG, PNG, WebP, GIF erlaubt', 'error'); input.value=''; return;
+    showToast(window.t('toast.invalidFormat'), 'error'); input.value=''; return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    showToast('Bild zu gross (max. 5MB)', 'error'); input.value=''; return;
+    showToast(window.t('toast.imageTooLarge5'), 'error'); input.value=''; return;
   }
   var reader = new FileReader();
   reader.onload = function(e) {
@@ -1845,7 +2064,7 @@ function handleImageSelect(input) {
     var wrap = document.getElementById('imgPreviewWrap');
     if (preview) preview.src = e.target.result;
     if (wrap) wrap.style.display = 'block';
-    showToast('Bild ausgewaehlt', 'success');
+    showToast(window.t('toast.imageSelected'), 'success');
   };
   reader.readAsDataURL(file);
 }
@@ -1878,17 +2097,17 @@ function openNFTPriceModal() {
     return '<button onclick="selectNFTPrice('+v+',this)" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;cursor:pointer;font-size:15px;font-weight:700">'+v+' YEET</button>';
   }).join('');
   modal.innerHTML = '<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:340px;width:100%">'
-    +'<h3 style="margin:0 0 6px;font-size:16px">&#128142; Als NFT verkaufen</h3>'
-    +'<p style="color:#666;font-size:12px;margin-bottom:16px">Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).</p>'
-    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">Preis in YEET:</p>'
+    +'<h3 style="margin:0 0 6px;font-size:16px">&#128142; '+window.t('nft.title')+'</h3>'
+    +'<p style="color:#666;font-size:12px;margin-bottom:16px">'+window.t('nft.subtitle')+'</p>'
+    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">'+window.t('nft.priceLabel')+'</p>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+presetBtns+'</div>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">'
-    +'<input type="number" id="nftCustomPrice" placeholder="Freie Eingabe..." min="1" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearNFTPresets()">'
+    +'<input type="number" id="nftCustomPrice" placeholder="'+window.t('nft.customPrice')+'" min="1" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearNFTPresets()">'
     +'<span style="color:#c6f135;font-weight:700">YEET</span>'
     +'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'nftModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">Abbrechen</button>'
-    +'<button onclick="confirmNFTPrice()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">Bestaetigen</button>'
+    +'<button onclick="document.getElementById(\'nftModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button onclick="confirmNFTPrice()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">'+window.t('common.confirm')+'</button>'
     +'</div></div>';
   modal.addEventListener('click', function(e){if(e.target===this)this.remove();});
   document.body.appendChild(modal);
@@ -1911,13 +2130,13 @@ function clearNFTPresets() {
 function confirmNFTPrice() {
   var price = _nftSelectedPreset;
   if (!price) { var ci=document.getElementById('nftCustomPrice'); price=ci?parseFloat(ci.value):null; }
-  if (!price||price<=0){showToast('Bitte Preis eingeben','error');return;}
+  if (!price||price<=0){showToast(window.t('toast.priceRequired'),'error');return;}
   document.getElementById('nftModal')?.remove();
   window._postIsNFT=true; window._postNFTPrice=price;
   var btn=document.getElementById('nftToggleBtn');if(btn)btn.style.color='#c6f135';
   var nd=document.getElementById('nftPriceDisplay');
   if(nd){nd.style.display='block';document.getElementById('nftPriceVal').textContent=price;}
-  showToast('NFT-Preis: '+price+' YEET','success');
+  showToast(window.t('nft.priceSet',{price:price}),'success');
 }
 
 
@@ -1943,17 +2162,17 @@ function openPPVPriceModal() {
     return '<button onclick="selectPPVPrice('+v+',this)" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;cursor:pointer;font-size:15px;font-weight:700">'+v+' YEET</button>';
   }).join('');
   modal.innerHTML = '<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:340px;width:100%">'
-    +'<h3 style="margin:0 0 6px;font-size:16px">&#128274; Pay-per-View</h3>'
-    +'<p style="color:#666;font-size:12px;margin-bottom:16px">Bild wird erst nach Bezahlung sichtbar. Einnahmen gehen direkt an dich.</p>'
-    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">Preis in YEET:</p>'
+    +'<h3 style="margin:0 0 6px;font-size:16px">&#128274; '+window.t('ppv.title')+'</h3>'
+    +'<p style="color:#666;font-size:12px;margin-bottom:16px">'+window.t('ppv.subtitle')+'</p>'
+    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">'+window.t('nft.priceLabel')+'</p>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+presetBtns+'</div>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">'
-    +'<input type="number" id="ppvCustomPrice" placeholder="Freie Eingabe..." min="0.1" step="0.1" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearPPVPresets()">'
+    +'<input type="number" id="ppvCustomPrice" placeholder="'+window.t('nft.customPrice')+'" min="0.1" step="0.1" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearPPVPresets()">'
     +'<span style="color:#c6f135;font-weight:700">YEET</span>'
     +'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'ppvModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">Abbrechen</button>'
-    +'<button onclick="confirmPPVPrice()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">Bestaetigen</button>'
+    +'<button onclick="document.getElementById(\'ppvModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button onclick="confirmPPVPrice()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">'+window.t('common.confirm')+'</button>'
     +'</div></div>';
   modal.addEventListener('click', function(e){if(e.target===this)this.remove();});
   document.body.appendChild(modal);
@@ -1977,20 +2196,20 @@ function clearPPVPresets() {
 function confirmPPVPrice() {
   var price = _ppvSelectedPreset;
   if (!price) { var ci=document.getElementById('ppvCustomPrice'); price=ci?parseFloat(ci.value):null; }
-  if (!price||price<=0){showToast('Bitte Preis eingeben','error');return;}
+  if (!price||price<=0){showToast(window.t('toast.priceRequired'),'error');return;}
   document.getElementById('ppvModal')?.remove();
   window._postIsPPV = true; window._postPPVPrice = price;
   var btn=document.getElementById('ppvToggleBtn'); if(btn) btn.style.color='#c6f135';
   var nd=document.getElementById('ppvPriceDisplay');
   if(nd){nd.style.display='block'; document.getElementById('ppvPriceVal').textContent=price;}
-  showToast('PPV-Preis: '+price+' YEET','success');
+  showToast(window.t('ppv.priceSet',{price:price}),'success');
 }
 
 // ââ PPV UNLOCK in Feed ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
-  if (!jwt) { showToast('Bitte einloggen', 'error'); return; }
-  if (!authorId) { showToast('Autor nicht gefunden', 'error'); return; }
+  if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
+  if (!authorId) { showToast(window.t('toast.authorNotFound'), 'error'); return; }
 
   // Check if already unlocked
   var unlocked = JSON.parse(localStorage.getItem('ppv_unlocked') || '{}');
@@ -1999,7 +2218,7 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
   }
 
   var btn = overlayEl.querySelector('button');
-  if (btn) { btn.disabled = true; btn.textContent = 'Wird entsperrt...'; }
+  if (btn) { btn.disabled = true; btn.textContent = window.t('toast.unlocking'); }
 
   fetch('/api/v1/tips', {
     method:'POST',
@@ -2012,14 +2231,14 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
       imgEl.style.filter = 'none';
       imgEl.style.transition = 'filter 0.5s ease';
       overlayEl.style.display = 'none';
-      showToast('Entsperrt! '+price+' YEET gesendet (inkl. 10% Netzwerkgebühr)', 'success');
+      showToast(window.t('toast.unlocked',{price:price}), 'success');
     } else {
-      showToast('Fehler: '+(d.error&&d.error.message||'Entsperren fehlgeschlagen'), 'error');
-      if(btn){btn.disabled=false; btn.textContent='Entsperren';}
+      showToast(window.t('common.error')+': '+(d.error&&d.error.message||window.t('toast.unlockFailed')), 'error');
+      if(btn){btn.disabled=false; btn.textContent=window.t('ppv.unlock');}
     }
   }).catch(function(e){
-    showToast('Netzwerkfehler', 'error');
-    if(btn){btn.disabled=false; btn.textContent='Entsperren';}
+    showToast(window.t('common.networkError'), 'error');
+    if(btn){btn.disabled=false; btn.textContent=window.t('ppv.unlock');}
   });
 }
 
@@ -2040,27 +2259,27 @@ function renderMediaUrl(p) {
     + '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">'
     + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);gap:10px">'
     + '<div style="font-size:32px">&#128274;</div>'
-    + '<div style="color:#fff;font-size:14px;font-weight:700">' + price + ' YEET zum Entsperren</div>'
-    + '<button class="ppv-unlock-btn" style="background:#c6f135;border:none;border-radius:20px;padding:8px 20px;color:#000;font-weight:700;cursor:pointer;font-size:13px">Entsperren</button>'
+    + '<div style="color:#fff;font-size:14px;font-weight:700">' + window.t('ppv.unlockPrompt',{price:price}) + '</div>'
+    + '<button class="ppv-unlock-btn" style="background:#c6f135;border:none;border-radius:20px;padding:8px 20px;color:#000;font-weight:700;cursor:pointer;font-size:13px">' + window.t('ppv.unlock') + '</button>'
     + '</div></div>';
 }
 
 
 function repostPost(postId, currentReposts) {
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
-  if (!jwt) { showToast('Bitte einloggen', 'error'); return; }
-  if (currentReposts >= 1) { showToast('Max. 1 Repost erlaubt', 'error'); return; }
+  if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
+  if (currentReposts >= 1) { showToast(window.t('toast.maxRepost'), 'error'); return; }
   fetch('/api/v1/posts/' + postId + '/repost', {
     method: 'POST', headers: {'Authorization': 'Bearer ' + jwt}
   }).then(function(r){return r.json();}).then(function(d){
-    if (d.success) { showToast('Repost erfolgreich! \u21BA', 'success'); loadFeed(); }
-    else showToast((d.error && d.error.message) || 'Fehler', 'error');
-  }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
+    if (d.success) { showToast(window.t('toast.repostSuccess'), 'success'); loadFeed(); }
+    else showToast((d.error && d.error.message) || window.t('common.error'), 'error');
+  }).catch(function(){ showToast(window.t('common.networkError'), 'error'); });
 }
 
 function togglePostVisibility(postId, currentVis) {
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
-  if (!jwt) { showToast('Bitte einloggen', 'error'); return; }
+  if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
   var newVis = currentVis === 'public' ? 'followers' : 'public';
   fetch('/api/v1/posts/' + postId + '/visibility', {
     method: 'PATCH',
@@ -2068,10 +2287,10 @@ function togglePostVisibility(postId, currentVis) {
     body: JSON.stringify({visibility: newVis})
   }).then(function(r){return r.json();}).then(function(d){
     if (d.success) {
-      var label = newVis === 'public' ? '\uD83C\uDF0D Public' : '\uD83D\uDC64 Nur Follower';
-      showToast('Sichtbarkeit: ' + label, 'success'); loadFeed();
-    } else showToast((d.error && d.error.message) || 'Fehler', 'error');
-  }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
+      showToast(window.t(newVis === 'public' ? 'toast.visibilityPublic' : 'toast.visibilityFollowers'), 'success');
+      loadFeed();
+    } else showToast((d.error && d.error.message) || window.t('common.error'), 'error');
+  }).catch(function(){ showToast(window.t('common.networkError'), 'error'); });
 }
 
 
@@ -2095,15 +2314,15 @@ function openPostMenu(btn) {
     return el;
   }
 
-  menu.appendChild(menuItem('\u21BA', 'Repost' + (reposts >= 1 ? ' (max. 1)' : ''), function(){ repostPost(pid, reposts); menu.remove(); }));
-  menu.appendChild(menuItem('\uD83D\uDCE4', 'Share', function(){ sharePost(pid); menu.remove(); }));
-  menu.appendChild(menuItem('+', 'Follow', function(){ toggleFollowById(authorId); menu.remove(); }));
+  menu.appendChild(menuItem('\u21BA', window.t('menu.repost') + (reposts >= 1 ? ' (max. 1)' : ''), function(){ repostPost(pid, reposts); menu.remove(); }));
+  menu.appendChild(menuItem('\uD83D\uDCE4', window.t('menu.share'), function(){ sharePost(pid); menu.remove(); }));
+  menu.appendChild(menuItem('+', window.t('menu.follow'), function(){ toggleFollowById(authorId); menu.remove(); }));
 
   var sep = document.createElement('div');
   sep.style.cssText = 'height:1px;background:#2a2a2a;margin:4px 6px';
   menu.appendChild(sep);
 
-  menu.appendChild(menuItem('\uD83D\uDEA9', 'Melden', function(){ reportPost(pid); menu.remove(); }, true));
+  menu.appendChild(menuItem('\uD83D\uDEA9', window.t('menu.report'), function(){ reportPost(pid); menu.remove(); }, true));
 
   var actionsDiv = btn.closest('.post-actions');
   actionsDiv.appendChild(menu);
@@ -2125,7 +2344,7 @@ function sharePost(postId) {
   if (navigator.share) {
     navigator.share({ title: 'YEET Post', url: url }).catch(function(){});
   } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(function(){ showToast('Link kopiert! \uD83D\uDCCB', 'success'); });
+    navigator.clipboard.writeText(url).then(function(){ showToast(window.t('toast.linkCopied'), 'success'); });
   } else {
     showToast('Link: ' + url);
   }
@@ -2134,13 +2353,13 @@ function sharePost(postId) {
 function toggleFollowById(authorId) {
   var jwt = localStorage.getItem('yeet_jwt');
   if (!jwt) { openAuthModal('login'); return; }
-  if (!authorId) { showToast('Benutzer nicht gefunden', 'error'); return; }
+  if (!authorId) { showToast(window.t('toast.userNotFound'), 'error'); return; }
   fetch('/api/v1/users/' + authorId + '/follow', {
     method: 'POST', headers: { 'Authorization': 'Bearer ' + jwt }
   }).then(function(r){ return r.json(); }).then(function(d){
-    if (d.success) showToast('Gefolgt! \uD83D\uDC4D', 'success');
-    else showToast((d.error && d.error.message) || 'Bereits gefolgt', 'error');
-  }).catch(function(){ showToast('Netzwerkfehler', 'error'); });
+    if (d.success) showToast(window.t('toast.followed'), 'success');
+    else showToast((d.error && d.error.message) || window.t('toast.alreadyFollowing'), 'error');
+  }).catch(function(){ showToast(window.t('common.networkError'), 'error'); });
 }
 
 function showExternalLinkWarning(e,url){
@@ -2152,12 +2371,12 @@ function showExternalLinkWarning(e,url){
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   m.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:12px">&#128279;</div>'
-    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">Du verlÃÂÃÂ¤sst YEET</h3>'
-    +'<p style="color:#888;font-size:13px;margin:0 0 16px">Dieser Link fÃÂÃÂ¼hrt zu einer externen Seite. YEET ÃÂÃÂ¼bernimmt keine Verantwortung fÃÂÃÂ¼r externe Inhalte.</p>'
+    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">'+window.t('extlink.title')+'</h3>'
+    +'<p style="color:#888;font-size:13px;margin:0 0 16px">'+window.t('extlink.subtitle')+'</p>'
     +'<div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left">'+url+'</div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
-    +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">Abbrechen</button>'
-    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">ÃÂÃÂffnen</button>'
+    +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">'+window.t('common.cancel')+'</button>'
+    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">'+window.t('common.open')+'</button>'
     +'</div></div>';
   m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
   document.body.appendChild(m);
@@ -2650,15 +2869,15 @@ function showExternalLinkWarning(e,url){
       if(r.status===401){
         localStorage.removeItem('yeet_jwt');
         openAuthModal('login');
-        showToast('Session abgelaufen, bitte erneut einloggen','error');
+        showToast(window.t('toast.sessionExpired'),'error');
         btn.disabled=false;
         return;
       }
-      if(!r.ok){showToast('Kommentar konnte nicht gesendet werden','error');btn.disabled=false;return;}
+      if(!r.ok){showToast(window.t('toast.commentFailed'),'error');btn.disabled=false;return;}
       inp.value='';
       loadComments(id);
-      showToast('Kommentar gepostet','success');
-    }catch(e){showToast('Netzwerkfehler','error');}
+      showToast(window.t('toast.commentPosted'),'success');
+    }catch(e){showToast(window.t('common.networkError'),'error');}
     btn.disabled=false;
   }
   async function loadComments(id){
@@ -2681,7 +2900,7 @@ function showExternalLinkWarning(e,url){
             +'<div style="color:#ccc">'+safeContent+'</div></div></div>';
         }).join('');
       }else{
-        list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">Noch keine Kommentare</div>';
+        list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">'+(window.t?window.t('comments.empty'):'No comments yet')+'</div>';
       }
     }catch(e){console.error('loadComments:',e);}
   }
