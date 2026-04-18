@@ -38,6 +38,7 @@ struct FeedRow {
 
 pub async fn get_feed(
     State(state): State<AppState>,
+    _auth: AuthUser,
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
     let page = q.page.unwrap_or(1).max(1);
@@ -208,8 +209,13 @@ async fn viewer_is_age_verified(state: &AppState, viewer: Option<&AuthUser>) -> 
 
 pub async fn get_adult_feed(
     State(state): State<AppState>,
+    auth: AuthUser,
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
+    // Adult feed requires an authenticated + age-verified account
+    if !viewer_is_age_verified(&state, Some(&auth)).await {
+        return Err(AppError::Forbidden("Age verification required".into()));
+    }
     let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset = (page - 1) * per_page;

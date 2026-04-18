@@ -501,8 +501,9 @@ function showTrendingFeed(){
 async function loadTrendingFeedPosts(){
   try{
     var jwt=localStorage.getItem('yeet_jwt');
-    var hdrs=jwt?{'Authorization':'Bearer '+jwt}:{};
-    var resp=await fetch('/api/v1/feed',{headers:hdrs});
+    if(!jwt){ showLoginGate(); return; }
+    var resp=await fetch('/api/v1/feed',{headers:{'Authorization':'Bearer '+jwt}});
+    if(resp.status===401){ showLoginGate(); return; }
     var data=await resp.json();
     if(!data.success||!data.data){return;}
     var trending=data.data.filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;}).sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);});
@@ -546,6 +547,13 @@ async function loadTrendingFeedPosts(){
       // safeHtml built above
       contentDiv.innerHTML=safeHtml;
       div.appendChild(contentDiv);
+      // Image / media
+      var mediaHtml=renderMediaUrl(p);
+      if(mediaHtml){
+        var mediaDiv=document.createElement('div');
+        mediaDiv.innerHTML=mediaHtml;
+        div.appendChild(mediaDiv);
+      }
       // External link warning box
       if(foundUrls.length>0){
         var previewDiv=document.createElement('div');
@@ -611,9 +619,26 @@ async function loadProfile(){
     if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:var(--yeet);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000">'+(short?short[0].toUpperCase():'Y')+'</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font';
   }catch(e){}
 }
+function showLoginGate(){
+  var empty=document.querySelector('.empty');
+  var old=document.getElementById('feed-posts');
+  if(old)old.remove();
+  if(empty){
+    empty.style.display='';
+    empty.innerHTML='<div style="text-align:center;padding:48px 24px">'
+      +'<div style="font-size:44px;margin-bottom:8px">&#128274;</div>'
+      +'<h3 style="margin:0 0 6px;font-size:18px">Login erforderlich</h3>'
+      +'<p style="color:var(--muted);margin:0 0 16px;font-size:14px">Registriere oder melde dich an, um Posts zu sehen.</p>'
+      +'<button onclick="openWalletModal()" style="background:#c6f135;border:none;border-radius:20px;padding:10px 22px;color:#000;font-weight:700;cursor:pointer;font-size:14px">Register / Login</button>'
+      +'</div>';
+  }
+}
 async function loadFeed(){
   try{
-    const r=await fetch('/api/v1/feed');
+    const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+    if(!jwt){ showLoginGate(); return; }
+    const r=await fetch('/api/v1/feed',{headers:{'Authorization':'Bearer '+jwt}});
+    if(r.status===401){ showLoginGate(); return; }
     const d=await r.json();
     const empty=document.querySelector('.empty');
     const old=document.getElementById('feed-posts');
@@ -1171,15 +1196,16 @@ function setTab(t){
 }
 function loadFeedFiltered(filter){
   const jwt=localStorage.getItem('yeet_jwt');
-  const headers={'Content-Type':'application/json'};
-  if(jwt)headers['Authorization']='Bearer '+jwt;
+  if(!jwt){ showLoginGate(); return; }
+  const headers={'Content-Type':'application/json','Authorization':'Bearer '+jwt};
   var url=filter==='adult'?'/api/v1/feed/adult':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
   // Toggle is a composer-only hint  never force it from tab switches.
   var atl=document.getElementById('adultToggleLabel');
   if(atl)atl.style.display='flex';
   fetch(url,{headers})
-    .then(r=>r.json())
+    .then(r=>{ if(r.status===401){ showLoginGate(); return null; } return r.json(); })
     .then(d=>{
+      if(!d)return;
       const old=document.getElementById('feed-posts');if(old)old.remove();
       const empty=document.querySelector('.empty');
       if(d.success&&d.data&&d.data.length>0){
@@ -1262,6 +1288,7 @@ function submitPost(){
   window.closeNFTModal = closeNFTModal;
   window.mintNFT = mintNFT;
   window.openSettingsModal = openSettingsModal;
+  window.showLoginGate = showLoginGate;
   window.closeSettingsModal = closeSettingsModal;
   window.applySettings = applySettings;
   window.disconnectWallet = disconnectWallet;
