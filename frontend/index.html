@@ -1212,7 +1212,12 @@ function submitPost(){
   var _checkboxIs18=!!(document.getElementById('adultToggle')&&document.getElementById('adultToggle').checked);
   var isAdult=_tabIs18||_checkboxIs18;
   fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:window._postImageB64||null,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null})})
-    .then(r=>r.json()).then(d=>{
+    .then(async function(r){
+      if(r.status===413){throw new Error('Bild zu gross fuer den Server');}
+      var ct=r.headers.get('content-type')||'';
+      if(ct.indexOf('application/json')===-1){throw new Error('Serverfehler ('+r.status+')');}
+      return r.json();
+    }).then(d=>{
       if(d.success===false)showToast('Error: '+(d.error&&d.error.message||'Post failed'));
       else{
         document.getElementById('postTxt').value='';
