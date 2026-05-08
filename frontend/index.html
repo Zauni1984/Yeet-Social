@@ -428,15 +428,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div id="profileHeader" style="padding:20px"></div>
       <div id="profileEditForm" style="display:none;padding:0 20px 20px">
         <div style="background:#1a1a1a;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
-          <label style="font-size:12px;color:var(--muted)">Display Name (max 50)</label>
-          <input id="editDisplayName" maxlength="50" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px">
-          <label style="font-size:12px;color:var(--muted)">Bio (max 280)</label>
-          <textarea id="editBio" maxlength="280" rows="3" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px;resize:vertical"></textarea>
-          <label style="font-size:12px;color:var(--muted)">Avatar URL</label>
+          <div style="display:flex;align-items:baseline;justify-content:space-between"><label data-i18n="profile.displayName" style="font-size:12px;color:var(--muted)">Display Name (max 50)</label><small class="char-counter" id="counter-displayName" style="font-size:11px;color:var(--muted)">0/50</small></div>
+          <input id="editDisplayName" maxlength="50" oninput="updateProfileCounter(this,50)" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between"><label data-i18n="profile.bio" style="font-size:12px;color:var(--muted)">Bio (max 280)</label><small class="char-counter" id="counter-bio" style="font-size:11px;color:var(--muted)">0/280</small></div>
+          <textarea id="editBio" maxlength="280" rows="3" oninput="updateProfileCounter(this,280)" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px;resize:vertical"></textarea>
+          <label data-i18n="profile.avatarUrl" style="font-size:12px;color:var(--muted)">Avatar URL</label>
           <input id="editAvatarUrl" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px" placeholder="https://...">
           <div style="display:flex;gap:8px;margin-top:4px">
-            <button onclick="saveProfile()" style="flex:1;background:var(--yeet);color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Save</button>
-            <button onclick="toggleProfileEdit(false)" style="flex:1;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer">Cancel</button>
+            <button onclick="saveProfile()" data-i18n="common.save" style="flex:1;background:var(--yeet);color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Save</button>
+            <button onclick="toggleProfileEdit(false)" data-i18n="common.cancel" style="flex:1;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer">Cancel</button>
           </div>
         </div>
       </div>
@@ -521,6 +521,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.editAvatar':'Change','profile.editCover':'Change cover',
       'profile.displayName':'Display Name (max 50)','profile.bio':'Bio (max 280)',
       'profile.avatarUrl':'Avatar URL',
+      'profile.editProfile':'Edit Profile','profile.saveOk':'Profile saved',
+      'profile.saveFailed':'Save failed: {error}','profile.tooLong':'Too long: please shorten before saving',
       // delete account
       'delete.prompt':'Delete account permanently?\n\nAll posts, follows and settings will be deleted. This action cannot be undone.\n\nType "DELETE" to confirm:',
       'delete.keyword':'DELETE',
@@ -599,6 +601,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.editAvatar':'Ändern','profile.editCover':'Cover ändern',
       'profile.displayName':'Anzeigename (max. 50)','profile.bio':'Bio (max. 280)',
       'profile.avatarUrl':'Avatar-URL',
+      'profile.editProfile':'Profil bearbeiten','profile.saveOk':'Profil gespeichert',
+      'profile.saveFailed':'Speichern fehlgeschlagen: {error}','profile.tooLong':'Zu lang — bitte kürzen vor dem Speichern',
       'delete.prompt':'Konto endgültig löschen?\n\nAlle Posts, Follows und Einstellungen werden gelöscht. Diese Aktion ist unwiderruflich.\n\nTippe "LÖSCHEN" zur Bestätigung:',
       'delete.keyword':'LÖSCHEN',
       'report.title':'Post melden','report.detailsPlaceholder':'Details (optional)','report.submit':'Melden',
@@ -1663,7 +1667,7 @@ function renderProfileHeader(u, own){
 
   var btn;
   if(own){
-    btn = '<button onclick="toggleProfileEdit(true)" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">Edit Profile</button>';
+    btn = '<button onclick="toggleProfileEdit(true)" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">'+window.t('profile.editProfile')+'</button>';
   }else if(localStorage.getItem('yeet_jwt')){
     btn = '<button id="followBtn" onclick="toggleFollowProfile()" data-follow="0" style="background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">Follow</button>';
   }else{ btn = ''; }
@@ -1783,17 +1787,34 @@ function closeProfile(){
   if(typeof loadFeed === 'function') loadFeed();
 }
 
+function updateProfileCounter(input, max){
+  if(!input) return;
+  var counter = document.getElementById('counter-' + (input.id === 'editBio' ? 'bio' : 'displayName'));
+  if(!counter) return;
+  var len = (input.value || '').length;
+  counter.textContent = len + '/' + max;
+  var ratio = len / max;
+  counter.style.color = len > max ? '#ff6666' : (ratio >= 0.9 ? '#f5a623' : 'var(--muted)');
+}
+
 function toggleProfileEdit(on){
   var f = document.getElementById('profileEditForm');
   if(f) f.style.display = on ? '' : 'none';
+  if(on){
+    var dn = document.getElementById('editDisplayName'); if(dn) updateProfileCounter(dn, 50);
+    var bio = document.getElementById('editBio'); if(bio) updateProfileCounter(bio, 280);
+  }
 }
 
 async function saveProfile(){
   var jwt = localStorage.getItem('yeet_jwt');
-  if(!jwt){ showToast('Not authenticated'); return; }
+  if(!jwt){ showToast(window.t('common.notLoggedIn')); return; }
+  var dnVal = document.getElementById('editDisplayName').value.trim();
+  var bioVal = document.getElementById('editBio').value.trim();
+  if(dnVal.length > 50 || bioVal.length > 280){ showToast(window.t('profile.tooLong')); return; }
   var body = {
-    display_name: document.getElementById('editDisplayName').value.trim() || null,
-    bio: document.getElementById('editBio').value.trim() || null,
+    display_name: dnVal || null,
+    bio: bioVal || null,
     avatar_url: document.getElementById('editAvatarUrl').value.trim() || null
   };
   try{
@@ -1803,11 +1824,11 @@ async function saveProfile(){
       body: JSON.stringify(body)
     });
     var d = await r.json();
-    if(!d.success){ showToast('Save failed: '+((d.error&&d.error.message)||'')); return; }
-    showToast('Profile saved');
+    if(!d.success){ showToast(window.t('profile.saveFailed', {error: (d.error&&d.error.message)||''})); return; }
+    showToast(window.t('profile.saveOk'));
     toggleProfileEdit(false);
     if(window._currentProfile) showProfile(window._currentProfile.address, window._currentProfile.own);
-  }catch(e){ showToast('Save error'); }
+  }catch(e){ showToast(window.t('common.networkError')); }
 }
 
 async function openFollowList(address, kind){
@@ -1877,6 +1898,7 @@ window.showProfile = showProfile;
 window.closeProfile = closeProfile;
 window.toggleProfileEdit = toggleProfileEdit;
 window.saveProfile = saveProfile;
+window.updateProfileCounter = updateProfileCounter;
 window.toggleFollowProfile = toggleFollowProfile;
 
 
