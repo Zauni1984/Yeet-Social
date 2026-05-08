@@ -36,13 +36,16 @@ jobs:
             set -e
             echo "[CD] $(date) — Starting deploy"
             DEPLOY_DIR=/root/yeet-social
-            mkdir -p $DEPLOY_DIR
+            HTML_DIR=/root/yeet-html
+            NGINX_CONF=/root/yeet-nginx.conf
+            mkdir -p $DEPLOY_DIR $HTML_DIR
 
-            # Pull latest configs
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml" -o $DEPLOY_DIR/docker-compose.yml
-            curl -sL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf" -o $DEPLOY_DIR/nginx.conf
+            REPO_RAW=https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main
 
-            # Ensure .env exists
+            curl -fsSL "$REPO_RAW/docker-compose.yml" -o $DEPLOY_DIR/docker-compose.yml
+            curl -fsSL "$REPO_RAW/nginx.conf"          -o $DEPLOY_DIR/nginx.conf
+            cp $DEPLOY_DIR/nginx.conf $NGINX_CONF
+
             if [ ! -f $DEPLOY_DIR/.env ]; then
               echo "ERROR: $DEPLOY_DIR/.env missing! Create it on the VPS first."
               exit 1
@@ -50,19 +53,20 @@ jobs:
 
             cd $DEPLOY_DIR
 
-            # Pull latest backend image
             docker pull ghcr.io/zauni1984/yeet-social/backend:main || true
-
-            # Start/update stack
             docker compose up -d --remove-orphans
 
-            # Sync frontend into named volume
-            docker run --rm -v yeet-social_frontend_data:/html alpine sh -c \
-              "wget -qO /html/index.html https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/frontend/index.html"
+            curl -fsSL "$REPO_RAW/frontend/index.html" -o $HTML_DIR/index.html.new
+            mv $HTML_DIR/index.html.new $HTML_DIR/index.html
+            ls -la $HTML_DIR/index.html
 
-            # Health check
-            sleep 15
+            docker exec yeet-nginx nginx -s reload || \
+              docker compose restart nginx
+
+            sleep 10
             STATUS=$(curl -sk http://127.0.0.1:8080/api/v1/health 2>/dev/null || echo "error")
-            echo "[CD] Health: $STATUS"
+            echo "[CD] Backend health: $STATUS"
+            FE_HEAD=$(curl -sI http://127.0.0.1/ 2>/dev/null | head -1 || echo "no-fe")
+            echo "[CD] Frontend HEAD: $FE_HEAD"
             docker ps --format "table {{.Names}}\t{{.Status}}"
             echo "[CD] Done: $(date)"
