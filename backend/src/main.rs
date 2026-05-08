@@ -127,6 +127,11 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/tips",             post(api::tips::send_tip))
         .route("/api/v1/tokens/balance",   get(api::tokens::get_balance))
         .route("/api/v1/tokens/rewards",   get(api::tokens::get_rewards))
+        // Paper wallets — printable YEET banknotes
+        .route("/api/v1/paper-wallets",          post(api::paper_wallets::create))
+        .route("/api/v1/paper-wallets",          get(api::paper_wallets::list_mine))
+        .route("/api/v1/paper-wallets/redeem",   post(api::paper_wallets::redeem))
+        .route("/api/v1/paper-wallets/:id/void", post(api::paper_wallets::void))
         // Allow base64-encoded images (5 MB * 4/3 ≈ 6.7 MB) in JSON bodies
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .layer(ServiceBuilder::new()
