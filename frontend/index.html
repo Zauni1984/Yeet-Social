@@ -1124,6 +1124,7 @@ async function onConnected(address,walletName,provider){
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
       showToast(' Signed in: '+walletName+' ('+short+')');
+      if(typeof showGlobalFeed === 'function') showGlobalFeed();
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -2766,6 +2767,10 @@ function showExternalLinkWarning(e,url){
     localStorage.setItem('yeetUser',JSON.stringify(user));
     if(wallet)localStorage.setItem('yeetWallet',wallet);
     _updateAuthUI(user,wallet);
+    // Refresh the gated UI so the user lands on the feed instead of the
+    // "please log in" placeholder.
+    if(typeof window.showGlobalFeed === 'function') window.showGlobalFeed();
+    else if(typeof window.loadFeed === 'function') window.loadFeed();
   }
 
   function _updateAuthUI(user,wallet){
