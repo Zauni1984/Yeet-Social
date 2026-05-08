@@ -167,7 +167,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="btnEUR" onclick="window.setCur && setCur('EUR')" class="cur-btn">EUR</button>
     </div>
   </div>
-  <div class="search"><input type="text" id="searchInput" placeholder="Search posts, users, tags..." autocomplete="off" name="search_q" onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
+  <div class="search"><input type="search" id="searchInput" placeholder="Search posts, users, tags..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" name="yeet_search" onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
