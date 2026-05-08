@@ -29,7 +29,8 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
 .tick .sym{color:var(--muted)}
 .up{color:var(--green)}.dn{color:var(--red)}
-nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;padding:0 16px;gap:12px;overflow:hidden}
+nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;display:flex;justify-content:center;padding:0 16px;overflow:hidden}
+.nav-inner{display:flex;align-items:center;gap:12px;width:100%;max-width:1200px}
 .logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:var(--yeet);text-decoration:none;flex-shrink:0}
 .logo svg{width:28px;height:28px}
 .search{flex:1;max-width:420px}
@@ -150,6 +151,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 
 <!-- NAV -->
 <nav>
+ <div class="nav-inner">
   <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
@@ -177,7 +179,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
       <button class="btn-login" onclick="doLogout()" id="disconnectBtn" style="font-size:10px;padding:3px 7px;white-space:nowrap;max-width:90px">&#9211;</button>
     </div>
-    
+ </div>
 </nav>
 
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
@@ -674,6 +676,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   document.addEventListener('DOMContentLoaded', function(){
     document.documentElement.setAttribute('lang', getLang());
     applyTranslations();
+    // Nuke browser autofill on the top search input. Chrome ignores
+    // autocomplete="off" on type=text/search and refills on load.
+    var si = document.getElementById('searchInput');
+    if(si){
+      var clr = function(){ if(si !== document.activeElement) si.value = ''; };
+      clr();
+      setTimeout(clr, 50);
+      setTimeout(clr, 250);
+      setTimeout(clr, 1000);
+    }
   });
 })();
 </script>
