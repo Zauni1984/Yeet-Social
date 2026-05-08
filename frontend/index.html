@@ -169,7 +169,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="btnEUR" onclick="window.setCur && setCur('EUR')" class="cur-btn">EUR</button>
     </div>
   </div>
-  <div class="search"><input type="search" id="searchInput" placeholder="Search posts, users, tags..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" onkeydown="if(event.key==='Enter')performSearch(this.value)"></div>
+  <div class="search">
+    <!-- decoy fields absorb autofill heuristics -->
+    <input type="text" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
+    <input type="password" name="password" autocomplete="current-password" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
+    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" onkeydown="if(event.key==='Enter')performSearch(this.value)">
+  </div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
