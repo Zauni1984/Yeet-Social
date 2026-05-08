@@ -530,6 +530,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.avatarUrl':'Avatar URL',
       'profile.editProfile':'Edit Profile','profile.saveOk':'Profile saved',
       'profile.saveFailed':'Save failed: {error}','profile.tooLong':'Too long: please shorten before saving',
+      'profile.follow':'Follow','profile.unfollow':'Unfollow',
+      // tip modal
+      'tip.title':'Tip YEET Tokens','tip.subtitle':'Support this post with YEET tokens',
+      'tip.quickSelect':'Quick select:','tip.orEnter':'Or enter amount:','tip.customPlaceholder':'Custom amount...',
+      'tip.send':'Send Tip','tip.sending':'Sending...','tip.notLogged':'Please login to tip',
+      'tip.selectAmount':'Please select an amount','tip.sentAmount':'Sent {amount} YEET!',
+      'tip.failed':'Tip failed',
+      // link preview / posts / wallet
+      'link.loading':'Loading preview...',
+      'post.deleteConfirm':'Delete this Yeet?','post.deleted':'Yeet deleted','post.deleteFailed':'Delete failed: {status}',
+      'wallet.comingSoon':'WalletConnect coming soon',
       // delete account
       'delete.prompt':'Delete account permanently?\n\nAll posts, follows and settings will be deleted. This action cannot be undone.\n\nType "DELETE" to confirm:',
       'delete.keyword':'DELETE',
@@ -610,6 +621,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.avatarUrl':'Avatar-URL',
       'profile.editProfile':'Profil bearbeiten','profile.saveOk':'Profil gespeichert',
       'profile.saveFailed':'Speichern fehlgeschlagen: {error}','profile.tooLong':'Zu lang — bitte kürzen vor dem Speichern',
+      'profile.follow':'Folgen','profile.unfollow':'Entfolgen',
+      'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
+      'tip.quickSelect':'Schnellauswahl:','tip.orEnter':'Oder Betrag eingeben:','tip.customPlaceholder':'Eigener Betrag...',
+      'tip.send':'Tip senden','tip.sending':'Senden...','tip.notLogged':'Bitte einloggen, um zu tippen',
+      'tip.selectAmount':'Bitte wähle einen Betrag','tip.sentAmount':'{amount} YEET gesendet!',
+      'tip.failed':'Tip fehlgeschlagen',
+      'link.loading':'Vorschau wird geladen...',
+      'post.deleteConfirm':'Diesen Yeet löschen?','post.deleted':'Yeet gelöscht','post.deleteFailed':'Löschen fehlgeschlagen: {status}',
+      'wallet.comingSoon':'WalletConnect kommt bald',
       'delete.prompt':'Konto endgültig löschen?\n\nAlle Posts, Follows und Einstellungen werden gelöscht. Diese Aktion ist unwiderruflich.\n\nTippe "LÖSCHEN" zur Bestätigung:',
       'delete.keyword':'LÖSCHEN',
       'report.title':'Post melden','report.detailsPlaceholder':'Details (optional)','report.submit':'Melden',
@@ -902,7 +922,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+authorAddr+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+authorAddr+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML='<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -1159,12 +1179,12 @@ async function sendTip(){
 }
 
 async function deletePost(id){
-  if(!confirm('Delete this Yeet?'))return;
+  if(!confirm(window.t('post.deleteConfirm')))return;
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt)return;
   const r=await fetch('/api/v1/posts/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
-  if(r.ok){showToast('Yeet deleted');loadFeed();}
-  else showToast('Delete failed: '+r.status);
+  if(r.ok){showToast(window.t('post.deleted'));loadFeed();}
+  else showToast(window.t('post.deleteFailed', {status: r.status}));
 }
 function openWebboardsModal(){document.getElementById('webboardsModal').classList.add('on');}
 function closeWebboardsModal(e){if(!e||e.target===document.getElementById('webboardsModal'))document.getElementById('webboardsModal').classList.remove('on');}
@@ -1465,7 +1485,7 @@ function loadFeedFiltered(filter){
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
           const el=document.createElement('div');
           el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+authorAddr+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+authorAddr+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull;  '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+renderMediaUrl(p)+'</div>';
+          el.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull;  '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+renderMediaUrl(p)+'</div>';
           wrap.appendChild(el);
         }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
@@ -1604,6 +1624,9 @@ window._currentProfile = null; // {address, own}
 
 function _shortAddr(a){ return a ? (a.length>12 ? a.slice(0,6)+'...'+a.slice(-4) : a) : ''; }
 function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Escape a value for embedding inside a single-quoted JS string literal
+// that lives inside an HTML attribute (e.g. onclick="foo('...')").
+function _jsq(s){ return String(s||'').replace(/[\\'"<>]/g, function(c){ return '\\x'+c.charCodeAt(0).toString(16).padStart(2,'0'); }); }
 function _avatarInner(author){
   var url = author && author.avatar_url;
   if(url) return '<img src="'+_esc(url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
@@ -1686,7 +1709,7 @@ function renderProfileHeader(u, own){
   if(own){
     btn = '<button onclick="toggleProfileEdit(true)" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">'+window.t('profile.editProfile')+'</button>';
   }else if(localStorage.getItem('yeet_jwt')){
-    btn = '<button id="followBtn" onclick="toggleFollowProfile()" data-follow="0" style="background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">Follow</button>';
+    btn = '<button id="followBtn" onclick="toggleFollowProfile()" data-follow="0" style="background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">'+window.t('profile.follow')+'</button>';
   }else{ btn = ''; }
 
   document.getElementById('profileHeaderName').textContent = u.display_name || short || 'Profile';
@@ -1750,7 +1773,7 @@ async function loadUserPosts(address){
       var tipBtnHtml = isOwnProfile ? '' : '<button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button>';
       var el = document.createElement('div');
       el.style.cssText = 'padding:16px 20px;border-bottom:1px solid var(--border)';
-      el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+authorAddr+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+authorAddr+'\')" style="font-size:14px;cursor:pointer">'+_esc(short)+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago'+(hrs?' &bull; '+hrs+'h':'')+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'')+(p.is_permanent?' &bull; <span style="color:#c6f135">Permanent</span>':'')+'</div></div></div>'
+      el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+_esc(short)+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago'+(hrs?' &bull; '+hrs+'h':'')+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'')+(p.is_permanent?' &bull; <span style="color:#c6f135">Permanent</span>':'')+'</div></div></div>'
         + '<div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+txt+renderMediaUrl(p)+'</div>'
         + '<div class="post-actions" style="display:flex;align-items:center;position:relative">'
           + '<button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button>'
@@ -1892,9 +1915,10 @@ window.closeFollowList = closeFollowList;
 
 async function toggleFollowProfile(){
   var jwt = localStorage.getItem('yeet_jwt');
-  if(!jwt){ showToast('Connect wallet first'); return; }
+  if(!jwt){ showToast(window.t('common.notLoggedIn')); return; }
   var p = window._currentProfile;
   if(!p) return;
+  if(p.own){ showToast(window.t('toast.cantFollowSelf')); return; }
   var btn = document.getElementById('followBtn');
   var isFollowing = btn && btn.dataset.follow === '1';
   var method = 'POST';
@@ -1921,7 +1945,7 @@ window.toggleFollowProfile = toggleFollowProfile;
 
 function loadLinkPreview(url, container) {
   // Show skeleton first
-  container.innerHTML = '<div style="border:1px solid #2a2a2a;border-radius:12px;padding:12px;background:#0d0d0d;display:flex;align-items:center;gap:8px"><span style="color:#555;font-size:12px">&#128279; Lade Vorschau...</span></div>';
+  container.innerHTML = '<div style="border:1px solid #2a2a2a;border-radius:12px;padding:12px;background:#0d0d0d;display:flex;align-items:center;gap:8px"><span style="color:#555;font-size:12px">&#128279; '+window.t('link.loading')+'</span></div>';
   fetch('/api/v1/link-preview?url=' + encodeURIComponent(url))
     .then(function(r){ return r.json(); })
     .then(function(data){
@@ -2477,7 +2501,7 @@ function showExternalLinkWarning(e,url){
     <button class="atab" id="atReg" onclick="switchAuthTab('register')">Register</button>
   </div>
   <button class="wbtn" onclick="connectMetaMaskAuth()">&#129418; MetaMask</button>
-  <button class="wbtn" onclick="alert('WalletConnect coming soon')">&#128279; WalletConnect</button>
+  <button class="wbtn" onclick="window.showToast(window.t('wallet.comingSoon'))">&#128279; WalletConnect</button>
   <div class="or-div">or use email</div>
   <div id="mErr" class="merr"></div>
   <div id="mOk" class="mok"></div>
@@ -3002,16 +3026,16 @@ function _tipPick(btn,amount){
 <script>
 function openTipModal(postId,toAddr){
   var jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt){alert('Please login to tip');return;}
+  if(!jwt){window.showToast(window.t('tip.notLogged'));return;}
   var old=document.getElementById('_tipOv');if(old)old.remove();
   window._tipSelected=1;window._tipPostId=postId;window._tipToAddr=toAddr;
   var ov=document.createElement('div');ov.id='_tipOv';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center';
   var box=document.createElement('div');
   box.style.cssText='background:#111;border:1px solid #333;border-radius:16px;padding:24px;width:340px;max-width:92vw';
-  var h3=document.createElement('h3');h3.style.cssText='margin:0 0 6px;color:#fff;font-size:18px';h3.textContent=' Tip YEET Tokens';box.appendChild(h3);
-  var p1=document.createElement('p');p1.style.cssText='color:#888;font-size:13px;margin:0 0 16px';p1.textContent='Support this post with YEET tokens';box.appendChild(p1);
-  var p2=document.createElement('p');p2.style.cssText='color:#888;font-size:12px;margin:0 0 8px';p2.textContent='Quick select:';box.appendChild(p2);
+  var h3=document.createElement('h3');h3.style.cssText='margin:0 0 6px;color:#fff;font-size:18px';h3.textContent='🎁 '+window.t('tip.title');box.appendChild(h3);
+  var p1=document.createElement('p');p1.style.cssText='color:#888;font-size:13px;margin:0 0 16px';p1.textContent=window.t('tip.subtitle');box.appendChild(p1);
+  var p2=document.createElement('p');p2.style.cssText='color:#888;font-size:12px;margin:0 0 8px';p2.textContent=window.t('tip.quickSelect');box.appendChild(p2);
   var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;margin-bottom:16px';
   [1,3,5,10].forEach(function(amt,i){
     var b=document.createElement('button');
@@ -3026,20 +3050,20 @@ function openTipModal(postId,toAddr){
     row.appendChild(b);
   });
   box.appendChild(row);
-  var p3=document.createElement('p');p3.style.cssText='color:#888;font-size:12px;margin:0 0 6px';p3.textContent='Or enter amount:';box.appendChild(p3);
+  var p3=document.createElement('p');p3.style.cssText='color:#888;font-size:12px;margin:0 0 6px';p3.textContent=window.t('tip.orEnter');box.appendChild(p3);
   var inp=document.createElement('input');
-  inp.type='number';inp.min='0.1';inp.step='0.1';inp.placeholder='Custom amount...';
+  inp.type='number';inp.min='0.1';inp.step='0.1';inp.placeholder=window.t('tip.customPlaceholder');
   inp.style.cssText='width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:16px';
   inp.oninput=function(){window._tipSelected=parseFloat(inp.value)||0;row.querySelectorAll('button').forEach(function(x){x.style.borderColor='#333';});};
   box.appendChild(inp);
   var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:10px';
   var sendBtn=document.createElement('button');
   sendBtn.style.cssText='flex:1;padding:12px;background:#c8ff00;color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer';
-  sendBtn.textContent=' Send Tip';
+  sendBtn.textContent=window.t('tip.send');
   sendBtn.onclick=function(){_doTip(window._tipPostId,window._tipToAddr);};
   var cancelBtn=document.createElement('button');
   cancelBtn.style.cssText='padding:12px 18px;background:#1a1a1a;color:#888;border:1px solid #333;border-radius:10px;font-size:14px;cursor:pointer';
-  cancelBtn.textContent='Cancel';
+  cancelBtn.textContent=window.t('common.cancel');
   cancelBtn.onclick=function(){ov.remove();};
   btnRow.appendChild(sendBtn);btnRow.appendChild(cancelBtn);box.appendChild(btnRow);
   ov.appendChild(box);
@@ -3047,7 +3071,7 @@ function openTipModal(postId,toAddr){
   document.body.appendChild(ov);
 }
 
-async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast('Please log in to send tips','error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast('Please select an amount','error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent='Sending...';}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast('Sent '+amt+' YEET!','success');if(ov)ov.remove();window._tipSelected=0;}else{showToast('Error: '+(res.d.error&&res.d.error.message||res.d.message||'Tip failed'),'error');if(btn){btn.disabled=false;btn.textContent='Send Tip';}}}).catch(function(){showToast('Network error','error');if(btn){btn.disabled=false;btn.textContent='Send Tip';}});}
+async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast(window.t('tip.notLogged'),'error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast(window.t('tip.selectAmount'),'error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent=window.t('tip.sending');}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast(window.t('tip.sentAmount',{amount:amt}),'success');if(ov)ov.remove();window._tipSelected=0;}else{showToast(window.t('common.error')+': '+(res.d.error&&res.d.error.message||res.d.message||window.t('tip.failed')),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}}}).catch(function(){showToast(window.t('common.networkError'),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}});}
 </script>
 </body>
 </html>
