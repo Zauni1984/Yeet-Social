@@ -151,6 +151,33 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 
 /* ticker removed */
 
+.site-footer{margin-top:40px;padding:24px 16px;border-top:1px solid var(--border);background:#080808;color:var(--muted);font-size:12px}
+.site-footer-inner{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;max-width:1400px;margin:0 auto}
+.site-footer-links a{color:var(--muted);text-decoration:none;margin-right:14px}
+.site-footer-links a:hover{color:var(--yeet);text-decoration:underline}
+.site-footer .copy{color:#666;font-size:11px}
+@media(max-width:600px){.site-footer-links a{display:inline-block;margin:4px 10px 4px 0}}
+
+.legal-page{display:none;position:fixed;inset:0;z-index:300;background:#080808;color:var(--text);overflow-y:auto;padding:24px;line-height:1.65;font-size:14px}
+.legal-page.on{display:block}
+.legal-page-inner{max-width:780px;margin:0 auto;padding:32px 8px 80px}
+.legal-page h1{color:var(--yeet);font-size:28px;margin:0 0 8px;font-weight:800}
+.legal-page h2{color:var(--text);font-size:18px;margin:24px 0 8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px}
+.legal-page h3{color:var(--text);font-size:15px;margin:18px 0 6px;font-weight:700}
+.legal-page p{margin:0 0 12px;color:#cccccc}
+.legal-page ul,.legal-page ol{margin:0 0 12px;padding-left:22px;color:#cccccc}
+.legal-page li{margin-bottom:4px}
+.legal-page table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+.legal-page th,.legal-page td{border:1px solid var(--border);padding:6px 10px;vertical-align:top;text-align:left}
+.legal-page th{background:#1a1a1a;color:var(--yeet);font-weight:700}
+.legal-page .legal-back{display:inline-flex;align-items:center;gap:6px;color:var(--yeet);background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;margin-bottom:18px}
+.legal-page .legal-back:hover{border-color:var(--yeet)}
+.legal-page .legal-meta{color:var(--muted);font-size:12px;margin:0 0 18px;font-style:italic}
+.legal-page article{display:none}
+.legal-page article.on{display:block}
+.legal-page address{font-style:normal;background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:0 0 12px;font-family:monospace;font-size:13px;color:#dddddd;white-space:pre-wrap}
+.legal-page strong{color:#fff}
+
 </style>
 </head>
 <body>
@@ -3550,5 +3577,420 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
   };
 })();
 </script>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div class="site-footer-links">
+      <a href="/legal/imprint" data-legal="imprint">Imprint</a>
+      <a href="/legal/privacy" data-legal="privacy">Privacy Policy</a>
+      <a href="/legal/terms" data-legal="terms">Terms of Service</a>
+      <a href="/legal/cookies" data-legal="cookies">Cookies</a>
+      <a href="/legal/disclaimer" data-legal="disclaimer">Disclaimer</a>
+    </div>
+    <div class="copy">&copy; 2026 BlockSocial UG (haftungsbeschr&auml;nkt) &middot; Beilngries, Germany</div>
+  </div>
+</footer>
+
+<div class="legal-page" id="legalPage" role="region" aria-label="Legal information">
+  <div class="legal-page-inner">
+    <button class="legal-back" onclick="closeLegalPage()" type="button">&larr; Back to YEET Social</button>
+
+    <article id="legal-imprint">
+      <h1>Imprint</h1>
+      <p class="legal-meta">Information pursuant to Section 5 of the German Telemedia Act (TMG) and Section 18 (2) of the German State Media Treaty (MStV).</p>
+
+      <h2>Operator</h2>
+      <address>BlockSocial UG (haftungsbeschr&auml;nkt)
+Kratzm&uuml;hlstr. 14
+92339 Beilngries
+Germany
+
+Phone: +49 176 8327 5353
+Email: info@blocksocial.eu</address>
+
+      <h2>Managing directors</h2>
+      <p>Alexandre Ederer, Stefan Zaunreither</p>
+
+      <h2>Commercial register</h2>
+      <p>Amtsgericht Ingolstadt, registration number HRB 11740.</p>
+
+      <h2>VAT identification number</h2>
+      <p>According to Section 27 a of the German Value Added Tax Act: <strong>DE354082556</strong>.</p>
+
+      <h2>Responsible for editorial content</h2>
+      <p>Pursuant to Section 18 (2) MStV, responsible for journalistic-editorial content: Alexandre Ederer and Stefan Zaunreither, address as stated above.</p>
+
+      <h2>Online dispute resolution</h2>
+      <p>The European Commission provides a platform for online dispute resolution available at <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a>.</p>
+
+      <h2>Consumer dispute resolution</h2>
+      <p>We are neither willing nor obliged to participate in dispute-resolution proceedings before a consumer arbitration board.</p>
+
+      <h2>Liability for content</h2>
+      <p>The contents of these pages have been created with the greatest care. We cannot, however, guarantee that the contents are accurate, complete and up to date. As a service provider we are responsible for our own content on these pages in accordance with general law and Section 7 (1) TMG. Pursuant to Sections 8 to 10 TMG, we are not obliged as a service provider to monitor transmitted or stored third-party information or to investigate circumstances that indicate illegal activity. Obligations to remove or block the use of information under general law remain unaffected. Liability in this regard is, however, only possible from the moment we become aware of a specific infringement. As soon as we become aware of any such infringement, we will remove the relevant content immediately.</p>
+
+      <h2>Liability for links</h2>
+      <p>Our website contains links to external third-party websites whose content we have no influence over. We therefore cannot accept any liability for this third-party content. The respective provider or operator of the linked pages is always responsible for their content. Linked pages were checked for possible legal violations at the time of linking; illegal content was not recognisable. Permanent monitoring of the content of linked pages is not reasonable without concrete evidence of an infringement. As soon as we become aware of any infringement, we will remove the link immediately.</p>
+
+      <h2>Copyright</h2>
+      <p>The content and works on these pages created by the operator are subject to German copyright law. Duplication, processing, distribution and any kind of exploitation outside the limits of copyright law require the written consent of the respective author or creator. Downloads and copies of this site are only permitted for private, non-commercial use. Insofar as content was not created by the operator, the copyrights of third parties are respected and identified as such.</p>
+    </article>
+
+    <article id="legal-privacy">
+      <h1>Privacy Policy</h1>
+      <p class="legal-meta">Last updated: 8 May 2026.</p>
+
+      <h2>1. Controller</h2>
+      <p>The controller within the meaning of Article 4 (7) of the General Data Protection Regulation (GDPR) is:</p>
+      <address>BlockSocial UG (haftungsbeschr&auml;nkt)
+Kratzm&uuml;hlstr. 14
+92339 Beilngries, Germany
+Email: info@blocksocial.eu
+Phone: +49 176 8327 5353</address>
+
+      <h2>2. Data Protection Officer</h2>
+      <p>We have appointed a data protection officer:</p>
+      <address>Stefan Zaunreither
+c/o BlockSocial UG (haftungsbeschr&auml;nkt), address as above
+Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
+
+      <h2>3. Scope</h2>
+      <p>This policy applies to the YEET Social platform accessible at justyeet.it (the &ldquo;Service&rdquo;), our smart contracts deployed on the BNB Smart Chain, and any related sub-domains.</p>
+
+      <h2>4. Categories of personal data we process</h2>
+
+      <h3>4.1 Account data</h3>
+      <ul>
+        <li>Email address (only if you register with email)</li>
+        <li>Username and display name</li>
+        <li>Password hash (bcrypt &mdash; we never see your plaintext password)</li>
+        <li>Public Ethereum-style wallet address (if you sign in with a wallet)</li>
+        <li>Email verification status</li>
+      </ul>
+
+      <h3>4.2 Profile data</h3>
+      <ul>
+        <li>Display name (optional)</li>
+        <li>Biography (optional)</li>
+        <li>Avatar image (optional, uploaded to our servers)</li>
+        <li>Cover image (optional, uploaded to our servers)</li>
+      </ul>
+
+      <h3>4.3 Content data</h3>
+      <ul>
+        <li>Posts (&ldquo;Yeets&rdquo;) you create &mdash; text, attached images, visibility settings, content flags (e.g.&nbsp;18+), pay-per-view price, and timestamps</li>
+        <li>Comments, likes, and reshares</li>
+        <li>Reports you submit about other content</li>
+        <li>Notifications received from the Service</li>
+        <li>Following relationships with other users</li>
+      </ul>
+
+      <h3>4.4 Transactional data</h3>
+      <ul>
+        <li>Tip records (sender, recipient, amount, currency, timestamp, optional post reference)</li>
+        <li>Paper-wallet records (issuer, amount, status, hash of the claim secret, timestamps)</li>
+        <li>NFT minting events</li>
+        <li>Pay-per-view unlocks</li>
+      </ul>
+
+      <h3>4.5 Technical data</h3>
+      <ul>
+        <li>IP address (briefly, for rate-limiting and abuse detection)</li>
+        <li>Browser/user-agent metadata (briefly, in server logs)</li>
+        <li>JSON Web Tokens (JWT) stored in your browser&rsquo;s localStorage</li>
+        <li>Language and content preferences</li>
+      </ul>
+
+      <h3>4.6 Age-verification data</h3>
+      <p>If you choose to access 18+ content, we process biometric data (a one-time face image used to estimate your age via an automated process). The image is processed in-session; only the result &mdash; a &ldquo;verified &ge;&nbsp;18&rdquo; flag against your account &mdash; is retained. This processing requires your explicit consent under Article 9 (2) (a) GDPR.</p>
+
+      <h2>5. Purposes and legal bases for processing</h2>
+      <ul>
+        <li><strong>Operating your account and providing the Service.</strong> Legal basis: Article 6 (1) (b) GDPR &mdash; performance of a contract.</li>
+        <li><strong>Email verification, password reset, transactional notifications.</strong> Legal basis: Article 6 (1) (b) GDPR.</li>
+        <li><strong>Wallet-based authentication.</strong> Legal basis: Article 6 (1) (b) GDPR. We verify possession of a private key by asking you to sign a one-time challenge. We never receive your private key.</li>
+        <li><strong>Age verification for 18+ content.</strong> Legal basis: Article 6 (1) (c) GDPR (legal obligation under the German Youth Protection Act, JuSchG) in combination with Article 9 (2) (a) GDPR (your explicit consent for biometric data).</li>
+        <li><strong>Security, fraud prevention, abuse mitigation.</strong> Legal basis: Article 6 (1) (f) GDPR &mdash; our legitimate interest in keeping the Service safe and stable.</li>
+        <li><strong>Improving and analysing the Service.</strong> Legal basis: Article 6 (1) (f) GDPR. We use only minimal, aggregated data and do not sell or share your personal data with advertisers.</li>
+      </ul>
+
+      <h2>6. Cookies and similar technologies</h2>
+      <p>We use no third-party tracking cookies, advertising pixels, or analytics packages. The Service uses your browser&rsquo;s localStorage and sessionStorage for the items listed in our <a href="/legal/cookies" data-legal="cookies">Cookie Policy</a>. These are strictly necessary for the operation of the Service (Section 25 (2) (2) of the German Telecommunications Telemedia Data Protection Act, TTDSG) and do not require consent.</p>
+
+      <h2>7. Recipients and processors</h2>
+      <h3>7.1 Hosting</h3>
+      <p>The Service is hosted on a server within the European Union (provider: Hostinger International Ltd., EU data centre).</p>
+
+      <h3>7.2 Email delivery</h3>
+      <p>For transactional email (e.g. verification) we use an SMTP provider configured by us. The current provider operates within the EU.</p>
+
+      <h3>7.3 Public blockchain (BNB Smart Chain)</h3>
+      <p>On-chain actions you initiate &mdash; tipping with on-chain confirmation, NFT minting, smart-contract interaction &mdash; produce records that are stored on the BNB Smart Chain. <strong>These records are public, replicated globally on countless nodes, and cannot be modified or deleted by us or by any single party.</strong> By using on-chain features, you accept that your wallet address and the associated transaction details are permanently public. This is an unavoidable property of blockchain technology.</p>
+
+      <h3>7.4 Content delivery networks</h3>
+      <p>The Service loads small JavaScript libraries from public CDNs (currently cdnjs.cloudflare.com) on initial page load. As a side-effect of any HTTP request, your IP address may be visible to these providers. We choose providers with stated GDPR compliance; we do not control their privacy practices in detail.</p>
+
+      <h3>7.5 Law enforcement</h3>
+      <p>We disclose data only when legally compelled (court order, statutory obligation).</p>
+
+      <h2>8. International transfers</h2>
+      <p>Personal data we hold is stored within the European Union. Where unavoidable (e.g. CDNs), we rely on the providers&rsquo; Standard Contractual Clauses or equivalent transfer mechanisms recognised under Chapter V GDPR.</p>
+
+      <h2>9. Storage period</h2>
+      <ul>
+        <li>Posts marked &ldquo;ephemeral&rdquo; (the default): automatically deleted from the database 24&nbsp;hours after creation.</li>
+        <li>Posts marked &ldquo;permanent&rdquo;: stored until you delete them or your account.</li>
+        <li>Comments / likes / reshares: stored alongside the parent post; deleted when the parent post is deleted, or when you delete them.</li>
+        <li>Account data: stored until you delete your account.</li>
+        <li>Tip records and paper-wallet records: retained for up to ten years to satisfy German commercial and tax retention obligations (HGB, AO).</li>
+        <li>Server access logs: rotated and purged after 14&nbsp;days.</li>
+        <li>Age-verification result flag: stored for as long as your account exists.</li>
+      </ul>
+
+      <h2>10. Your rights as a data subject</h2>
+      <p>Under the GDPR you have the following rights:</p>
+      <ul>
+        <li><strong>Access (Art. 15)</strong> &mdash; request a copy of the personal data we hold about you. The Service offers a one-click export under Settings &rarr; Privacy &rarr; &ldquo;Export my data&rdquo;.</li>
+        <li><strong>Rectification (Art. 16)</strong> &mdash; correct inaccurate data via your profile settings or by contacting us.</li>
+        <li><strong>Erasure (Art. 17)</strong> &mdash; request deletion of your account and associated data via Settings &rarr; Privacy &rarr; &ldquo;Delete account permanently&rdquo;. <strong>Records on the public blockchain cannot be deleted</strong> (see&nbsp;&sect;&nbsp;7.3).</li>
+        <li><strong>Restriction of processing (Art. 18)</strong>.</li>
+        <li><strong>Data portability (Art. 20)</strong> &mdash; receive your data in a structured, machine-readable format (JSON).</li>
+        <li><strong>Objection (Art. 21)</strong> &mdash; to processing based on Art. 6 (1) (f).</li>
+        <li><strong>Withdraw consent (Art. 7 (3))</strong> &mdash; at any time, without affecting the lawfulness of past processing.</li>
+        <li><strong>Complaint with a supervisory authority (Art. 77)</strong> &mdash; for our location, this is the Bayerisches Landesamt f&uuml;r Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach, Germany, <a href="https://www.lda.bayern.de" target="_blank" rel="noopener">www.lda.bayern.de</a>.</li>
+      </ul>
+      <p>To exercise any of these rights, email info@blocksocial.eu. We respond within one month (Art. 12 (3) GDPR).</p>
+
+      <h2>11. Automated decision-making</h2>
+      <p>We do not engage in automated decision-making with legal or similarly significant effects (Art. 22 GDPR), with the exception of the optional age-verification check, which exists to comply with German youth-protection law and which you may decline (in which case you cannot access 18+ content).</p>
+
+      <h2>12. Changes to this policy</h2>
+      <p>We may revise this policy. The current version, including the date last updated, is always available at this URL. Material changes will be highlighted in-app.</p>
+
+      <h2>13. Contact</h2>
+      <p>For any privacy question, please email info@blocksocial.eu (subject &ldquo;Privacy&rdquo;) or write to the address listed in&nbsp;&sect;&nbsp;1.</p>
+    </article>
+
+    <article id="legal-terms">
+      <h1>Terms of Service</h1>
+      <p class="legal-meta">Last updated: 8 May 2026.</p>
+      <p>These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the YEET Social platform operated by BlockSocial UG (haftungsbeschr&auml;nkt) (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;BlockSocial&rdquo;). By creating an account, signing in with a wallet, or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.</p>
+
+      <h2>1. The Service</h2>
+      <p>YEET Social is a Web3-native social-media platform that combines short-form posts, on-chain creator tipping, NFT minting, paper wallets and other blockchain-related features. Some content is ephemeral and automatically deleted after 24&nbsp;hours by default; some can be flagged as &ldquo;permanent&rdquo;. Token-related features use the YEET token deployed on the BNB Smart Chain or a custodial off-chain ledger maintained by us.</p>
+
+      <h2>2. Eligibility</h2>
+      <p>You must be at least 16&nbsp;years old to create an account. To access content marked 18+, you must be at least 18 and complete our age-verification flow. By using the Service you represent that you meet these requirements and that your use of the Service is lawful where you reside.</p>
+
+      <h2>3. Account registration and security</h2>
+      <ul>
+        <li>You may register with an email address and password, or sign in by signing a challenge with a self-custodial cryptocurrency wallet you control.</li>
+        <li>You are responsible for keeping your account credentials, password, and wallet private keys secret. We have no way to recover lost private keys, lost seed phrases, or lost paper-wallet claim codes.</li>
+        <li>You must provide accurate information when registering and keep it up to date.</li>
+        <li>You may not maintain multiple accounts to evade suspensions, manipulate tips/reactions, or otherwise circumvent these Terms.</li>
+      </ul>
+
+      <h2>4. Your content</h2>
+      <p>You retain all rights in content you post (the &ldquo;User Content&rdquo;). By posting, you grant BlockSocial a worldwide, non-exclusive, royalty-free, sub-licensable, transferable licence to host, store, reproduce, modify (e.g. resize/transcode), publish, publicly perform, and publicly display the User Content, solely for the limited purposes of operating, displaying, and improving the Service. The licence ends a reasonable time after you delete the User Content, except as needed (i)&nbsp;to comply with law, (ii)&nbsp;to maintain backups, or (iii)&nbsp;to maintain on-chain records that cannot be removed.</p>
+      <p>You represent and warrant that you have all rights necessary to grant the licence above.</p>
+
+      <h2>5. Acceptable use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>post content that is illegal, defamatory, harassing, obscene as a matter of law, exploitative of minors, infringes intellectual property, or violates third-party privacy rights;</li>
+        <li>impersonate any person or entity, or misrepresent your affiliation;</li>
+        <li>use the Service to send spam, malware, or fraudulent communications;</li>
+        <li>attempt to access accounts, data, or smart-contract privileges that are not yours;</li>
+        <li>interfere with or circumvent rate limits, anti-abuse measures, or security features;</li>
+        <li>scrape or crawl the Service in a way inconsistent with these Terms or with our <code>robots.txt</code>;</li>
+        <li>offer or solicit paid services that are illegal in either party&rsquo;s jurisdiction;</li>
+        <li>use the Service to launder money, finance terrorism, or evade sanctions.</li>
+      </ul>
+      <p>We may, at our sole discretion, remove content, restrict features, suspend, or terminate accounts that violate these rules.</p>
+
+      <h2>6. Tipping, paper wallets and on-chain features</h2>
+      <ul>
+        <li>The YEET token is a utility token used inside the Service. Tipping, paper wallets, NFT minting and pay-per-view unlocking can be performed off-chain (via our internal ledger) or on-chain (via smart contracts on the BNB Smart Chain). Off-chain balances reflect a custodial liability of BlockSocial UG.</li>
+        <li><strong>Platform fee:</strong> a platform fee of up to 10&nbsp;% of each tip is collected to fund the operation of the Service. The exact rate is displayed before you confirm any transaction.</li>
+        <li><strong>No financial advice:</strong> nothing on the Service constitutes investment advice, a recommendation to buy or sell any token, or an offer of securities.</li>
+        <li><strong>No guarantee of value:</strong> tokens may lose all value. Past performance is not indicative of future returns.</li>
+        <li><strong>Irreversibility:</strong> on-chain transactions cannot be reversed by us once broadcast. Mistakes &mdash; wrong addresses, wrong amounts, lost keys &mdash; are permanent.</li>
+        <li><strong>Paper wallets are bearer instruments.</strong> Whoever holds the printed claim code can redeem the tokens. Treat them like cash. Unclaimed paper wallets can be voided by the issuer to refund the locked balance; once redeemed, the operation is final.</li>
+      </ul>
+
+      <h2>7. NFTs</h2>
+      <p>NFTs minted via the Service exist on the BNB Smart Chain. Ownership of an NFT does not by itself convey copyright in the underlying media; it conveys only what the relevant smart contract provides. We are not the operator of the BNB Smart Chain and have no power to alter, freeze, or roll back on-chain state.</p>
+
+      <h2>8. 18+ content</h2>
+      <p>The Service may display content suitable only for adults. Such content is gated behind an explicit toggle and an age-verification check (see Privacy Policy &sect;&nbsp;4.6 and &sect;&nbsp;5). It is your responsibility not to display such content where it is unlawful or where minors may see it.</p>
+
+      <h2>9. Reporting and moderation</h2>
+      <p>You can report content that you believe violates these Terms or applicable law via the in-app report feature. We review reports in good faith but make no commitment as to response time. We act as a hosting provider within the meaning of &sect;&sect;&nbsp;7&ndash;10 TMG and act on reports as legally required.</p>
+
+      <h2>10. Termination</h2>
+      <p>You may delete your account at any time. We may suspend or terminate your access immediately if we reasonably believe you have violated these Terms or applicable law, or if continuing to provide the Service to you would expose us to legal risk. Sections that by their nature survive (e.g. licence over already-published content, liability limits, governing law) remain in force after termination.</p>
+
+      <h2>11. Disclaimer of warranties</h2>
+      <p>The Service is provided &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranties of any kind, whether express or implied, including but not limited to merchantability, fitness for a particular purpose, non-infringement, or that the Service will be uninterrupted or error-free. To the extent we cannot disclaim warranties under applicable law, the duration of any implied warranty is limited to the minimum period allowed.</p>
+
+      <h2>12. Limitation of liability</h2>
+      <ul>
+        <li>BlockSocial is liable without limitation for damages caused intentionally or by gross negligence, for damages from injury to life, body or health, and where liability is mandatory under the German Product Liability Act (Produkthaftungsgesetz).</li>
+        <li>In all other cases, BlockSocial is liable only for breach of essential contractual obligations (&ldquo;Kardinalpflichten&rdquo;), and that liability is limited to foreseeable damages typical for this type of contract.</li>
+        <li>BlockSocial is not liable for: (i)&nbsp;loss or theft of your private keys or paper-wallet codes; (ii)&nbsp;on-chain transaction reversals or counter-party failures; (iii)&nbsp;volatility or loss of market value of any token; (iv)&nbsp;third-party services or content; (v)&nbsp;force-majeure events including blockchain network outages, exchange failures or regulatory action.</li>
+      </ul>
+
+      <h2>13. Indemnification</h2>
+      <p>You agree to indemnify and hold BlockSocial harmless from any third-party claim arising out of (i)&nbsp;your User Content, (ii)&nbsp;your violation of these Terms, or (iii)&nbsp;your violation of any law or third-party right.</p>
+
+      <h2>14. Governing law and jurisdiction</h2>
+      <p>These Terms are governed by the law of the Federal Republic of Germany, excluding the UN Convention on Contracts for the International Sale of Goods. Mandatory consumer-protection provisions of the country of your habitual residence remain unaffected.</p>
+      <p>For users acting as merchants (&ldquo;Kaufleute&rdquo;) within the meaning of the German Commercial Code (HGB), legal entities under public law, or special funds under public law, the exclusive place of jurisdiction is Ingolstadt, Germany.</p>
+
+      <h2>15. Changes to these Terms</h2>
+      <p>We may update these Terms. Material changes will be announced in-app at least 30&nbsp;days before they take effect. Continued use of the Service after the effective date constitutes acceptance of the updated Terms.</p>
+
+      <h2>16. Severability</h2>
+      <p>If any provision of these Terms is held invalid or unenforceable, the remaining provisions remain in effect.</p>
+
+      <h2>17. Contact</h2>
+      <p>info@blocksocial.eu &middot; BlockSocial UG (haftungsbeschr&auml;nkt), Kratzm&uuml;hlstr. 14, 92339 Beilngries, Germany.</p>
+    </article>
+
+    <article id="legal-cookies">
+      <h1>Cookie Policy</h1>
+      <p class="legal-meta">Last updated: 8 May 2026.</p>
+
+      <p>This Cookie Policy describes the small data items the YEET Social platform stores in your browser, why we use them, and how you can control them.</p>
+
+      <h2>What we use</h2>
+      <p>We do not use HTTP cookies for tracking, advertising, or third-party analytics. Instead, we use the browser&rsquo;s localStorage and sessionStorage for these items:</p>
+
+      <table>
+        <thead><tr><th>Key</th><th>Storage</th><th>Purpose</th><th>Lifetime</th></tr></thead>
+        <tbody>
+          <tr><td><code>yeet_jwt</code></td><td>localStorage</td><td>Keeps you signed in (JSON Web Token issued by our authentication API).</td><td>Until you sign out or the token expires.</td></tr>
+          <tr><td><code>yeet_address</code></td><td>localStorage</td><td>Your wallet address, if you signed in with a wallet.</td><td>Until you sign out.</td></tr>
+          <tr><td><code>yeet_lang</code></td><td>localStorage</td><td>Your chosen language (en/de).</td><td>Until you clear it.</td></tr>
+          <tr><td><code>yeetUser</code> / <code>yeetWallet</code> / <code>yeetToken</code> / <code>yt</code></td><td>localStorage</td><td>Internal session metadata (legacy keys retained for compatibility).</td><td>Until you sign out.</td></tr>
+          <tr><td><code>yeet_pending_redeem</code></td><td>sessionStorage</td><td>Temporarily holds a paper-wallet claim code while you sign in to redeem it.</td><td>Until the browser tab closes.</td></tr>
+        </tbody>
+      </table>
+
+      <p>These items are <strong>strictly necessary</strong> for the operation of the Service (Section 25 (2) (2) of the German TTDSG). Without them, you cannot stay signed in or carry your settings between visits, and consent is not legally required.</p>
+
+      <h2>Third-party content</h2>
+      <p>On initial page load we fetch a small number of JavaScript libraries from public content delivery networks (currently <code>cdnjs.cloudflare.com</code>). These requests may, as a technical side-effect, expose your IP address to the CDN provider. We do not control these providers&rsquo; practices in detail.</p>
+
+      <h2>How to clear or block our storage</h2>
+      <p>You can clear localStorage at any time through your browser&rsquo;s developer tools or your browser&rsquo;s &ldquo;Clear site data&rdquo; option. Note that clearing localStorage will sign you out and reset your settings. You can also block storage entirely via your browser settings, but the Service will then not function correctly.</p>
+
+      <h2>Changes</h2>
+      <p>We will update this Cookie Policy whenever we change what we store, and disclose any new third-party connections that may transmit personal data.</p>
+
+      <h2>Contact</h2>
+      <p>info@blocksocial.eu</p>
+    </article>
+
+    <article id="legal-disclaimer">
+      <h1>Disclaimer</h1>
+      <p class="legal-meta">Last updated: 8 May 2026.</p>
+
+      <p>The information and features provided through YEET Social are offered on an informational and entertainment basis. While we work hard to keep the Service functional and accurate, the following caveats apply.</p>
+
+      <h2>1. No financial, investment, tax, or legal advice</h2>
+      <p>Nothing on the Service constitutes investment advice, financial advice, legal advice, tax advice, or a recommendation to buy or sell any token, NFT, or other digital asset. Always conduct your own research and consult a qualified professional before making decisions.</p>
+
+      <h2>2. Cryptocurrency risks</h2>
+      <ul>
+        <li>Cryptocurrencies and tokens (including the YEET token) are highly volatile. Their value may fall to zero and may not recover.</li>
+        <li>On-chain transactions are irreversible. We cannot reverse a confirmed transaction, retrieve mistakenly sent funds, or recover lost private keys.</li>
+        <li>Smart contracts may contain bugs that we have not detected. While we audit our contracts to a reasonable standard, we cannot guarantee zero defects.</li>
+        <li>Regulatory frameworks for crypto-assets are evolving. Laws applicable to your jurisdiction may change in ways that affect your ability to use, transfer, or hold tokens.</li>
+      </ul>
+
+      <h2>3. Paper wallets are bearer instruments</h2>
+      <p>A YEET paper wallet is a printable bill that anyone holding the QR code or claim text can redeem. Treat it like physical cash: store it securely, do not photograph it casually, do not share the claim code over insecure channels. We cannot recover the value of a paper wallet whose code has been seen by a third party.</p>
+
+      <h2>4. 18+ content</h2>
+      <p>Content marked 18+ is intended exclusively for adult viewers. Access is gated behind an opt-in setting and an age-verification check. It is your responsibility to ensure that consumption of such content is lawful where you are and that minors cannot access your device while you view it.</p>
+
+      <h2>5. User-generated content</h2>
+      <p>The Service displays content created by other users. Such content reflects the opinions, beliefs, and statements of its authors only. It does not reflect our views. We do not pre-screen User Content; we act on reports.</p>
+
+      <h2>6. External links</h2>
+      <p>Pages on the Service may link to third-party websites. We have no control over those sites and assume no responsibility for their content, privacy practices, or availability.</p>
+
+      <h2>7. No guarantee of availability</h2>
+      <p>The Service may be temporarily unavailable due to maintenance, attacks, or events outside our control (including BNB Smart Chain congestion or outages). We do not guarantee uninterrupted access.</p>
+
+      <h2>8. Forward-looking statements</h2>
+      <p>Any roadmap items, planned features, or token-economy descriptions on the Service are aspirational. They are not promises and may change.</p>
+
+      <h2>9. Trademarks</h2>
+      <p>Third-party names, logos, and trademarks appearing on the Service are the property of their respective owners and are used for identification purposes only.</p>
+
+      <h2>10. Copyright complaints</h2>
+      <p>If you believe content on the Service infringes your copyright, contact info@blocksocial.eu with a description of the work, the URL of the infringing post, and a statement under penalty of perjury that you are the rightful holder.</p>
+
+      <h2>Contact</h2>
+      <address>BlockSocial UG (haftungsbeschr&auml;nkt)
+Kratzm&uuml;hlstr. 14
+92339 Beilngries, Germany
+info@blocksocial.eu</address>
+    </article>
+
+  </div>
+</div>
+
+<script>
+// Legal-pages SPA router. URLs like /legal/imprint render the matching
+// <article> as a fullscreen overlay; back-button + footer links use
+// pushState so URLs are real and shareable.
+(function(){
+  var SLUGS = ['imprint','privacy','terms','cookies','disclaimer'];
+  function showLegalPage(slug){
+    if(SLUGS.indexOf(slug) === -1) return false;
+    var page = document.getElementById('legalPage');
+    if(!page) return false;
+    page.classList.add('on');
+    page.querySelectorAll('article').forEach(function(a){ a.classList.remove('on'); });
+    var sec = document.getElementById('legal-' + slug);
+    if(sec){
+      sec.classList.add('on');
+      var h = sec.querySelector('h1');
+      document.title = (h ? h.textContent : 'Legal') + ' · YEET Social';
+    }
+    page.scrollTop = 0;
+    return true;
+  }
+  function closeLegalPage(){
+    var page = document.getElementById('legalPage');
+    if(page) page.classList.remove('on');
+    if(/^\/legal\//.test(location.pathname)) history.pushState(null,'','/');
+    document.title = 'YEET Social';
+  }
+  function routeFromUrl(){
+    var m = /^\/legal\/([a-z]+)\/?$/.exec(location.pathname);
+    if(m) return showLegalPage(m[1]);
+    var page = document.getElementById('legalPage');
+    if(page) page.classList.remove('on');
+    return false;
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[data-legal]');
+    if(!a) return;
+    e.preventDefault();
+    var slug = a.dataset.legal;
+    if(showLegalPage(slug)) history.pushState(null,'','/legal/'+slug);
+  });
+  window.addEventListener('popstate', routeFromUrl);
+  if(document.readyState !== 'loading') routeFromUrl();
+  else document.addEventListener('DOMContentLoaded', routeFromUrl);
+  window.showLegalPage = showLegalPage;
+  window.closeLegalPage = closeLegalPage;
+})();
+</script>
+
 </body>
 </html>
