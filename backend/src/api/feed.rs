@@ -185,6 +185,24 @@ pub async fn get_user_posts(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
+    // Block check: if either party has blocked the other, hide the timeline
+    // entirely (404). Defense-in-depth on top of the client-side guard.
+    if let Some(auth) = viewer.as_ref() {
+        if let Ok(viewer_id) = resolve_viewer_id(&state, auth).await {
+            if viewer_id != user_id {
+                let blocked: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM user_blocks
+                       WHERE (blocker_id = $1 AND blocked_id = $2)
+                          OR (blocker_id = $2 AND blocked_id = $1))"
+                ).bind(viewer_id).bind(user_id)
+                 .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+                if blocked {
+                    return Ok(Json(PagedResponse { success: true, data: vec![], total: 0, page, per_page }));
+                }
+            }
+        }
+    }
+
     // Viewers that haven't completed the face scan (or are anonymous) never see 18+ posts,
     // even if they follow the author.
     let viewer_verified = viewer_is_age_verified(&state, viewer.as_ref()).await;

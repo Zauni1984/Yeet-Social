@@ -281,8 +281,8 @@ pub async fn upload_image(
     }
     let iv = iv_b64.ok_or_else(|| AppError::Validation("iv field required".into()))?;
     let blob = blob_bytes.ok_or_else(|| AppError::Validation("file field required".into()))?;
-    if iv.len() > IV_LEN {
-        return Err(AppError::Validation("iv too large".into()));
+    if iv.is_empty() || iv.len() > IV_LEN {
+        return Err(AppError::Validation("invalid iv length".into()));
     }
     let is_b64 = |c: char| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=' || c == '-' || c == '_';
     if !iv.chars().all(is_b64) {
@@ -350,6 +350,11 @@ pub async fn get_blob(
     }
     assert_member(state.db.pool(), conv_id, me).await?;
     let rel = blob_path.ok_or_else(|| AppError::NotFound("Blob missing".into()))?;
+    // Defense-in-depth path validation: the DB value is server-written,
+    // but we still refuse anything trying to escape uploads_dir.
+    if rel.contains("..") || rel.starts_with('/') {
+        return Err(AppError::NotFound("Blob missing".into()));
+    }
     let path = uploads_dir().join(&rel);
     let bytes = tokio::fs::read(&path).await
         .map_err(|_| AppError::NotFound("Blob missing".into()))?;
@@ -383,10 +388,14 @@ pub async fn delete_one(
     .bind(msg_id).bind(me)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
-    // Best-effort blob unlink; cleanup job will also sweep orphans.
+    // Best-effort blob unlink. Defensive: a malicious blob_path would
+    // have had to be injected at INSERT time (we control that), but
+    // we still refuse anything that escapes the uploads root.
     if let Some(rel) = blob_path {
-        let full = uploads_dir().join(&rel);
-        let _ = tokio::fs::remove_file(&full).await;
+        if !rel.contains("..") && !rel.starts_with('/') {
+            let full = uploads_dir().join(&rel);
+            let _ = tokio::fs::remove_file(&full).await;
+        }
     }
     Ok(Json(ApiResponse::ok("deleted")))
 }

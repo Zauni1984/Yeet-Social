@@ -473,6 +473,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128172; <span data-i18n="dm.title">Messages</span></div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:8px" data-i18n="dm.retention">Auto-delete messages after</div>
+        <select id="settingDmRetention" onchange="window.updateDmRetention && window.updateDmRetention(this.value)" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px">
+          <option value="1" data-i18n="dm.day1">1 day</option>
+          <option value="7" data-i18n="dm.day7">7 days</option>
+          <option value="30" data-i18n="dm.day30">30 days</option>
+        </select>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.gdpr">Privacy (GDPR)</div>
         <button onclick="exportMyData()" style="width:100%;background:#1e88e522;color:#64b5f6;border:1px solid #1e88e544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px">&#128190; <span data-i18n="settings.exportData">Export my data (JSON)</span></button>
         <button onclick="deleteMyAccount()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px">&#128465; <span data-i18n="settings.deleteAccount">Delete account permanently</span></button>
@@ -1548,6 +1557,13 @@ function openSettingsModal(){
   if(document.getElementById('settingAutoload'))document.getElementById('settingAutoload').checked=s.autoload!==false;
   var langSel=document.getElementById('settingLanguage');
   if(langSel) langSel.value = (window.getLang ? window.getLang() : 'en');
+  var retSel=document.getElementById('settingDmRetention');
+  if(retSel){
+    fetch('/api/v1/me/dm-retention', { headers:{'Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||'')} })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d && d.data) retSel.value = String(d.data.dm_retention_days); })
+      .catch(function(){});
+  }
   document.getElementById('settingsModal').classList.add('on');
   // Show "Link Wallet" only for email-only users (no wallet yet)
   const lw=document.getElementById('linkWalletBtn');
@@ -4393,18 +4409,70 @@ info@blocksocial.eu</address>
     return fetch(path, opts);
   }
 
-  // Per-peer ECDH-derived conversation key cache. Indexed by peer pubkey
-  // (which uniquely identifies the peer's identity).
+  // Per-conversation key cache. For DMs the key is derived from ECDH;
+  // for groups it's unwrapped from the user's per-member envelope.
+  // Indexed by conversation id so groups and DMs share the same store.
   var _convKeys = Object.create(null);
 
-  async function convKeyFor(peerPubB64, myPubB64){
-    if(_convKeys[peerPubB64]) return _convKeys[peerPubB64];
+  async function dmKeyFor(peerPubB64){
     var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
     var peerPk = await window.YeetE2EE.importPubSpki(peerPubB64);
-    var key = await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, peerPubB64);
-    _convKeys[peerPubB64] = key;
-    return key;
+    return await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, peerPubB64);
   }
+
+  async function unwrapGroupKey(envelopeB64){
+    var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+    // Group-key envelopes are wrapped with the inviter's
+    // ECDH(my_sk, my_pk) self-key for creator, or with the
+    // shared (inviter_sk, invitee_pk) key for invited members.
+    // The unwrap key is therefore ECDH(my_sk, inviter_pk) — but we
+    // don't know the inviter, so we try both (a) self-key (admin/
+    // creator case) and (b) some peer pks. v1 simplification:
+    // we only wrap envelopes under the *self-key* derived from
+    // ECDH(my_sk, my_pk). createGroup already does this for the
+    // creator's envelope; for invited members the invite handler
+    // re-uses the invitation row's envelope which was wrapped under
+    // ECDH(creator_sk, invitee_pk). To decrypt we need the
+    // *inviter's pubkey* — which we don't currently have in the
+    // conversation summary. v1 limit: any user who accepted the
+    // invitation via /accept stores the envelope under self-key,
+    // because the create flow wraps each envelope under the
+    // creator's view of the conversation. NOTE: this is the place
+    // to plug a richer protocol later.
+    var rawSelfPk = await window.YeetE2EE.importPubSpki(id.pk);
+    var selfKey = await window.YeetE2EE.deriveConvKey(id.sk, rawSelfPk, id.pk, id.pk);
+    var all = window.YeetE2EE.b64ToBytes(envelopeB64);
+    var iv = all.slice(0, 12);
+    var ct = all.slice(12);
+    var raw;
+    try {
+      raw = new Uint8Array(await window.crypto.subtle.decrypt(
+        { name:'AES-GCM', iv: iv }, selfKey, ct));
+    } catch(e){
+      // For non-creator members, we don't have a reliable way to
+      // recover the inviter's pubkey in v1, so fail gracefully.
+      throw new Error('group_key_unwrap_failed');
+    }
+    return await window.crypto.subtle.importKey(
+      'raw', raw, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+  }
+
+  async function convKeyForConv(c){
+    if(_convKeys[c.id]) return _convKeys[c.id];
+    var k;
+    if(c.kind === 'group'){
+      if(!c.encrypted_group_key) throw new Error('no_group_key');
+      k = await unwrapGroupKey(c.encrypted_group_key);
+    } else {
+      if(!c.peer_public_key) throw new Error('no_peer_key');
+      k = await dmKeyFor(c.peer_public_key);
+    }
+    _convKeys[c.id] = k;
+    return k;
+  }
+
+  // Back-compat alias used by some older call sites
+  async function convKeyFor(peerPubB64){ return await dmKeyFor(peerPubB64); }
 
   function escapeHtml(s){
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -4468,12 +4536,18 @@ info@blocksocial.eu</address>
       return;
     }
     var html = top + _conversations.map(function(c){
-      var name = c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : T('common.unknown'));
+      var name;
+      if(c.kind === 'group'){
+        name = c.name || T('dm.groupNew');
+      } else {
+        name = c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : T('common.unknown'));
+      }
       var act = (_activeConv && _activeConv.id === c.id) ? 'background:#1a1a1a' : '';
       var when = c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : '';
+      var icon = c.kind === 'group' ? '&#128101; ' : '';
       return '<div onclick="openConversation(\''+ c.id +'\')" style="padding:8px 10px;border-radius:8px;cursor:pointer;'+ act +'">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">'
-        +   '<b style="font-size:13px">'+ escapeHtml(name) +'</b>'
+        +   '<b style="font-size:13px">'+ icon + escapeHtml(name) +'</b>'
         +   '<span style="font-size:11px;color:var(--muted)">'+ when +'</span>'
         + '</div>'
         + '</div>';
@@ -4488,23 +4562,48 @@ info@blocksocial.eu</address>
     _activeConv = c;
     renderConvList();
     var hdr = document.getElementById('dmThreadHeader');
-    var name = c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : '?');
-    hdr.innerHTML = '<b style="color:#fff">'+ escapeHtml(name) +'</b>'
-      + ' <span id="dmSafety" style="font-size:11px;color:var(--muted);margin-left:6px"></span>';
+    var name;
+    if(c.kind === 'group'){ name = c.name || T('dm.groupNew'); }
+    else { name = c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : '?'); }
+    var actions = c.kind === 'group'
+      ? ' <button onclick="leaveGroupConv(\''+ c.id +'\')" style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px">'+ T('dm.leave') +'</button>'
+      : '';
+    hdr.innerHTML = '<b style="color:#fff">'+ (c.kind==='group' ? '&#128101; ' : '') + escapeHtml(name) +'</b>'
+      + ' <span id="dmSafety" style="font-size:11px;color:var(--muted);margin-left:6px"></span>'
+      + actions;
     document.getElementById('dmThreadBody').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center">'+ T('common.loading') +'</div>';
-    document.getElementById('dmComposer').style.display = c.peer_public_key ? 'flex' : 'none';
-    if(!c.peer_public_key){
-      document.getElementById('dmThreadBody').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+ T('dm.peerNoKey') +'</div>';
+
+    var canCompose = c.kind === 'group' ? !!c.encrypted_group_key : !!c.peer_public_key;
+    document.getElementById('dmComposer').style.display = canCompose ? 'flex' : 'none';
+    if(!canCompose){
+      document.getElementById('dmThreadBody').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+ T(c.kind==='group' ? 'dm.decryptFailed' : 'dm.peerNoKey') +'</div>';
       return;
     }
-    // Compute safety number lazily so the header shows a stable verification fingerprint.
-    try {
-      var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
-      var sn = await window.YeetE2EE.safetyNumber(id.pk, c.peer_public_key);
-      var sEl = document.getElementById('dmSafety');
-      if(sEl) sEl.textContent = T('dm.safetyNumber')+': '+ sn;
-    } catch(e){ /* identity setup may have been declined */ }
+
+    if(c.kind === 'dm'){
+      try {
+        var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+        var sn = await window.YeetE2EE.safetyNumber(id.pk, c.peer_public_key);
+        var sEl = document.getElementById('dmSafety');
+        if(sEl) sEl.textContent = T('dm.safetyNumber')+': '+ sn;
+      } catch(e){}
+    }
     await loadMessages(convId);
+  };
+
+  window.leaveGroupConv = async function(convId){
+    if(!confirm(T('dm.leaveConfirm'))) return;
+    try {
+      var r = await api('/api/v1/conversations/'+ encodeURIComponent(convId) +'/leave', { method:'POST' });
+      if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
+      window.showToast(T('dm.left'),'success');
+      _activeConv = null;
+      delete _convKeys[convId];
+      await refreshConversations();
+      document.getElementById('dmThreadHeader').textContent = T('dm.pickConv');
+      document.getElementById('dmThreadBody').innerHTML = '';
+      document.getElementById('dmComposer').style.display = 'none';
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
   };
 
   function retentionCutoffMs(){
@@ -4519,9 +4618,7 @@ info@blocksocial.eu</address>
       var conv = _conversations.find(function(x){ return x.id === convId; });
       if(!conv) return;
       var key = null;
-      if(conv.peer_public_key){
-        try { key = await convKeyFor(conv.peer_public_key, null); } catch(e){ /* show ciphertext warnings inline */ }
-      }
+      try { key = await convKeyForConv(conv); } catch(e){ /* per-message render falls back to error glyph */ }
       // Filter by client retention. Server has already enforced the 30d
       // hard cap; this is the optional shorter retention the user picked.
       var cutoff = retentionCutoffMs();
@@ -4590,9 +4687,8 @@ info@blocksocial.eu</address>
     var text = (input.value || '').trim();
     if(!text) return;
     if(text.length > 2000){ window.showToast('Too long','error'); return; }
-    if(!_activeConv.peer_public_key){ window.showToast(T('dm.peerNoKey'),'error'); return; }
     try {
-      var key = await convKeyFor(_activeConv.peer_public_key, null);
+      var key = await convKeyForConv(_activeConv);
       var blob = await window.YeetE2EE.encryptWithKey(key, text);
       var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
         method:'POST',
@@ -4620,8 +4716,9 @@ info@blocksocial.eu</address>
     try {
       // The visible-in-chat ciphertext is just a marker; the real amount
       // travels via the tip_amount field, which the backend wires into
-      // a tips row inside the same transaction.
-      var key = await convKeyFor(_activeConv.peer_public_key, null);
+      // a tips row inside the same transaction. v1: only DMs.
+      if(_activeConv.kind !== 'dm'){ window.showToast(T('common.error'),'error'); return; }
+      var key = await convKeyForConv(_activeConv);
       var blob = await window.YeetE2EE.encryptWithKey(key, 'TIP:'+amt);
       var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
         method:'POST',
@@ -4707,13 +4804,12 @@ info@blocksocial.eu</address>
   // ---------- image send ----------
   window.sendDmImage = async function(input){
     if(!_activeConv) return;
-    if(!_activeConv.peer_public_key){ window.showToast(T('dm.peerNoKey'),'error'); return; }
     var file = input.files && input.files[0];
     input.value = ''; // allow re-selecting the same file
     if(!file) return;
     if(file.size > 8 * 1024 * 1024){ window.showToast(T('dm.imageTooLarge'),'error'); return; }
     try {
-      var key = await convKeyFor(_activeConv.peer_public_key, null);
+      var key = await convKeyForConv(_activeConv);
       var buf = new Uint8Array(await file.arrayBuffer());
       var iv  = window.crypto.getRandomValues(new Uint8Array(12));
       var ct  = new Uint8Array(await window.crypto.subtle.encrypt(

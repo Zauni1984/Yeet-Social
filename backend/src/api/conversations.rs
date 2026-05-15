@@ -71,6 +71,10 @@ pub struct ConversationSummary {
     pub peer_display_name: Option<String>,
     pub peer_avatar_url: Option<String>,
     pub peer_public_key: Option<String>,
+    // For group conversations: this caller's envelope of the
+    // group_key (NULL until the admin (re-)distributes it).
+    pub encrypted_group_key: Option<String>,
+    pub role: Option<String>,
     pub last_message_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
 }
@@ -150,6 +154,8 @@ pub async fn create_dm(
         peer_display_name: row.2,
         peer_avatar_url: row.3,
         peer_public_key: peer_pk,
+        encrypted_group_key: None,
+        role: Some("member".into()),
         last_message_at: None,
         created_at,
     })))
@@ -166,11 +172,13 @@ pub async fn list_mine(
     let rows: Vec<(
         Uuid, String, Option<String>, DateTime<Utc>,
         Option<Uuid>, Option<String>, Option<String>, Option<String>, Option<String>,
+        Option<String>, String,
         Option<DateTime<Utc>>
     )> = sqlx::query_as(
         "SELECT c.id, c.kind, c.name, c.created_at,
                 peer.id AS peer_id, peer.username, peer.display_name,
                 peer.avatar_url, peer.e2ee_public_key,
+                cm.encrypted_group_key, cm.role,
                 (SELECT MAX(created_at) FROM messages m WHERE m.conversation_id = c.id)
            FROM conversations c
            JOIN conversation_members cm ON cm.conversation_id = c.id AND cm.user_id = $1
@@ -194,7 +202,8 @@ pub async fn list_mine(
         id: r.0, kind: r.1, name: r.2, created_at: r.3,
         peer_id: r.4, peer_username: r.5, peer_display_name: r.6,
         peer_avatar_url: r.7, peer_public_key: r.8,
-        last_message_at: r.9,
+        encrypted_group_key: r.9, role: Some(r.10),
+        last_message_at: r.11,
     }).collect();
 
     Ok(Json(ApiResponse::ok(out)))
