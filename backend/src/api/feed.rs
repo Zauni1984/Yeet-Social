@@ -38,12 +38,13 @@ struct FeedRow {
 
 pub async fn get_feed(
     State(state): State<AppState>,
-    _auth: AuthUser,
+    auth: AuthUser,
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
     let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset = (page - 1) * per_page;
+    let viewer_id = resolve_viewer_id(&state, &auth).await?;
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
@@ -54,18 +55,38 @@ pub async fn get_feed(
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours')
+          AND NOT EXISTS (SELECT 1 FROM user_blocks ub
+                           WHERE (ub.blocker_id = $3 AND ub.blocked_id = u.id)
+                              OR (ub.blocker_id = u.id AND ub.blocked_id = $3))
         ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
     )
-    .bind(per_page).bind(offset)
+    .bind(per_page).bind(offset).bind(viewer_id)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM posts WHERE expires_at > NOW() AND deleted_at IS NULL AND is_adult = FALSE AND is_removed = FALSE"
+        "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
+          WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
+            AND NOT EXISTS (SELECT 1 FROM user_blocks ub
+                             WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
+                                OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"
     )
+    .bind(viewer_id)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let posts = rows.into_iter().map(row_to_feed_post).collect();
     Ok(Json(PagedResponse { success: true, data: posts, total, page, per_page }))
+}
+
+/// Resolve the caller's UUID from the JWT subject (wallet address or
+/// `email:<uuid>` for the email-auth path).
+async fn resolve_viewer_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid> {
+    if let Some(rest) = auth.address.strip_prefix("email:") {
+        return rest.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
+    }
+    sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+        .bind(&auth.address)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("User not found".into()))
 }
 
 pub async fn get_following_feed(
@@ -96,6 +117,9 @@ pub async fn get_following_feed(
         FROM posts p JOIN users u ON p.author_id = u.id
         JOIN follows f ON f.following_id = p.author_id
         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
+          AND NOT EXISTS (SELECT 1 FROM user_blocks ub
+                           WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
+                              OR (ub.blocker_id = u.id AND ub.blocked_id = $1))
         ORDER BY p.created_at DESC LIMIT $2 OFFSET $3"
     )
     .bind(user_id).bind(per_page).bind(offset)
@@ -103,7 +127,10 @@ pub async fn get_following_feed(
 
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN follows f ON f.following_id = p.author_id
-        WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
+        WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM user_blocks ub
+                           WHERE (ub.blocker_id = $1 AND ub.blocked_id = p.author_id)
+                              OR (ub.blocker_id = p.author_id AND ub.blocked_id = $1))"
     )
     .bind(user_id)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;

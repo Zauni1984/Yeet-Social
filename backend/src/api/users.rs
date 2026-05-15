@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, models::{ApiResponse, UserProfile}};
-use crate::api::middleware::AuthUser;
+use crate::api::middleware::{AuthUser, OptionalAuth};
 
 #[derive(sqlx::FromRow)]
 struct ProfileRow {
@@ -12,6 +12,7 @@ struct ProfileRow {
     bio: Option<String>, avatar_url: Option<String>, cover_url: Option<String>, created_at: DateTime<Utc>,
     follower_count: Option<i64>, following_count: Option<i64>, post_count: Option<i64>,
     age_verified_at: Option<DateTime<Utc>>,
+    e2ee_public_key: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -33,6 +34,7 @@ pub struct FollowEntry {
 
 pub async fn get_profile(
     State(state): State<AppState>,
+    OptionalAuth(viewer): OptionalAuth,
     Path(address): Path<String>,
 ) -> AppResult<Json<ApiResponse<UserProfile>>> {
     // Accept either a UUID (email-only users) or a wallet address
@@ -41,14 +43,14 @@ pub async fn get_profile(
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
-                u.age_verified_at
+                u.age_verified_at, u.e2ee_public_key
          FROM users u WHERE u.id = $1::uuid"
     } else {
         "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
-                u.age_verified_at
+                u.age_verified_at, u.e2ee_public_key
          FROM users u WHERE u.wallet_address = $1"
     };
     let bind_val = if address.parse::<Uuid>().is_ok() { address.clone() } else { address.to_lowercase() };
@@ -56,6 +58,27 @@ pub async fn get_profile(
         .bind(bind_val)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+
+    // Block relationship is only meaningful when the caller is signed in.
+    let (is_blocked_by_me, has_blocked_me) = if let Some(auth) = viewer.as_ref() {
+        if let Ok(viewer_id) = resolve_user_id(&state, &auth.address).await {
+            if viewer_id == r.id {
+                (false, false)
+            } else {
+                let blocked: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2)"
+                ).bind(viewer_id).bind(r.id)
+                 .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+                let blocked_by: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2)"
+                ).bind(r.id).bind(viewer_id)
+                 .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+                (blocked, blocked_by)
+            }
+        } else { (false, false) }
+    } else {
+        (false, false)
+    };
 
     Ok(Json(ApiResponse::ok(UserProfile {
         id: r.id, wallet_address: r.wallet_address.clone(), display_name: r.display_name,
@@ -65,6 +88,9 @@ pub async fn get_profile(
         post_count: r.post_count.unwrap_or(0),
         age_verified: r.age_verified_at.is_some(),
         created_at: r.created_at,
+        is_blocked_by_me,
+        has_blocked_me,
+        e2ee_ready: r.e2ee_public_key.is_some(),
     })))
 }
 
@@ -74,7 +100,7 @@ pub async fn get_my_profile(
 ) -> AppResult<Json<ApiResponse<UserProfile>>> {
     // Email users carry "email:UUID" in auth.address — look up by UUID; wallet users keep 0x...
     let key = auth.address.strip_prefix("email:").unwrap_or(&auth.address).to_string();
-    get_profile(State(state), Path(key)).await
+    get_profile(State(state), OptionalAuth(Some(auth)), Path(key)).await
 }
 
 pub async fn update_profile(

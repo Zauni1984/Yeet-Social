@@ -118,6 +118,9 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/notifications",             get(api::notifications::get_notifications))
         .route("/api/v1/notifications/read",        post(api::notifications::mark_notifications_read))
         .route("/api/v1/users/:address/unfollow", post(api::users::unfollow_user))
+        .route("/api/v1/users/:address/block",    post(api::blocks::block))
+        .route("/api/v1/users/:address/unblock",  post(api::blocks::unblock))
+        .route("/api/v1/me/blocks",               get(api::blocks::list_mine))
         // Tips & Tokens
         .route("/api/v1/admin/posts",          get(api::report::admin_list_posts))
         .route("/api/v1/admin/reports",        get(api::report::admin_list_reports))

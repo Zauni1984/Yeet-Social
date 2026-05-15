@@ -30,6 +30,17 @@ pub struct UserProfile {
     pub post_count: i64,
     pub age_verified: bool,
     pub created_at: DateTime<Utc>,
+    // True iff the caller has blocked this user. Defaults to false for
+    // anonymous callers.
+    #[serde(default)]
+    pub is_blocked_by_me: bool,
+    // True iff this user has blocked the caller.
+    #[serde(default)]
+    pub has_blocked_me: bool,
+    // True iff this user has uploaded an E2EE identity public key
+    // (i.e. is reachable for encrypted DMs).
+    #[serde(default)]
+    pub e2ee_ready: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
