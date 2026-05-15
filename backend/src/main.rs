@@ -41,7 +41,8 @@ async fn main() {
     // Start background jobs
     tokio::spawn(services::batch_rewards::start_reward_batch_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_cleanup_job(state.clone()));
-    info!(" Background jobs started (batch rewards + cleanup)");
+    tokio::spawn(services::batch_rewards::start_message_cleanup_job(state.clone()));
+    info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");
     info!("🛑 Graceful shutdown complete");
@@ -124,6 +125,14 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/e2ee/keys",            get(api::e2ee::get_my_keys))
         .route("/api/v1/me/e2ee/keys",            post(api::e2ee::upload_keys))
         .route("/api/v1/users/:address/e2ee/pubkey", get(api::e2ee::get_peer_pubkey))
+        .route("/api/v1/conversations",              get(api::conversations::list_mine))
+        .route("/api/v1/conversations/dm",           post(api::conversations::create_dm))
+        .route("/api/v1/conversations/:id/hide",     post(api::conversations::hide))
+        .route("/api/v1/conversations/:id/messages", get(api::messages::list))
+        .route("/api/v1/conversations/:id/messages", post(api::messages::send))
+        .route("/api/v1/messages/:id",               axum::routing::delete(api::messages::delete_one))
+        .route("/api/v1/me/dm-retention",            get(api::conversations::get_retention))
+        .route("/api/v1/me/dm-retention",            post(api::conversations::update_retention))
         // Tips & Tokens
         .route("/api/v1/admin/posts",          get(api::report::admin_list_posts))
         .route("/api/v1/admin/reports",        get(api::report::admin_list_reports))

@@ -139,3 +139,31 @@ pub async fn start_cleanup_job(state: AppState) {
         }
     }
 }
+
+/// Hard-cap retention for encrypted messages: anything past
+/// `expires_at` (server-set to created_at + 30 days) is purged from
+/// the database. Runs hourly. Per-user retention shorter than 30 d
+/// is enforced client-side as a display filter on top of this.
+pub async fn start_message_cleanup_job(state: AppState) {
+    let mut ticker = interval(Duration::from_secs(3600));
+    loop {
+        ticker.tick().await;
+        match sqlx::query("DELETE FROM messages WHERE expires_at < NOW()")
+            .execute(&state.db.pool).await
+        {
+            Ok(r) if r.rows_affected() > 0 => {
+                info!("Message cleanup: purged {} expired messages.", r.rows_affected())
+            }
+            Ok(_) => {}
+            Err(e) => error!("Message cleanup error: {e}"),
+        }
+        // Also drop very old pending invitations
+        if let Err(e) = sqlx::query(
+            "DELETE FROM group_invitations
+              WHERE status = 'pending'
+                AND created_at < NOW() - INTERVAL '30 days'"
+        ).execute(&state.db.pool).await {
+            warn!("Old-invitations purge error: {e}");
+        }
+    }
+}

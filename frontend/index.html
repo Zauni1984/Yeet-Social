@@ -339,6 +339,35 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 </div>
 
 <!-- SETTINGS MODAL -->
+<div class="modal-bg" id="messagesModal" onclick="closeMessagesModal(event)">
+  <div class="modal modal-wrap" style="max-width:780px;width:96vw">
+    <button class="modal-close" onclick="closeMessagesModal()">&#10005;</button>
+    <h3>&#128172; <span data-i18n="dm.title">Messages</span></h3>
+    <div style="display:flex;height:60vh;min-height:380px;gap:0;margin-top:8px;border-top:1px solid var(--border)">
+      <div id="dmConvList" style="width:240px;border-right:1px solid var(--border);overflow-y:auto;padding:8px 4px"></div>
+      <div id="dmThreadPane" style="flex:1;display:flex;flex-direction:column;min-width:0">
+        <div id="dmThreadHeader" style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)" data-i18n="dm.pickConv">Select a conversation</div>
+        <div id="dmThreadBody" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px"></div>
+        <div id="dmComposer" style="display:none;border-top:1px solid var(--border);padding:8px;gap:6px;flex-wrap:wrap">
+          <textarea id="dmInput" rows="2" placeholder="" style="flex:1 1 100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;resize:vertical;min-height:34px"></textarea>
+          <button onclick="sendDmText()" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer" data-i18n="dm.send">Send</button>
+          <button onclick="openDmTip()" style="background:transparent;border:1px solid #f5a623;color:#f5a623;border-radius:8px;padding:8px 12px;cursor:pointer" title="" data-i18n-title="dm.sendTip">&#127873;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="newDmModal" onclick="closeNewDmModal(event)">
+  <div class="modal modal-wrap" style="max-width:420px">
+    <button class="modal-close" onclick="closeNewDmModal()">&#10005;</button>
+    <h3>&#128172; <span data-i18n="dm.newTitle">New conversation</span></h3>
+    <p style="color:var(--muted);font-size:13px;margin:6px 0 10px" data-i18n="dm.newSubtitle">Enter the recipient's wallet address or username.</p>
+    <input id="newDmAddr" type="text" autocomplete="off" spellcheck="false" placeholder="0x... or @username" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:14px;font-family:monospace">
+    <button onclick="createDmConversation()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="dm.startChat">Start chat</button>
+  </div>
+</div>
+
 <div class="modal-bg" id="paperWalletModal" onclick="closePaperWalletModal(event)">
   <div class="modal modal-wrap" style="max-width:560px">
     <button class="modal-close" onclick="closePaperWalletModal()">&#10005;</button>
@@ -466,6 +495,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#">&#9889; Token Tips</a>
     <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
     <a class="nav-link" href="#" onclick="check18Plus();return false;">&#128286; 18+ Content</a>
+    <a class="nav-link" href="#" onclick="openMessagesModal();return false;">&#128172; Messages <span id="dmInviteBadge" style="display:none;background:#ff4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px"></span></a>
     <a class="nav-link" href="#" onclick="openPaperWalletModal();return false;">&#128181; Paper Wallets</a>
     <div class="nav-section">Account</div>
     <a class="nav-link" href="#" onclick="showMyProfile();return false;">&#128100; Profile</a>
@@ -613,6 +643,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.blockConfirm':'Block {name}? They won’t be able to message, tip or see your posts.',
       'profile.blocked':'User blocked','profile.unblocked':'User unblocked',
       'profile.unavailable':'This user is unavailable.',
+      // direct messages
+      'dm.title':'Messages','dm.newTitle':'New conversation',
+      'dm.newSubtitle':'Enter the recipient\'s wallet address or username.',
+      'dm.pickConv':'Select a conversation','dm.send':'Send','dm.sendTip':'Send a tip',
+      'dm.startChat':'Start chat','dm.new':'New','dm.empty':'No conversations yet.',
+      'dm.composerPh':'Encrypted message... press Enter to send',
+      'dm.peerNoKey':'This user has not enabled encrypted messages yet.',
+      'dm.notSupported':'Your browser does not support end-to-end encryption.',
+      'dm.enableTitle':'Enable encrypted messages',
+      'dm.enablePrompt':'Sign once with your wallet to enable end-to-end encrypted DMs. The signature derives a key that never leaves your browser.',
+      'dm.linkWallet':'Connect a wallet to enable encrypted messages.',
+      'dm.tipAmount':'How much YEET to send?',
+      'dm.tipSent':'Sent {amount} YEET',
+      'dm.deleted':'[message deleted]','dm.deletedToast':'Message deleted',
+      'dm.deleteConfirm':'Delete this message? It will be removed for both of you.',
+      'dm.decryptFailed':'[unable to decrypt]',
+      'dm.safetyNumber':'Safety number',
+      'dm.retention':'Auto-delete messages after',
+      'dm.retentionUpdated':'Retention updated',
+      'dm.day1':'1 day','dm.day7':'7 days','dm.day30':'30 days',
+      'dm.you':'You','dm.tipMessage':'Tip · {amount} YEET',
       // tip modal
       'tip.title':'Tip YEET Tokens','tip.subtitle':'Support this post with YEET tokens',
       'tip.quickSelect':'Quick select:','tip.orEnter':'Or enter amount:','tip.customPlaceholder':'Custom amount...',
@@ -739,6 +790,26 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.blockConfirm':'{name} blockieren? Diese Person kann dir dann weder schreiben noch tippen noch deine Posts sehen.',
       'profile.blocked':'Nutzer blockiert','profile.unblocked':'Blockierung aufgehoben',
       'profile.unavailable':'Dieser Nutzer ist nicht verfügbar.',
+      'dm.title':'Nachrichten','dm.newTitle':'Neue Unterhaltung',
+      'dm.newSubtitle':'Wallet-Adresse oder Benutzernamen des Empfängers eingeben.',
+      'dm.pickConv':'Wähle eine Unterhaltung','dm.send':'Senden','dm.sendTip':'Tip senden',
+      'dm.startChat':'Chat starten','dm.new':'Neu','dm.empty':'Noch keine Unterhaltungen.',
+      'dm.composerPh':'Verschlüsselte Nachricht... Enter zum Senden',
+      'dm.peerNoKey':'Dieser Nutzer hat verschlüsselte Nachrichten noch nicht aktiviert.',
+      'dm.notSupported':'Dein Browser unterstützt keine Ende-zu-Ende-Verschlüsselung.',
+      'dm.enableTitle':'Verschlüsselte Nachrichten aktivieren',
+      'dm.enablePrompt':'Einmal mit der Wallet signieren, um Ende-zu-Ende-verschlüsselte DMs zu aktivieren. Die Signatur leitet einen Schlüssel ab, der den Browser nie verlässt.',
+      'dm.linkWallet':'Wallet verbinden, um verschlüsselte Nachrichten zu aktivieren.',
+      'dm.tipAmount':'Wieviel YEET senden?',
+      'dm.tipSent':'{amount} YEET gesendet',
+      'dm.deleted':'[Nachricht gelöscht]','dm.deletedToast':'Nachricht gelöscht',
+      'dm.deleteConfirm':'Diese Nachricht löschen? Sie wird für beide Seiten entfernt.',
+      'dm.decryptFailed':'[konnte nicht entschlüsselt werden]',
+      'dm.safetyNumber':'Sicherheitsnummer',
+      'dm.retention':'Nachrichten automatisch löschen nach',
+      'dm.retentionUpdated':'Speicherdauer aktualisiert',
+      'dm.day1':'1 Tag','dm.day7':'7 Tagen','dm.day30':'30 Tagen',
+      'dm.you':'Du','dm.tipMessage':'Tip · {amount} YEET',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
       'tip.quickSelect':'Schnellauswahl:','tip.orEnter':'Oder Betrag eingeben:','tip.customPlaceholder':'Eigener Betrag...',
       'tip.send':'Tip senden','tip.sending':'Senden...','tip.notLogged':'Bitte einloggen, um zu tippen',
@@ -4265,6 +4336,332 @@ info@blocksocial.eu</address>
   // already exists; we just want to make sure nobody else can read it).
   window.addEventListener('storage', function(ev){
     if(ev.key === 'yeet_jwt' && !ev.newValue) clearIdentityCache();
+  });
+})();
+</script>
+
+<script>
+// ---------- Direct messages (E2EE) ----------
+(function(){
+  var T = function(k,v){ return (window.t ? window.t(k,v) : k); };
+  function jwt(){ return localStorage.getItem('yeet_jwt'); }
+  function api(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});
+    var j = jwt();
+    if(j) opts.headers['Authorization'] = 'Bearer ' + j;
+    return fetch(path, opts);
+  }
+
+  // Per-peer ECDH-derived conversation key cache. Indexed by peer pubkey
+  // (which uniquely identifies the peer's identity).
+  var _convKeys = Object.create(null);
+
+  async function convKeyFor(peerPubB64, myPubB64){
+    if(_convKeys[peerPubB64]) return _convKeys[peerPubB64];
+    var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+    var peerPk = await window.YeetE2EE.importPubSpki(peerPubB64);
+    var key = await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, peerPubB64);
+    _convKeys[peerPubB64] = key;
+    return key;
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function fmtTime(ts){
+    var d = new Date(ts);
+    return d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ---------- modal open/close ----------
+  var _conversations = [];
+  var _activeConv = null;
+  var _retentionDays = 7;
+
+  window.openMessagesModal = async function(){
+    if(!jwt()){ window.showToast(T('common.pleaseLogin'),'error'); return; }
+    if(window.E2EE_UNSUPPORTED){
+      window.showToast(T('dm.notSupported'),'error'); return;
+    }
+    var addr = localStorage.getItem('yeet_address') || '';
+    // Block email-only users without an on-chain wallet for v1.
+    if(!addr || !addr.toLowerCase().startsWith('0x')){
+      window.showToast(T('dm.linkWallet'),'error'); return;
+    }
+    document.getElementById('messagesModal').classList.add('on');
+    document.getElementById('dmInput').placeholder = T('dm.composerPh');
+    await refreshConversations();
+    await refreshRetention();
+  };
+  window.closeMessagesModal = function(e){
+    if(!e || e.target === document.getElementById('messagesModal'))
+      document.getElementById('messagesModal').classList.remove('on');
+  };
+  window.openNewDmModal = function(){
+    document.getElementById('newDmModal').classList.add('on');
+    var i = document.getElementById('newDmAddr'); i.value = ''; setTimeout(function(){ i.focus(); }, 30);
+  };
+  window.closeNewDmModal = function(e){
+    if(!e || e.target === document.getElementById('newDmModal'))
+      document.getElementById('newDmModal').classList.remove('on');
+  };
+
+  async function refreshConversations(){
+    var list = document.getElementById('dmConvList');
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px;text-align:center">'+ T('common.loading') +'</div>';
+    try {
+      var r = await api('/api/v1/conversations');
+      var d = await r.json();
+      _conversations = (d && d.data) || [];
+      renderConvList();
+    } catch(e){
+      list.innerHTML = '<div style="color:#ff6666;font-size:13px;padding:10px">'+ T('common.networkError') +'</div>';
+    }
+  }
+  function renderConvList(){
+    var list = document.getElementById('dmConvList');
+    var top = '<button onclick="openNewDmModal()" style="width:calc(100% - 8px);margin:0 4px 8px;padding:8px;background:var(--yeet);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer">+ '+ T('dm.new') +'</button>';
+    if(!_conversations.length){
+      list.innerHTML = top + '<div style="color:var(--muted);font-size:12px;padding:10px;text-align:center">'+ T('dm.empty') +'</div>';
+      return;
+    }
+    var html = top + _conversations.map(function(c){
+      var name = c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : T('common.unknown'));
+      var act = (_activeConv && _activeConv.id === c.id) ? 'background:#1a1a1a' : '';
+      var when = c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : '';
+      return '<div onclick="openConversation(\''+ c.id +'\')" style="padding:8px 10px;border-radius:8px;cursor:pointer;'+ act +'">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">'
+        +   '<b style="font-size:13px">'+ escapeHtml(name) +'</b>'
+        +   '<span style="font-size:11px;color:var(--muted)">'+ when +'</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    list.innerHTML = html;
+  }
+  window.renderConvList = renderConvList;
+
+  window.openConversation = async function(convId){
+    var c = _conversations.find(function(x){ return x.id === convId; });
+    if(!c) return;
+    _activeConv = c;
+    renderConvList();
+    var hdr = document.getElementById('dmThreadHeader');
+    var name = c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : '?');
+    hdr.innerHTML = '<b style="color:#fff">'+ escapeHtml(name) +'</b>'
+      + ' <span id="dmSafety" style="font-size:11px;color:var(--muted);margin-left:6px"></span>';
+    document.getElementById('dmThreadBody').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center">'+ T('common.loading') +'</div>';
+    document.getElementById('dmComposer').style.display = c.peer_public_key ? 'flex' : 'none';
+    if(!c.peer_public_key){
+      document.getElementById('dmThreadBody').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+ T('dm.peerNoKey') +'</div>';
+      return;
+    }
+    // Compute safety number lazily so the header shows a stable verification fingerprint.
+    try {
+      var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+      var sn = await window.YeetE2EE.safetyNumber(id.pk, c.peer_public_key);
+      var sEl = document.getElementById('dmSafety');
+      if(sEl) sEl.textContent = T('dm.safetyNumber')+': '+ sn;
+    } catch(e){ /* identity setup may have been declined */ }
+    await loadMessages(convId);
+  };
+
+  function retentionCutoffMs(){
+    return Date.now() - _retentionDays * 24 * 3600 * 1000;
+  }
+
+  async function loadMessages(convId){
+    try {
+      var r = await api('/api/v1/conversations/'+ convId +'/messages?limit=80');
+      var d = await r.json();
+      var msgs = (d && d.data) || [];
+      var conv = _conversations.find(function(x){ return x.id === convId; });
+      if(!conv) return;
+      var key = null;
+      if(conv.peer_public_key){
+        try { key = await convKeyFor(conv.peer_public_key, null); } catch(e){ /* show ciphertext warnings inline */ }
+      }
+      // Filter by client retention. Server has already enforced the 30d
+      // hard cap; this is the optional shorter retention the user picked.
+      var cutoff = retentionCutoffMs();
+      msgs = msgs.filter(function(m){ return new Date(m.created_at).getTime() >= cutoff; });
+      var bodyEl = document.getElementById('dmThreadBody');
+      if(!msgs.length){
+        bodyEl.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">—</div>';
+        return;
+      }
+      var meAddr = (localStorage.getItem('yeet_address') || '').toLowerCase();
+      var pieces = [];
+      for(var i=0;i<msgs.length;i++){
+        var m = msgs[i];
+        var mine = false;
+        // Identify own messages by sender_id == current user. We don't have a
+        // ready user-id on the client, so fall back to the peer-id heuristic.
+        if(conv.peer_id && m.sender_id && m.sender_id !== conv.peer_id) mine = true;
+        var label = mine ? T('dm.you') : (conv.peer_display_name || conv.peer_username || '');
+        var rendered = await renderMessageBody(m, key);
+        pieces.push(messageBubble(m, mine, label, rendered));
+      }
+      bodyEl.innerHTML = pieces.join('');
+      bodyEl.scrollTop = bodyEl.scrollHeight;
+    } catch(e){
+      console.error(e);
+      document.getElementById('dmThreadBody').innerHTML = '<div style="color:#ff6666;font-size:13px">'+ T('common.networkError') +'</div>';
+    }
+  }
+
+  async function renderMessageBody(m, convKey){
+    if(m.deleted_at){
+      return '<span style="color:var(--muted);font-style:italic">'+ T('dm.deleted') +'</span>';
+    }
+    if(m.kind === 'tip'){
+      var amt = (typeof m.tip_amount === 'number') ? m.tip_amount : 0;
+      return '<span style="color:#f5a623;font-weight:700">&#127873; '+ T('dm.tipMessage', { amount: amt }) +'</span>';
+    }
+    if(!convKey){
+      return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+    }
+    try {
+      var plain = await window.YeetE2EE.decryptWithKey(convKey, m.iv, m.ciphertext);
+      // Decrypted plaintext is rendered with textContent-equivalent escaping.
+      return escapeHtml(plain);
+    } catch(e){
+      return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+    }
+  }
+  function messageBubble(m, mine, label, rendered){
+    var side = mine ? 'flex-end' : 'flex-start';
+    var bg   = mine ? '#1f2a14' : '#1a1a1a';
+    var del  = mine && !m.deleted_at && m.kind !== 'tip'
+      ? '<button onclick="deleteDmMessage(\''+ m.id +'\')" title="delete" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 4px">&times;</button>'
+      : '';
+    return '<div style="align-self:'+ side +';max-width:80%">'
+      + '<div style="background:'+ bg +';border:1px solid #2a2a2a;border-radius:12px;padding:6px 10px;font-size:13px;color:#eee;word-wrap:break-word">'+ rendered +'</div>'
+      + '<div style="display:flex;justify-content:'+ (mine?'flex-end':'flex-start') +';gap:6px;font-size:10px;color:var(--muted);margin-top:2px">'
+      +   '<span>'+ fmtTime(m.created_at) +'</span>'
+      +   del
+      + '</div></div>';
+  }
+
+  window.sendDmText = async function(){
+    if(!_activeConv) return;
+    var input = document.getElementById('dmInput');
+    var text = (input.value || '').trim();
+    if(!text) return;
+    if(text.length > 2000){ window.showToast('Too long','error'); return; }
+    if(!_activeConv.peer_public_key){ window.showToast(T('dm.peerNoKey'),'error'); return; }
+    try {
+      var key = await convKeyFor(_activeConv.peer_public_key, null);
+      var blob = await window.YeetE2EE.encryptWithKey(key, text);
+      var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
+        method:'POST',
+        body: JSON.stringify({ kind:'text', ciphertext: blob.ciphertext, iv: blob.iv })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      input.value = '';
+      await loadMessages(_activeConv.id);
+    } catch(e){
+      console.error(e);
+      window.showToast(T('common.networkError'),'error');
+    }
+  };
+
+  window.openDmTip = async function(){
+    if(!_activeConv) return;
+    var amtStr = prompt(T('dm.tipAmount'), '1');
+    if(amtStr === null) return;
+    var amt = parseFloat(amtStr);
+    if(!amt || amt <= 0){ window.showToast(T('tip.selectAmount'),'error'); return; }
+    try {
+      // The visible-in-chat ciphertext is just a marker; the real amount
+      // travels via the tip_amount field, which the backend wires into
+      // a tips row inside the same transaction.
+      var key = await convKeyFor(_activeConv.peer_public_key, null);
+      var blob = await window.YeetE2EE.encryptWithKey(key, 'TIP:'+amt);
+      var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
+        method:'POST',
+        body: JSON.stringify({ kind:'tip', ciphertext: blob.ciphertext, iv: blob.iv, tip_amount: String(amt) })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      window.showToast(T('dm.tipSent',{amount:amt}),'success');
+      await loadMessages(_activeConv.id);
+    } catch(e){
+      window.showToast(T('common.networkError'),'error');
+    }
+  };
+
+  window.deleteDmMessage = async function(id){
+    if(!confirm(T('dm.deleteConfirm'))) return;
+    try {
+      var r = await api('/api/v1/messages/'+ encodeURIComponent(id), { method:'DELETE' });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      window.showToast(T('dm.deletedToast'),'success');
+      if(_activeConv) await loadMessages(_activeConv.id);
+    } catch(e){
+      window.showToast(T('common.networkError'),'error');
+    }
+  };
+
+  window.createDmConversation = async function(){
+    var raw = (document.getElementById('newDmAddr').value || '').trim();
+    if(!raw){ return; }
+    var addr = raw.replace(/^@/, '');
+    try {
+      var r = await api('/api/v1/conversations/dm', {
+        method:'POST',
+        body: JSON.stringify({ peer_address: addr })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      var d = await r.json();
+      closeNewDmModal();
+      await refreshConversations();
+      window.openConversation(d.data.id);
+    } catch(e){
+      window.showToast(T('common.networkError'),'error');
+    }
+  };
+
+  async function refreshRetention(){
+    try {
+      var r = await api('/api/v1/me/dm-retention');
+      var d = await r.json();
+      if(d && d.data && d.data.dm_retention_days) _retentionDays = d.data.dm_retention_days;
+    } catch(e){}
+  }
+  window.updateDmRetention = async function(days){
+    days = parseInt(days, 10);
+    if(![1,7,30].includes(days)) return;
+    try {
+      var r = await api('/api/v1/me/dm-retention', { method:'POST', body: JSON.stringify({ dm_retention_days: days }) });
+      if(!r.ok) return;
+      _retentionDays = days;
+      window.showToast(T('dm.retentionUpdated'),'success');
+      if(_activeConv) await loadMessages(_activeConv.id);
+    } catch(e){}
+  };
+
+  // Enter to send (Shift+Enter for newline).
+  document.addEventListener('keydown', function(e){
+    if(e.target && e.target.id === 'dmInput' && e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault(); sendDmText();
+    }
   });
 })();
 </script>
