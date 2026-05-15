@@ -344,13 +344,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <button class="modal-close" onclick="closeMessagesModal()">&#10005;</button>
     <h3>&#128172; <span data-i18n="dm.title">Messages</span></h3>
     <div style="display:flex;height:60vh;min-height:380px;gap:0;margin-top:8px;border-top:1px solid var(--border)">
-      <div id="dmConvList" style="width:240px;border-right:1px solid var(--border);overflow-y:auto;padding:8px 4px"></div>
+      <div id="dmConvList" style="width:240px;border-right:1px solid var(--border);overflow-y:auto;padding:8px 4px">
+        <button onclick="openInvitationsModal()" id="dmInvitationsBtn" style="display:none;width:calc(100% - 8px);margin:0 4px 6px;padding:6px;background:#3a2a14;color:#f5a623;border:1px solid #5a4220;border-radius:6px;cursor:pointer;font-size:12px">&#9993;&#65039; <span id="dmInvitationsCount">0</span> <span data-i18n="dm.invTitle">invitations</span></button>
+      </div>
       <div id="dmThreadPane" style="flex:1;display:flex;flex-direction:column;min-width:0">
         <div id="dmThreadHeader" style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)" data-i18n="dm.pickConv">Select a conversation</div>
         <div id="dmThreadBody" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px"></div>
         <div id="dmComposer" style="display:none;border-top:1px solid var(--border);padding:8px;gap:6px;flex-wrap:wrap">
           <textarea id="dmInput" rows="2" placeholder="" style="flex:1 1 100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;resize:vertical;min-height:34px"></textarea>
           <button onclick="sendDmText()" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer" data-i18n="dm.send">Send</button>
+          <button onclick="document.getElementById('dmImageInput').click()" title="" data-i18n-title="dm.sendImage" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px 12px;cursor:pointer">&#128247;</button>
+          <input type="file" id="dmImageInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" onchange="sendDmImage(this)">
           <button onclick="openDmTip()" style="background:transparent;border:1px solid #f5a623;color:#f5a623;border-radius:8px;padding:8px 12px;cursor:pointer" title="" data-i18n-title="dm.sendTip">&#127873;</button>
         </div>
       </div>
@@ -364,7 +368,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <h3>&#128172; <span data-i18n="dm.newTitle">New conversation</span></h3>
     <p style="color:var(--muted);font-size:13px;margin:6px 0 10px" data-i18n="dm.newSubtitle">Enter the recipient's wallet address or username.</p>
     <input id="newDmAddr" type="text" autocomplete="off" spellcheck="false" placeholder="0x... or @username" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:14px;font-family:monospace">
-    <button onclick="createDmConversation()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="dm.startChat">Start chat</button>
+    <button onclick="createDmConversation()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:10px" data-i18n="dm.startChat">Start chat</button>
+    <button onclick="closeNewDmModal();openNewGroupModal()" style="width:100%;padding:10px;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:10px;font-weight:600;cursor:pointer" data-i18n="dm.groupNew">New group</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="newGroupModal" onclick="closeNewGroupModal(event)">
+  <div class="modal modal-wrap" style="max-width:480px">
+    <button class="modal-close" onclick="closeNewGroupModal()">&#10005;</button>
+    <h3>&#128101; <span data-i18n="dm.groupNew">New group</span></h3>
+    <input id="newGroupName" type="text" maxlength="80" placeholder="" data-i18n-placeholder="dm.groupNamePh" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin:10px 0">
+    <div id="newGroupMembers" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+    <button onclick="addGroupMemberRow()" style="background:transparent;color:var(--yeet);border:1px dashed var(--border);border-radius:8px;padding:6px;width:100%;cursor:pointer;margin-bottom:14px" data-i18n="dm.groupAdd">+ Add member</button>
+    <button onclick="createGroup()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="dm.groupCreate">Create group</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="invitationsModal" onclick="closeInvitationsModal(event)">
+  <div class="modal modal-wrap" style="max-width:520px">
+    <button class="modal-close" onclick="closeInvitationsModal()">&#10005;</button>
+    <h3>&#9993;&#65039; <span data-i18n="dm.invTitle">Group invitations</span></h3>
+    <div id="invList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:60vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -664,6 +688,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.retentionUpdated':'Retention updated',
       'dm.day1':'1 day','dm.day7':'7 days','dm.day30':'30 days',
       'dm.you':'You','dm.tipMessage':'Tip · {amount} YEET',
+      'dm.image':'Image','dm.sendImage':'Send image','dm.imageTooLarge':'Image too large (max 8 MB)',
+      'dm.invTitle':'Group invitations','dm.invFrom':'from','dm.invAccept':'Accept','dm.invDecline':'Decline',
+      'dm.invEmpty':'No pending invitations.','dm.invAccepted':'Joined group','dm.invDeclined':'Declined',
+      'dm.groupNew':'New group','dm.groupNamePh':'Group name','dm.groupAdd':'Add member','dm.groupCreate':'Create group',
+      'dm.groupMemberPh':'wallet or @username','dm.groupAtLeastOne':'Add at least one member',
+      'dm.groupNoKey':'Member has no encryption key yet — skipped.',
+      'dm.groupCreated':'Group created','dm.leave':'Leave group',
+      'dm.leaveConfirm':'Leave this group?','dm.left':'You left the group.',
       // tip modal
       'tip.title':'Tip YEET Tokens','tip.subtitle':'Support this post with YEET tokens',
       'tip.quickSelect':'Quick select:','tip.orEnter':'Or enter amount:','tip.customPlaceholder':'Custom amount...',
@@ -810,6 +842,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.retentionUpdated':'Speicherdauer aktualisiert',
       'dm.day1':'1 Tag','dm.day7':'7 Tagen','dm.day30':'30 Tagen',
       'dm.you':'Du','dm.tipMessage':'Tip · {amount} YEET',
+      'dm.image':'Bild','dm.sendImage':'Bild senden','dm.imageTooLarge':'Bild zu groß (max. 8 MB)',
+      'dm.invTitle':'Gruppen-Einladungen','dm.invFrom':'von','dm.invAccept':'Annehmen','dm.invDecline':'Ablehnen',
+      'dm.invEmpty':'Keine offenen Einladungen.','dm.invAccepted':'Gruppe beigetreten','dm.invDeclined':'Abgelehnt',
+      'dm.groupNew':'Neue Gruppe','dm.groupNamePh':'Gruppenname','dm.groupAdd':'Mitglied hinzufügen','dm.groupCreate':'Gruppe erstellen',
+      'dm.groupMemberPh':'Wallet oder @username','dm.groupAtLeastOne':'Mindestens ein Mitglied hinzufügen',
+      'dm.groupNoKey':'Mitglied hat noch keinen Encryption-Key — übersprungen.',
+      'dm.groupCreated':'Gruppe erstellt','dm.leave':'Gruppe verlassen',
+      'dm.leaveConfirm':'Diese Gruppe wirklich verlassen?','dm.left':'Gruppe verlassen.',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
       'tip.quickSelect':'Schnellauswahl:','tip.orEnter':'Oder Betrag eingeben:','tip.customPlaceholder':'Eigener Betrag...',
       'tip.send':'Tip senden','tip.sending':'Senden...','tip.notLogged':'Bitte einloggen, um zu tippen',
@@ -4663,6 +4703,247 @@ info@blocksocial.eu</address>
       e.preventDefault(); sendDmText();
     }
   });
+
+  // ---------- image send ----------
+  window.sendDmImage = async function(input){
+    if(!_activeConv) return;
+    if(!_activeConv.peer_public_key){ window.showToast(T('dm.peerNoKey'),'error'); return; }
+    var file = input.files && input.files[0];
+    input.value = ''; // allow re-selecting the same file
+    if(!file) return;
+    if(file.size > 8 * 1024 * 1024){ window.showToast(T('dm.imageTooLarge'),'error'); return; }
+    try {
+      var key = await convKeyFor(_activeConv.peer_public_key, null);
+      var buf = new Uint8Array(await file.arrayBuffer());
+      var iv  = window.crypto.getRandomValues(new Uint8Array(12));
+      var ct  = new Uint8Array(await window.crypto.subtle.encrypt(
+        { name:'AES-GCM', iv: iv }, key, buf));
+      var ivB64 = window.YeetE2EE.bytesToB64(iv);
+      // Multipart: iv + file
+      var form = new FormData();
+      form.append('iv', ivB64);
+      form.append('file', new Blob([ct], { type:'application/octet-stream' }), 'enc.bin');
+      var r = await fetch('/api/v1/conversations/'+ _activeConv.id +'/messages/image', {
+        method:'POST',
+        headers:{ 'Authorization':'Bearer '+ jwt() },
+        body: form
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      await loadMessages(_activeConv.id);
+    } catch(e){
+      console.error(e);
+      window.showToast(T('common.networkError'),'error');
+    }
+  };
+
+  // Hook into renderMessageBody for image kind. We monkey-patch by
+  // wrapping the previous version (defined above) since it's a closure
+  // local to this IIFE.
+  var _origRender = renderMessageBody;
+  renderMessageBody = async function(m, convKey){
+    if(m.kind === 'image' && !m.deleted_at){
+      if(!convKey) return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+      try {
+        var r = await fetch('/api/v1/messages/'+ encodeURIComponent(m.id) +'/blob', {
+          headers:{ 'Authorization':'Bearer '+ jwt() }
+        });
+        if(!r.ok) throw new Error('blob fetch');
+        var ct = new Uint8Array(await r.arrayBuffer());
+        var iv = window.YeetE2EE.b64ToBytes(m.iv);
+        var plain = new Uint8Array(await window.crypto.subtle.decrypt(
+          { name:'AES-GCM', iv: iv }, convKey, ct));
+        var url = URL.createObjectURL(new Blob([plain]));
+        // Revoke after a short delay to free memory; img already cached
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+        return '<img src="'+ url +'" style="max-width:240px;max-height:240px;border-radius:8px;display:block" alt="">';
+      } catch(e){
+        return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+      }
+    }
+    return _origRender(m, convKey);
+  };
+
+  // ---------- group invitations ----------
+  var _pendingInvites = [];
+  async function refreshInvitations(){
+    try {
+      var r = await api('/api/v1/me/invitations');
+      var d = await r.json();
+      _pendingInvites = (d && d.data) || [];
+      var btn = document.getElementById('dmInvitationsBtn');
+      var cnt = document.getElementById('dmInvitationsCount');
+      if(btn && cnt){
+        cnt.textContent = _pendingInvites.length;
+        btn.style.display = _pendingInvites.length ? 'block' : 'none';
+      }
+      // Sidebar badge
+      var sb = document.getElementById('dmInviteBadge');
+      if(sb){
+        if(_pendingInvites.length){ sb.style.display=''; sb.textContent = _pendingInvites.length; }
+        else sb.style.display = 'none';
+      }
+    } catch(e){}
+  }
+
+  window.openInvitationsModal = async function(){
+    document.getElementById('invitationsModal').classList.add('on');
+    await refreshInvitations();
+    renderInvitations();
+  };
+  window.closeInvitationsModal = function(e){
+    if(!e || e.target === document.getElementById('invitationsModal'))
+      document.getElementById('invitationsModal').classList.remove('on');
+  };
+
+  function renderInvitations(){
+    var list = document.getElementById('invList');
+    if(!_pendingInvites.length){
+      list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px;text-align:center">'+ T('dm.invEmpty') +'</div>';
+      return;
+    }
+    list.innerHTML = _pendingInvites.map(function(inv){
+      var name = inv.conversation_name || inv.conversation_id.slice(0,8);
+      var by   = inv.invited_by_username || '';
+      return '<div style="background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:10px">'
+        + '<div style="flex:1;min-width:0"><b>'+ escapeHtml(name) +'</b>'
+        +   (by ? '<div style="font-size:11px;color:var(--muted)">'+ T('dm.invFrom') +' @'+ escapeHtml(by) +'</div>' : '')
+        + '</div>'
+        + '<button onclick="acceptInvitation(\''+ inv.id +'\')" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">'+ T('dm.invAccept') +'</button>'
+        + '<button onclick="declineInvitation(\''+ inv.id +'\')" style="background:transparent;color:#ff7f7f;border:1px solid #5a2a2a;border-radius:8px;padding:6px 12px;cursor:pointer">'+ T('dm.invDecline') +'</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  window.acceptInvitation = async function(id){
+    try {
+      var r = await api('/api/v1/invitations/'+ encodeURIComponent(id) +'/accept', { method:'POST' });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      window.showToast(T('dm.invAccepted'),'success');
+      await refreshInvitations();
+      renderInvitations();
+      await refreshConversations();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
+  window.declineInvitation = async function(id){
+    try {
+      var r = await api('/api/v1/invitations/'+ encodeURIComponent(id) +'/decline', { method:'POST' });
+      if(!r.ok) return;
+      window.showToast(T('dm.invDeclined'),'success');
+      await refreshInvitations();
+      renderInvitations();
+    } catch(e){}
+  };
+
+  // Refresh invites whenever the messages modal opens.
+  var _origOpenMessages = window.openMessagesModal;
+  window.openMessagesModal = async function(){
+    await _origOpenMessages();
+    refreshInvitations();
+  };
+
+  // ---------- group creation ----------
+  window.openNewGroupModal = function(){
+    document.getElementById('newGroupName').value = '';
+    document.getElementById('newGroupMembers').innerHTML = '';
+    addGroupMemberRow(); addGroupMemberRow();
+    document.getElementById('newGroupModal').classList.add('on');
+  };
+  window.closeNewGroupModal = function(e){
+    if(!e || e.target === document.getElementById('newGroupModal'))
+      document.getElementById('newGroupModal').classList.remove('on');
+  };
+  window.addGroupMemberRow = function(){
+    var row = document.createElement('input');
+    row.type = 'text'; row.className = 'ng-mem';
+    row.placeholder = T('dm.groupMemberPh');
+    row.autocomplete = 'off'; row.spellcheck = false;
+    row.style.cssText = 'background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;font-family:monospace';
+    document.getElementById('newGroupMembers').appendChild(row);
+  };
+
+  window.createGroup = async function(){
+    var name = (document.getElementById('newGroupName').value || '').trim();
+    if(!name){ window.showToast('Group name required','error'); return; }
+    var rows = Array.from(document.querySelectorAll('#newGroupMembers .ng-mem'));
+    var addresses = rows.map(function(r){ return (r.value||'').trim().replace(/^@/,''); }).filter(Boolean);
+    if(!addresses.length){ window.showToast(T('dm.groupAtLeastOne'),'error'); return; }
+    try {
+      var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+      // 1. Generate a random AES-GCM group key.
+      var gk = await window.crypto.subtle.generateKey(
+        { name:'AES-GCM', length: 256 }, true, ['encrypt','decrypt']);
+      var gkRaw = new Uint8Array(await window.crypto.subtle.exportKey('raw', gk));
+
+      // 2. Fetch each member's pubkey and wrap the group key under
+      //    the per-member conv key (ECDH+HKDF), then send.
+      var members = [];
+      // Own envelope: the creator wraps under their own pk -> self ECDH would be silly,
+      // so we just AES-GCM-encrypt under a session-derived key tied to our identity.
+      // Simpler: use ECDH(my_sk, my_pk) — works fine, yields a stable key.
+      var myPkObj = await window.YeetE2EE.importPubSpki(id.pk);
+      var myConv = await window.YeetE2EE.deriveConvKey(id.sk, myPkObj, id.pk, id.pk);
+      var myEnv = await wrapBytes(myConv, gkRaw);
+      // user_id for self: ask the server.
+      var meR = await api('/api/v1/users/me');
+      var meD = await meR.json();
+      var myId = meD && meD.data && meD.data.id;
+      if(myId) members.push({ user_id: myId, encrypted_group_key: myEnv });
+
+      for(var i=0;i<addresses.length;i++){
+        var addr = addresses[i];
+        try {
+          var pkr = await api('/api/v1/users/'+ encodeURIComponent(addr) +'/e2ee/pubkey');
+          var pkd = await pkr.json();
+          if(!pkd || !pkd.data || !pkd.data.public_key){
+            window.showToast(T('dm.groupNoKey'),'error');
+            continue;
+          }
+          var peerPk = await window.YeetE2EE.importPubSpki(pkd.data.public_key);
+          var conv = await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, pkd.data.public_key);
+          var env = await wrapBytes(conv, gkRaw);
+          members.push({ user_id: pkd.data.user_id, encrypted_group_key: env });
+        } catch(e){ /* skip bad member */ }
+      }
+      if(!members.length){ window.showToast(T('dm.groupAtLeastOne'),'error'); return; }
+      var r = await api('/api/v1/conversations/group', {
+        method:'POST',
+        body: JSON.stringify({ name: name, members: members })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        return;
+      }
+      window.showToast(T('dm.groupCreated'),'success');
+      closeNewGroupModal();
+      await refreshConversations();
+    } catch(e){
+      console.error(e);
+      window.showToast(T('common.networkError'),'error');
+    }
+  };
+
+  async function wrapBytes(key, bytes){
+    var iv = window.crypto.getRandomValues(new Uint8Array(12));
+    var ct = new Uint8Array(await window.crypto.subtle.encrypt(
+      { name:'AES-GCM', iv: iv }, key, bytes));
+    var out = new Uint8Array(iv.length + ct.length);
+    out.set(iv, 0); out.set(ct, iv.length);
+    return window.YeetE2EE.bytesToB64(out);
+  }
+
+  // Poll invitations on first load so the sidebar badge is current
+  // before the user opens the modal.
+  setTimeout(function(){ if(jwt()) refreshInvitations(); }, 1500);
+  setInterval(function(){ if(jwt()) refreshInvitations(); }, 60000);
 })();
 </script>
 

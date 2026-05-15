@@ -144,10 +144,25 @@ pub async fn start_cleanup_job(state: AppState) {
 /// `expires_at` (server-set to created_at + 30 days) is purged from
 /// the database. Runs hourly. Per-user retention shorter than 30 d
 /// is enforced client-side as a display filter on top of this.
+///
+/// For image messages we collect the on-disk blob paths first and
+/// unlink them after the DB rows are gone — otherwise we'd leak
+/// orphaned ciphertext blobs into UPLOADS_DIR/dm-blobs/.
 pub async fn start_message_cleanup_job(state: AppState) {
     let mut ticker = interval(Duration::from_secs(3600));
+    let uploads_root = std::env::var("UPLOADS_DIR").unwrap_or_else(|_| "/app/uploads".into());
     loop {
         ticker.tick().await;
+
+        // 1. Snapshot expired image blob paths before deleting rows.
+        let expired_paths: Vec<String> = match sqlx::query_scalar(
+            "SELECT blob_path FROM messages
+              WHERE expires_at < NOW() AND blob_path IS NOT NULL"
+        ).fetch_all(&state.db.pool).await {
+            Ok(v) => v,
+            Err(e) => { error!("Expired-blob scan error: {e}"); Vec::new() }
+        };
+
         match sqlx::query("DELETE FROM messages WHERE expires_at < NOW()")
             .execute(&state.db.pool).await
         {
@@ -157,7 +172,17 @@ pub async fn start_message_cleanup_job(state: AppState) {
             Ok(_) => {}
             Err(e) => error!("Message cleanup error: {e}"),
         }
-        // Also drop very old pending invitations
+
+        // 2. Unlink blobs whose rows just vanished.
+        for rel in expired_paths {
+            if rel.contains("..") { continue; } // defensive: never escape
+            let full = std::path::Path::new(&uploads_root).join(&rel);
+            if let Err(e) = tokio::fs::remove_file(&full).await {
+                warn!("Failed to remove orphaned blob {}: {e}", full.display());
+            }
+        }
+
+        // 3. Old pending invitations.
         if let Err(e) = sqlx::query(
             "DELETE FROM group_invitations
               WHERE status = 'pending'

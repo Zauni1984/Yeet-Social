@@ -19,3 +19,4 @@ pub mod blocks;
 pub mod e2ee;
 pub mod conversations;
 pub mod messages;
+pub mod invitations;
