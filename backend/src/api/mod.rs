@@ -16,3 +16,4 @@ pub mod settings;
 pub mod uploads;
 pub mod paper_wallets;
 pub mod blocks;
+pub mod e2ee;

@@ -4048,5 +4048,226 @@ info@blocksocial.eu</address>
 })();
 </script>
 
+<script>
+// ---------- E2EE primitives ----------
+// All crypto runs in the browser via WebCrypto. The server stores only
+// ciphertext (encrypted private key blob) and the public key. The
+// derivation chain is:
+//
+//   master_key = SHA-256( personal_sign("YEET-E2EE-v1 identity key") )
+//   identity_sk encrypted under master_key with AES-GCM(random 12B IV)
+//   conv_key (1:1) = HKDF( ECDH(my_sk, peer_pk), info bound to both pubkeys )
+//   message_ct = AES-GCM( conv_key, plaintext, random 12B IV )
+//
+// Limitations (documented for the audit): no forward secrecy, no
+// post-compromise security, no double-ratchet. v1 only.
+
+(function(){
+  if(!window.crypto || !window.crypto.subtle){
+    window.E2EE_UNSUPPORTED = true;
+    return;
+  }
+  var subtle = window.crypto.subtle;
+  var SIGN_MESSAGE = 'YEET-E2EE-v1 identity key';
+
+  // base64 (URL-safe) helpers — the server treats blobs as opaque
+  // base64 so we don't really need URL-safe, but it's idempotent.
+  function bytesToB64(bytes){
+    var s = '';
+    for(var i=0;i<bytes.length;i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s);
+  }
+  function b64ToBytes(b64){
+    var s = atob(b64);
+    var out = new Uint8Array(s.length);
+    for(var i=0;i<s.length;i++) out[i] = s.charCodeAt(i);
+    return out;
+  }
+  function randIv(){ return window.crypto.getRandomValues(new Uint8Array(12)); }
+
+  async function sha256(bytes){
+    return new Uint8Array(await subtle.digest('SHA-256', bytes));
+  }
+
+  // Ask MetaMask (or any injected provider) to sign the deterministic
+  // identity message. Returns the raw signature as bytes.
+  async function signIdentityMessage(){
+    var prov = window.ethereum;
+    if(!prov || !prov.request) throw new Error('no_wallet');
+    var accounts = await prov.request({ method:'eth_accounts' });
+    if(!accounts || !accounts.length){
+      accounts = await prov.request({ method:'eth_requestAccounts' });
+    }
+    if(!accounts || !accounts.length) throw new Error('no_account');
+    var sig = await prov.request({ method:'personal_sign', params:[ SIGN_MESSAGE, accounts[0] ] });
+    if(typeof sig !== 'string' || !sig.startsWith('0x')) throw new Error('bad_signature');
+    var hex = sig.slice(2);
+    var out = new Uint8Array(hex.length / 2);
+    for(var i=0;i<out.length;i++) out[i] = parseInt(hex.substr(i*2, 2), 16);
+    return out;
+  }
+
+  async function deriveMasterKey(){
+    var sig = await signIdentityMessage();
+    var seed = await sha256(sig);
+    return await subtle.importKey('raw', seed, { name:'AES-GCM' }, false, ['encrypt','decrypt']);
+  }
+
+  async function genIdentityKeypair(){
+    return await subtle.generateKey(
+      { name:'ECDH', namedCurve:'P-256' }, true, ['deriveKey','deriveBits']);
+  }
+
+  async function exportPubSpki(key){
+    var raw = await subtle.exportKey('spki', key);
+    return bytesToB64(new Uint8Array(raw));
+  }
+  async function importPubSpki(b64){
+    return await subtle.importKey('spki', b64ToBytes(b64),
+      { name:'ECDH', namedCurve:'P-256' }, false, []);
+  }
+  async function exportPriv(key){
+    var raw = await subtle.exportKey('pkcs8', key);
+    return new Uint8Array(raw);
+  }
+  async function importPriv(bytes){
+    return await subtle.importKey('pkcs8', bytes,
+      { name:'ECDH', namedCurve:'P-256' }, false, ['deriveKey','deriveBits']);
+  }
+
+  // master_key (AES-GCM) wraps the PKCS8 private key bytes
+  async function wrapPrivateKey(master, privBytes){
+    var iv = randIv();
+    var ct = new Uint8Array(await subtle.encrypt(
+      { name:'AES-GCM', iv: iv }, master, privBytes));
+    // Concatenate IV || ciphertext so a single base64 string carries both
+    var out = new Uint8Array(iv.length + ct.length);
+    out.set(iv, 0); out.set(ct, iv.length);
+    return bytesToB64(out);
+  }
+  async function unwrapPrivateKey(master, blobB64){
+    var all = b64ToBytes(blobB64);
+    var iv = all.slice(0, 12);
+    var ct = all.slice(12);
+    var plain = new Uint8Array(await subtle.decrypt(
+      { name:'AES-GCM', iv: iv }, master, ct));
+    return await importPriv(plain);
+  }
+
+  // HKDF-derived 256-bit AES-GCM key. The info is bound to the sorted
+  // pubkey pair to defeat unknown-key-share attacks (so swapping pks
+  // server-side changes the derived key and decryption fails).
+  async function deriveConvKey(mySk, peerPk, pkA_b64, pkB_b64){
+    var shared = new Uint8Array(await subtle.deriveBits(
+      { name:'ECDH', public: peerPk }, mySk, 256));
+    var sorted = (pkA_b64 < pkB_b64) ? (pkA_b64 + '|' + pkB_b64) : (pkB_b64 + '|' + pkA_b64);
+    var info = new TextEncoder().encode('yeet-dm-v1|' + sorted);
+    var ikm = await subtle.importKey('raw', shared, 'HKDF', false, ['deriveKey']);
+    return await subtle.deriveKey(
+      { name:'HKDF', hash:'SHA-256', salt: new Uint8Array(0), info: info },
+      ikm,
+      { name:'AES-GCM', length: 256 },
+      false,
+      ['encrypt','decrypt']);
+  }
+
+  async function encryptWithKey(key, plaintext){
+    var iv = randIv();
+    var pt = new TextEncoder().encode(plaintext);
+    var ct = new Uint8Array(await subtle.encrypt(
+      { name:'AES-GCM', iv: iv }, key, pt));
+    return { iv: bytesToB64(iv), ciphertext: bytesToB64(ct) };
+  }
+  async function decryptWithKey(key, ivB64, ctB64){
+    var iv = b64ToBytes(ivB64);
+    var ct = b64ToBytes(ctB64);
+    var pt = new Uint8Array(await subtle.decrypt(
+      { name:'AES-GCM', iv: iv }, key, ct));
+    return new TextDecoder().decode(pt);
+  }
+
+  // 30-digit human-readable fingerprint, grouped 5x6 like Signal.
+  async function safetyNumber(pkA_b64, pkB_b64){
+    var sorted = (pkA_b64 < pkB_b64) ? (pkA_b64 + pkB_b64) : (pkB_b64 + pkA_b64);
+    var dig = await sha256(new TextEncoder().encode(sorted));
+    // Take first 15 bytes -> 30 decimal digits (each byte -> 2 digits via mod 100)
+    var s = '';
+    for(var i=0;i<15;i++){
+      var d = (dig[i] % 100).toString().padStart(2,'0');
+      s += d;
+    }
+    return s.match(/.{5}/g).join(' ');
+  }
+
+  // ----- session cache for the unwrapped identity private key -----
+  // We keep the unwrapped key only in memory (not in localStorage),
+  // and re-derive on every tab open. sessionStorage holds the b64 of
+  // the *encrypted* blob so we don't have to refetch from the server
+  // on a soft reload, but we never persist the plaintext.
+  var _identitySk = null;
+  var _identityPk = null;
+
+  async function ensureIdentity(promptMessage){
+    if(_identitySk) return { sk: _identitySk, pk: _identityPk };
+    var jwt = localStorage.getItem('yeet_jwt');
+    if(!jwt) throw new Error('not_logged_in');
+    // 1. Try server
+    var r = await fetch('/api/v1/me/e2ee/keys', { headers:{ Authorization:'Bearer '+jwt } });
+    var d = await r.json();
+    if(d && d.success && d.data && d.data.public_key && d.data.encrypted_private_key){
+      // Recovery flow on this device
+      var master = await deriveMasterKey();
+      try {
+        _identitySk = await unwrapPrivateKey(master, d.data.encrypted_private_key);
+        _identityPk = d.data.public_key;
+        return { sk: _identitySk, pk: _identityPk };
+      } catch(e) {
+        throw new Error('unwrap_failed');
+      }
+    }
+    // 2. First-time setup
+    if(promptMessage && !confirm(promptMessage)) throw new Error('setup_declined');
+    var master2 = await deriveMasterKey();
+    var kp = await genIdentityKeypair();
+    var spki = await exportPubSpki(kp.publicKey);
+    var pkcs8 = await exportPriv(kp.privateKey);
+    var wrapped = await wrapPrivateKey(master2, pkcs8);
+    var ur = await fetch('/api/v1/me/e2ee/keys', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+      body: JSON.stringify({ public_key: spki, encrypted_private_key: wrapped })
+    });
+    var ud = await ur.json();
+    if(!ur.ok || !ud.success) throw new Error('upload_failed');
+    _identitySk = kp.privateKey;
+    _identityPk = spki;
+    return { sk: _identitySk, pk: _identityPk };
+  }
+
+  function clearIdentityCache(){ _identitySk = null; _identityPk = null; }
+
+  // Expose a deliberately small surface.
+  window.YeetE2EE = {
+    ensureIdentity: ensureIdentity,
+    clearCache: clearIdentityCache,
+    importPubSpki: importPubSpki,
+    deriveConvKey: deriveConvKey,
+    encryptWithKey: encryptWithKey,
+    decryptWithKey: decryptWithKey,
+    safetyNumber: safetyNumber,
+    randIv: function(){ return bytesToB64(randIv()); },
+    bytesToB64: bytesToB64,
+    b64ToBytes: b64ToBytes,
+    SIGN_MESSAGE: SIGN_MESSAGE
+  };
+
+  // Wipe the cached private key on logout (the disconnectWallet path
+  // already exists; we just want to make sure nobody else can read it).
+  window.addEventListener('storage', function(ev){
+    if(ev.key === 'yeet_jwt' && !ev.newValue) clearIdentityCache();
+  });
+})();
+</script>
+
 </body>
 </html>

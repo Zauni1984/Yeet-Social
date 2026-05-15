@@ -121,6 +121,9 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/:address/block",    post(api::blocks::block))
         .route("/api/v1/users/:address/unblock",  post(api::blocks::unblock))
         .route("/api/v1/me/blocks",               get(api::blocks::list_mine))
+        .route("/api/v1/me/e2ee/keys",            get(api::e2ee::get_my_keys))
+        .route("/api/v1/me/e2ee/keys",            post(api::e2ee::upload_keys))
+        .route("/api/v1/users/:address/e2ee/pubkey", get(api::e2ee::get_peer_pubkey))
         // Tips & Tokens
         .route("/api/v1/admin/posts",          get(api::report::admin_list_posts))
         .route("/api/v1/admin/reports",        get(api::report::admin_list_reports))
