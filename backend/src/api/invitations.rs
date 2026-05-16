@@ -48,7 +48,7 @@ pub async fn create_group(
     if req.name.trim().is_empty() || req.name.len() > 80 {
         return Err(AppError::Validation("Group name must be 1-80 chars".into()));
     }
-    if req.members.len() < 1 || req.members.len() > 50 {
+    if req.members.is_empty() || req.members.len() > 50 {
         return Err(AppError::Validation("Members must be 1-50".into()));
     }
     let me = caller_user_id(&state, &auth).await?;

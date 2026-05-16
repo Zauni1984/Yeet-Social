@@ -102,10 +102,10 @@ pub async fn send(
     .bind(conv_id).bind(me)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     if let Some((peer_id, kind)) = peer {
-        if kind == "dm" {
-            if crate::api::blocks::either_blocks(state.db.pool(), me, peer_id).await? {
-                return Err(AppError::Forbidden("Blocked".into()));
-            }
+        if kind == "dm"
+            && crate::api::blocks::either_blocks(state.db.pool(), me, peer_id).await?
+        {
+            return Err(AppError::Forbidden("Blocked".into()));
         }
     }
 

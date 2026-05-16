@@ -35,7 +35,7 @@ async fn caller_user_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid> {
 /// Crockford base32 — unambiguous (no I, L, O, U), case-insensitive.
 fn base32_crockford(bytes: &[u8]) -> String {
     const ALPH: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-    let mut out = String::with_capacity((bytes.len() * 8 + 4) / 5);
+    let mut out = String::with_capacity((bytes.len() * 8).div_ceil(5));
     let (mut buf, mut bits) = (0u32, 0u32);
     for &b in bytes {
         buf = (buf << 8) | b as u32;

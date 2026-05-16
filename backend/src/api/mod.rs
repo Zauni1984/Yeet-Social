@@ -1,4 +1,10 @@
 //! API handlers grouped by domain.
+//
+// Many handlers use ad-hoc tuples for `sqlx::query_as` results to avoid
+// declaring a single-use FromRow struct. Clippy's `type_complexity`
+// lint flags those tuples; suppressing it here keeps CI clean while
+// preserving the lint everywhere else.
+#![allow(clippy::type_complexity)]
 pub mod auth;
 pub mod feed;
 pub mod middleware;

@@ -4618,23 +4618,28 @@ info@blocksocial.eu</address>
   async function refreshConversations(){
     var list = document.getElementById('dmConvList');
     list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px;text-align:center">'+ T('common.loading') +'</div>';
+    var failMsg = null;
     try {
       var r = await api('/api/v1/conversations');
-      var d = await r.json();
-      _conversations = (d && d.data) || [];
-      renderConvList();
-    } catch(e){
-      list.innerHTML = '<div style="color:#ff6666;font-size:13px;padding:10px">'+ T('common.networkError') +'</div>';
-    }
+      if(!r.ok){ failMsg = T('common.error') + ' ('+r.status+')'; }
+      else {
+        var d = await r.json();
+        _conversations = (d && d.data) || [];
+      }
+    } catch(e){ failMsg = T('common.networkError'); }
+    // Always render the list — even on error — so the "+ New" button
+    // stays reachable. The error is shown below the button.
+    renderConvList(failMsg);
   }
-  function renderConvList(){
+  function renderConvList(failMsg){
     var list = document.getElementById('dmConvList');
     var top = '<button onclick="openNewDmModal()" style="width:calc(100% - 8px);margin:0 4px 8px;padding:8px;background:var(--yeet);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer">+ '+ T('dm.new') +'</button>';
+    var err = failMsg ? '<div style="color:#ff6666;font-size:12px;padding:6px 10px">'+ escapeHtml(failMsg) +'</div>' : '';
     if(!_conversations.length){
-      list.innerHTML = top + '<div style="color:var(--muted);font-size:12px;padding:10px;text-align:center">'+ T('dm.empty') +'</div>';
+      list.innerHTML = top + err + '<div style="color:var(--muted);font-size:12px;padding:10px;text-align:center">'+ T('dm.empty') +'</div>';
       return;
     }
-    var html = top + _conversations.map(function(c){
+    var html = top + err + _conversations.map(function(c){
       var name;
       if(c.kind === 'group'){
         name = c.name || T('dm.groupNew');
