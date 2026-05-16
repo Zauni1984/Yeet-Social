@@ -4493,10 +4493,24 @@ info@blocksocial.eu</address>
     if(window.E2EE_UNSUPPORTED){
       window.showToast(T('dm.notSupported'),'error'); return;
     }
-    var addr = localStorage.getItem('yeet_address') || '';
-    // Block email-only users without an on-chain wallet for v1.
-    if(!addr || !addr.toLowerCase().startsWith('0x')){
+    // Real gate: do we have a browser wallet that can sign the
+    // identity-derivation message? `yeet_address` may be empty for
+    // older sessions, so don't rely on it.
+    if(!window.ethereum || !window.ethereum.request){
       window.showToast(T('dm.linkWallet'),'error'); return;
+    }
+    // Backfill yeet_address from the injected provider so the rest of
+    // the app (own-message detection, sidebar, etc.) keeps working.
+    if(!localStorage.getItem('yeet_address')){
+      try {
+        var accs = await window.ethereum.request({ method:'eth_accounts' });
+        if(!accs || !accs.length){
+          accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+        }
+        if(accs && accs[0]) localStorage.setItem('yeet_address', accs[0].toLowerCase());
+      } catch(e){
+        window.showToast(T('dm.linkWallet'),'error'); return;
+      }
     }
     document.getElementById('messagesModal').classList.add('on');
     document.getElementById('dmInput').placeholder = T('dm.composerPh');
