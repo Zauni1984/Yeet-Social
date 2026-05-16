@@ -26,16 +26,35 @@ pub(crate) async fn caller_user_id(state: &AppState, auth: &AuthUser) -> AppResu
         .ok_or_else(|| AppError::NotFound("User not found".into()))
 }
 
+/// Resolve a user reference (UUID, 0x-wallet, or @username) to a UUID.
 pub(crate) async fn resolve_user(pool: &PgPool, address_or_id: &str) -> AppResult<Uuid> {
-    if let Ok(id) = Uuid::parse_str(address_or_id) {
+    let raw = address_or_id.trim().trim_start_matches('@');
+    if let Ok(id) = Uuid::parse_str(raw) {
         return Ok(id);
     }
-    sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(address_or_id.to_lowercase())
-        .fetch_optional(pool)
-        .await
-        .map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))
+    // wallet_address lookup (case-insensitive)
+    if let Some(id) = sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM users WHERE LOWER(wallet_address) = LOWER($1)"
+    )
+    .bind(raw)
+    .fetch_optional(pool)
+    .await
+    .map_err(AppError::Database)?
+    {
+        return Ok(id);
+    }
+    // username lookup (case-insensitive, exact match)
+    if let Some(id) = sqlx::query_scalar::<_, Uuid>(
+        "SELECT id FROM users WHERE LOWER(username) = LOWER($1)"
+    )
+    .bind(raw)
+    .fetch_optional(pool)
+    .await
+    .map_err(AppError::Database)?
+    {
+        return Ok(id);
+    }
+    Err(AppError::NotFound("User not found".into()))
 }
 
 pub(crate) async fn assert_member(pool: &PgPool, conv: Uuid, user: Uuid) -> AppResult<()> {

@@ -363,12 +363,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 </div>
 
 <div class="modal-bg" id="newDmModal" onclick="closeNewDmModal(event)">
-  <div class="modal modal-wrap" style="max-width:420px">
+  <div class="modal modal-wrap" style="max-width:440px">
     <button class="modal-close" onclick="closeNewDmModal()">&#10005;</button>
     <h3>&#128172; <span data-i18n="dm.newTitle">New conversation</span></h3>
-    <p style="color:var(--muted);font-size:13px;margin:6px 0 10px" data-i18n="dm.newSubtitle">Enter the recipient's wallet address or username.</p>
-    <input id="newDmAddr" type="text" autocomplete="off" spellcheck="false" placeholder="0x... or @username" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:14px;font-family:monospace">
-    <button onclick="createDmConversation()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:10px" data-i18n="dm.startChat">Start chat</button>
+    <p style="color:var(--muted);font-size:12px;margin:6px 0 8px" data-i18n="dm.followingHint">Pick from people you follow:</p>
+    <input id="newDmFilter" type="text" autocomplete="off" placeholder="" data-i18n-placeholder="common.search" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:8px">
+    <div id="newDmFollows" style="max-height:32vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;padding:6px"></div>
+    <details style="margin-bottom:10px"><summary style="cursor:pointer;color:var(--muted);font-size:12px;margin-bottom:6px" data-i18n="dm.orEnterAddr">Or enter wallet / username manually</summary>
+      <input id="newDmAddr" type="text" autocomplete="off" spellcheck="false" placeholder="0x... or @username" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;margin:6px 0;font-family:monospace">
+      <button onclick="createDmConversation()" style="width:100%;padding:8px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="dm.startChat">Start chat</button>
+    </details>
     <button onclick="closeNewDmModal();openNewGroupModal()" style="width:100%;padding:10px;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:10px;font-weight:600;cursor:pointer" data-i18n="dm.groupNew">New group</button>
   </div>
 </div>
@@ -378,8 +382,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <button class="modal-close" onclick="closeNewGroupModal()">&#10005;</button>
     <h3>&#128101; <span data-i18n="dm.groupNew">New group</span></h3>
     <input id="newGroupName" type="text" maxlength="80" placeholder="" data-i18n-placeholder="dm.groupNamePh" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin:10px 0">
-    <div id="newGroupMembers" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-    <button onclick="addGroupMemberRow()" style="background:transparent;color:var(--yeet);border:1px dashed var(--border);border-radius:8px;padding:6px;width:100%;cursor:pointer;margin-bottom:14px" data-i18n="dm.groupAdd">+ Add member</button>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:4px" data-i18n="dm.pickMembers">Pick members from people you follow:</div>
+    <input id="newGroupFilter" type="text" autocomplete="off" placeholder="" data-i18n-placeholder="common.search" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:8px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:8px">
+    <div id="newGroupFollows" style="max-height:30vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;border:1px solid var(--border);border-radius:10px;padding:6px;margin-bottom:10px"></div>
+    <details style="margin-bottom:10px"><summary style="cursor:pointer;color:var(--muted);font-size:12px" data-i18n="dm.orEnterAddrs">Or add extra members by address</summary>
+      <div id="newGroupMembers" style="display:flex;flex-direction:column;gap:6px;margin:6px 0 8px"></div>
+      <button onclick="addGroupMemberRow()" style="background:transparent;color:var(--yeet);border:1px dashed var(--border);border-radius:8px;padding:6px;width:100%;cursor:pointer" data-i18n="dm.groupAdd">+ Add member</button>
+    </details>
     <button onclick="createGroup()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="dm.groupCreate">Create group</button>
   </div>
 </div>
@@ -705,6 +714,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.groupNew':'New group','dm.groupNamePh':'Group name','dm.groupAdd':'Add member','dm.groupCreate':'Create group',
       'dm.groupMemberPh':'wallet or @username','dm.groupAtLeastOne':'Add at least one member',
       'dm.groupNoKey':'Member has no encryption key yet — skipped.',
+      'dm.groupNoReady':'None of the selected members has encrypted messages enabled.',
+      'dm.followingHint':'Pick from people you follow:',
+      'dm.pickMembers':'Pick members from people you follow:',
+      'dm.orEnterAddr':'Or enter wallet / username manually',
+      'dm.orEnterAddrs':'Or add extra members by address',
+      'dm.noFollowsHit':'No matches.','dm.skipped':'skipped',
+      'dm.setupFailed':'Could not set up encrypted messages on this device.',
+      'common.search':'Search...',
       'dm.groupCreated':'Group created','dm.leave':'Leave group',
       'dm.leaveConfirm':'Leave this group?','dm.left':'You left the group.',
       // tip modal
@@ -861,6 +878,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.groupNew':'Neue Gruppe','dm.groupNamePh':'Gruppenname','dm.groupAdd':'Mitglied hinzufügen','dm.groupCreate':'Gruppe erstellen',
       'dm.groupMemberPh':'Wallet oder @username','dm.groupAtLeastOne':'Mindestens ein Mitglied hinzufügen',
       'dm.groupNoKey':'Mitglied hat noch keinen Encryption-Key — übersprungen.',
+      'dm.groupNoReady':'Keiner der gewählten Empfänger hat verschlüsselte Nachrichten aktiviert.',
+      'dm.followingHint':'Aus deinen Follows wählen:',
+      'dm.pickMembers':'Mitglieder aus deinen Follows wählen:',
+      'dm.orEnterAddr':'Oder Wallet / Benutzername manuell eingeben',
+      'dm.orEnterAddrs':'Oder weitere Mitglieder per Adresse hinzufügen',
+      'dm.noFollowsHit':'Keine Treffer.','dm.skipped':'übersprungen',
+      'dm.setupFailed':'Verschlüsselte Nachrichten konnten auf diesem Gerät nicht eingerichtet werden.',
+      'common.search':'Suchen...',
       'dm.groupCreated':'Gruppe erstellt','dm.leave':'Gruppe verlassen',
       'dm.leaveConfirm':'Diese Gruppe wirklich verlassen?','dm.left':'Gruppe verlassen.',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
@@ -4606,13 +4631,110 @@ info@blocksocial.eu</address>
     if(!e || e.target === document.getElementById('messagesModal'))
       document.getElementById('messagesModal').classList.remove('on');
   };
-  window.openNewDmModal = function(){
+  window.openNewDmModal = async function(){
     document.getElementById('newDmModal').classList.add('on');
-    var i = document.getElementById('newDmAddr'); i.value = ''; setTimeout(function(){ i.focus(); }, 30);
+    var i = document.getElementById('newDmAddr'); if(i) i.value = '';
+    var filt = document.getElementById('newDmFilter'); if(filt) filt.value = '';
+    await loadFollowsInto('newDmFollows', 'dm');
+    if(filt) setTimeout(function(){ filt.focus(); }, 30);
   };
   window.closeNewDmModal = function(e){
     if(!e || e.target === document.getElementById('newDmModal'))
       document.getElementById('newDmModal').classList.remove('on');
+  };
+
+  // Cache of "people I follow" for both modals.
+  var _myFollowing = null;
+  // Selected user_ids for group creation; toggled by checkboxes in the
+  // group modal. Cleared each time the modal opens.
+  var _groupSelected = Object.create(null);
+
+  async function fetchMyFollowing(force){
+    if(_myFollowing && !force) return _myFollowing;
+    // Resolve my own address first; emails users have only a UUID.
+    var meR = await api('/api/v1/users/me');
+    if(!meR.ok) throw new Error('me_failed');
+    var meD = await meR.json();
+    var addr = (meD && meD.data && (meD.data.wallet_address || meD.data.id));
+    if(!addr) throw new Error('me_no_address');
+    var fR = await api('/api/v1/users/'+ encodeURIComponent(addr) +'/following');
+    if(!fR.ok) throw new Error('following_failed');
+    var fD = await fR.json();
+    _myFollowing = (fD && fD.data) || [];
+    return _myFollowing;
+  }
+
+  function followFilter(list, term){
+    term = (term||'').trim().toLowerCase().replace(/^@/, '');
+    if(!term) return list;
+    return list.filter(function(u){
+      return (u.display_name||'').toLowerCase().indexOf(term) >= 0
+          || (u.username||'').toLowerCase().indexOf(term) >= 0
+          || (u.wallet_address||'').toLowerCase().indexOf(term) >= 0;
+    });
+  }
+
+  // Renders the follows list inside the given container. `mode` is
+  // 'dm' (single-click selects + starts) or 'group' (checkbox toggle).
+  async function loadFollowsInto(containerId, mode){
+    var el = document.getElementById(containerId);
+    if(!el) return;
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px;text-align:center">'+ T('common.loading') +'</div>';
+    var list;
+    try { list = await fetchMyFollowing(true); }
+    catch(e){
+      el.innerHTML = '<div style="color:#ff6666;font-size:12px;padding:10px">'+ T('common.networkError') +'</div>';
+      return;
+    }
+    var filterId = (mode === 'group') ? 'newGroupFilter' : 'newDmFilter';
+    var search = document.getElementById(filterId);
+    var renderAll = function(){
+      var term = search ? search.value : '';
+      var rows = followFilter(list, term);
+      if(!rows.length){
+        el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px;text-align:center">'+ T('dm.noFollowsHit') +'</div>';
+        return;
+      }
+      el.innerHTML = rows.map(function(u){
+        var name  = escapeHtml(u.display_name || u.username || (u.wallet_address ? u.wallet_address.slice(0,8)+'…' : '?'));
+        var handle = u.username ? ('<span style="color:var(--muted);font-size:11px">@'+ escapeHtml(u.username) +'</span>') : '';
+        var avatar = u.avatar_url
+          ? '<img src="'+ escapeHtml(u.avatar_url) +'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+          : '<div style="width:32px;height:32px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">'+ (name[0]||'Y').toUpperCase() +'</div>';
+        var locked = !u.e2ee_ready;
+        var note  = locked ? '<span title="'+ T('dm.peerNoKey') +'" style="color:#888;font-size:11px;margin-left:4px">&#128274;</span>' : '';
+        if(mode === 'group'){
+          var checked = _groupSelected[u.id] ? 'checked' : '';
+          var disabled = locked ? 'disabled' : '';
+          return '<label style="display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;cursor:'+ (locked?'not-allowed':'pointer') +';opacity:'+ (locked?'0.5':'1') +'">'
+            + '<input type="checkbox" '+ checked +' '+ disabled +' data-uid="'+ u.id +'" onchange="toggleGroupMember(this)" style="cursor:'+ (locked?'not-allowed':'pointer') +'">'
+            + avatar
+            + '<div style="flex:1;min-width:0">'+ name +' '+ handle +' '+ note +'</div>'
+            + '</label>';
+        }
+        return '<div onclick="startDmFromFollow(\''+ u.id +'\', \''+ escapeHtml(u.wallet_address||u.id) +'\')" style="display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;cursor:pointer">'
+          + avatar
+          + '<div style="flex:1;min-width:0">'+ name +' '+ handle +' '+ note +'</div>'
+          + '</div>';
+      }).join('');
+    };
+    renderAll();
+    if(search) search.oninput = renderAll;
+  }
+
+  window.toggleGroupMember = function(cb){
+    var uid = cb.getAttribute('data-uid');
+    if(cb.checked) _groupSelected[uid] = true;
+    else delete _groupSelected[uid];
+  };
+
+  window.startDmFromFollow = async function(userId, addrOrId){
+    closeNewDmModal();
+    // Backend's create_dm accepts UUID or wallet — prefer UUID since
+    // emails users have NULL wallet_address.
+    var target = userId || addrOrId;
+    document.getElementById('newDmAddr').value = target; // reused by createDmConversation
+    await createDmConversation();
   };
 
   async function refreshConversations(){
@@ -5050,11 +5172,13 @@ info@blocksocial.eu</address>
   };
 
   // ---------- group creation ----------
-  window.openNewGroupModal = function(){
+  window.openNewGroupModal = async function(){
     document.getElementById('newGroupName').value = '';
     document.getElementById('newGroupMembers').innerHTML = '';
-    addGroupMemberRow(); addGroupMemberRow();
+    _groupSelected = Object.create(null);
+    var gf = document.getElementById('newGroupFilter'); if(gf) gf.value = '';
     document.getElementById('newGroupModal').classList.add('on');
+    await loadFollowsInto('newGroupFollows', 'group');
   };
   window.closeNewGroupModal = function(e){
     if(!e || e.target === document.getElementById('newGroupModal'))
@@ -5072,47 +5196,88 @@ info@blocksocial.eu</address>
   window.createGroup = async function(){
     var name = (document.getElementById('newGroupName').value || '').trim();
     if(!name){ window.showToast('Group name required','error'); return; }
+    // Combine the checkbox selection (people I follow) with the
+    // manual extra-address rows in the collapsed details block.
+    var selectedIds = Object.keys(_groupSelected);
     var rows = Array.from(document.querySelectorAll('#newGroupMembers .ng-mem'));
-    var addresses = rows.map(function(r){ return (r.value||'').trim().replace(/^@/,''); }).filter(Boolean);
-    if(!addresses.length){ window.showToast(T('dm.groupAtLeastOne'),'error'); return; }
+    var extraAddresses = rows.map(function(r){ return (r.value||'').trim().replace(/^@/,''); }).filter(Boolean);
+    if(!selectedIds.length && !extraAddresses.length){
+      window.showToast(T('dm.groupAtLeastOne'),'error'); return;
+    }
+
+    // Each failure-mode produces a useful toast instead of the generic
+    // "Network error". We rethrow only true infrastructure problems.
+    var id;
     try {
-      var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
-      // 1. Generate a random AES-GCM group key.
-      var gk = await window.crypto.subtle.generateKey(
+      id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+    } catch(e){
+      if(String(e.message||e).match(/aborted|declined/i)){ return; }
+      console.error('ensureIdentity:', e);
+      window.showToast(T('dm.setupFailed'),'error');
+      return;
+    }
+
+    var meR, meD, myId;
+    try {
+      meR = await api('/api/v1/users/me');
+      meD = meR.ok ? await meR.json() : null;
+      myId = meD && meD.data && meD.data.id;
+      if(!myId){ window.showToast(T('common.error'),'error'); return; }
+    } catch(e){
+      console.error('users/me:', e);
+      window.showToast(T('common.networkError'),'error'); return;
+    }
+
+    var gk, gkRaw, myPkObj, myConv, myEnv;
+    try {
+      gk = await window.crypto.subtle.generateKey(
         { name:'AES-GCM', length: 256 }, true, ['encrypt','decrypt']);
-      var gkRaw = new Uint8Array(await window.crypto.subtle.exportKey('raw', gk));
+      gkRaw = new Uint8Array(await window.crypto.subtle.exportKey('raw', gk));
+      myPkObj = await window.YeetE2EE.importPubSpki(id.pk);
+      myConv  = await window.YeetE2EE.deriveConvKey(id.sk, myPkObj, id.pk, id.pk);
+      myEnv   = await wrapBytes(myConv, gkRaw);
+    } catch(e){
+      console.error('group key gen:', e);
+      window.showToast(T('common.error'),'error'); return;
+    }
 
-      // 2. Fetch each member's pubkey and wrap the group key under
-      //    the per-member conv key (ECDH+HKDF), then send.
-      var members = [];
-      // Own envelope: the creator wraps under their own pk -> self ECDH would be silly,
-      // so we just AES-GCM-encrypt under a session-derived key tied to our identity.
-      // Simpler: use ECDH(my_sk, my_pk) — works fine, yields a stable key.
-      var myPkObj = await window.YeetE2EE.importPubSpki(id.pk);
-      var myConv = await window.YeetE2EE.deriveConvKey(id.sk, myPkObj, id.pk, id.pk);
-      var myEnv = await wrapBytes(myConv, gkRaw);
-      // user_id for self: ask the server.
-      var meR = await api('/api/v1/users/me');
-      var meD = await meR.json();
-      var myId = meD && meD.data && meD.data.id;
-      if(myId) members.push({ user_id: myId, encrypted_group_key: myEnv });
+    var members = [{ user_id: myId, encrypted_group_key: myEnv }];
+    var skipped = 0;
 
-      for(var i=0;i<addresses.length;i++){
-        var addr = addresses[i];
-        try {
-          var pkr = await api('/api/v1/users/'+ encodeURIComponent(addr) +'/e2ee/pubkey');
-          var pkd = await pkr.json();
-          if(!pkd || !pkd.data || !pkd.data.public_key){
-            window.showToast(T('dm.groupNoKey'),'error');
-            continue;
-          }
-          var peerPk = await window.YeetE2EE.importPubSpki(pkd.data.public_key);
-          var conv = await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, pkd.data.public_key);
-          var env = await wrapBytes(conv, gkRaw);
-          members.push({ user_id: pkd.data.user_id, encrypted_group_key: env });
-        } catch(e){ /* skip bad member */ }
-      }
-      if(!members.length){ window.showToast(T('dm.groupAtLeastOne'),'error'); return; }
+    // Selected follow IDs: fetch pubkey by UUID, wrap envelope.
+    for (var s of selectedIds){
+      try {
+        var pkr = await api('/api/v1/users/'+ encodeURIComponent(s) +'/e2ee/pubkey');
+        if(!pkr.ok){ skipped++; continue; }
+        var pkd = await pkr.json();
+        if(!pkd || !pkd.data || !pkd.data.public_key){ skipped++; continue; }
+        var peerPk = await window.YeetE2EE.importPubSpki(pkd.data.public_key);
+        var conv   = await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, pkd.data.public_key);
+        var env    = await wrapBytes(conv, gkRaw);
+        members.push({ user_id: pkd.data.user_id, encrypted_group_key: env });
+      } catch(e){ console.warn('member-skip', s, e); skipped++; }
+    }
+    // Manual extra addresses (wallet or @username): resolve, then same as above.
+    for (var a of extraAddresses){
+      try {
+        var pkr2 = await api('/api/v1/users/'+ encodeURIComponent(a) +'/e2ee/pubkey');
+        if(!pkr2.ok){ skipped++; continue; }
+        var pkd2 = await pkr2.json();
+        if(!pkd2 || !pkd2.data || !pkd2.data.public_key){ skipped++; continue; }
+        var peerPk2 = await window.YeetE2EE.importPubSpki(pkd2.data.public_key);
+        var conv2   = await window.YeetE2EE.deriveConvKey(id.sk, peerPk2, id.pk, pkd2.data.public_key);
+        var env2    = await wrapBytes(conv2, gkRaw);
+        members.push({ user_id: pkd2.data.user_id, encrypted_group_key: env2 });
+      } catch(e){ console.warn('member-skip', a, e); skipped++; }
+    }
+
+    if(members.length <= 1){
+      // Only me — there's nothing to invite. Tell the user clearly.
+      window.showToast(T('dm.groupNoReady'),'error');
+      return;
+    }
+
+    try {
       var r = await api('/api/v1/conversations/group', {
         method:'POST',
         body: JSON.stringify({ name: name, members: members })
@@ -5122,11 +5287,13 @@ info@blocksocial.eu</address>
         window.showToast((d.error && d.error.message) || T('common.error'),'error');
         return;
       }
-      window.showToast(T('dm.groupCreated'),'success');
+      var msg = T('dm.groupCreated');
+      if(skipped > 0) msg += ' ('+ skipped +' '+ T('dm.skipped') +')';
+      window.showToast(msg,'success');
       closeNewGroupModal();
       await refreshConversations();
     } catch(e){
-      console.error(e);
+      console.error('group POST:', e);
       window.showToast(T('common.networkError'),'error');
     }
   };

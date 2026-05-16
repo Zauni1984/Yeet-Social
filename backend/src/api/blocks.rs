@@ -31,17 +31,9 @@ async fn caller_user_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid> {
         .ok_or_else(|| AppError::NotFound("User not found".into()))
 }
 
-/// Resolve a target user by either UUID or wallet address.
+/// Resolve a target user (UUID, 0x-wallet, or @username).
 async fn resolve_user(state: &AppState, address_or_id: &str) -> AppResult<Uuid> {
-    if let Ok(id) = Uuid::parse_str(address_or_id) {
-        return Ok(id);
-    }
-    sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE wallet_address = $1")
-        .bind(address_or_id.to_lowercase())
-        .fetch_optional(state.db.pool())
-        .await
-        .map_err(AppError::Database)?
-        .ok_or_else(|| AppError::NotFound("User not found".into()))
+    crate::api::conversations::resolve_user(state.db.pool(), address_or_id).await
 }
 
 #[derive(Debug, Serialize)]

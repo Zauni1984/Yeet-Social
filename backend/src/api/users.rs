@@ -30,6 +30,12 @@ pub struct FollowEntry {
     pub display_name: Option<String>,
     pub avatar_url: Option<String>,
     pub followed_at: DateTime<Utc>,
+    #[serde(default)]
+    pub username: Option<String>,
+    // True iff this user has uploaded an E2EE public key — i.e. is
+    // reachable for encrypted DMs / can be added to encrypted groups.
+    #[serde(default)]
+    pub e2ee_ready: bool,
 }
 
 pub async fn get_profile(
@@ -259,7 +265,8 @@ pub async fn list_followers(
 ) -> AppResult<Json<ApiResponse<Vec<FollowEntry>>>> {
     let target_id = resolve_target_id(&state, &address).await?;
     let rows = sqlx::query_as::<_, FollowEntry>(
-        "SELECT u.id, u.wallet_address, u.display_name, u.avatar_url, f.created_at AS followed_at
+        "SELECT u.id, u.wallet_address, u.display_name, u.avatar_url, f.created_at AS followed_at,
+                u.username, (u.e2ee_public_key IS NOT NULL) AS e2ee_ready
            FROM follows f JOIN users u ON u.id = f.follower_id
           WHERE f.following_id = $1
           ORDER BY f.created_at DESC
@@ -276,7 +283,8 @@ pub async fn list_following(
 ) -> AppResult<Json<ApiResponse<Vec<FollowEntry>>>> {
     let target_id = resolve_target_id(&state, &address).await?;
     let rows = sqlx::query_as::<_, FollowEntry>(
-        "SELECT u.id, u.wallet_address, u.display_name, u.avatar_url, f.created_at AS followed_at
+        "SELECT u.id, u.wallet_address, u.display_name, u.avatar_url, f.created_at AS followed_at,
+                u.username, (u.e2ee_public_key IS NOT NULL) AS e2ee_ready
            FROM follows f JOIN users u ON u.id = f.following_id
           WHERE f.follower_id = $1
           ORDER BY f.created_at DESC
