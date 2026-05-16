@@ -685,7 +685,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.peerNoKey':'This user has not enabled encrypted messages yet.',
       'dm.notSupported':'Your browser does not support end-to-end encryption.',
       'dm.enableTitle':'Enable encrypted messages',
-      'dm.enablePrompt':'Sign once with your wallet to enable end-to-end encrypted DMs. The signature derives a key that never leaves your browser.',
+      'dm.enablePrompt':'Enable end-to-end encrypted DMs? A key will be derived once and never leaves your browser.',
+      'dm.enableSetup':'Enter your account password. We derive an encryption key from it locally — the server never sees the password or the derived key.',
+      'dm.enableUnlock':'Enter your account password to unlock your encrypted messages on this device.',
       'dm.linkWallet':'Connect a wallet to enable encrypted messages.',
       'dm.tipAmount':'How much YEET to send?',
       'dm.tipSent':'Sent {amount} YEET',
@@ -839,7 +841,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.peerNoKey':'Dieser Nutzer hat verschlüsselte Nachrichten noch nicht aktiviert.',
       'dm.notSupported':'Dein Browser unterstützt keine Ende-zu-Ende-Verschlüsselung.',
       'dm.enableTitle':'Verschlüsselte Nachrichten aktivieren',
-      'dm.enablePrompt':'Einmal mit der Wallet signieren, um Ende-zu-Ende-verschlüsselte DMs zu aktivieren. Die Signatur leitet einen Schlüssel ab, der den Browser nie verlässt.',
+      'dm.enablePrompt':'Ende-zu-Ende-verschlüsselte DMs aktivieren? Ein Schlüssel wird einmalig abgeleitet und verlässt deinen Browser nie.',
+      'dm.enableSetup':'Gib dein Kontopasswort ein. Wir leiten lokal einen Verschlüsselungsschlüssel daraus ab — der Server sieht weder das Passwort noch den Schlüssel.',
+      'dm.enableUnlock':'Gib dein Kontopasswort ein, um deine verschlüsselten Nachrichten auf diesem Gerät zu entsperren.',
       'dm.linkWallet':'Wallet verbinden, um verschlüsselte Nachrichten zu aktivieren.',
       'dm.tipAmount':'Wieviel YEET senden?',
       'dm.tipSent':'{amount} YEET gesendet',
@@ -4234,10 +4238,71 @@ info@blocksocial.eu</address>
     return out;
   }
 
-  async function deriveMasterKey(){
+  // master_key derivation has two paths, depending on what the user can produce:
+  //   wallet path:   sha256( personal_sign(SIGN_MESSAGE) )
+  //   password path: PBKDF2-SHA-256( password, 'YEET-E2EE-v1|' || user_id, 200000 )
+  // The user_id is queried from /api/v1/users/me; it never changes per
+  // account, so the salt is stable across sessions and devices.
+  async function deriveMasterKeyFromWallet(){
     var sig = await signIdentityMessage();
     var seed = await sha256(sig);
     return await subtle.importKey('raw', seed, { name:'AES-GCM' }, false, ['encrypt','decrypt']);
+  }
+  async function fetchOwnUserId(){
+    var j = localStorage.getItem('yeet_jwt'); if(!j) throw new Error('not_logged_in');
+    var r = await fetch('/api/v1/users/me', { headers:{ Authorization:'Bearer '+j } });
+    var d = await r.json();
+    if(!d || !d.success || !d.data || !d.data.id) throw new Error('no_user_id');
+    return d.data.id;
+  }
+  async function deriveMasterKeyFromPassword(pwd, userId){
+    var enc = new TextEncoder();
+    var km = await subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveKey']);
+    return await subtle.deriveKey(
+      { name:'PBKDF2', hash:'SHA-256', salt: enc.encode('YEET-E2EE-v1|' + userId), iterations: 200000 },
+      km, { name:'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
+  }
+  function hasInjectedWallet(){
+    return !!(window.ethereum && window.ethereum.request);
+  }
+  function promptPassword(message){
+    // Lightweight UI: a fixed overlay with a password input. Resolves
+    // with the entered password or null on cancel.
+    return new Promise(function(resolve){
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center';
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#111;border:1px solid #333;border-radius:14px;padding:22px;width:360px;max-width:92vw;color:#eee;font-family:inherit';
+      var h = document.createElement('h3');
+      h.textContent = '🔐 ' + (window.t ? window.t('dm.enableTitle') : 'Enable encrypted messages');
+      h.style.cssText = 'margin:0 0 8px;color:#fff;font-size:18px';
+      var p = document.createElement('p');
+      p.textContent = message;
+      p.style.cssText = 'margin:0 0 14px;color:#aaa;font-size:13px;line-height:1.45';
+      var inp = document.createElement('input');
+      inp.type = 'password'; inp.autocomplete = 'current-password';
+      inp.style.cssText = 'width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:14px';
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:8px';
+      var ok = document.createElement('button');
+      ok.textContent = 'OK';
+      ok.style.cssText = 'flex:1;padding:10px;background:#c8ff00;color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer';
+      var cancel = document.createElement('button');
+      cancel.textContent = (window.t ? window.t('common.cancel') : 'Cancel');
+      cancel.style.cssText = 'padding:10px 14px;background:#1a1a1a;border:1px solid #333;color:#aaa;border-radius:10px;cursor:pointer';
+      box.appendChild(h); box.appendChild(p); box.appendChild(inp); box.appendChild(btnRow);
+      btnRow.appendChild(ok); btnRow.appendChild(cancel);
+      ov.appendChild(box); document.body.appendChild(ov);
+      setTimeout(function(){ inp.focus(); }, 30);
+      function finish(val){ ov.remove(); resolve(val); }
+      ok.onclick = function(){ finish(inp.value || ''); };
+      cancel.onclick = function(){ finish(null); };
+      inp.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){ e.preventDefault(); finish(inp.value || ''); }
+        else if(e.key === 'Escape'){ e.preventDefault(); finish(null); }
+      });
+      ov.addEventListener('click', function(e){ if(e.target === ov) finish(null); });
+    });
   }
 
   async function genIdentityKeypair(){
@@ -4342,19 +4407,43 @@ info@blocksocial.eu</address>
     var r = await fetch('/api/v1/me/e2ee/keys', { headers:{ Authorization:'Bearer '+jwt } });
     var d = await r.json();
     if(d && d.success && d.data && d.data.public_key && d.data.encrypted_private_key){
-      // Recovery flow on this device
-      var master = await deriveMasterKey();
-      try {
-        _identitySk = await unwrapPrivateKey(master, d.data.encrypted_private_key);
-        _identityPk = d.data.public_key;
-        return { sk: _identitySk, pk: _identityPk };
-      } catch(e) {
-        throw new Error('unwrap_failed');
+      // Recovery flow on this device. Try wallet path first (if we have
+      // an injected wallet); if it fails or is unavailable, fall back to
+      // the password-derived master. AES-GCM authenticates, so a wrong
+      // master fails loudly — we can safely race the two.
+      var unwrapped = null;
+      if(hasInjectedWallet()){
+        try {
+          var mw = await deriveMasterKeyFromWallet();
+          unwrapped = await unwrapPrivateKey(mw, d.data.encrypted_private_key);
+        } catch(e) { /* fall through to password */ }
       }
+      if(!unwrapped){
+        var uid1 = await fetchOwnUserId();
+        var pwd1 = await promptPassword((window.t? window.t('dm.enableUnlock') : 'Enter your password to unlock encrypted messages.'));
+        if(pwd1 === null) throw new Error('aborted');
+        try {
+          var mp = await deriveMasterKeyFromPassword(pwd1, uid1);
+          unwrapped = await unwrapPrivateKey(mp, d.data.encrypted_private_key);
+        } catch(e) { throw new Error('unwrap_failed'); }
+      }
+      _identitySk = unwrapped;
+      _identityPk = d.data.public_key;
+      return { sk: _identitySk, pk: _identityPk };
     }
-    // 2. First-time setup
+    // 2. First-time setup — choose master method. If the user has an
+    // injected wallet we prefer wallet sign (matches the rest of the
+    // app's Web3 identity); otherwise fall back to password.
     if(promptMessage && !confirm(promptMessage)) throw new Error('setup_declined');
-    var master2 = await deriveMasterKey();
+    var master2;
+    if(hasInjectedWallet()){
+      master2 = await deriveMasterKeyFromWallet();
+    } else {
+      var uid = await fetchOwnUserId();
+      var pwd = await promptPassword((window.t? window.t('dm.enableSetup') : 'Enter your account password to derive an encryption key. Use the same password you log in with.'));
+      if(pwd === null || pwd.length < 1) throw new Error('aborted');
+      master2 = await deriveMasterKeyFromPassword(pwd, uid);
+    }
     var kp = await genIdentityKeypair();
     var spki = await exportPubSpki(kp.publicKey);
     var pkcs8 = await exportPriv(kp.privateKey);
@@ -4493,23 +4582,19 @@ info@blocksocial.eu</address>
     if(window.E2EE_UNSUPPORTED){
       window.showToast(T('dm.notSupported'),'error'); return;
     }
-    // Real gate: do we have a browser wallet that can sign the
-    // identity-derivation message? `yeet_address` may be empty for
-    // older sessions, so don't rely on it.
-    if(!window.ethereum || !window.ethereum.request){
-      window.showToast(T('dm.linkWallet'),'error'); return;
-    }
-    // Backfill yeet_address from the injected provider so the rest of
-    // the app (own-message detection, sidebar, etc.) keeps working.
-    if(!localStorage.getItem('yeet_address')){
-      try {
-        var accs = await window.ethereum.request({ method:'eth_accounts' });
-        if(!accs || !accs.length){
-          accs = await window.ethereum.request({ method:'eth_requestAccounts' });
-        }
-        if(accs && accs[0]) localStorage.setItem('yeet_address', accs[0].toLowerCase());
-      } catch(e){
-        window.showToast(T('dm.linkWallet'),'error'); return;
+    // Two routes to an encrypted identity:
+    //   - injected wallet (MetaMask etc.): we sign the identity message
+    //   - password: we PBKDF2 the user's account password
+    // Either way we can let the modal open here; ensureIdentity() will
+    // prompt for the right thing at the moment a chat actually needs a key.
+    if(window.ethereum && window.ethereum.request){
+      // Opportunistically backfill yeet_address for older wallet-login
+      // sessions so own-message detection keeps working.
+      if(!localStorage.getItem('yeet_address')){
+        try {
+          var accs = await window.ethereum.request({ method:'eth_accounts' });
+          if(accs && accs[0]) localStorage.setItem('yeet_address', accs[0].toLowerCase());
+        } catch(e){ /* non-fatal */ }
       }
     }
     document.getElementById('messagesModal').classList.add('on');
