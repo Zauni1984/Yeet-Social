@@ -27,3 +27,4 @@ pub mod conversations;
 pub mod messages;
 pub mod invitations;
 pub mod search;
+pub mod admin_mod;

@@ -79,6 +79,26 @@ pub async fn create_post(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
+    // Refuse if the user has an active posting ban (set via the
+    // admin moderation API). The reason, if any, is surfaced so the
+    // client can show a meaningful message rather than a generic 403.
+    let ban: Option<(Option<chrono::DateTime<Utc>>, Option<String>)> = sqlx::query_as(
+        "SELECT posting_banned_until, post_ban_reason FROM users WHERE id = $1"
+    )
+    .bind(user_id)
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    if let Some((Some(until), reason)) = ban {
+        if until > Utc::now() {
+            let hours_left = (until - Utc::now()).num_hours();
+            let msg = match reason {
+                Some(r) if !r.is_empty() =>
+                    format!("Posting is suspended for ~{} more hour(s): {}", hours_left, r),
+                _ => format!("Posting is suspended for ~{} more hour(s).", hours_left),
+            };
+            return Err(AppError::Forbidden(msg));
+        }
+    }
+
     let is_permanent = req.is_permanent.unwrap_or(false) || req.is_nft.unwrap_or(false);
     let expires_at = if is_permanent {
         Utc::now() + ChronoDuration::hours(24 * 365 * 100)
