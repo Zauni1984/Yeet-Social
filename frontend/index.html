@@ -216,6 +216,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:#000;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center">&#128100;</button>
     </div>
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px">
+      <span class="balance-pill" id="balancePill" onclick="openWalletModal()" title="" data-i18n-title="balance.title">&#9889; <span id="balanceAmt">—</span> YEET</span>
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
       <button class="btn-login" onclick="doLogout()" id="disconnectBtn" style="font-size:10px;padding:3px 7px;white-space:nowrap;max-width:90px">&#9211;</button>
     </div>
@@ -722,6 +723,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.noFollowsHit':'No matches.','dm.skipped':'skipped',
       'dm.setupFailed':'Could not set up encrypted messages on this device.',
       'common.search':'Search...',
+      'balance.title':'Your YEET balance — click for wallet options',
       'dm.groupCreated':'Group created','dm.leave':'Leave group',
       'dm.leaveConfirm':'Leave this group?','dm.left':'You left the group.',
       // tip modal
@@ -886,6 +888,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.noFollowsHit':'Keine Treffer.','dm.skipped':'übersprungen',
       'dm.setupFailed':'Verschlüsselte Nachrichten konnten auf diesem Gerät nicht eingerichtet werden.',
       'common.search':'Suchen...',
+      'balance.title':'Dein YEET-Guthaben — Klick für Wallet-Optionen',
       'dm.groupCreated':'Gruppe erstellt','dm.leave':'Gruppe verlassen',
       'dm.leaveConfirm':'Diese Gruppe wirklich verlassen?','dm.left':'Gruppe verlassen.',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
@@ -1309,6 +1312,7 @@ async function onConnected(address,walletName,provider){
       btn.textContent=short;
       showToast(' Signed in: '+walletName+' ('+short+')');
       if(typeof showGlobalFeed === 'function') showGlobalFeed();
+      if(typeof refreshTokenBalance === 'function') refreshTokenBalance();
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -1326,6 +1330,44 @@ function showToast(msg){
   t.textContent=msg;t.style.opacity='1';
   setTimeout(()=>t.style.opacity='0',3000);
 }
+
+// ---------- Token balance pill ----------
+// Fetches the caller's off-chain YEET balance and renders it in the top
+// nav pill. Hooked into login, tip-send, paper-wallet actions, DM-tips
+// and a 60s background refresh so the pill stays in sync.
+async function refreshTokenBalance(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  var pill = document.getElementById('balancePill');
+  var amt  = document.getElementById('balanceAmt');
+  if(!jwt || !pill || !amt){ return; }
+  try {
+    var r = await fetch('/api/v1/tokens/balance', { headers:{ 'Authorization':'Bearer '+jwt } });
+    if(!r.ok) return;
+    var d = await r.json();
+    if(d && d.success && d.data){
+      var n = Number(d.data.yeet_balance || 0);
+      // Compact format: integers under 1000 → as-is; 1k+ → 1.2k; 1m+ → 1.2m
+      var pretty;
+      if(n >= 1e6)      pretty = (n/1e6).toFixed(2).replace(/\.?0+$/, '') + 'm';
+      else if(n >= 1e3) pretty = (n/1e3).toFixed(2).replace(/\.?0+$/, '') + 'k';
+      else if(n >= 100) pretty = n.toFixed(0);
+      else              pretty = n.toFixed(2).replace(/\.?0+$/, '');
+      amt.textContent = pretty;
+      // Visual cue when very low / zero
+      pill.style.borderColor = n > 0 ? 'var(--yeet)' : 'var(--border)';
+      pill.style.color       = n > 0 ? 'var(--yeet)' : 'var(--muted)';
+      // Expose precise value to other code (e.g. profile header)
+      window._yeetBalance = n;
+    }
+  } catch(e){ /* silent: balance pill is non-critical */ }
+}
+window.refreshTokenBalance = refreshTokenBalance;
+// Background refresh on a slow tick — keeps the pill fresh without
+// polling so often that we hammer the API.
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(refreshTokenBalance, 800);
+  setInterval(refreshTokenBalance, 60000);
+});
 
 async function connectMetaMask(){
   // MetaMask injects window.ethereum asynchronously  wait up to 1s
@@ -2049,12 +2091,23 @@ function renderProfileHeader(u, own){
       + '<div style="flex-shrink:0">'+btn+'</div>'
     + '</div>'
     + (bio ? '<div style="font-size:14px;line-height:1.6;margin:12px 0;white-space:pre-wrap">'+bio+'</div>' : '')
-    + '<div style="display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:8px">'
+    + '<div style="display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap">'
       + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
       + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
       + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> Posts</span>'
+      + (own ? '<span style="color:var(--yeet)">&#9889; <b id="profileBalanceVal" style="color:var(--yeet)">—</b> YEET</span>' : '')
     + '</div>'
     + uploadInputs;
+  // For own-profile: mirror the nav-pill balance into the profile stats row.
+  if(own && typeof window.refreshTokenBalance === 'function'){
+    window.refreshTokenBalance().then(function(){
+      var el = document.getElementById('profileBalanceVal');
+      if(el && typeof window._yeetBalance === 'number'){
+        var n = window._yeetBalance;
+        el.textContent = n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      }
+    });
+  }
   // Prefill edit form
   var dn = document.getElementById('editDisplayName'); if(dn) dn.value = u.display_name || '';
   var ebio = document.getElementById('editBio'); if(ebio) ebio.value = u.bio || '';
@@ -2964,6 +3017,9 @@ function showExternalLinkWarning(e,url){
 .btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
 .btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
 .addr-pill{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer}
+.balance-pill{font-size:12px;color:var(--yeet);background:rgba(200,255,0,.08);border:1px solid var(--yeet);padding:4px 10px;border-radius:14px;cursor:pointer;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.balance-pill:hover{background:rgba(200,255,0,.16)}
+@media(max-width:480px){.balance-pill{font-size:11px;padding:3px 8px}}
 </style>
 
 <script>
@@ -3010,6 +3066,7 @@ function showExternalLinkWarning(e,url){
     // "please log in" placeholder.
     if(typeof window.showGlobalFeed === 'function') window.showGlobalFeed();
     else if(typeof window.loadFeed === 'function') window.loadFeed();
+    if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
   }
 
   function _updateAuthUI(user,wallet){
@@ -3426,7 +3483,7 @@ function openTipModal(postId,toAddr){
   document.body.appendChild(ov);
 }
 
-async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast(window.t('tip.notLogged'),'error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast(window.t('tip.selectAmount'),'error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent=window.t('tip.sending');}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast(window.t('tip.sentAmount',{amount:amt}),'success');if(ov)ov.remove();window._tipSelected=0;}else{showToast(window.t('common.error')+': '+(res.d.error&&res.d.error.message||res.d.message||window.t('tip.failed')),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}}}).catch(function(){showToast(window.t('common.networkError'),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}});}
+async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast(window.t('tip.notLogged'),'error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast(window.t('tip.selectAmount'),'error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent=window.t('tip.sending');}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast(window.t('tip.sentAmount',{amount:amt}),'success');if(ov)ov.remove();window._tipSelected=0;if(typeof window.refreshTokenBalance==='function')window.refreshTokenBalance();}else{showToast(window.t('common.error')+': '+(res.d.error&&res.d.error.message||res.d.message||window.t('tip.failed')),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}}}).catch(function(){showToast(window.t('common.networkError'),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}});}
 </script>
 
 <!-- Paper-wallet PDF + QR libs (loaded async; UI gracefully waits) -->
@@ -3510,6 +3567,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
       }
       var bill = j.data;
       window.showToast(T('paper.created_ok'),'success');
+      if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
       // Render result
       pwRenderResult(bill);
       // Auto-download PDF
@@ -3589,6 +3647,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
       var j = await r.json();
       if(!r.ok){ window.showToast((j && j.error && j.error.message) || T('common.error'),'error'); return; }
       window.showToast(T('paper.voided'),'success');
+      if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
       pwRefreshList();
     } catch(e){
       window.showToast(T('common.networkError'),'error');
@@ -5044,6 +5103,7 @@ info@blocksocial.eu</address>
         return;
       }
       window.showToast(T('dm.tipSent',{amount:amt}),'success');
+      if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
       await loadMessages(_activeConv.id);
     } catch(e){
       window.showToast(T('common.networkError'),'error');
