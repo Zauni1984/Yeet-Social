@@ -215,11 +215,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
       <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:#000;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center">&#128100;</button>
     </div>
-    <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px">
+    <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px;position:relative">
       <span class="balance-pill" id="balancePill" onclick="openWalletModal()" title="" data-i18n-title="balance.title">&#9889; <span id="balanceAmt">—</span> YEET</span>
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
+      <span class="nav-bell" id="navBell" onclick="window.toggleNotifPanel && window.toggleNotifPanel()" title="" data-i18n-title="notif.title" role="button" tabindex="0">&#128276;<span class="nav-bell-badge" id="navBellBadge" style="display:none">0</span></span>
       <span class="nav-avatar" id="navAvatar" onclick="window.showMyProfile && window.showMyProfile()" title="" data-i18n-title="profile.title">&#128100;</span>
       <button class="btn-login" onclick="doLogout()" id="disconnectBtn" style="font-size:10px;padding:3px 7px;white-space:nowrap;max-width:90px">&#9211;</button>
+      <div class="notif-panel" id="notifPanel" onclick="event.stopPropagation()">
+        <div class="notif-header">
+          <b style="font-size:13px" data-i18n="notif.title">Notifications</b>
+          <button class="notif-mark-all" onclick="markAllNotificationsRead()" data-i18n="notif.markAll">Mark all read</button>
+        </div>
+        <div id="notifList"></div>
+      </div>
     </div>
  </div>
 </nav>
@@ -731,6 +739,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.setupFailed':'Could not set up encrypted messages on this device.',
       'common.search':'Search...',
       'balance.title':'Your YEET balance — click for wallet options',
+      'notif.title':'Notifications','notif.empty':'No notifications yet.','notif.markAll':'Mark all read',
       'dm.groupCreated':'Group created','dm.leave':'Leave group',
       'dm.leaveConfirm':'Leave this group?','dm.left':'You left the group.',
       // tip modal
@@ -907,6 +916,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.setupFailed':'Verschlüsselte Nachrichten konnten auf diesem Gerät nicht eingerichtet werden.',
       'common.search':'Suchen...',
       'balance.title':'Dein YEET-Guthaben — Klick für Wallet-Optionen',
+      'notif.title':'Benachrichtigungen','notif.empty':'Noch keine Benachrichtigungen.','notif.markAll':'Alle gelesen',
       'dm.groupCreated':'Gruppe erstellt','dm.leave':'Gruppe verlassen',
       'dm.leaveConfirm':'Diese Gruppe wirklich verlassen?','dm.left':'Gruppe verlassen.',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
@@ -1338,6 +1348,7 @@ async function onConnected(address,walletName,provider){
       if(typeof showGlobalFeed === 'function') showGlobalFeed();
       if(typeof refreshTokenBalance === 'function') refreshTokenBalance();
       if(typeof refreshNavAvatar === 'function') refreshNavAvatar();
+      if(typeof refreshNotifBadge === 'function') refreshNotifBadge();
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -1412,12 +1423,157 @@ async function refreshNavAvatar(){
 }
 window.refreshNavAvatar = refreshNavAvatar;
 
-// Background refresh on a slow tick — keeps the pill fresh without
+// ---------- Notifications ----------
+// Fetch the unread count for the bell badge. Cheap; runs every 45s.
+async function refreshNotifBadge(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  var badge = document.getElementById('navBellBadge');
+  if(!jwt || !badge){ return; }
+  try {
+    var r = await fetch('/api/v1/notifications/unread-count', {
+      headers:{ 'Authorization':'Bearer '+jwt }
+    });
+    if(!r.ok) return;
+    var d = await r.json();
+    var n = (d && d.data && d.data.count) || 0;
+    if(n > 0){
+      badge.style.display = '';
+      badge.textContent = n > 99 ? '99+' : String(n);
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e){ /* silent */ }
+}
+window.refreshNotifBadge = refreshNotifBadge;
+
+function fmtRelTime(iso){
+  try {
+    var d = new Date(iso);
+    var s = Math.floor((Date.now() - d.getTime())/1000);
+    if(s < 60) return s+'s';
+    if(s < 3600) return Math.floor(s/60)+'m';
+    if(s < 86400) return Math.floor(s/3600)+'h';
+    if(s < 86400*7) return Math.floor(s/86400)+'d';
+    return d.toLocaleDateString();
+  } catch(e){ return ''; }
+}
+
+async function loadNotifications(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  var listEl = document.getElementById('notifList');
+  if(!jwt || !listEl) return;
+  listEl.innerHTML = '<div class="notif-empty">'+ window.t('common.loading') +'</div>';
+  try {
+    var r = await fetch('/api/v1/notifications', {
+      headers:{ 'Authorization':'Bearer '+jwt }
+    });
+    if(!r.ok){ listEl.innerHTML = '<div class="notif-empty">'+ window.t('common.error') +'</div>'; return; }
+    var d = await r.json();
+    var items = (d && d.data) || [];
+    if(!items.length){
+      listEl.innerHTML = '<div class="notif-empty">'+ window.t('notif.empty') +'</div>';
+      return;
+    }
+    listEl.innerHTML = items.map(function(n){
+      var av;
+      if(n.from_avatar_url){
+        av = '<span class="nav-avatar" style="background-image:url(\''+ String(n.from_avatar_url).replace(/['"<>]/g,'') +'\')"></span>';
+      } else {
+        var initial = (n.from_username || n.from_address || '?').toString().charAt(0).toUpperCase();
+        av = '<span class="nav-avatar">'+ initial +'</span>';
+      }
+      var cls = 'notif-row' + (n.read ? '' : ' unread');
+      // Build a safe text — server stores plain text; we escape just in case.
+      var msg = String(n.message||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var clickTarget;
+      if(n.post_id) clickTarget = 'event.stopPropagation();handleNotifClick(\''+ n.id +'\', \''+ n.post_id +'\', null)';
+      else if(n.from_address || n.from_user_id) clickTarget = 'event.stopPropagation();handleNotifClick(\''+ n.id +'\', null, \''+ (n.from_address||n.from_user_id) +'\')';
+      else clickTarget = 'event.stopPropagation();markOneNotifRead(\''+ n.id +'\')';
+      return '<div class="'+ cls +'" onclick="'+ clickTarget +'">'
+        + av
+        + '<div class="notif-row-text">'+ msg +'<div class="notif-row-time">'+ fmtRelTime(n.created_at) +'</div></div>'
+        + '</div>';
+    }).join('');
+  } catch(e){
+    listEl.innerHTML = '<div class="notif-empty">'+ window.t('common.networkError') +'</div>';
+  }
+}
+
+async function markAllNotificationsRead(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt) return;
+  try {
+    await fetch('/api/v1/notifications/read', {
+      method:'POST', headers:{ 'Authorization':'Bearer '+jwt }
+    });
+    var badge = document.getElementById('navBellBadge');
+    if(badge) badge.style.display = 'none';
+    document.querySelectorAll('#notifList .notif-row.unread').forEach(function(el){
+      el.classList.remove('unread');
+    });
+  } catch(e){}
+}
+window.markAllNotificationsRead = markAllNotificationsRead;
+
+async function markOneNotifRead(id){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt || !id) return;
+  try {
+    await fetch('/api/v1/notifications/'+ encodeURIComponent(id) +'/read', {
+      method:'POST', headers:{ 'Authorization':'Bearer '+jwt }
+    });
+    refreshNotifBadge();
+  } catch(e){}
+}
+window.markOneNotifRead = markOneNotifRead;
+
+window.handleNotifClick = async function(id, postId, userRef){
+  await markOneNotifRead(id);
+  toggleNotifPanel(false);
+  if(postId && typeof window.showPostDetail === 'function'){
+    window.showPostDetail(postId);
+  } else if(userRef && typeof window.showProfile === 'function'){
+    window.showProfile(userRef);
+  } else if(postId && typeof window.showGlobalFeed === 'function'){
+    // No detail view: just refresh the feed so the post is on screen.
+    window.showGlobalFeed();
+  }
+};
+
+window.toggleNotifPanel = function(forceState){
+  var p = document.getElementById('notifPanel');
+  if(!p) return;
+  var wasOn = p.classList.contains('on');
+  var open = (typeof forceState === 'boolean') ? forceState : !wasOn;
+  if(open){
+    p.classList.add('on');
+    loadNotifications();
+  } else {
+    p.classList.remove('on');
+  }
+};
+// Close on outside click + Esc.
+document.addEventListener('click', function(e){
+  var p = document.getElementById('notifPanel');
+  if(!p || !p.classList.contains('on')) return;
+  if(e.target.id === 'navBell' || (e.target.parentNode && e.target.parentNode.id === 'navBell')) return;
+  if(!p.contains(e.target)) p.classList.remove('on');
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    var p = document.getElementById('notifPanel');
+    if(p && p.classList.contains('on')) p.classList.remove('on');
+  }
+});
+
+// Background refresh on a slow tick — keeps the pills fresh without
 // polling so often that we hammer the API.
 document.addEventListener('DOMContentLoaded', function(){
   setTimeout(refreshTokenBalance, 800);
   setTimeout(refreshNavAvatar, 900);
+  setTimeout(refreshNotifBadge, 1000);
   setInterval(refreshTokenBalance, 60000);
+  setInterval(refreshNotifBadge, 45000);
 });
 
 // MetaMask + other extensions inject window.ethereum asynchronously and
@@ -3213,7 +3369,23 @@ function showExternalLinkWarning(e,url){
 .balance-pill:hover{background:rgba(200,255,0,.16)}
 .nav-avatar{width:30px;height:30px;border-radius:50%;background:#1a1a1a;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;overflow:hidden;color:var(--yeet);background-size:cover;background-position:center}
 .nav-avatar:hover{border-color:var(--yeet)}
-@media(max-width:480px){.balance-pill{font-size:11px;padding:3px 8px}.nav-avatar{width:26px;height:26px;font-size:14px}}
+.nav-bell{position:relative;width:32px;height:30px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--muted);border-radius:8px;user-select:none}
+.nav-bell:hover{color:var(--yeet);background:rgba(255,255,255,.04)}
+.nav-bell-badge{position:absolute;top:-2px;right:-2px;background:#ff4444;color:#fff;border-radius:10px;padding:0 5px;font-size:10px;font-weight:700;min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.notif-panel{position:absolute;top:42px;right:0;width:360px;max-width:92vw;max-height:60vh;overflow-y:auto;background:#0d0d0d;border:1px solid var(--border);border-radius:12px;z-index:250;display:none;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.notif-panel.on{display:block}
+.notif-row{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;align-items:flex-start}
+.notif-row:last-child{border-bottom:none}
+.notif-row:hover{background:#181818}
+.notif-row.unread{background:rgba(200,255,0,.05)}
+.notif-row .nav-avatar{flex-shrink:0;width:32px;height:32px;font-size:14px}
+.notif-row-text{flex:1;font-size:13px;color:#eee;min-width:0}
+.notif-row-time{color:var(--muted);font-size:11px;margin-top:2px}
+.notif-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+.notif-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#0d0d0d;z-index:1}
+.notif-mark-all{background:transparent;color:var(--yeet);border:none;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:6px}
+.notif-mark-all:hover{background:rgba(200,255,0,.1)}
+@media(max-width:480px){.balance-pill{font-size:11px;padding:3px 8px}.nav-avatar{width:26px;height:26px;font-size:14px}.nav-bell{width:28px;height:26px;font-size:14px}.notif-panel{width:88vw;right:-50px}}
 </style>
 
 <script>
@@ -3337,6 +3509,7 @@ function showExternalLinkWarning(e,url){
     else if(typeof window.loadFeed === 'function') window.loadFeed();
     if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
     if(typeof window.refreshNavAvatar === 'function') window.refreshNavAvatar();
+    if(typeof window.refreshNotifBadge === 'function') window.refreshNotifBadge();
   }
 
   function _updateAuthUI(user,wallet){

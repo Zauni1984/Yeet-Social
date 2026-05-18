@@ -173,6 +173,19 @@ pub async fn like_post(
     if inserted.rows_affected() > 0 {
         sqlx::query("UPDATE posts SET like_count = like_count + 1 WHERE id = $1")
             .bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
+        // Notify the post author (notify() skips self-notifications).
+        if let Some(author_id) = sqlx::query_scalar::<_, Uuid>(
+            "SELECT author_id FROM posts WHERE id = $1"
+        ).bind(id).fetch_optional(state.db.pool()).await.ok().flatten() {
+            let actor = sqlx::query_scalar::<_, Option<String>>(
+                "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+            ).bind(user_id).fetch_optional(state.db.pool()).await
+             .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+            crate::api::notifications::notify(
+                state.db.pool(), author_id, Some(user_id),
+                "like", &format!("{} liked your post", actor), Some(id),
+            ).await;
+        }
     }
     Ok(Json(ApiResponse::ok(())))
 }
@@ -362,6 +375,21 @@ pub async fn add_comment(
         .bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
 
     let _ = tokens::grant_reward(&state.db, user_id, RewardAction::CommentPosted, rewards::COMMENT_POSTED).await;
+
+    // Notify the post author so they know someone replied.
+    if let Some(author_id) = sqlx::query_scalar::<_, Uuid>(
+        "SELECT author_id FROM posts WHERE id = $1"
+    ).bind(id).fetch_optional(state.db.pool()).await.ok().flatten() {
+        let actor = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+        ).bind(user_id).fetch_optional(state.db.pool()).await
+         .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+        crate::api::notifications::notify(
+            state.db.pool(), author_id, Some(user_id),
+            "comment", &format!("{} commented on your post", actor), Some(id),
+        ).await;
+    }
+
     Ok(Json(ApiResponse::ok(comment_id)))
 }
 

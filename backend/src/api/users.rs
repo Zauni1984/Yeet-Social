@@ -179,9 +179,24 @@ pub async fn follow_user(
     if follower_id == following_id {
         return Err(AppError::Validation("Cannot follow yourself".into()));
     }
-    sqlx::query("INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
-        .bind(follower_id).bind(following_id)
-        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    let inserted = sqlx::query(
+        "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING"
+    )
+    .bind(follower_id).bind(following_id)
+    .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    // Only notify on a brand-new follow row (not a duplicate POST).
+    if inserted.rows_affected() > 0 {
+        let actor_name = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+        )
+        .bind(follower_id)
+        .fetch_optional(state.db.pool()).await
+        .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+        crate::api::notifications::notify(
+            state.db.pool(), following_id, Some(follower_id),
+            "follow", &format!("{} started following you", actor_name), None,
+        ).await;
+    }
     Ok(Json(ApiResponse::ok(())))
 }
 

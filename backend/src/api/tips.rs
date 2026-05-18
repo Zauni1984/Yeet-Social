@@ -146,5 +146,18 @@ pub async fn send_tip(
         &req.amount, &req.currency, req.tx_hash.as_deref(),
     ).await?;
     tx.commit().await.map_err(AppError::Database)?;
+
+    // Notify recipient after the tx has settled. Best-effort.
+    let actor = sqlx::query_scalar::<_, Option<String>>(
+        "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+    ).bind(from_id).fetch_optional(state.db.pool()).await
+     .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+    crate::api::notifications::notify(
+        state.db.pool(), to_id, Some(from_id),
+        "tip",
+        &format!("{} tipped you {} {}", actor, req.amount, req.currency),
+        req.post_id,
+    ).await;
+
     Ok(Json(ApiResponse::ok(tip_id)))
 }
