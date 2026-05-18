@@ -177,6 +177,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .legal-page article.on{display:block}
 .legal-page address{font-style:normal;background:#0d0d0d;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:0 0 12px;font-family:monospace;font-size:13px;color:#dddddd;white-space:pre-wrap}
 .legal-page strong{color:#fff}
+.adm-tab{background:transparent;border:none;color:var(--muted);padding:8px 14px;cursor:pointer;font-weight:700;border-bottom:2px solid transparent;font-size:14px}
+.adm-tab:hover{color:#fff}
+.adm-tab.on{color:var(--yeet);border-bottom-color:var(--yeet)}
+.adm-card{background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
+.adm-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.adm-metric{background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:14px}
+.adm-metric .v{font-size:24px;font-weight:800;color:var(--yeet);font-variant-numeric:tabular-nums}
+.adm-metric .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.adm-btn{padding:6px 10px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:12px;font-weight:600;margin-right:4px}
+.adm-btn:hover{border-color:var(--yeet);color:var(--yeet)}
+.adm-btn.danger{border-color:#5a2a2a;color:#ff7f7f}
+.adm-btn.danger:hover{background:#3a1a1a}
+.adm-btn.warn{border-color:#5a4a1a;color:#ffb84d}
+.adm-input{width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none}
+.adm-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.adm-badge.flagged{background:#3a2a1a;color:#ffb84d}
+.adm-badge.banned{background:#3a1a1a;color:#ff7f7f}
+.adm-badge.ok{background:#1a3a1a;color:#7fff7f}
 
 </style>
 </head>
@@ -491,6 +509,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; <span data-i18n="settings.linkWallet">Link Wallet</span></button>
         <button onclick="verifyRecoveryPhrase()" style="width:100%;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.verifySeed">&#128279; Verify recovery phrase</button>
         <button onclick="adminSecretPrompt()" id="adminSecretBtn" style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.admin">&#128737; Admin secret</button>
+        <a href="/admin" data-admin-link style="display:block;width:100%;box-sizing:border-box;text-align:center;background:transparent;color:#ff6666;border:1px solid #5a2a2a;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;text-decoration:none">&#128737; Open admin dashboard</a>
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
@@ -4771,6 +4790,20 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
   </div>
 </footer>
 
+<div class="legal-page" id="adminPage" role="region" aria-label="Admin dashboard" style="display:none">
+  <div class="legal-page-inner" style="max-width:1024px">
+    <button class="legal-back" onclick="closeAdminPage()" type="button">&larr; Back to YEET Social</button>
+    <h1>&#128737; <span data-i18n="admin.title">Admin dashboard</span></h1>
+    <div id="adminTabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin:14px 0 18px;flex-wrap:wrap">
+      <button class="adm-tab" data-tab="overview">Overview</button>
+      <button class="adm-tab" data-tab="reports">Reports</button>
+      <button class="adm-tab" data-tab="users">Users</button>
+      <button class="adm-tab" data-tab="audit">Audit log</button>
+    </div>
+    <div id="adminContent" style="min-height:200px"></div>
+  </div>
+</div>
+
 <div class="legal-page" id="legalPage" role="region" aria-label="Legal information">
   <div class="legal-page-inner">
     <button class="legal-back" onclick="closeLegalPage()" type="button">&larr; Back to YEET Social</button>
@@ -5169,6 +5202,286 @@ info@blocksocial.eu</address>
   else document.addEventListener('DOMContentLoaded', routeFromUrl);
   window.showLegalPage = showLegalPage;
   window.closeLegalPage = closeLegalPage;
+})();
+</script>
+
+<script>
+// ---------- Admin dashboard ----------
+// Standalone full-screen overlay routed at /admin. Gated on
+// localStorage.yeet_admin_secret being set; the secret is sent on
+// every admin call so without it nothing works.
+(function(){
+  function secret(){ return localStorage.getItem('yeet_admin_secret') || ''; }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtTime(iso){
+    try {
+      var d = new Date(iso);
+      var s = Math.floor((Date.now() - d.getTime())/1000);
+      if(s < 60)    return s+'s ago';
+      if(s < 3600)  return Math.floor(s/60)+'m ago';
+      if(s < 86400) return Math.floor(s/3600)+'h ago';
+      return d.toLocaleString();
+    } catch(e){ return ''; }
+  }
+
+  var _activeTab = 'overview';
+  var _adminPage, _adminContent;
+
+  window.openAdminPage = function(){
+    if(!secret()){
+      window.showToast('Set admin secret in Settings first','error');
+      return;
+    }
+    _adminPage = document.getElementById('adminPage');
+    _adminContent = document.getElementById('adminContent');
+    if(!_adminPage) return;
+    _adminPage.style.display = 'block';
+    _adminPage.classList.add('on');
+    setTab(_activeTab);
+  };
+  window.closeAdminPage = function(){
+    if(_adminPage){ _adminPage.style.display = 'none'; _adminPage.classList.remove('on'); }
+    if(/^\/admin\b/.test(location.pathname)) history.pushState(null,'','/');
+  };
+
+  function setTab(name){
+    _activeTab = name;
+    [].forEach.call(document.querySelectorAll('#adminTabs .adm-tab'), function(b){
+      b.classList.toggle('on', b.dataset.tab === name);
+    });
+    if(name === 'overview') renderOverview();
+    else if(name === 'reports') renderReports();
+    else if(name === 'users') renderUsers();
+    else if(name === 'audit') renderAudit();
+  }
+  document.addEventListener('click', function(ev){
+    var t = ev.target.closest && ev.target.closest('#adminTabs .adm-tab');
+    if(t) setTab(t.dataset.tab);
+  });
+
+  // --- Overview ---
+  async function renderOverview(){
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    try {
+      var r = await fetch('/api/v1/admin/stats?secret=' + encodeURIComponent(secret()));
+      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret or backend error.</div>'; return; }
+      var d = await r.json();
+      var s = (d && d.data) || {};
+      _adminContent.innerHTML =
+          '<div class="adm-card-grid">'
+        + '<div class="adm-metric"><div class="v">'+ (s.total_users||0) +'</div><div class="l">Total users</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.posts_24h||0)  +'</div><div class="l">Posts in 24 h</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.flagged_posts||0) +'</div><div class="l">Flagged</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.banned_users||0) +'</div><div class="l">Banned users</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.pending_invitations||0) +'</div><div class="l">Pending invites</div></div>'
+        + '</div>'
+        + '<div style="background:#0d0d0d;border:1px solid var(--border);border-radius:10px;padding:14px"><b>Tip</b> &mdash; the per-user moderation actions (ban / delete) are also accessible directly from any user&rsquo;s profile via the &#128737;-icon when the admin secret is set.</div>';
+    } catch(e){
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+    }
+  }
+
+  // --- Reports ---
+  async function renderReports(){
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    try {
+      var r = await fetch('/api/v1/admin/reports?secret=' + encodeURIComponent(secret()));
+      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret or backend error.</div>'; return; }
+      var d = await r.json();
+      var posts = (d && d.data) || [];
+      if(!posts.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No open reports.</div>'; return; }
+      _adminContent.innerHTML = posts.map(function(p){
+        var snippet = esc((p.content || '').slice(0, 240));
+        return '<div class="adm-card">'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">@'+ esc(p.author_name||'user') +' &middot; '+ fmtTime(p.created_at) +' &middot; '
+          +     '<span class="adm-badge flagged">'+ (p.report_count||0) +' reports</span></div>'
+          +   '<div style="font-size:13px;white-space:pre-wrap;word-break:break-word">'+ snippet +'</div>'
+          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
+          +   '<button class="adm-btn" onclick="adminUnflagPost(\''+ p.id +'\')">Unflag</button>'
+          +   '<button class="adm-btn warn" onclick="adminRemovePost(\''+ p.id +'\')">Remove</button>'
+          +   '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">Hard delete</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    } catch(e){
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+    }
+  }
+  async function _postSecret(path, extra){
+    var body = Object.assign({ secret: secret() }, extra || {});
+    var r = await fetch(path, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+    return r;
+  }
+  window.adminUnflagPost = async function(id){
+    var r = await _postSecret('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/unflag', {});
+    if(r.ok){ window.showToast('Unflagged','success'); renderReports(); }
+    else window.showToast('Unflag failed','error');
+  };
+  window.adminRemovePost = async function(id){
+    var reason = prompt('Removal reason (visible to author):', '');
+    if(reason === null) return;
+    // The "remove" route uses DELETE on /api/v1/admin/posts/:id with a
+    // JSON body. fetch supports body on DELETE in modern browsers.
+    var r = await fetch('/api/v1/admin/posts/'+ encodeURIComponent(id), {
+      method:'DELETE',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ secret: secret(), reason: reason })
+    });
+    if(r.ok){ window.showToast('Post removed','success'); renderReports(); }
+    else window.showToast('Remove failed','error');
+  };
+  window.adminHardDeletePost = async function(id){
+    if(!confirm('Hard-delete this post irreversibly?')) return;
+    var r = await fetch('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/hard', {
+      method:'DELETE',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ secret: secret(), reason: 'admin hard delete' })
+    });
+    if(r.ok){ window.showToast('Post hard-deleted','success'); renderReports(); }
+    else window.showToast('Hard delete failed','error');
+  };
+
+  // --- Users ---
+  function renderUsers(){
+    _adminContent.innerHTML =
+        '<div style="display:flex;gap:8px;margin-bottom:12px">'
+      + '<input id="admUserQ" class="adm-input" placeholder="@username, 0x... wallet, or UUID">'
+      + '<button class="adm-btn" onclick="adminUserSearch()">Find</button>'
+      + '</div>'
+      + '<div id="admUserResult"></div>';
+    var i = document.getElementById('admUserQ');
+    if(i){ i.focus(); i.addEventListener('keydown', function(e){ if(e.key==='Enter') adminUserSearch(); }); }
+  }
+  window.adminUserSearch = async function(){
+    var q = (document.getElementById('admUserQ')||{}).value.trim();
+    var out = document.getElementById('admUserResult');
+    if(!q){ if(out) out.innerHTML=''; return; }
+    out.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">Looking up...</div>';
+    try {
+      var r = await fetch('/api/v1/admin/user-lookup?secret=' + encodeURIComponent(secret()) + '&q=' + encodeURIComponent(q));
+      var d = await r.json();
+      if(!r.ok){ out.innerHTML = '<div style="color:#ff6666;padding:14px">'+ esc((d.error&&d.error.message)||'Not found') +'</div>'; return; }
+      var u = d.data;
+      var banned = u.posting_banned_until && new Date(u.posting_banned_until) > new Date();
+      var badge = banned ? '<span class="adm-badge banned">Banned until '+ new Date(u.posting_banned_until).toLocaleString() +'</span>' : '<span class="adm-badge ok">Active</span>';
+      var addr = u.wallet_address || u.id;
+      out.innerHTML = '<div class="adm-card" style="flex-direction:column;align-items:stretch">'
+        + '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">'
+        +   (u.avatar_url
+              ? '<img src="'+ esc(u.avatar_url) +'" style="width:48px;height:48px;border-radius:50%;object-fit:cover">'
+              : '<div style="width:48px;height:48px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px">'+ ((u.display_name||u.username||'?')[0]||'?').toUpperCase() +'</div>')
+        +   '<div style="flex:1;min-width:0">'
+        +     '<div style="font-size:16px;font-weight:700">'+ esc(u.display_name||u.username||'user') +'</div>'
+        +     (u.username?'<div style="color:var(--muted);font-size:12px">@'+ esc(u.username) +'</div>':'')
+        +     (u.email?'<div style="color:var(--muted);font-size:12px">'+ esc(u.email) +'</div>':'')
+        +     (u.wallet_address?'<div style="color:var(--muted);font-size:11px;word-break:break-all;font-family:monospace">'+ esc(u.wallet_address) +'</div>':'')
+        +   '</div>'
+        +   '<div style="text-align:right">'+ badge +'</div>'
+        + '</div>'
+        + '<div style="display:flex;gap:20px;margin-top:10px;color:var(--muted);font-size:12px">'
+        +   '<span><b style="color:#fff">'+ (u.post_count||0) +'</b> posts</span>'
+        +   '<span><b style="color:#fff">'+ (u.reported_count||0) +'</b> flagged</span>'
+        +   '<span>Joined '+ fmtTime(u.created_at) +'</span>'
+        + '</div>'
+        + (u.post_ban_reason ? '<div style="color:#ffb84d;margin-top:6px;font-size:12px">Ban reason: '+ esc(u.post_ban_reason) +'</div>' : '')
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">'
+        +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 12)">Ban 12 h</button>'
+        +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 24)">Ban 24 h</button>'
+        +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 168)">Ban 7 d</button>'
+        +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 720)">Ban 30 d</button>'
+        +   '<button class="adm-btn" onclick="adminUnbanFromCard(\''+ esc(addr) +'\')">Unban</button>'
+        +   '<button class="adm-btn danger" onclick="adminDeleteFromCard(\''+ esc(addr) +'\', \''+ esc(u.username||'') +'\')">Delete user&hellip;</button>'
+        + '</div>'
+        + '</div>';
+    } catch(e){
+      out.innerHTML = '<div style="color:#ff6666;padding:14px">Network error.</div>';
+    }
+  };
+  window.adminBanFromCard = async function(addr, hours){
+    var reason = prompt('Reason (optional):', '');
+    if(reason === null) return;
+    var r = await _postSecret('/api/v1/admin/users/'+ encodeURIComponent(addr) +'/ban-post',
+      { duration_hours: hours, reason: reason || null });
+    if(r.ok){ window.showToast('User suspended','success'); adminUserSearch(); }
+    else { var d = await r.json().catch(function(){return{};}); window.showToast('Ban failed: '+ ((d.error&&d.error.message)||r.status),'error'); }
+  };
+  window.adminUnbanFromCard = async function(addr){
+    var r = await _postSecret('/api/v1/admin/users/'+ encodeURIComponent(addr) +'/unban-post', { reason: null });
+    if(r.ok){ window.showToast('Ban lifted','success'); adminUserSearch(); }
+    else window.showToast('Unban failed','error');
+  };
+  window.adminDeleteFromCard = async function(addr, expectedUsername){
+    var conf = prompt('Type the username "'+ expectedUsername +'" to confirm deletion:', '');
+    if(conf === null) return;
+    if(conf.trim().toLowerCase() !== (expectedUsername||'').toLowerCase()){
+      window.showToast('Confirmation does not match username','error'); return;
+    }
+    if(!confirm('PERMANENTLY delete user "'+ expectedUsername +'" and all their content?')) return;
+    var r = await _postSecret('/api/v1/admin/users/'+ encodeURIComponent(addr) +'/delete',
+      { confirmation: conf, reason: 'admin dashboard delete' });
+    if(r.ok){ window.showToast('User deleted','success'); document.getElementById('admUserResult').innerHTML = ''; }
+    else { var d = await r.json().catch(function(){return{};}); window.showToast('Delete failed: '+ ((d.error&&d.error.message)||r.status),'error'); }
+  };
+
+  // --- Audit log ---
+  async function renderAudit(){
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    try {
+      var r = await fetch('/api/v1/admin/actions?secret=' + encodeURIComponent(secret()));
+      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret.</div>'; return; }
+      var d = await r.json();
+      var rows = (d && d.data) || [];
+      if(!rows.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No admin actions logged yet.</div>'; return; }
+      _adminContent.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="color:var(--muted);text-align:left">'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">When</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Action</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Target</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Duration</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Reason</th>'
+        + '</tr></thead><tbody>'
+        + rows.map(function(a){
+            return '<tr style="border-bottom:1px solid var(--border)">'
+              + '<td style="padding:6px 8px;color:var(--muted);white-space:nowrap">'+ fmtTime(a.created_at) +'</td>'
+              + '<td style="padding:6px 8px"><b>'+ esc(a.action_type) +'</b></td>'
+              + '<td style="padding:6px 8px">'+ esc(a.target_username || (a.target_user_id?a.target_user_id.slice(0,8):'—')) +'</td>'
+              + '<td style="padding:6px 8px">'+ (a.duration_hours ? a.duration_hours+' h' : '—') +'</td>'
+              + '<td style="padding:6px 8px;color:#ccc">'+ esc(a.reason || '') +'</td>'
+              + '</tr>';
+          }).join('')
+        + '</tbody></table>';
+    } catch(e){
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+    }
+  }
+
+  // --- Routing ---
+  function routeAdmin(){
+    if(/^\/admin\b/.test(location.pathname)){
+      // Open after a tick so the DOM is mounted.
+      setTimeout(function(){ openAdminPage(); }, 0);
+      return true;
+    }
+    return false;
+  }
+  // pushState navigation when an in-app link sets ?admin=1 or /admin.
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[data-admin-link]');
+    if(!a) return;
+    e.preventDefault();
+    history.pushState(null, '', '/admin');
+    openAdminPage();
+  });
+  window.addEventListener('popstate', function(){
+    if(!routeAdmin()) closeAdminPage();
+  });
+  if(document.readyState !== 'loading') routeAdmin();
+  else document.addEventListener('DOMContentLoaded', routeAdmin);
 })();
 </script>
 

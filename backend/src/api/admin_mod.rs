@@ -249,3 +249,94 @@ pub async fn list_actions(
     }).collect();
     Ok(Json(ApiResponse::ok(out)))
 }
+
+// ---------- dashboard stats ----------
+
+#[derive(Debug, Serialize)]
+pub struct StatsResponse {
+    pub total_users: i64,
+    pub posts_24h: i64,
+    pub flagged_posts: i64,
+    pub banned_users: i64,
+    pub pending_invitations: i64,
+}
+
+pub async fn stats(
+    State(state): State<AppState>,
+    Query(q): Query<ActionsQuery>,
+) -> AppResult<Json<ApiResponse<StatsResponse>>> {
+    check_admin(&q.secret)?;
+    let pool = state.db.pool();
+    let total_users: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
+        .fetch_one(pool).await.map_err(AppError::Database)?;
+    let posts_24h: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM posts WHERE created_at > NOW() - INTERVAL '24 hours'"
+    ).fetch_one(pool).await.map_err(AppError::Database)?;
+    let flagged_posts: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM posts WHERE is_flagged = TRUE AND is_removed = FALSE"
+    ).fetch_one(pool).await.map_err(AppError::Database)?;
+    let banned_users: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM users WHERE posting_banned_until > NOW()"
+    ).fetch_one(pool).await.map_err(AppError::Database)?;
+    let pending_invitations: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM group_invitations WHERE status = 'pending'"
+    ).fetch_one(pool).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(StatsResponse {
+        total_users, posts_24h, flagged_posts, banned_users, pending_invitations,
+    })))
+}
+
+// ---------- admin user lookup ----------
+//
+// Returns enough state to drive the per-user moderation card in the
+// admin dashboard: ban status, post count, recent action summary.
+
+#[derive(Debug, Deserialize)]
+pub struct UserLookupQuery {
+    pub secret: String,
+    pub q: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminUserCard {
+    pub id: Uuid,
+    pub username: Option<String>,
+    pub display_name: Option<String>,
+    pub wallet_address: Option<String>,
+    pub email: Option<String>,
+    pub avatar_url: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub post_count: i64,
+    pub reported_count: i64,
+    pub posting_banned_until: Option<DateTime<Utc>>,
+    pub post_ban_reason: Option<String>,
+}
+
+pub async fn lookup_user(
+    State(state): State<AppState>,
+    Query(q): Query<UserLookupQuery>,
+) -> AppResult<Json<ApiResponse<AdminUserCard>>> {
+    check_admin(&q.secret)?;
+    let (id, _) = resolve_target(&state, &q.q).await?;
+    let row: (Uuid, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>,
+              DateTime<Utc>, Option<DateTime<Utc>>, Option<String>) = sqlx::query_as(
+        "SELECT id, username, display_name, wallet_address, email, avatar_url,
+                created_at, posting_banned_until, post_ban_reason
+           FROM users WHERE id = $1"
+    )
+    .bind(id)
+    .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+    let post_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM posts WHERE author_id = $1 AND is_removed = FALSE"
+    ).bind(id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+    let reported_count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM posts WHERE author_id = $1 AND is_flagged = TRUE"
+    ).bind(id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(AdminUserCard {
+        id: row.0, username: row.1, display_name: row.2,
+        wallet_address: row.3, email: row.4, avatar_url: row.5,
+        created_at: row.6,
+        posting_banned_until: row.7, post_ban_reason: row.8,
+        post_count, reported_count,
+    })))
+}
