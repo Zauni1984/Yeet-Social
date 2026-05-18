@@ -3694,94 +3694,179 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
     await waitForLibs();
     var bill = (typeof billOrJson === 'string') ? JSON.parse(billOrJson) : billOrJson;
     var jsPDF = window.jspdf.jsPDF;
-    var W = 156, H = 66;
+    var W = 160, H = 75; // slightly larger for a more banknote-like 2:1 ratio
     var doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [W, H] });
     var redeemUrl = location.origin + '/?redeem=' + encodeURIComponent(bill.claim_secret);
+    var amtStr = String(Number(bill.amount).toLocaleString());
 
-    // Background: very dark
-    doc.setFillColor(8, 8, 8);
+    // ---- palette ----
+    var BG     = [10, 14, 4];
+    var DARK   = [16, 22, 6];
+    var LIME   = [200, 255, 0];
+    var LIME_D = [140, 175, 0];
+    var TEXT   = [235, 235, 220];
+    var MUTED  = [170, 175, 155];
+
+    // ---- 1. Background ----
+    doc.setFillColor(BG[0], BG[1], BG[2]);
     doc.rect(0, 0, W, H, 'F');
 
-    // Outer ornamental frame (lime)
-    doc.setDrawColor(200, 255, 0);
-    doc.setLineWidth(0.7);
-    doc.rect(2, 2, W - 4, H - 4);
-    doc.setLineWidth(0.2);
-    doc.rect(3.5, 3.5, W - 7, H - 7);
-
-    // Guilloché-ish micro-ornament (lots of thin lines)
-    doc.setDrawColor(180, 220, 0);
+    // ---- 2. Faint guilloché texture (corners only, low-contrast) ----
+    doc.setDrawColor(45, 60, 0); // very subtle on dark bg
     doc.setLineWidth(0.05);
-    for (var i = 0; i < 80; i++) {
-      var y = 4 + (H - 8) * (i / 80);
-      doc.line(4, y, W - 4, y + Math.sin(i / 5) * 0.3);
+    // Top band only — text body sits on plain dark below it.
+    for (var i = 0; i < 22; i++) {
+      var yy = 5 + i * 0.55;
+      doc.line(5, yy, W - 5, yy + Math.sin(i / 3 + 1) * 0.25);
+    }
+    // Bottom band, mirrored.
+    for (var j = 0; j < 22; j++) {
+      var yb = H - 16 + j * 0.55;
+      doc.line(5, yb, W - 5, yb + Math.sin(j / 3) * 0.25);
     }
 
-    // Title block, top-left
-    doc.setTextColor(200, 255, 0);
+    // ---- 3. Outer double frame ----
+    doc.setDrawColor(LIME[0], LIME[1], LIME[2]);
+    doc.setLineWidth(0.7);
+    doc.roundedRect(2.5, 2.5, W - 5, H - 5, 1.8, 1.8);
+    doc.setLineWidth(0.18);
+    doc.roundedRect(3.8, 3.8, W - 7.6, H - 7.6, 1.3, 1.3);
+
+    // ---- 4. Portrait window (left) ----
+    var pCx = 25, pCy = H / 2, pRx = 16, pRy = 26;
+    // backing
+    doc.setFillColor(DARK[0], DARK[1], DARK[2]);
+    doc.ellipse(pCx, pCy, pRx, pRy, 'F');
+    doc.setDrawColor(LIME[0], LIME[1], LIME[2]);
+    doc.setLineWidth(0.6);
+    doc.ellipse(pCx, pCy, pRx, pRy, 'S');
+    doc.setLineWidth(0.2);
+    doc.ellipse(pCx, pCy, pRx - 1.4, pRy - 1.4, 'S');
+
+    // Radial-ish texture inside the window (very subtle)
+    doc.setLineWidth(0.04);
+    doc.setDrawColor(70, 90, 0);
+    for (var k = 0; k < 14; k++) {
+      var a = (k / 14) * Math.PI * 2;
+      doc.line(
+        pCx + Math.cos(a) * 3, pCy + Math.sin(a) * 3,
+        pCx + Math.cos(a) * (pRx - 2), pCy + Math.sin(a) * (pRy - 2)
+      );
+    }
+
+    // ---- 5. Stylized figure inside the window ----
+    // Hair / hat — slight dome on the head
+    doc.setFillColor(LIME_D[0], LIME_D[1], LIME_D[2]);
+    doc.ellipse(pCx, pCy - 9, 7.2, 4.2, 'F');
+    // Head
+    doc.setFillColor(LIME[0], LIME[1], LIME[2]);
+    doc.circle(pCx, pCy - 6.5, 6.6, 'F');
+    doc.setDrawColor(DARK[0], DARK[1], DARK[2]);
+    doc.setLineWidth(0.5);
+    doc.circle(pCx, pCy - 6.5, 6.6, 'S');
+    // Eyes (two small dark ovals)
+    doc.setFillColor(DARK[0], DARK[1], DARK[2]);
+    doc.ellipse(pCx - 2.2, pCy - 7, 0.7, 1.1, 'F');
+    doc.ellipse(pCx + 2.2, pCy - 7, 0.7, 1.1, 'F');
+    // Mouth — small curved smile, approximated by a thin filled ellipse arc
+    doc.setLineWidth(0.45);
+    doc.setDrawColor(DARK[0], DARK[1], DARK[2]);
+    doc.line(pCx - 1.6, pCy - 3.6, pCx - 0.6, pCy - 3.0);
+    doc.line(pCx - 0.6, pCy - 3.0, pCx + 0.6, pCy - 3.0);
+    doc.line(pCx + 0.6, pCy - 3.0, pCx + 1.6, pCy - 3.6);
+    // Neck
+    doc.setFillColor(LIME[0], LIME[1], LIME[2]);
+    doc.rect(pCx - 1.8, pCy - 0.5, 3.6, 3.2, 'F');
+    // Shoulders / collar
+    doc.setFillColor(LIME_D[0], LIME_D[1], LIME_D[2]);
+    doc.ellipse(pCx, pCy + 8, 12, 5.5, 'F');
+    doc.setFillColor(LIME[0], LIME[1], LIME[2]);
+    doc.ellipse(pCx, pCy + 9.5, 9.5, 4, 'F');
+    // Y monogram on the collar
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text(T('bn.title'), 7, 12);
+    doc.setFontSize(10);
+    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.text('Y', pCx, pCy + 11, { align: 'center' });
+
+    // ---- 6. Title block (top, right of portrait) ----
+    var col = 47;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(LIME[0], LIME[1], LIME[2]);
+    doc.text(T('bn.title'), col, 13);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    doc.setTextColor(200, 200, 200);
-    doc.text(T('bn.subtitle'), 7, 16);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(T('bn.subtitle'), col, 17.5);
+    // Separator
+    doc.setDrawColor(LIME[0], LIME[1], LIME[2]);
+    doc.setLineWidth(0.3);
+    doc.line(col, 19.5, W - 50, 19.5);
 
-    // Big denomination
+    // ---- 7. Denomination (centre-left under title) ----
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(46);
-    var amtStr = String(Number(bill.amount).toLocaleString());
-    doc.text(amtStr, 7, 38);
-    doc.setFontSize(12);
-    doc.setTextColor(200, 255, 0);
-    doc.text('YEET', 7, 45);
+    doc.setFontSize(40);
+    doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+    doc.text(amtStr, col, 36);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(LIME[0], LIME[1], LIME[2]);
+    doc.text('YEET TOKENS', col, 41.5);
 
-    // Corner denominations
+    // ---- 8. Redemption steps — clearly under the denomination ----
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(200, 255, 0);
-    doc.text(amtStr, W - 7, 8, { align: 'right' });
-    doc.text(amtStr, 7, H - 4);
-    doc.text(amtStr, W - 7, H - 4, { align: 'right' });
+    doc.setFontSize(7);
+    doc.setTextColor(LIME[0], LIME[1], LIME[2]);
+    doc.text(T('bn.howTo'), col, 51);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(TEXT[0], TEXT[1], TEXT[2]);
+    doc.text(T('bn.step1'), col, 55);
+    doc.text(T('bn.step2'), col, 58);
+    doc.text(T('bn.step3'), col, 61);
 
-    // QR on right
+    // ---- 9. QR — right side, white backing for scanability ----
     var qrPng = makeQrDataUrl(redeemUrl);
-    var qrSize = 30;
-    doc.addImage(qrPng, 'PNG', W - qrSize - 6, (H - qrSize) / 2, qrSize, qrSize);
+    var qrSize = 32;
+    var qrX = W - qrSize - 8;
+    var qrY = 12;
+    doc.setFillColor(252, 252, 245);
+    doc.rect(qrX - 1.5, qrY - 1.5, qrSize + 3, qrSize + 3, 'F');
+    doc.addImage(qrPng, 'PNG', qrX, qrY, qrSize, qrSize);
 
     // Serial + issued under QR
     doc.setFont('courier', 'normal');
     doc.setFontSize(7);
-    doc.setTextColor(220, 220, 220);
-    var serialY = (H - qrSize) / 2 + qrSize + 3;
-    doc.text(T('bn.serial') + ': ' + bill.serial, W - qrSize - 6, serialY);
+    doc.setTextColor(LIME[0], LIME[1], LIME[2]);
+    var labelY = qrY + qrSize + 4;
+    doc.text(T('bn.serial') + ': ' + bill.serial, qrX, labelY);
     var issued = new Date(bill.created_at || Date.now());
-    doc.text(T('bn.issued') + ': ' + issued.toISOString().slice(0, 10), W - qrSize - 6, serialY + 3);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(T('bn.issued') + ': ' + issued.toISOString().slice(0, 10), qrX, labelY + 3.2);
 
-    // Redemption instructions
+    // ---- 10. Corner ornaments — only top, where they don't fight text ----
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(200, 255, 0);
-    doc.text(T('bn.howTo'), 7, H - 21);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(220, 220, 220);
-    doc.setFontSize(6.5);
-    doc.text(T('bn.step1'), 7, H - 18);
-    doc.text(T('bn.step2'), 7, H - 15);
-    doc.text(T('bn.step3'), 7, H - 12);
+    doc.setFontSize(11);
+    doc.setTextColor(LIME[0], LIME[1], LIME[2]);
+    doc.text(amtStr, 7, 9);
+    doc.text(amtStr, W - 7, 9, { align: 'right' });
 
-    // Backup claim code (printed text — recoverable if QR is damaged)
+    // ---- 11. Backup code — bottom strip, dedicated quiet zone ----
+    // Clear the band first so guilloché doesn't strike it through.
+    doc.setFillColor(BG[0], BG[1], BG[2]);
+    doc.rect(5, H - 7.6, W - 10, 5.4, 'F');
+    // Separator above the code
+    doc.setDrawColor(LIME_D[0], LIME_D[1], LIME_D[2]);
+    doc.setLineWidth(0.18);
+    doc.line(7, H - 7.6, W - 7, H - 7.6);
     doc.setFont('courier', 'normal');
-    doc.setFontSize(5.5);
-    doc.setTextColor(160, 160, 160);
-    doc.text(T('bn.code') + ': ' + bill.claim_secret, 7, H - 7);
-
-    // Cash-handling notice
+    doc.setFontSize(6.2);
+    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.text(T('bn.code') + ': ' + bill.claim_secret, W / 2, H - 4.6, { align: 'center' });
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(5);
-    doc.setTextColor(140, 140, 140);
-    doc.text(T('bn.notTransferable'), W / 2, H - 1.5, { align: 'center' });
+    doc.setFontSize(5.4);
+    doc.setTextColor(120, 120, 110);
+    doc.text(T('bn.notTransferable'), W / 2, H - 2.3, { align: 'center' });
 
     // Save
     var fname = 'YEET-' + (bill.serial || 'bill').replace(/[^A-Z0-9-]/gi, '_') + '.pdf';
