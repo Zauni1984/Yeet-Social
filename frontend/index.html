@@ -3834,15 +3834,18 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
     doc.rect(qrX - 1.5, qrY - 1.5, qrSize + 3, qrSize + 3, 'F');
     doc.addImage(qrPng, 'PNG', qrX, qrY, qrSize, qrSize);
 
-    // Serial + issued under QR
+    // Serial + issued under QR — centred on the QR's vertical axis so a
+    // long "Serial: YEET-XXXX-XXXX-XXXX" doesn't run past the right
+    // frame. Slightly smaller font keeps it within the QR's footprint.
     doc.setFont('courier', 'normal');
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(LIME[0], LIME[1], LIME[2]);
     var labelY = qrY + qrSize + 4;
-    doc.text(T('bn.serial') + ': ' + bill.serial, qrX, labelY);
+    var qrMidX = qrX + qrSize / 2;
+    doc.text(T('bn.serial') + ': ' + bill.serial, qrMidX, labelY, { align: 'center' });
     var issued = new Date(bill.created_at || Date.now());
     doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(T('bn.issued') + ': ' + issued.toISOString().slice(0, 10), qrX, labelY + 3.2);
+    doc.text(T('bn.issued') + ': ' + issued.toISOString().slice(0, 10), qrMidX, labelY + 3.2, { align: 'center' });
 
     // ---- 10. Corner ornaments — only top, where they don't fight text ----
     doc.setFont('helvetica', 'bold');
