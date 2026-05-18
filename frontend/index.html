@@ -1373,6 +1373,74 @@ function showToast(msg){
   setTimeout(()=>t.style.opacity='0',3000);
 }
 
+// ---------- Unified API helper ----------
+// Wraps fetch with: Authorization header from yeet_jwt, JSON parse,
+// auto-handled 401 (clears the JWT, surfaces a 'session expired' toast,
+// opens the login modal so the user doesn't end up staring at silent
+// failures), and a normalised return shape:
+//   { ok: boolean, status: number, data: T | undefined, error: string | undefined }
+// Returns ok=false on network failure so callers don't have to wrap
+// every call in try/catch; the error text is the network-error i18n.
+window._sessionExpiredAt = 0;
+async function yeetFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({}, opts.headers || {});
+  // Default Content-Type only for JSON-body requests; multipart sets its own.
+  if(opts.body && typeof opts.body === 'string' && !opts.headers['Content-Type']){
+    opts.headers['Content-Type'] = 'application/json';
+  }
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(jwt && !opts.headers['Authorization']) opts.headers['Authorization'] = 'Bearer ' + jwt;
+  var r;
+  try {
+    r = await fetch(path, opts);
+  } catch(e){
+    return { ok:false, status:0, data:undefined, error: (window.t ? window.t('common.networkError') : 'Network error') };
+  }
+  // Try to parse JSON regardless; some endpoints return JSON on errors too.
+  var d = null;
+  try { d = await r.clone().json(); } catch(e){ /* not JSON, fine */ }
+  if(r.status === 401){
+    // Throttle so a feed of failed requests doesn't pop the modal repeatedly.
+    var now = Date.now();
+    if(now - window._sessionExpiredAt > 5000){
+      window._sessionExpiredAt = now;
+      try { localStorage.removeItem('yeet_jwt'); } catch(e){}
+      try { localStorage.removeItem('yeet_address'); } catch(e){}
+      if(window.showToast) showToast(window.t ? window.t('toast.sessionExpired') : 'Session expired');
+      if(typeof window.openAuthModal === 'function'){
+        try { window.openAuthModal('login'); } catch(e){}
+      } else if(typeof window.openWalletModal === 'function'){
+        try { window.openWalletModal(); } catch(e){}
+      }
+    }
+    return { ok:false, status:401, data:undefined, error:'session_expired' };
+  }
+  if(!r.ok){
+    var msg = (d && d.error && d.error.message) || (d && d.message) || ('HTTP ' + r.status);
+    return { ok:false, status:r.status, data: d && d.data, error: msg };
+  }
+  return { ok:true, status:r.status, data: d && (d.data !== undefined ? d.data : d), error: undefined };
+}
+window.yeetFetch = yeetFetch;
+
+// Safety net: any uncaught Promise rejection (typically a fetch that
+// threw because the network is offline or a JSON.parse blew up) still
+// surfaces something to the user instead of a silent failure. Avoids
+// trapping our own intentional throws by checking the message shape.
+window.addEventListener('unhandledrejection', function(ev){
+  try {
+    var reason = ev && ev.reason;
+    var msg = reason && (reason.message || String(reason));
+    if(!msg) return;
+    // Skip already-handled paths (yeetFetch always resolves; this is
+    // for everything else).
+    if(/aborted|user_cancel|setup_declined/i.test(msg)) return;
+    if(window.showToast) showToast((window.t ? window.t('common.networkError') : 'Network error'), 'error');
+    if(window.console) console.warn('Unhandled rejection:', reason);
+  } catch(e){}
+});
+
 // ---------- Token balance pill ----------
 // Fetches the caller's off-chain YEET balance and renders it in the top
 // nav pill. Hooked into login, tip-send, paper-wallet actions, DM-tips
@@ -1382,26 +1450,23 @@ async function refreshTokenBalance(){
   var pill = document.getElementById('balancePill');
   var amt  = document.getElementById('balanceAmt');
   if(!jwt || !pill || !amt){ return; }
-  try {
-    var r = await fetch('/api/v1/tokens/balance', { headers:{ 'Authorization':'Bearer '+jwt } });
-    if(!r.ok) return;
-    var d = await r.json();
-    if(d && d.success && d.data){
-      var n = Number(d.data.yeet_balance || 0);
-      // Compact format: integers under 1000 → as-is; 1k+ → 1.2k; 1m+ → 1.2m
-      var pretty;
-      if(n >= 1e6)      pretty = (n/1e6).toFixed(2).replace(/\.?0+$/, '') + 'm';
-      else if(n >= 1e3) pretty = (n/1e3).toFixed(2).replace(/\.?0+$/, '') + 'k';
-      else if(n >= 100) pretty = n.toFixed(0);
-      else              pretty = n.toFixed(2).replace(/\.?0+$/, '');
-      amt.textContent = pretty;
-      // Visual cue when very low / zero
-      pill.style.borderColor = n > 0 ? 'var(--yeet)' : 'var(--border)';
-      pill.style.color       = n > 0 ? 'var(--yeet)' : 'var(--muted)';
-      // Expose precise value to other code (e.g. profile header)
-      window._yeetBalance = n;
-    }
-  } catch(e){ /* silent: balance pill is non-critical */ }
+  // yeetFetch handles 401 -> session-expired flow centrally so a
+  // background refresh against an expired token surfaces a single
+  // 'session expired' toast and an auth modal instead of silent fails.
+  var res = await yeetFetch('/api/v1/tokens/balance');
+  if(!res.ok || !res.data) return;
+  var n = Number(res.data.yeet_balance || 0);
+  // Compact format: integers under 100 keep up to 2 decimals,
+  // 100-999 are rounded, 1k+ -> 1.2k, 1m+ -> 1.2m.
+  var pretty;
+  if(n >= 1e6)      pretty = (n/1e6).toFixed(2).replace(/\.?0+$/, '') + 'm';
+  else if(n >= 1e3) pretty = (n/1e3).toFixed(2).replace(/\.?0+$/, '') + 'k';
+  else if(n >= 100) pretty = n.toFixed(0);
+  else              pretty = n.toFixed(2).replace(/\.?0+$/, '');
+  amt.textContent = pretty;
+  pill.style.borderColor = n > 0 ? 'var(--yeet)' : 'var(--border)';
+  pill.style.color       = n > 0 ? 'var(--yeet)' : 'var(--muted)';
+  window._yeetBalance = n;
 }
 window.refreshTokenBalance = refreshTokenBalance;
 
@@ -1411,21 +1476,19 @@ async function refreshNavAvatar(){
   var jwt = localStorage.getItem('yeet_jwt');
   var el  = document.getElementById('navAvatar');
   if(!jwt || !el) return;
-  try {
-    var r = await fetch('/api/v1/users/me', { headers:{ 'Authorization':'Bearer '+jwt } });
-    if(!r.ok) return;
-    var d = await r.json();
-    var u = d && d.data;
-    if(!u) return;
-    if(u.avatar_url){
-      el.style.backgroundImage = "url('"+ String(u.avatar_url).replace(/['"<>]/g,'') +"')";
-      el.textContent = '';
-    } else {
-      el.style.backgroundImage = '';
-      var initial = (u.display_name || u.wallet_address || 'Y').toString().trim().charAt(0).toUpperCase();
-      el.textContent = initial || 'Y';
-    }
-  } catch(e){ /* non-critical */ }
+  var res = await yeetFetch('/api/v1/users/me');
+  if(!res.ok || !res.data) return;
+  // Adapter so the rest of the function reads the user object the
+  // same way as before.
+  var u = res.data;
+  if(u.avatar_url){
+    el.style.backgroundImage = "url('"+ String(u.avatar_url).replace(/['"<>]/g,'') +"')";
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = '';
+    var initial = (u.display_name || u.wallet_address || 'Y').toString().trim().charAt(0).toUpperCase();
+    el.textContent = initial || 'Y';
+  }
 }
 window.refreshNavAvatar = refreshNavAvatar;
 
@@ -1435,20 +1498,15 @@ async function refreshNotifBadge(){
   var jwt = localStorage.getItem('yeet_jwt');
   var badge = document.getElementById('navBellBadge');
   if(!jwt || !badge){ return; }
-  try {
-    var r = await fetch('/api/v1/notifications/unread-count', {
-      headers:{ 'Authorization':'Bearer '+jwt }
-    });
-    if(!r.ok) return;
-    var d = await r.json();
-    var n = (d && d.data && d.data.count) || 0;
-    if(n > 0){
-      badge.style.display = '';
-      badge.textContent = n > 99 ? '99+' : String(n);
-    } else {
-      badge.style.display = 'none';
-    }
-  } catch(e){ /* silent */ }
+  var res = await yeetFetch('/api/v1/notifications/unread-count');
+  if(!res.ok || !res.data) return;
+  var n = res.data.count || 0;
+  if(n > 0){
+    badge.style.display = '';
+    badge.textContent = n > 99 ? '99+' : String(n);
+  } else {
+    badge.style.display = 'none';
+  }
 }
 window.refreshNotifBadge = refreshNotifBadge;
 
