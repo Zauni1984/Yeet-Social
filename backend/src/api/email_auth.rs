@@ -14,6 +14,11 @@ pub struct EmailRegisterRequest {
     pub password: String,
     pub display_name: Option<String>,
     pub consent: Option<bool>,
+    /// Client-derived wallet address (lower-case 0x...). Optional, since
+    /// older clients do not send it; when present we persist it so the
+    /// account is reachable for tipping / paper-wallet redemption /
+    /// follow-from-wallet flows without a separate link-wallet step.
+    pub wallet_address: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -116,12 +121,31 @@ pub async fn register(
         .chars().filter(|c| c.is_alphanumeric() || *c == '_').take(20).collect::<String>();
     let username = unique_username(&state, &username_base).await?;
 
+    // Optional client-derived wallet: only accept a well-formed 0x address
+    // and only if it isn't already taken by another account.
+    let wallet_lower: Option<String> = match req.wallet_address.as_deref() {
+        Some(w) if w.len() == 42 && w.starts_with("0x")
+                 && w[2..].chars().all(|c| c.is_ascii_hexdigit()) => Some(w.to_lowercase()),
+        _ => None,
+    };
+    if let Some(ref w) = wallet_lower {
+        let taken: Option<Uuid> = sqlx::query_scalar(
+            "SELECT id FROM users WHERE LOWER(wallet_address) = $1"
+        )
+        .bind(w)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+        if taken.is_some() {
+            return Err(AppError::Validation("Wallet address already linked to another account".into()));
+        }
+    }
+
     let user_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO users (email, password_hash, password_salt, username, display_name)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id"
+        "INSERT INTO users (email, password_hash, password_salt, username, display_name, wallet_address)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
     )
     .bind(&email_lower).bind(&hash).bind(&salt).bind(&username)
     .bind(req.display_name.unwrap_or_else(|| username.clone()))
+    .bind(&wallet_lower)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     issue_and_send_verification(&state, user_id, &email_lower).await?;

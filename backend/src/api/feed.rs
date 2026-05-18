@@ -204,10 +204,17 @@ pub async fn get_user_posts(
     }
 
     // Viewers that haven't completed the face scan (or are anonymous) never see 18+ posts,
-    // even if they follow the author.
+    // even if they follow the author. Exception: a user always sees their
+    // own 18+ posts on their own profile, regardless of the verification
+    // status of the viewer — they uploaded it, they obviously consented.
     let viewer_verified = viewer_is_age_verified(&state, viewer.as_ref()).await;
-    let include_adult_sql = if viewer_verified { "" } else { " AND p.is_adult = FALSE" };
-    let include_adult_count_sql = if viewer_verified { "" } else { " AND is_adult = FALSE" };
+    let viewer_is_author = match viewer.as_ref() {
+        Some(a) => resolve_viewer_id(&state, a).await.ok() == Some(user_id),
+        None => false,
+    };
+    let allow_adult = viewer_verified || viewer_is_author;
+    let include_adult_sql = if allow_adult { "" } else { " AND p.is_adult = FALSE" };
+    let include_adult_count_sql = if allow_adult { "" } else { " AND is_adult = FALSE" };
 
     let list_sql = format!(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,

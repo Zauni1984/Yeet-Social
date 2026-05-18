@@ -41,6 +41,10 @@ pub struct UserProfile {
     // (i.e. is reachable for encrypted DMs).
     #[serde(default)]
     pub e2ee_ready: bool,
+    // True iff the caller follows this user. Defaults to false for
+    // anonymous callers.
+    #[serde(default)]
+    pub is_following: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]

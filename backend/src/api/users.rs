@@ -65,11 +65,11 @@ pub async fn get_profile(
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".into()))?;
 
-    // Block relationship is only meaningful when the caller is signed in.
-    let (is_blocked_by_me, has_blocked_me) = if let Some(auth) = viewer.as_ref() {
+    // Block + follow state are only meaningful when the caller is signed in.
+    let (is_blocked_by_me, has_blocked_me, is_following) = if let Some(auth) = viewer.as_ref() {
         if let Ok(viewer_id) = resolve_user_id(&state, &auth.address).await {
             if viewer_id == r.id {
-                (false, false)
+                (false, false, false)
             } else {
                 let blocked: bool = sqlx::query_scalar(
                     "SELECT EXISTS(SELECT 1 FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2)"
@@ -79,11 +79,15 @@ pub async fn get_profile(
                     "SELECT EXISTS(SELECT 1 FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2)"
                 ).bind(r.id).bind(viewer_id)
                  .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
-                (blocked, blocked_by)
+                let following: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2)"
+                ).bind(viewer_id).bind(r.id)
+                 .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+                (blocked, blocked_by, following)
             }
-        } else { (false, false) }
+        } else { (false, false, false) }
     } else {
-        (false, false)
+        (false, false, false)
     };
 
     Ok(Json(ApiResponse::ok(UserProfile {
@@ -97,6 +101,7 @@ pub async fn get_profile(
         is_blocked_by_me,
         has_blocked_me,
         e2ee_ready: r.e2ee_public_key.is_some(),
+        is_following,
     })))
 }
 

@@ -218,6 +218,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px">
       <span class="balance-pill" id="balancePill" onclick="openWalletModal()" title="" data-i18n-title="balance.title">&#9889; <span id="balanceAmt">—</span> YEET</span>
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
+      <span class="nav-avatar" id="navAvatar" onclick="window.showMyProfile && window.showMyProfile()" title="" data-i18n-title="profile.title">&#128100;</span>
       <button class="btn-login" onclick="doLogout()" id="disconnectBtn" style="font-size:10px;padding:3px 7px;white-space:nowrap;max-width:90px">&#9211;</button>
     </div>
  </div>
@@ -661,7 +662,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.sessionExpired':'Session expired, please log in again',
       'toast.commentFailed':'Comment could not be sent','toast.commentPosted':'Comment posted',
       'toast.priceRequired':'Please enter a price','toast.adultEnable':'Enable 18+ content in Settings',
-      'toast.walletNotFound':'MetaMask not found','toast.noWalletSelected':'No wallet selected',
+      'toast.walletNotFound':'No browser wallet detected (e.g. MetaMask). Install or unlock one and try again.','toast.noWalletSelected':'No wallet selected',
       'toast.walletLinked':'Wallet linked','toast.walletLinkAborted':'Wallet link cancelled',
       'toast.walletDisconnected':'Wallet disconnected','toast.exportDownloaded':'Export downloaded',
       'toast.exportFailed':'Export failed','toast.deleteFailed':'Delete failed',
@@ -829,7 +830,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.sessionExpired':'Session abgelaufen, bitte erneut einloggen',
       'toast.commentFailed':'Kommentar konnte nicht gesendet werden','toast.commentPosted':'Kommentar gepostet',
       'toast.priceRequired':'Bitte Preis eingeben','toast.adultEnable':'18+ Content in Settings aktivieren',
-      'toast.walletNotFound':'MetaMask nicht gefunden','toast.noWalletSelected':'Keine Wallet ausgewählt',
+      'toast.walletNotFound':'Keine Browser-Wallet erkannt (z. B. MetaMask). Bitte installieren oder entsperren und erneut versuchen.','toast.noWalletSelected':'Keine Wallet ausgewählt',
       'toast.walletLinked':'Wallet verknüpft','toast.walletLinkAborted':'Wallet-Verknüpfung abgebrochen',
       'toast.walletDisconnected':'Wallet getrennt','toast.exportDownloaded':'Export heruntergeladen',
       'toast.exportFailed':'Export fehlgeschlagen','toast.deleteFailed':'Löschen fehlgeschlagen',
@@ -1313,6 +1314,7 @@ async function onConnected(address,walletName,provider){
       showToast(' Signed in: '+walletName+' ('+short+')');
       if(typeof showGlobalFeed === 'function') showGlobalFeed();
       if(typeof refreshTokenBalance === 'function') refreshTokenBalance();
+      if(typeof refreshNavAvatar === 'function') refreshNavAvatar();
     }else{
       btn.textContent=short;
       showToast('Connected (no JWT): '+short);loadProfile();
@@ -1362,20 +1364,61 @@ async function refreshTokenBalance(){
   } catch(e){ /* silent: balance pill is non-critical */ }
 }
 window.refreshTokenBalance = refreshTokenBalance;
+
+// Mirror the user's avatar into the top-nav avatar pill. Quick fetch
+// of /api/v1/users/me once on login + after avatar uploads.
+async function refreshNavAvatar(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  var el  = document.getElementById('navAvatar');
+  if(!jwt || !el) return;
+  try {
+    var r = await fetch('/api/v1/users/me', { headers:{ 'Authorization':'Bearer '+jwt } });
+    if(!r.ok) return;
+    var d = await r.json();
+    var u = d && d.data;
+    if(!u) return;
+    if(u.avatar_url){
+      el.style.backgroundImage = "url('"+ String(u.avatar_url).replace(/['"<>]/g,'') +"')";
+      el.textContent = '';
+    } else {
+      el.style.backgroundImage = '';
+      var initial = (u.display_name || u.wallet_address || 'Y').toString().trim().charAt(0).toUpperCase();
+      el.textContent = initial || 'Y';
+    }
+  } catch(e){ /* non-critical */ }
+}
+window.refreshNavAvatar = refreshNavAvatar;
+
 // Background refresh on a slow tick — keeps the pill fresh without
 // polling so often that we hammer the API.
 document.addEventListener('DOMContentLoaded', function(){
   setTimeout(refreshTokenBalance, 800);
+  setTimeout(refreshNavAvatar, 900);
   setInterval(refreshTokenBalance, 60000);
 });
 
-async function connectMetaMask(){
-  // MetaMask injects window.ethereum asynchronously  wait up to 1s
-  const eth=await new Promise(res=>{
-    if(window.ethereum)return res(window.ethereum);
-    let t=0;
-    const iv=setInterval(()=>{if(window.ethereum){clearInterval(iv);res(window.ethereum);}else if((t+=50)>1000){clearInterval(iv);res(null);}},50);
+// MetaMask + other extensions inject window.ethereum asynchronously and
+// may also dispatch a non-standard 'ethereum#initialized' event when ready.
+// Wait up to `timeoutMs` for the provider to show up before giving up.
+function waitForEthereum(timeoutMs){
+  timeoutMs = timeoutMs || 2500;
+  return new Promise(function(res){
+    if(window.ethereum) return res(window.ethereum);
+    var done = false;
+    function settle(v){ if(!done){ done = true; res(v); } }
+    var iv = setInterval(function(){
+      if(window.ethereum){ clearInterval(iv); settle(window.ethereum); }
+    }, 50);
+    setTimeout(function(){ clearInterval(iv); settle(window.ethereum || null); }, timeoutMs);
+    window.addEventListener('ethereum#initialized', function(){
+      clearInterval(iv); settle(window.ethereum || null);
+    }, { once: true });
   });
+}
+window.waitForEthereum = waitForEthereum;
+
+async function connectMetaMask(){
+  const eth=await waitForEthereum(2500);
   if(eth&&(eth.isMetaMask||eth.providers?.some(p=>p.isMetaMask))){
     const provider=eth.providers?.find(p=>p.isMetaMask)||eth;
     try{
@@ -1665,9 +1708,12 @@ function openSettingsModal(){
 async function linkWalletToEmailUser(){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
-  if(!window.ethereum){showToast(window.t('toast.walletNotFound'));return;}
+  // Same async-detection wait as the main connect flow — MetaMask may
+  // inject after the page renders.
+  const eth = await waitForEthereum(2500);
+  if(!eth){showToast(window.t('toast.walletNotFound'));return;}
   try{
-    const [addr]=await window.ethereum.request({method:'eth_requestAccounts'});
+    const [addr]=await eth.request({method:'eth_requestAccounts'});
     if(!addr){showToast(window.t('toast.noWalletSelected'));return;}
     const nr=await fetch('/api/v1/auth/link-wallet/nonce',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
@@ -1891,6 +1937,7 @@ async function uploadProfileImage(input, kind){
     if(!d || !d.success){ throw new Error((d && d.error && d.error.message) || window.t('toast.uploadFailed')); }
     showToast(window.t(kind === 'cover' ? 'toast.coverUpdated' : 'toast.avatarUpdated'), 'success');
     if(typeof showMyProfile === 'function') showMyProfile();
+    if(kind === 'avatar' && typeof window.refreshNavAvatar === 'function') window.refreshNavAvatar();
   }catch(e){ showToast(window.t('toast.uploadError')+': '+(e.message||window.t('common.unknown')),'error'); }
   finally{ input.value = ''; }
 }
@@ -2072,7 +2119,14 @@ function renderProfileHeader(u, own){
     } else if(u.is_blocked_by_me){
       pieces.push('<button onclick="toggleBlockProfile('+ addrJsArg +', false)" style="background:#3a1a1a;color:#ff7f7f;border:1px solid #5a2a2a;border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">'+ window.t('profile.unblock') +'</button>');
     } else {
-      pieces.push('<button id="followBtn" onclick="toggleFollowProfile()" data-follow="0" style="background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">'+window.t('profile.follow')+'</button>');
+      // Initial follow state comes from the backend (is_following) so a
+      // reload doesn't reset the button to 'Follow'.
+      var following = !!u.is_following;
+      var followStyle = following
+        ? 'background:transparent;color:var(--text);border:1px solid var(--border);'
+        : 'background:var(--yeet);color:#000;border:none;';
+      var followLabel = following ? window.t('profile.unfollow') : window.t('profile.follow');
+      pieces.push('<button id="followBtn" onclick="toggleFollowProfile()" data-follow="'+ (following?'1':'0') +'" style="'+ followStyle +'border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">'+ followLabel +'</button>');
       pieces.push('<button onclick="openTipModal(null, '+ addrJsArg +')" style="background:transparent;border:1px solid #f5a623;color:#f5a623;border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600">&#127873; '+ window.t('profile.tip') +'</button>');
       pieces.push('<button onclick="toggleBlockProfile('+ addrJsArg +', true)" title="'+ window.t('profile.block') +'" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:8px 12px;cursor:pointer;font-size:16px">&#128683;</button>');
     }
@@ -2302,14 +2356,25 @@ async function toggleFollowProfile(){
   var method = 'POST';
   var path = isFollowing ? '/unfollow' : '/follow';
   try{
-    await fetch('/api/v1/users/'+encodeURIComponent(p.address)+path, {
+    var r = await fetch('/api/v1/users/'+encodeURIComponent(p.address)+path, {
       method: method, headers:{'Authorization':'Bearer '+jwt}
     });
+    if(!r.ok){ showToast(window.t('common.error')); return; }
     if(btn){
-      if(isFollowing){ btn.dataset.follow='0'; btn.textContent='Follow'; btn.style.background='var(--yeet)'; btn.style.color='#000'; }
-      else { btn.dataset.follow='1'; btn.textContent='Following'; btn.style.background='transparent'; btn.style.color='var(--text)'; btn.style.border='1px solid var(--border)'; }
+      if(isFollowing){
+        btn.dataset.follow='0';
+        btn.textContent = window.t('profile.follow');
+        btn.style.cssText = 'background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700';
+      } else {
+        btn.dataset.follow='1';
+        btn.textContent = window.t('profile.unfollow');
+        btn.style.cssText = 'background:transparent;color:var(--text);border:1px solid var(--border);border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700';
+      }
     }
-  }catch(e){ showToast('Follow error'); }
+    // Mirror the new state on the cached profile so an immediate re-render
+    // (e.g. a block toggle) keeps the right button.
+    if(window._currentProfile) window._currentProfile.is_following = !isFollowing;
+  }catch(e){ showToast(window.t('common.networkError')); }
 }
 
 async function toggleBlockProfile(address, blockIt){
@@ -3019,7 +3084,9 @@ function showExternalLinkWarning(e,url){
 .addr-pill{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer}
 .balance-pill{font-size:12px;color:var(--yeet);background:rgba(200,255,0,.08);border:1px solid var(--yeet);padding:4px 10px;border-radius:14px;cursor:pointer;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
 .balance-pill:hover{background:rgba(200,255,0,.16)}
-@media(max-width:480px){.balance-pill{font-size:11px;padding:3px 8px}}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:#1a1a1a;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;overflow:hidden;color:var(--yeet);background-size:cover;background-position:center}
+.nav-avatar:hover{border-color:var(--yeet)}
+@media(max-width:480px){.balance-pill{font-size:11px;padding:3px 8px}.nav-avatar{width:26px;height:26px;font-size:14px}}
 </style>
 
 <script>
@@ -3067,6 +3134,7 @@ function showExternalLinkWarning(e,url){
     if(typeof window.showGlobalFeed === 'function') window.showGlobalFeed();
     else if(typeof window.loadFeed === 'function') window.loadFeed();
     if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
+    if(typeof window.refreshNavAvatar === 'function') window.refreshNavAvatar();
   }
 
   function _updateAuthUI(user,wallet){
