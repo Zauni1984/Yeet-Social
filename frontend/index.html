@@ -1228,9 +1228,13 @@ async function loadFeed(){
   try{
     const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
     if(!jwt){ showLoginGate(); return; }
+    // Show a small spinner so a slow network doesn't make the page
+    // look frozen. The class is auto-removed when posts render.
+    showFeedSpinner();
     const r=await fetch('/api/v1/feed',{headers:{'Authorization':'Bearer '+jwt}});
-    if(r.status===401){ showLoginGate(); return; }
+    if(r.status===401){ hideFeedSpinner(); showLoginGate(); return; }
     const d=await r.json();
+    hideFeedSpinner();
     const empty=document.querySelector('.empty');
     const old=document.getElementById('feed-posts');
     if(old)old.remove();
@@ -2009,6 +2013,23 @@ function updateCharCount(){
 // + post hits, click navigates to profile or post.
 var _searchTimer = null;
 var _searchSeq = 0;
+// Small spinner shown above the feed while loadFeed is in flight.
+function showFeedSpinner(){
+  if(document.getElementById('feedSpinner')) return;
+  var m = document.querySelector('.main'); if(!m) return;
+  var s = document.createElement('div');
+  s.id = 'feedSpinner';
+  s.style.cssText = 'display:flex;justify-content:center;padding:24px';
+  s.innerHTML = '<div style="width:24px;height:24px;border:3px solid #1a1a1a;border-top-color:var(--yeet);border-radius:50%;animation:spin .8s linear infinite"></div>';
+  var anchor = document.getElementById('feed-posts') || document.querySelector('.empty');
+  m.insertBefore(s, anchor || null);
+}
+function hideFeedSpinner(){
+  var s = document.getElementById('feedSpinner'); if(s) s.remove();
+}
+window.showFeedSpinner = showFeedSpinner;
+window.hideFeedSpinner = hideFeedSpinner;
+
 function performSearch(q){
   if(!q||q.trim().length<2){
     closeSearchResults();
@@ -3009,24 +3030,79 @@ function closeFaceScan(){
 function handleImageSelect(input) {
   var file = input.files[0];
   if (!file) return;
-  var allowed = ['image/jpeg','image/jpg','image/png','image/webp','image/gif'];
-  if (!allowed.includes(file.type)) {
-    showToast(window.t('toast.invalidFormat'), 'error'); input.value=''; return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    showToast(window.t('toast.imageTooLarge5'), 'error'); input.value=''; return;
-  }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    window._postImageB64 = e.target.result;
-    var preview = document.getElementById('imgPreview');
-    var wrap = document.getElementById('imgPreviewWrap');
-    if (preview) preview.src = e.target.result;
-    if (wrap) wrap.style.display = 'block';
-    showToast(window.t('toast.imageSelected'), 'success');
-  };
-  reader.readAsDataURL(file);
+  return ingestComposerImage(file).finally(function(){ input.value = ''; });
 }
+
+// Validate + preview a File from any source (file picker, drag-drop,
+// clipboard paste). Returns a promise so callers can chain on it.
+function ingestComposerImage(file){
+  return new Promise(function(resolve){
+    if (!file) return resolve();
+    var allowed = ['image/jpeg','image/jpg','image/png','image/webp','image/gif'];
+    if (!allowed.includes(file.type)) {
+      showToast(window.t('toast.invalidFormat'), 'error'); return resolve();
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(window.t('toast.imageTooLarge5'), 'error'); return resolve();
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      window._postImageB64 = e.target.result;
+      var preview = document.getElementById('imgPreview');
+      var wrap = document.getElementById('imgPreviewWrap');
+      if (preview) preview.src = e.target.result;
+      if (wrap) wrap.style.display = 'block';
+      showToast(window.t('toast.imageSelected'), 'success');
+      resolve();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Drag-and-drop + paste-from-clipboard hooks on the composer textarea.
+// Set up once on first DOM ready so the textarea behaves like a Twitter
+// /  Slack-style image drop target.
+function wireComposerImageHotpaths(){
+  var ta = document.getElementById('postTxt');
+  if(!ta || ta.dataset.imgHotpathReady) return;
+  ta.dataset.imgHotpathReady = '1';
+
+  var setDragVisual = function(on){
+    ta.style.outline = on ? '2px dashed var(--yeet)' : '';
+    ta.style.outlineOffset = on ? '-4px' : '';
+  };
+
+  ['dragenter','dragover'].forEach(function(evt){
+    ta.addEventListener(evt, function(e){
+      if(!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
+      e.preventDefault(); setDragVisual(true);
+    });
+  });
+  ['dragleave','dragend'].forEach(function(evt){
+    ta.addEventListener(evt, function(){ setDragVisual(false); });
+  });
+  ta.addEventListener('drop', function(e){
+    if(!e.dataTransfer || !e.dataTransfer.files || !e.dataTransfer.files.length) return;
+    e.preventDefault(); setDragVisual(false);
+    var f = e.dataTransfer.files[0];
+    if(f && f.type && f.type.indexOf('image/') === 0) ingestComposerImage(f);
+  });
+
+  ta.addEventListener('paste', function(e){
+    var items = e.clipboardData && e.clipboardData.items;
+    if(!items) return;
+    for(var i=0;i<items.length;i++){
+      if(items[i].type && items[i].type.indexOf('image/') === 0){
+        var f = items[i].getAsFile();
+        if(f){ e.preventDefault(); ingestComposerImage(f); return; }
+      }
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', wireComposerImageHotpaths);
+// Also wire when the composer is dynamically re-rendered (it isn't
+// today, but defensive in case loadFeed swaps it).
+setTimeout(wireComposerImageHotpaths, 1500);
 function removeImage() {
   window._postImageB64 = null;
   var wrap = document.getElementById('imgPreviewWrap');
@@ -3472,6 +3548,7 @@ function showExternalLinkWarning(e,url){
 .btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
 .btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
 .addr-pill{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
 .balance-pill{font-size:12px;color:var(--yeet);background:rgba(200,255,0,.08);border:1px solid var(--yeet);padding:4px 10px;border-radius:14px;cursor:pointer;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
 .balance-pill:hover{background:rgba(200,255,0,.16)}
 .nav-avatar{width:30px;height:30px;border-radius:50%;background:#1a1a1a;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;overflow:hidden;color:var(--yeet);background-size:cover;background-position:center}
@@ -3903,16 +3980,29 @@ function showExternalLinkWarning(e,url){
     var heart=btn.querySelector('.like-heart');
     var countEl=btn.querySelector('.like-count');
     var n=parseInt(countEl?countEl.textContent:0)||0;
-    if(window._liked[id]){
-      await fetch('/api/v1/posts/'+id+'/unlike',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+    var wasLiked = !!window._liked[id];
+    // Optimistic UI: paint the new state immediately so the click feels
+    // instant. Roll back if the server says no.
+    if(wasLiked){
       window._liked[id]=false;
       if(heart)heart.style.color='';
       if(countEl)countEl.textContent=Math.max(0,n-1);
-    }else{
-      await fetch('/api/v1/posts/'+id+'/like',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(()=>{});
+    } else {
       window._liked[id]=true;
       if(heart)heart.style.color='#e0245e';
       if(countEl)countEl.textContent=n+1;
+    }
+    var path = wasLiked ? '/unlike' : '/like';
+    try {
+      var r = await fetch('/api/v1/posts/'+id+path,
+        {method:'POST',headers:{'Authorization':'Bearer '+jwt}});
+      if(!r.ok) throw new Error('server');
+    } catch(e){
+      // Roll back optimistic update on failure.
+      window._liked[id]=wasLiked;
+      if(heart) heart.style.color = wasLiked ? '#e0245e' : '';
+      if(countEl) countEl.textContent = n;
+      showToast(window.t('common.networkError'),'error');
     }
   }
   function toggleComments(btn,id){
