@@ -208,7 +208,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <!-- decoy fields absorb autofill heuristics -->
     <input type="text" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
     <input type="password" name="password" autocomplete="current-password" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
-    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" onkeydown="if(event.key==='Enter')performSearch(this.value)">
+    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')performSearch(this.value);else if(event.key==='Escape')closeSearchResults()">
   </div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
@@ -740,6 +740,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'common.search':'Search...',
       'balance.title':'Your YEET balance — click for wallet options',
       'notif.title':'Notifications','notif.empty':'No notifications yet.','notif.markAll':'Mark all read',
+      'search.users':'People','search.posts':'Posts','search.empty':'No matches.',
       'dm.groupCreated':'Group created','dm.leave':'Leave group',
       'dm.leaveConfirm':'Leave this group?','dm.left':'You left the group.',
       // tip modal
@@ -917,6 +918,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'common.search':'Suchen...',
       'balance.title':'Dein YEET-Guthaben — Klick für Wallet-Optionen',
       'notif.title':'Benachrichtigungen','notif.empty':'Noch keine Benachrichtigungen.','notif.markAll':'Alle gelesen',
+      'search.users':'Personen','search.posts':'Posts','search.empty':'Keine Treffer.',
       'dm.groupCreated':'Gruppe erstellt','dm.leave':'Gruppe verlassen',
       'dm.leaveConfirm':'Diese Gruppe wirklich verlassen?','dm.left':'Gruppe verlassen.',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
@@ -2003,17 +2005,122 @@ function updateCharCount(){
   cc.textContent=len;
   cc.style.color=len>250?'#ff4444':len>200?'#f0a500':'var(--muted)';
 }
+// Live search dropdown — debounced, calls /api/v1/search, renders user
+// + post hits, click navigates to profile or post.
+var _searchTimer = null;
+var _searchSeq = 0;
 function performSearch(q){
-  if(!q||q.trim().length<2){showToast(window.t('toast.search2chars'));return;}
-  q=q.trim();
-  if(q.startsWith('#')){
-    var ta=document.getElementById('postTxt');
-    if(ta){ta.value=q+' ';ta.focus();}
-    showToast('Searching: '+q);
-  }else{
-    showToast('Searching: '+q);
+  if(!q||q.trim().length<2){
+    closeSearchResults();
+    showToast(window.t('toast.search2chars'));
+    return;
+  }
+  runSearch(q.trim(), true);
+}
+function liveSearch(q){
+  if(_searchTimer){ clearTimeout(_searchTimer); _searchTimer = null; }
+  if(!q || q.trim().length < 2){ closeSearchResults(); return; }
+  _searchTimer = setTimeout(function(){ runSearch(q.trim(), false); }, 250);
+}
+async function runSearch(q, force){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ showToast(window.t('common.pleaseLogin')); return; }
+  var mySeq = ++_searchSeq;
+  ensureSearchDropdown();
+  setSearchDropdown('<div style="padding:14px;color:var(--muted);font-size:13px">'+ window.t('common.loading') +'</div>');
+  try {
+    var r = await fetch('/api/v1/search?q=' + encodeURIComponent(q), {
+      headers:{ 'Authorization':'Bearer '+jwt }
+    });
+    if(mySeq !== _searchSeq) return; // out-of-order
+    if(!r.ok){ setSearchDropdown('<div style="padding:14px;color:#ff6666;font-size:13px">'+ window.t('common.error') +'</div>'); return; }
+    var d = await r.json();
+    renderSearchResults(d.data || {users:[],posts:[]}, q);
+  } catch(e){
+    setSearchDropdown('<div style="padding:14px;color:#ff6666;font-size:13px">'+ window.t('common.networkError') +'</div>');
   }
 }
+function ensureSearchDropdown(){
+  if(document.getElementById('searchResults')) return;
+  var input = document.getElementById('searchInput');
+  if(!input) return;
+  var box = document.createElement('div');
+  box.id = 'searchResults';
+  box.style.cssText = 'position:absolute;top:calc(100% + 4px);left:0;right:0;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;max-height:60vh;overflow-y:auto;z-index:240;box-shadow:0 10px 40px rgba(0,0,0,.6);display:none';
+  // Place relative to .search container
+  var wrap = input.closest('.search') || input.parentNode;
+  if(wrap){ wrap.style.position = 'relative'; wrap.appendChild(box); }
+}
+function setSearchDropdown(html){
+  ensureSearchDropdown();
+  var box = document.getElementById('searchResults');
+  if(box){ box.innerHTML = html; box.style.display = 'block'; }
+}
+function closeSearchResults(){
+  var box = document.getElementById('searchResults');
+  if(box){ box.style.display = 'none'; box.innerHTML = ''; }
+}
+window.closeSearchResults = closeSearchResults;
+function _searchEsc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function renderSearchResults(data, q){
+  var users = data.users || [];
+  var posts = data.posts || [];
+  if(!users.length && !posts.length){
+    setSearchDropdown('<div style="padding:14px;color:var(--muted);font-size:13px;text-align:center">'+ window.t('search.empty') +'</div>');
+    return;
+  }
+  var html = '';
+  if(users.length){
+    html += '<div style="padding:6px 12px 4px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px">'+ window.t('search.users') +'</div>';
+    html += users.map(function(u){
+      var name  = _searchEsc(u.display_name || u.username || (u.wallet_address?u.wallet_address.slice(0,8)+'…':'?'));
+      var sub   = u.username ? '@'+ _searchEsc(u.username) : (u.wallet_address ? _searchEsc(u.wallet_address.slice(0,10)+'…') : '');
+      var av;
+      if(u.avatar_url){
+        av = '<span class="nav-avatar" style="flex-shrink:0;width:32px;height:32px;font-size:14px;background-image:url(\''+ _searchEsc(u.avatar_url) +'\')"></span>';
+      } else {
+        var initial = name.charAt(0).toUpperCase();
+        av = '<span class="nav-avatar" style="flex-shrink:0;width:32px;height:32px;font-size:14px">'+ initial +'</span>';
+      }
+      var ref = u.wallet_address || u.id;
+      return '<div onclick="event.stopPropagation();handleSearchUserClick(\''+ _searchEsc(ref) +'\')" style="display:flex;gap:10px;padding:8px 12px;cursor:pointer;align-items:center;border-top:1px solid var(--border)">'
+        + av
+        + '<div style="flex:1;min-width:0"><div style="font-size:13px;color:#eee">'+ name +'</div>'
+        + (sub ? '<div style="font-size:11px;color:var(--muted)">'+ sub +'</div>' : '')
+        + '</div></div>';
+    }).join('');
+  }
+  if(posts.length){
+    html += '<div style="padding:6px 12px 4px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-top:1px solid var(--border)">'+ window.t('search.posts') +'</div>';
+    html += posts.map(function(p){
+      var name = _searchEsc(p.author_display_name || p.author_username || (p.author_id?p.author_id.slice(0,8):'?'));
+      var content = _searchEsc(p.content || '');
+      return '<div onclick="event.stopPropagation();handleSearchPostClick(\''+ p.id +'\')" style="padding:8px 12px;cursor:pointer;border-top:1px solid var(--border)">'
+        + '<div style="font-size:11px;color:var(--muted);margin-bottom:2px">'+ name +'</div>'
+        + '<div style="font-size:13px;color:#eee">'+ content +'</div></div>';
+    }).join('');
+  }
+  setSearchDropdown(html);
+}
+window.handleSearchUserClick = function(ref){
+  closeSearchResults();
+  var input = document.getElementById('searchInput'); if(input){ input.value = ''; input.blur(); }
+  if(typeof window.showProfile === 'function') window.showProfile(ref);
+};
+window.handleSearchPostClick = function(id){
+  closeSearchResults();
+  var input = document.getElementById('searchInput'); if(input){ input.value = ''; input.blur(); }
+  if(typeof window.showPostDetail === 'function') window.showPostDetail(id);
+  else if(typeof window.showGlobalFeed === 'function') window.showGlobalFeed();
+};
+// Close dropdown on outside click
+document.addEventListener('click', function(e){
+  var input = document.getElementById('searchInput');
+  var box   = document.getElementById('searchResults');
+  if(!input || !box) return;
+  if(e.target === input || (box && box.contains(e.target))) return;
+  closeSearchResults();
+});
 function toggleNav(){
   const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
   const open=s.classList.toggle('open');

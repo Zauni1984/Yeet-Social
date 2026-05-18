@@ -117,6 +117,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/boards/:id",                get(api::boards::get_board))
         .route("/api/v1/webboards",                 get(api::boards::get_boards))
         // Notifications
+        .route("/api/v1/search",                        get(api::search::search))
         .route("/api/v1/notifications",                 get(api::notifications::get_notifications))
         .route("/api/v1/notifications/unread-count",    get(api::notifications::unread_count))
         .route("/api/v1/notifications/read",            post(api::notifications::mark_notifications_read))
