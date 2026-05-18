@@ -481,6 +481,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.account">Account</div>
         <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; <span data-i18n="settings.linkWallet">Link Wallet</span></button>
+        <button onclick="verifyRecoveryPhrase()" style="width:100%;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.verifySeed">&#128279; Verify recovery phrase</button>
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
@@ -672,6 +673,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.title':'Settings','settings.content':'Content','settings.adult':'18+ content',
       'settings.autoload':'Auto-load feed','settings.network':'Network','settings.account':'Account',
       'settings.linkWallet':'Link Wallet','settings.disconnect':'Disconnect Wallet',
+      'settings.verifySeed':'Verify recovery phrase',
+      'settings.verifySeedPrompt':'Enter your 12-word recovery phrase to verify it unlocks your wallet:',
+      'settings.verifyOk':'✓ Phrase matches your wallet',
+      'settings.verifyFail':'✗ Phrase does NOT match your wallet',
+      'settings.verifyNoWallet':'No wallet address on file for this account.',
       'settings.gdpr':'Privacy (GDPR)','settings.exportData':'Export my data (JSON)',
       'settings.deleteAccount':'Delete account permanently','settings.language':'Language',
       'settings.langEnglish':'English','settings.langGerman':'Deutsch',
@@ -840,6 +846,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.title':'Einstellungen','settings.content':'Inhalt','settings.adult':'18+ Inhalt',
       'settings.autoload':'Feed automatisch laden','settings.network':'Netzwerk','settings.account':'Konto',
       'settings.linkWallet':'Wallet verknüpfen','settings.disconnect':'Wallet trennen',
+      'settings.verifySeed':'Recovery-Phrase prüfen',
+      'settings.verifySeedPrompt':'Gib deine 12-Wort-Recovery-Phrase ein, um zu prüfen ob sie deine Wallet entsperrt:',
+      'settings.verifyOk':'✓ Phrase passt zu deiner Wallet',
+      'settings.verifyFail':'✗ Phrase passt NICHT zu deiner Wallet',
+      'settings.verifyNoWallet':'Für dieses Konto ist keine Wallet hinterlegt.',
       'settings.gdpr':'Datenschutz (DSGVO)','settings.exportData':'Daten exportieren (JSON)',
       'settings.deleteAccount':'Konto endgültig löschen','settings.language':'Sprache',
       'settings.langEnglish':'English','settings.langGerman':'Deutsch',
@@ -2999,7 +3010,7 @@ function showExternalLinkWarning(e,url){
       <input type="checkbox" id="rConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
       <span>I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
     </label>
-    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue &#8594;</button>
+    <button id="regNext1Btn" class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue &#8594;</button>
   </div>
   <div id="regStep2" style="display:none">
     <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
@@ -3108,8 +3119,83 @@ function showExternalLinkWarning(e,url){
   var _verifyIdx = [];
   var _regData = {};
 
-  function _genSeed(){var w=[];while(w.length<12)w.push(_BIP39[Math.floor(Math.random()*_BIP39.length)]);return w}
-  function _genWallet(words){var h=0,s=words.join(' ');for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}var a='0x';for(var j=0;j<40;j++){h=(h*1664525+1013904223)&0xffffffff;a+=(Math.abs(h)%16).toString(16)}return a}
+  // Wait for ethers.js to finish loading (it's deferred, so usually present
+  // by the time the user reaches the seed step, but we still defend against
+  // a slow CDN with a 5s timeout).
+  function _waitForEthers(timeoutMs){
+    timeoutMs = timeoutMs || 5000;
+    return new Promise(function(res, rej){
+      if(window.ethers) return res(window.ethers);
+      var t = 0;
+      var iv = setInterval(function(){
+        if(window.ethers){ clearInterval(iv); res(window.ethers); }
+        else if((t += 60) > timeoutMs){ clearInterval(iv); rej(new Error('ethers_unavailable')); }
+      }, 60);
+    });
+  }
+
+  // Proper BIP39 + BIP44 (m/44'/60'/0'/0/0) wallet generation. Replaces
+  // the legacy hash+LCG scheme that produced non-recoverable addresses.
+  // Returns { words:[...], address:'0x...' }. Throws if ethers fails to
+  // load (network) — caller surfaces a user-facing error.
+  async function _generateWallet(){
+    var ethers = await _waitForEthers();
+    // 128 bits of crypto-strong entropy → 12-word BIP39 mnemonic with a
+    // valid checksum, identical to MetaMask / Trezor / Ledger.
+    var entropy = window.crypto.getRandomValues(new Uint8Array(16));
+    var hex = '0x';
+    for(var i=0;i<entropy.length;i++) hex += entropy[i].toString(16).padStart(2,'0');
+    var mnemonic = ethers.Mnemonic.fromEntropy(hex);
+    // HDNodeWallet.fromPhrase derives at the default Ethereum/BSC path
+    // m/44'/60'/0'/0/0 (BIP44), giving an address compatible with every
+    // EVM wallet on both testnet and mainnet.
+    var w = ethers.HDNodeWallet.fromPhrase(mnemonic.phrase);
+    return {
+      words: mnemonic.phrase.split(/\s+/),
+      address: w.address.toLowerCase()
+    };
+  }
+
+  // Re-derive a wallet address from a seed phrase and compare to the
+  // expected address. Used by the verify-recovery-phrase flow so a user
+  // can confirm the words they wrote down really unlock the wallet on
+  // file. Tolerant of casing + extra whitespace.
+  async function _verifySeedMatches(words, expectedAddress){
+    try {
+      var ethers = await _waitForEthers();
+      var phrase = (Array.isArray(words) ? words.join(' ') : String(words)).trim().toLowerCase().replace(/\s+/g, ' ');
+      var w = ethers.HDNodeWallet.fromPhrase(phrase);
+      return w.address.toLowerCase() === String(expectedAddress || '').toLowerCase();
+    } catch(e){ return false; }
+  }
+  window._verifySeedMatches = _verifySeedMatches;
+
+  // User-facing self-check: enter the 12 words, compare against the
+  // wallet address the server has on file for this account. Catches
+  // mistyped / wrongly-written-down phrases before they matter.
+  window.verifyRecoveryPhrase = async function(){
+    var jwt = localStorage.getItem('yeet_jwt');
+    if(!jwt){ window.showToast(window.t('common.pleaseLogin'),'error'); return; }
+    var input = prompt(window.t('settings.verifySeedPrompt') ||
+      'Enter your 12-word recovery phrase to verify it unlocks your wallet:');
+    if(!input) return;
+    try {
+      var meR = await fetch('/api/v1/users/me', { headers:{ 'Authorization':'Bearer '+jwt } });
+      var me = (await meR.json()).data;
+      if(!me || !me.wallet_address){
+        window.showToast(window.t('settings.verifyNoWallet') ||
+          'No wallet address on file for this account.','error');
+        return;
+      }
+      var ok = await _verifySeedMatches(input, me.wallet_address);
+      window.showToast(ok
+        ? (window.t('settings.verifyOk') || '✓ Phrase matches your wallet')
+        : (window.t('settings.verifyFail') || '✗ Phrase does NOT match your wallet'),
+        ok ? 'success' : 'error');
+    } catch(e){
+      window.showToast(window.t('common.networkError'),'error');
+    }
+  };
 
   function _showErr(m){var e=document.getElementById('mErr');if(e){e.textContent=m;e.classList.add('show')}var o=document.getElementById('mOk');if(o)o.classList.remove('show')}
   function _showOk(m){var e=document.getElementById('mOk');if(e){e.textContent=m;e.classList.add('show')}var er=document.getElementById('mErr');if(er)er.classList.remove('show')}
@@ -3290,7 +3376,7 @@ function showExternalLinkWarning(e,url){
       if(payload.email_verified===false)_showVerifyBanner(email);
     }catch(e){_showErr(e.message)}
   };
-  window.regNext1 = function(){
+  window.regNext1 = async function(){
     var u=document.getElementById('rUser').value.trim();
     var e=document.getElementById('rEmail').value.trim();
     var p=document.getElementById('rPass').value;
@@ -3300,9 +3386,18 @@ function showExternalLinkWarning(e,url){
     if(p.length<8){_showErr('Password min 8 chars');return}
     if(!/\S+@\S+\.\S+/.test(e)){_showErr('Invalid email');return}
     if(!c||!c.checked){_showErr('Please accept the privacy policy (GDPR)');return}
-    _seedWords=_genSeed();
-    var wallet=_genWallet(_seedWords);
-    _regData={username:u,email:e,password:p,wallet_address:wallet,display_name:u,consent:true};
+    var btn = document.getElementById('regNext1Btn');
+    if(btn){ btn.disabled = true; btn.dataset.oldText = btn.textContent; btn.textContent = '...'; }
+    try {
+      var gen = await _generateWallet();
+      _seedWords = gen.words;
+      _regData = {username:u, email:e, password:p, wallet_address: gen.address, display_name:u, consent:true};
+    } catch(err){
+      _showErr('Could not generate wallet (network).');
+      if(btn){ btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Next'; }
+      return;
+    }
+    if(btn){ btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Next'; }
     var grid=document.getElementById('seedGrid');
     grid.innerHTML=_seedWords.map(function(w,i){return '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;display:flex;gap:5px"><span style="color:var(--muted);font-size:10px;min-width:16px">'+(i+1)+'.</span><span style="color:var(--yeet);font-weight:700">'+w+'</span></div>'}).join('');
     document.getElementById('regStep1').style.display='none';
@@ -3566,6 +3661,10 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 <!-- Paper-wallet PDF + QR libs (loaded async; UI gracefully waits) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+<!-- ethers.js v6 for proper BIP39 + BIP44 (m/44'/60'/0'/0/0) seed -> wallet derivation,
+     so accounts generated at registration are real Ethereum/BSC wallets importable into
+     MetaMask, Trezor, Ledger etc. on both testnet and mainnet. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js" defer></script>
 
 <script>
 // ---------- Paper Wallet (custodial claim-tickets) ----------
