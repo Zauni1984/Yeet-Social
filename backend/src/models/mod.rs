@@ -84,6 +84,11 @@ pub struct FeedPost {
     pub is_permanent: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ppv_price_yeet: Option<f64>,
+    /// True iff the calling viewer has paid to unlock this post. Always
+    /// true for the post's own author. NULL ppv_price_yeet posts also
+    /// report true (no unlock needed). Anonymous viewers always false.
+    #[serde(default)]
+    pub is_unlocked: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

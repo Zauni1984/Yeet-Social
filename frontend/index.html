@@ -787,6 +787,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Image is only visible after payment. Earnings go directly to you.',
       'ppv.unlock':'Unlock','ppv.unlockPrompt':'{price} YEET to unlock','ppv.priceSet':'PPV price: {price} YEET',
+      'ppv.alreadyUnlocked':'Already unlocked','ppv.cantUnlockOwn':'You cannot unlock your own post',
       // external link modal
       'extlink.title':'You are leaving YEET',
       'extlink.subtitle':'This link leads to an external site. YEET takes no responsibility for external content.',
@@ -943,6 +944,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Bild wird erst nach Bezahlung sichtbar. Einnahmen gehen direkt an dich.',
       'ppv.unlock':'Entsperren','ppv.unlockPrompt':'{price} YEET zum Entsperren','ppv.priceSet':'PPV-Preis: {price} YEET',
+      'ppv.alreadyUnlocked':'Bereits entsperrt','ppv.cantUnlockOwn':'Du kannst deinen eigenen Post nicht entsperren',
       'extlink.title':'Du verlässt YEET',
       'extlink.subtitle':'Dieser Link führt zu einer externen Seite. YEET übernimmt keine Verantwortung für externe Inhalte.',
       'menu.repost':'Repost','menu.share':'Teilen','menu.follow':'Folgen','menu.report':'Melden',
@@ -2782,37 +2784,41 @@ function confirmPPVPrice() {
 }
 
 // ââ PPV UNLOCK in Feed ââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// PPV unlock - server is the source of truth. Calls the dedicated
+// /api/v1/posts/:id/unlock endpoint which atomically debits the
+// caller, records the unlock entitlement, and routes the fee through
+// the standard tips ledger (90% creator / 10% platform).
 function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
   if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
-  if (!authorId) { showToast(window.t('toast.authorNotFound'), 'error'); return; }
-
-  // Check if already unlocked
-  var unlocked = JSON.parse(localStorage.getItem('ppv_unlocked') || '{}');
-  if (unlocked[postId]) {
-    imgEl.style.filter = 'none'; overlayEl.style.display = 'none'; return;
-  }
 
   var btn = overlayEl.querySelector('button');
   if (btn) { btn.disabled = true; btn.textContent = window.t('toast.unlocking'); }
 
-  fetch('/api/v1/tips', {
+  fetch('/api/v1/posts/' + encodeURIComponent(postId) + '/unlock', {
     method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
-    body: JSON.stringify({to_user_id: authorId, post_id: postId, amount: price})
-  }).then(function(r){ return r.json(); }).then(function(d){
-    if (d.success) {
-      unlocked[postId] = true;
-      localStorage.setItem('ppv_unlocked', JSON.stringify(unlocked));
+    headers:{'Authorization':'Bearer '+jwt}
+  }).then(function(r){
+    return r.json().then(function(d){ return { ok: r.ok, d: d }; });
+  }).then(function(res){
+    if (res.ok && res.d && res.d.success) {
       imgEl.style.filter = 'none';
       imgEl.style.transition = 'filter 0.5s ease';
+      imgEl.style.transform = 'none';
       overlayEl.style.display = 'none';
-      showToast(window.t('toast.unlocked',{price:price}), 'success');
+      var paid = (res.d.data && res.d.data.price_paid) || price;
+      if (res.d.data && res.d.data.already_unlocked) {
+        showToast(window.t('ppv.alreadyUnlocked'), 'success');
+      } else {
+        showToast(window.t('toast.unlocked',{price: paid}), 'success');
+        if (typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
+      }
     } else {
-      showToast(window.t('common.error')+': '+(d.error&&d.error.message||window.t('toast.unlockFailed')), 'error');
+      var msg = (res.d && res.d.error && res.d.error.message) || window.t('toast.unlockFailed');
+      showToast(window.t('common.error')+': '+msg, 'error');
       if(btn){btn.disabled=false; btn.textContent=window.t('ppv.unlock');}
     }
-  }).catch(function(e){
+  }).catch(function(){
     showToast(window.t('common.networkError'), 'error');
     if(btn){btn.disabled=false; btn.textContent=window.t('ppv.unlock');}
   });
@@ -2821,12 +2827,15 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
 
 function renderMediaUrl(p) {
   if (!p.media_url) return '';
+  // No PPV price set: render normally.
   if (!p.ppv_price_yeet) {
     return '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   }
-  var unlocked = {};
-  try { unlocked = JSON.parse(localStorage.getItem('ppv_unlocked') || '{}') || {}; } catch(e){}
-  if (unlocked[p.id]) {
+  // Server tells us whether the calling viewer has paid (or is the author,
+  // or anonymous - in which case is_unlocked is false). This replaces the
+  // old localStorage-based scheme that let users skip payment by clearing
+  // browser state.
+  if (p.is_unlocked) {
     return '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   }
   var aid = (p.author && p.author.id) ? p.author.id : '';

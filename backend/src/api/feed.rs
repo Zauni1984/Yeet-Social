@@ -34,6 +34,8 @@ struct FeedRow {
     display_name: Option<String>,
     avatar_url: Option<String>,
     tip_total_yeet: Option<f64>,
+    #[sqlx(default)]
+    is_unlocked: Option<bool>,
 }
 
 pub async fn get_feed(
@@ -52,7 +54,9 @@ pub async fn get_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $3
+              OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours')
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
@@ -113,7 +117,9 @@ pub async fn get_following_feed(
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $1
+              OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $1 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
         JOIN follows f ON f.following_id = p.author_id
         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
@@ -163,6 +169,7 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
         nft_price_yeet: r.nft_price_yeet,
         is_permanent: r.is_permanent.unwrap_or(false),
         ppv_price_yeet: r.ppv_price_yeet,
+        is_unlocked: r.is_unlocked.unwrap_or(false),
     }
 }
 
@@ -216,13 +223,23 @@ pub async fn get_user_posts(
     let include_adult_sql = if allow_adult { "" } else { " AND p.is_adult = FALSE" };
     let include_adult_count_sql = if allow_adult { "" } else { " AND is_adult = FALSE" };
 
+    // For anonymous viewers we still want the column shape consistent;
+    // a zero-UUID never matches any author / unlock row so is_unlocked
+    // ends up false for any PPV post (correct: they need to log in).
+    let viewer_for_unlock: Uuid = match viewer.as_ref() {
+        Some(a) => resolve_viewer_id(&state, a).await.unwrap_or_else(|_| Uuid::nil()),
+        None => Uuid::nil(),
+    };
+
     let list_sql = format!(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
             p.like_count, p.reshare_count, p.comment_count,
             p.expires_at, p.created_at,
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
-            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION)
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $4
+              OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $4 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.author_id = $1 AND p.expires_at > NOW()
           AND p.is_removed = FALSE AND p.deleted_at IS NULL{}
@@ -230,7 +247,7 @@ pub async fn get_user_posts(
         include_adult_sql
     );
     let rows = sqlx::query_as::<_, FeedRow>(&list_sql)
-        .bind(user_id).bind(per_page).bind(offset)
+        .bind(user_id).bind(per_page).bind(offset).bind(viewer_for_unlock)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let count_sql = format!(

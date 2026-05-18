@@ -57,6 +57,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         nft_price_yeet: None,
         is_permanent: false,
         ppv_price_yeet: None,
+        is_unlocked: false,
     }
 }
 
@@ -204,6 +205,95 @@ pub async fn unlike_post(
     Ok(Json(ApiResponse::ok(id)))
 }
 
+
+#[derive(Debug, Serialize)]
+pub struct UnlockResponse {
+    pub unlocked: bool,
+    pub price_paid: f64,
+    pub tip_id: Option<Uuid>,
+    pub already_unlocked: bool,
+}
+
+/// Pay-per-view unlock. The post author sets `ppv_price_yeet`; another
+/// authenticated viewer calls this endpoint to debit the price from
+/// their balance (10% platform cut, 90% to the author via the standard
+/// tips ledger), and a `ppv_unlocks` row records the entitlement so the
+/// viewer never gets re-charged. Idempotent.
+pub async fn unlock_post(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<ApiResponse<UnlockResponse>>> {
+    let caller_id = crate::api::conversations::caller_user_id(&state, &auth).await?;
+
+    // Resolve post + price + author in one shot.
+    let row: Option<(Uuid, Option<f64>, bool, Option<DateTime<Utc>>)> = sqlx::query_as(
+        "SELECT author_id,
+                CAST(ppv_price_yeet AS DOUBLE PRECISION) AS price,
+                is_removed,
+                deleted_at
+           FROM posts WHERE id = $1"
+    )
+    .bind(id)
+    .fetch_optional(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+    let (author_id, price_opt, is_removed, deleted_at) =
+        row.ok_or_else(|| AppError::NotFound("Post not found".into()))?;
+    if is_removed || deleted_at.is_some() {
+        return Err(AppError::NotFound("Post not found".into()));
+    }
+    let price = match price_opt {
+        Some(p) if p > 0.0 => p,
+        _ => return Err(AppError::Validation("Post is not pay-per-view".into())),
+    };
+    if author_id == caller_id {
+        return Err(AppError::Validation("Cannot unlock your own post".into()));
+    }
+    if crate::api::blocks::either_blocks(state.db.pool(), caller_id, author_id).await? {
+        return Err(AppError::Forbidden("Blocked".into()));
+    }
+
+    // Idempotent path: if an unlock row already exists, just return it.
+    let existing: Option<(f64, Option<Uuid>)> = sqlx::query_as(
+        "SELECT CAST(price_paid AS DOUBLE PRECISION), tip_id
+           FROM ppv_unlocks WHERE user_id = $1 AND post_id = $2"
+    )
+    .bind(caller_id).bind(id)
+    .fetch_optional(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+    if let Some((paid, tid)) = existing {
+        return Ok(Json(ApiResponse::ok(UnlockResponse {
+            unlocked: true,
+            price_paid: paid,
+            tip_id: tid,
+            already_unlocked: true,
+        })));
+    }
+
+    // Atomic charge + record. Fee accounting reuses the tips path so the
+    // creator's 90% / platform 10% split is consistent with other tips.
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+    let tip_id = crate::api::tips::send_tip_tx(
+        &mut tx, caller_id, author_id, Some(id),
+        &price.to_string(), "YEET", None,
+    ).await?;
+    sqlx::query(
+        "INSERT INTO ppv_unlocks (user_id, post_id, price_paid, tip_id)
+         VALUES ($1, $2, $3, $4)"
+    )
+    .bind(caller_id).bind(id).bind(price).bind(tip_id)
+    .execute(&mut *tx).await.map_err(AppError::Database)?;
+    tx.commit().await.map_err(AppError::Database)?;
+
+    Ok(Json(ApiResponse::ok(UnlockResponse {
+        unlocked: true,
+        price_paid: price,
+        tip_id: Some(tip_id),
+        already_unlocked: false,
+    })))
+}
 
 pub async fn reshare_post(
     State(state): State<AppState>,

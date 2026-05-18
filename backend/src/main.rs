@@ -86,6 +86,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/posts/:id",        get(api::posts::get_post))
         .route("/api/v1/posts/:id",        delete(api::posts::delete_post))
         .route("/api/v1/posts/:id/like",   post(api::posts::like_post))
+        .route("/api/v1/posts/:id/unlock", post(api::posts::unlock_post))
         .route("/api/v1/posts/:id/reshare",post(api::posts::reshare_post))
         .route("/api/v1/posts/:id/comments", get(api::posts::get_comments))
         .route("/api/v1/posts/:id/comments", post(api::posts::add_comment))
