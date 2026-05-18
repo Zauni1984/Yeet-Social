@@ -784,7 +784,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.title':'Age verification','verify.subtitle':'18+ area. One-time face scan to verify your age.',
       'verify.cameraStarting':'Camera starting...','verify.center':'Center your face, then start scan',
       'verify.start':'Start scan','verify.analyzing':'AI analyzing...','verify.success':'Verification successful!',
-      'verify.cameraDenied':'Camera access denied','verify.noFace':'No face detected','verify.retry':'Retry',
+      'verify.cameraDenied':'Camera access denied. Allow camera or upload a photo below.',
+      'verify.cameraNone':'No camera found. Upload a photo below.',
+      'verify.cameraBusy':'Camera is busy. Close other apps using the camera, or upload a photo.',
+      'verify.cameraUnsupported':'Your browser does not support live camera here. Upload a photo below.',
+      'verify.usePhoto':'Upload a photo instead',
+      'verify.noFace':'No face detected','verify.retry':'Retry',
       'verify.imageNotStored':'Image is not stored. Local AI analysis.',
       // NFT modal
       'nft.title':'Sell as NFT','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
@@ -948,7 +953,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.title':'Altersverifikation','verify.subtitle':'18+ Bereich. Einmaliger Face-Scan zur Altersprüfung.',
       'verify.cameraStarting':'Kamera startet...','verify.center':'Gesicht zentrieren, dann Scan starten',
       'verify.start':'Scan starten','verify.analyzing':'KI analysiert...','verify.success':'Verifikation erfolgreich!',
-      'verify.cameraDenied':'Kamerazugriff verweigert','verify.noFace':'Kein Gesicht erkannt','verify.retry':'Erneut',
+      'verify.cameraDenied':'Kamerazugriff verweigert. Kamera erlauben oder Foto unten hochladen.',
+      'verify.cameraNone':'Keine Kamera gefunden. Foto unten hochladen.',
+      'verify.cameraBusy':'Kamera ist belegt. Andere Apps schließen oder Foto hochladen.',
+      'verify.cameraUnsupported':'Dein Browser unterstützt hier keine Live-Kamera. Foto unten hochladen.',
+      'verify.usePhoto':'Foto stattdessen hochladen',
+      'verify.noFace':'Kein Gesicht erkannt','verify.retry':'Erneut',
       'verify.imageNotStored':'Bild wird nicht gespeichert. Lokale KI-Analyse.',
       'nft.title':'Als NFT verkaufen','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
       'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'NFT-Preis: {price} YEET',
@@ -2569,6 +2579,15 @@ async function submitReport(postId){
   }catch(e){showToast(window.t('common.networkError'),'error');}
 }
 var faceStream=null;
+// Mobile-friendly age verification:
+//   1. Try getUserMedia with front camera; fall back to any camera.
+//   2. If both fail (denied / no device / locked / SecurityError) — surface
+//      a clear hint AND an <input type=file accept=image/* capture=user>
+//      fallback button. capture="user" tells iOS Safari + Android Chrome to
+//      launch the camera natively; this works even when getUserMedia is
+//      blocked by a webview or earlier permission denial.
+//   3. The scan analyzer reads from either the live <video> or the
+//      uploaded image, so the downstream success path is identical.
 function check18Plus(){
   if(typeof _exitProfileView==='function') _exitProfileView();
   var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
@@ -2584,12 +2603,17 @@ function check18Plus(){
     +'<div style="font-size:40px;margin-bottom:12px">&#128247;</div>'
     +'<h3 style="margin:0 0 8px;font-size:18px">'+window.t('verify.title')+'</h3>'
     +'<p style="color:#888;font-size:13px;margin-bottom:16px">'+window.t('verify.subtitle')+'</p>'
-    +'<div style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:14px">'
+    +'<div id="faceMediaWrap" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:14px">'
     +'<video id="faceVid" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>'
+    +'<img id="faceImg" alt="" style="width:100%;height:100%;object-fit:cover;display:none">'
     +'<canvas id="faceCvs" style="display:none"></canvas>'
     +'<div id="faceOvl" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
     +'<div style="width:140px;height:180px;border:2px dashed rgba(198,241,53,.4);border-radius:50%"></div></div></div>'
-    +'<div id="faceSt" style="color:#888;font-size:13px;margin-bottom:14px">'+window.t('verify.cameraStarting')+'</div>'
+    +'<div id="faceSt" style="color:#888;font-size:13px;margin-bottom:10px">'+window.t('verify.cameraStarting')+'</div>'
+    +'<input type="file" id="faceFileInput" accept="image/*" capture="user" style="display:none" onchange="onFacePhotoPicked(this)">'
+    +'<div id="faceFallback" style="display:none;margin-bottom:10px">'
+      +'<button onclick="document.getElementById(\'faceFileInput\').click()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--yeet);border-radius:10px;color:var(--yeet);cursor:pointer;font-weight:700">&#128247; '+window.t('verify.usePhoto')+'</button>'
+    +'</div>'
     +'<div style="display:flex;gap:8px">'
     +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
     +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer" disabled>'+window.t('verify.start')+'</button>'
@@ -2599,23 +2623,105 @@ function check18Plus(){
   document.body.appendChild(modal);
   initCamera();
 }
+
 async function initCamera(){
-  try{
-    faceStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
-    var v=document.getElementById('faceVid');
-    if(v){v.srcObject=faceStream;document.getElementById('faceSt').textContent=window.t('verify.center');document.getElementById('scanBtn').disabled=false;}
-  }catch(e){document.getElementById('faceSt').textContent=window.t('verify.cameraDenied');}
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    // No getUserMedia at all (old WebView, insecure context). Skip
+    // straight to the photo-upload fallback.
+    showCameraFallback('verify.cameraUnsupported');
+    return;
+  }
+  var v=document.getElementById('faceVid');
+  // Try front camera first, then any camera. Some mobile devices reject
+  // the strict facingMode constraint with OverconstrainedError.
+  var attempts = [
+    { video:{ facingMode:{ ideal:'user' } }, audio:false },
+    { video: true, audio:false }
+  ];
+  var lastErr = null;
+  for(var i=0;i<attempts.length;i++){
+    try{
+      faceStream = await navigator.mediaDevices.getUserMedia(attempts[i]);
+      if(v){
+        v.srcObject = faceStream;
+        document.getElementById('faceSt').textContent = window.t('verify.center');
+        document.getElementById('scanBtn').disabled = false;
+      }
+      return;
+    } catch(e){ lastErr = e; }
+  }
+  // All camera attempts failed — surface a specific error and show the
+  // photo-upload fallback, which works on every modern mobile browser
+  // because <input type=file capture> uses a different permission model.
+  var key = 'verify.cameraDenied';
+  if(lastErr){
+    var name = lastErr.name || '';
+    if(name === 'NotAllowedError' || name === 'SecurityError') key = 'verify.cameraDenied';
+    else if(name === 'NotFoundError' || name === 'OverconstrainedError') key = 'verify.cameraNone';
+    else if(name === 'NotReadableError') key = 'verify.cameraBusy';
+    else key = 'verify.cameraUnsupported';
+  }
+  showCameraFallback(key);
 }
+
+function showCameraFallback(messageKey){
+  document.getElementById('faceSt').textContent = window.t(messageKey);
+  var fb = document.getElementById('faceFallback');
+  if(fb) fb.style.display = 'block';
+  var v = document.getElementById('faceVid');
+  if(v) v.style.display = 'none';
+  // Keep the Start button disabled until a photo is picked.
+}
+
+// Photo-upload fallback handler: read the file into the <img>, mark it
+// as the scan source, and enable the Start button so doFaceScan() picks
+// it up instead of the (failed) video stream.
+function onFacePhotoPicked(input){
+  var f = input.files && input.files[0];
+  if(!f) return;
+  if(f.size > 8 * 1024 * 1024){
+    document.getElementById('faceSt').textContent = window.t('toast.imageTooLarge');
+    input.value = ''; return;
+  }
+  var img = document.getElementById('faceImg');
+  var v   = document.getElementById('faceVid');
+  if(!img) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    img.onload = function(){
+      img.style.display = 'block';
+      if(v) v.style.display = 'none';
+      document.getElementById('faceSt').textContent = window.t('verify.center');
+      document.getElementById('scanBtn').disabled = false;
+      window._faceSourceIsImg = true;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(f);
+  input.value = '';
+}
+
 async function doFaceScan(){
   var btn=document.getElementById('scanBtn');
   btn.disabled=true;btn.textContent=window.t('verify.analyzing');
   document.getElementById('faceSt').textContent=window.t('verify.analyzing');
   document.getElementById('faceOvl').style.outline='2px solid #c6f135';
-  var v=document.getElementById('faceVid'),c=document.getElementById('faceCvs');
-  c.width=v.videoWidth||320;c.height=v.videoHeight||240;
-  c.getContext('2d').drawImage(v,0,0);
-  await new Promise(function(r){setTimeout(r,2200);});
-  // TODO: replace with real age-detection API call
+
+  var c=document.getElementById('faceCvs');
+  var useImg = !!window._faceSourceIsImg;
+  if(useImg){
+    var im = document.getElementById('faceImg');
+    c.width  = im.naturalWidth  || 320;
+    c.height = im.naturalHeight || 240;
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+  } else {
+    var v=document.getElementById('faceVid');
+    c.width=v.videoWidth||320;c.height=v.videoHeight||240;
+    c.getContext('2d').drawImage(v,0,0);
+  }
+  await new Promise(function(r){setTimeout(r,1500);});
+  // TODO: replace with real age-detection API call. For now we just
+  // confirm an image is present (non-black pixel ratio).
   var pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
   var nonBlack=0;
   for(var i=0;i<pixels.length;i+=4){if(pixels[i]>20||pixels[i+1]>20||pixels[i+2]>20)nonBlack++;}
@@ -2623,15 +2729,16 @@ async function doFaceScan(){
   if(!hasImage){document.getElementById('faceSt').textContent=window.t('verify.noFace');btn.disabled=false;btn.textContent=window.t('verify.retry');return;}
   document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; '+window.t('verify.success')+'</span>';
   localStorage.setItem('yeet_18plus_verified','1');
-  // Persist server-side so verification syncs across devices for this account
   var jwt=localStorage.getItem('yeet_jwt');
   if(jwt){
     fetch('/api/v1/users/me/verify-age',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(function(){});
   }
   setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
 }
+
 function closeFaceScan(){
   if(faceStream){faceStream.getTracks().forEach(function(t){t.stop();});faceStream=null;}
+  window._faceSourceIsImg = false;
   document.getElementById('faceScanModal')?.remove();
 }
 
