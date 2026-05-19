@@ -1,7 +1,7 @@
 //! Paper Wallet handlers.
 //!
 //! A paper wallet is a custodial claim ticket: at issuance the issuer's
-//! `yeet_token_balance` is debited and the amount is locked against a
+//! `yeet_credit_balance` is debited and the amount is locked against a
 //! hashed secret. Whoever later submits the secret receives the credit.
 //! The issuer can void an unclaimed bill to refund the balance.
 
@@ -168,7 +168,7 @@ pub async fn create(
 
     // Lock the row to prevent concurrent withdrawals
     let balance: f64 = sqlx::query_scalar(
-        "SELECT COALESCE(yeet_token_balance, 0)::float8 FROM users WHERE id = $1 FOR UPDATE"
+        "SELECT COALESCE(yeet_credit_balance, 0)::float8 FROM users WHERE id = $1 FOR UPDATE"
     )
     .bind(issuer_id)
     .fetch_one(&mut *tx)
@@ -216,7 +216,7 @@ pub async fn create(
     .await
     .map_err(AppError::Database)?;
 
-    sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance - $1 WHERE id = $2")
+    sqlx::query("UPDATE users SET yeet_credit_balance = yeet_credit_balance - $1 WHERE id = $2")
         .bind(req.amount)
         .bind(issuer_id)
         .execute(&mut *tx)
@@ -304,7 +304,7 @@ pub async fn redeem(
             "You can't redeem your own paper wallet — void it instead".into()));
     }
 
-    sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance + $1 WHERE id = $2")
+    sqlx::query("UPDATE users SET yeet_credit_balance = yeet_credit_balance + $1 WHERE id = $2")
         .bind(amount)
         .bind(claimer_id)
         .execute(&mut *tx)
@@ -343,7 +343,7 @@ pub async fn void(
     let r = voided.ok_or_else(|| AppError::NotFound(
         "Paper wallet not found, not yours, or no longer active".into()))?;
 
-    sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance + $1 WHERE id = $2")
+    sqlx::query("UPDATE users SET yeet_credit_balance = yeet_credit_balance + $1 WHERE id = $2")
         .bind(r.2)
         .bind(issuer_id)
         .execute(&mut *tx)

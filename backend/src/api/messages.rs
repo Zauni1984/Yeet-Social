@@ -127,8 +127,13 @@ pub async fn send(
         .fetch_one(&mut *tx).await.map_err(AppError::Database)?;
         let amount = req.tip_amount.as_deref()
             .ok_or_else(|| AppError::Validation("tip_amount required for kind=tip".into()))?;
-        let id = crate::api::tips::send_tip_tx(
-            &mut tx, me, recipient, None, amount, "YEET", None
+        // DM-attached tips move YEET Credit between sender and
+        // recipient inside the message-insert transaction. Gas-free.
+        let amount_val: f64 = amount.parse().map_err(|_| {
+            AppError::Validation("tip_amount must be a positive decimal".into())
+        })?;
+        let id = crate::api::credit_ops::debit_credit_pair(
+            &mut tx, me, recipient, None, amount_val
         ).await?;
         Some(id)
     } else {

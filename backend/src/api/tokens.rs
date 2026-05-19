@@ -7,9 +7,12 @@ use crate::api::middleware::AuthUser;
 
 #[derive(Debug, Serialize)]
 pub struct BalanceResponse {
-    /// Spendable off-chain YEET in the users.yeet_token_balance ledger.
-    /// This is what tips, paper-wallets and DM-tips actually debit.
-    pub yeet_balance: f64,
+    /// Spendable YEET Credit (off-chain, custodial). Funds paper
+    /// wallets, PPV unlocks, and DM-attached tips. Distinct from the
+    /// user's on-chain YEET balance, which lives at `wallet_address`
+    /// and is queried browser-side via `balanceOf` on the YEET BEP-20
+    /// contract.
+    pub credit_balance: f64,
     /// Reward-pool credits that haven't been minted on-chain yet.
     pub pending_yeet: i64,
     pub wallet_address: Option<String>,
@@ -41,7 +44,7 @@ pub async fn get_balance(
     let user_id = caller_user_id(&state, &auth).await?;
 
     let row: (f64, Option<String>) = sqlx::query_as(
-        "SELECT COALESCE(yeet_token_balance, 0)::float8 AS yeet_balance, wallet_address
+        "SELECT COALESCE(yeet_credit_balance, 0)::float8 AS credit_balance, wallet_address
            FROM users WHERE id = $1"
     )
     .bind(user_id)
@@ -52,7 +55,7 @@ pub async fn get_balance(
     let pending = tokens::get_pending_balance(&state.db, user_id).await?;
 
     Ok(Json(ApiResponse::ok(BalanceResponse {
-        yeet_balance: row.0,
+        credit_balance: row.0,
         pending_yeet: pending,
         wallet_address: row.1,
     })))

@@ -1,10 +1,10 @@
 [workspace]
-members = ["backend", "shared"]
+members = ["backend", "shared", "wallet"]
 resolver = "2"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["Yeet Team <dev@yeet.social>"]
 
 [workspace.dependencies]
@@ -16,3 +16,13 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "1"
 anyhow = "1"
+
+# Optimised release profile for the backend binary. Cargo only honours
+# `[profile.*]` declared at the workspace root, so the matching block
+# that previously lived in `backend/Cargo.toml` is consolidated here.
+[profile.release]
+opt-level     = 3
+lto           = true
+codegen-units = 1
+strip         = true
+panic         = "abort"

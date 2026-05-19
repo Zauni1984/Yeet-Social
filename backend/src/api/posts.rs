@@ -288,9 +288,11 @@ pub async fn unlock_post(
     // Atomic charge + record. Fee accounting reuses the tips path so the
     // creator's 90% / platform 10% split is consistent with other tips.
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
-    let tip_id = crate::api::tips::send_tip_tx(
-        &mut tx, caller_id, author_id, Some(id),
-        &price.to_string(), "YEET", None,
+    // PPV unlocks move YEET Credit (off-chain) — viewer debits, creator
+    // credits, atomic with the `ppv_unlocks` insert below. Cheap enough
+    // that paying gas per unlock would dominate the price.
+    let tip_id = crate::api::credit_ops::debit_credit_pair(
+        &mut tx, caller_id, author_id, Some(id), price,
     ).await?;
     sqlx::query(
         "INSERT INTO ppv_unlocks (user_id, post_id, price_paid, tip_id)

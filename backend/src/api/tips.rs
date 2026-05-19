@@ -1,45 +1,66 @@
-//! Tip handlers.
+//! Tip recording.
 //!
-//! The off-chain tip path is implemented as `send_tip_tx` which takes a
-//! caller-owned transaction. The HTTP route wraps it in `begin()`; the
-//! DM tip-message path (`api::messages`) joins the same tx so that the
-//! tip record + the message row land atomically.
-use axum::{extract::State, Json};
+//! Yeet's tip flow is fully non-custodial: the actual YEET transfer is
+//! an on-chain BEP-20 transaction signed in the user's browser (either
+//! by the in-app DontYeetWallet or by MetaMask). This module no longer
+//! moves any balance — there is no off-chain ledger. Its job is:
+//!
+//! 1. Accept the broadcast `tx_hash` from the frontend so the recipient
+//!    sees a notification immediately, before the
+//!    [`crate::services::indexer`] chain-watcher gets to it.
+//! 2. Insert a tip row for the sender's "my tips" history view.
+//!
+//! The chain is the source of truth for whether the tip actually
+//! settled. The indexer reconciles on-chain Transfer events with the
+//! rows written here; tips that the frontend reports but the chain
+//! never settles will sit as orphan rows (we can sweep them later).
+
+use axum::{Json, extract::State};
 use serde::Deserialize;
 use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
-use crate::{AppError, AppResult, AppState, models::ApiResponse};
+
 use crate::api::middleware::AuthUser;
+use crate::{AppError, AppResult, AppState, models::ApiResponse};
 
 #[derive(Debug, Deserialize)]
 pub struct SendTipRequest {
+    /// Recipient — either a Yeet `user_id` (UUID) or an EVM wallet address.
     pub to_address: String,
+    /// Decimal YEET amount as displayed (e.g. `"5"` or `"2.5"`).
     pub amount: String,
-    pub currency: String,
+    /// Optional post the tip is tied to (so the post composer can show "tipped").
     pub post_id: Option<Uuid>,
+    /// The on-chain transaction hash returned by `eth_sendRawTransaction`.
+    ///
+    /// Required for the row to be created — without it we'd be writing
+    /// an unverifiable claim. A frontend that fails to broadcast should
+    /// not POST here.
     pub tx_hash: Option<String>,
 }
 
-/// Inserts the tip + fee ledger entry and adjusts the sender / fee
-/// wallet balances *inside the caller's transaction*. Returns the new
-/// tip's id.
+/// Insert a tip row inside the caller's transaction.
 ///
-/// Pre-conditions enforced inline:
-/// - sender has enough YEET
-/// - sender != recipient
-/// - currency is BNB or YEET
+/// Used both by the HTTP route (which requires `tx_hash` upstream — see
+/// [`send_tip`]) and by intra-app callers like `api::messages` (DM tip
+/// attachments) and `api::posts` (PPV unlocks) that don't yet pass an
+/// on-chain tx hash. The DB row is purely for history/UX; the chain is
+/// authoritative, so rows without a `tx_hash` are tolerated for legacy
+/// internal flows but no longer accepted from the public endpoint.
+///
+/// # Errors
+///
+/// - [`AppError::Validation`] if `amount` doesn't parse to a positive
+///   decimal or the sender is tipping themselves.
+/// - [`AppError::Database`] on insert failure.
 pub(crate) async fn send_tip_tx(
     tx: &mut Transaction<'_, Postgres>,
     from_id: Uuid,
     to_id: Uuid,
     post_id: Option<Uuid>,
     amount_str: &str,
-    currency: &str,
     tx_hash: Option<&str>,
 ) -> AppResult<Uuid> {
-    if !["BNB", "YEET"].contains(&currency) {
-        return Err(AppError::Validation("Currency must be BNB or YEET".into()));
-    }
     let amount_val: f64 = amount_str.parse().unwrap_or(0.0);
     if amount_val <= 0.0 {
         return Err(AppError::Validation("Amount must be greater than 0".into()));
@@ -47,60 +68,26 @@ pub(crate) async fn send_tip_tx(
     if from_id == to_id {
         return Err(AppError::Validation("Cannot tip yourself".into()));
     }
+    let tx_hash = tx_hash.filter(|h| !h.is_empty());
 
-    // Lock sender row to prevent concurrent over-spend.
-    let balance: f64 = sqlx::query_scalar(
-        "SELECT COALESCE(yeet_token_balance, 0)::float8 FROM users WHERE id = $1 FOR UPDATE"
+    // Insert the tip row. `creator_amount` mirrors `amount` and
+    // `platform_cut` is zero — the old 10% off-chain fee skim is gone
+    // along with the rest of the off-chain ledger. A future on-chain
+    // fee mechanism (a fee-on-transfer YEET v2 or a relayer skim)
+    // would surface as a separate event the indexer can attribute.
+    let tip_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO tips (from_user_id, to_user_id, post_id, amount, creator_amount, platform_cut, currency, tx_hash)
+         VALUES ($1, $2, $3, $4, $4, '0', 'YEET', $5)
+         RETURNING id",
     )
     .bind(from_id)
-    .fetch_one(&mut **tx)
-    .await
-    .map_err(AppError::Database)?;
-    if balance < amount_val {
-        return Err(AppError::Validation("Insufficient YEET balance".into()));
-    }
-
-    let creator_amount = amount_val * 0.9;
-    let platform_cut   = amount_val * 0.1;
-
-    let tip_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO tips (from_user_id, to_user_id, post_id, amount, creator_amount, platform_cut, currency, tx_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
-    )
-    .bind(from_id).bind(to_id).bind(post_id)
+    .bind(to_id)
+    .bind(post_id)
     .bind(amount_str)
-    .bind(creator_amount.to_string()).bind(platform_cut.to_string())
-    .bind(currency).bind(tx_hash)
+    .bind(tx_hash)
     .fetch_one(&mut **tx)
     .await
     .map_err(AppError::Database)?;
-
-    sqlx::query(
-        "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
-         VALUES ('tip', $1, $2, $3, $4)"
-    )
-    .bind(tip_id).bind(amount_val).bind(platform_cut).bind(creator_amount)
-    .execute(&mut **tx).await.map_err(AppError::Database)?;
-
-    sqlx::query(
-        "UPDATE fee_wallet_balance SET total_yeet = total_yeet + $1 WHERE id = 1"
-    )
-    .bind(platform_cut)
-    .execute(&mut **tx).await.map_err(AppError::Database)?;
-
-    sqlx::query(
-        "UPDATE users SET yeet_token_balance = yeet_token_balance - $1 WHERE id = $2"
-    )
-    .bind(amount_val).bind(from_id)
-    .execute(&mut **tx).await.map_err(AppError::Database)?;
-
-    // Credit the recipient for YEET tips (off-chain ledger).
-    if currency == "YEET" {
-        sqlx::query(
-            "UPDATE users SET yeet_token_balance = yeet_token_balance + $1 WHERE id = $2"
-        )
-        .bind(creator_amount).bind(to_id)
-        .execute(&mut **tx).await.map_err(AppError::Database)?;
-    }
 
     Ok(tip_id)
 }
@@ -140,24 +127,52 @@ pub async fn send_tip(
         return Err(AppError::Forbidden("Blocked".into()));
     }
 
+    // Public endpoint requires an on-chain tx_hash — without it we'd
+    // be writing an unverifiable claim. Internal callers (DM tips, PPV
+    // unlocks) can still post None via `send_tip_tx` directly.
+    let tx_hash = req
+        .tx_hash
+        .as_deref()
+        .filter(|h| !h.is_empty())
+        .ok_or_else(|| AppError::Validation("Missing on-chain tx_hash".into()))?;
+
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     let tip_id = send_tip_tx(
-        &mut tx, from_id, to_id, req.post_id,
-        &req.amount, &req.currency, req.tx_hash.as_deref(),
-    ).await?;
+        &mut tx,
+        from_id,
+        to_id,
+        req.post_id,
+        &req.amount,
+        Some(tx_hash),
+    )
+    .await?;
     tx.commit().await.map_err(AppError::Database)?;
 
-    // Notify recipient after the tx has settled. Best-effort.
+    // Optimistic notification: the chain-watcher would also surface
+    // this, but firing it here means the recipient sees the toast
+    // within a frame of the sender's confirmation rather than after
+    // the next indexer poll. The indexer dedupes by `tx_hash`.
     let actor = sqlx::query_scalar::<_, Option<String>>(
-        "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
-    ).bind(from_id).fetch_optional(state.db.pool()).await
-     .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+        "SELECT COALESCE(display_name, username) FROM users WHERE id = $1",
+    )
+    .bind(from_id)
+    .fetch_optional(state.db.pool())
+    .await
+    .ok()
+    .flatten()
+    .flatten()
+    .unwrap_or_else(|| "Someone".into());
     crate::api::notifications::notify(
-        state.db.pool(), to_id, Some(from_id),
+        state.db.pool(),
+        to_id,
+        Some(from_id),
         "tip",
-        &format!("{} tipped you {} {}", actor, req.amount, req.currency),
+        &format!("{actor} tipped you {} YEET", req.amount),
         req.post_id,
-    ).await;
+    )
+    .await;
 
     Ok(Json(ApiResponse::ok(tip_id)))
 }
+
+// Rust guideline compliant 2026-02-21

@@ -42,7 +42,9 @@ async fn main() {
     tokio::spawn(services::batch_rewards::start_reward_batch_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_cleanup_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_message_cleanup_job(state.clone()));
-    info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
+    tokio::spawn(services::indexer::start_transfer_indexer_job(state.clone()));
+    tokio::spawn(services::credit_payout::start_credit_payout_job(state.clone()));
+    info!(" Background jobs started (batch rewards + cleanup + message-cleanup + transfer-indexer + credit-payout)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");
     info!("🛑 Graceful shutdown complete");
@@ -155,6 +157,14 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/tips",             post(api::tips::send_tip))
         .route("/api/v1/tokens/balance",   get(api::tokens::get_balance))
         .route("/api/v1/tokens/rewards",   get(api::tokens::get_rewards))
+        // YEET Credit (off-chain ledger): on-ramp via deposit (verifies an
+        // on-chain Transfer log), off-ramp via cashout (queued for the
+        // hourly payout worker), plus history reads for the wallet card.
+        .route("/api/v1/credit/info",        get(api::credit::info))
+        .route("/api/v1/credit/deposit",     post(api::credit::deposit))
+        .route("/api/v1/credit/cashout",     post(api::credit::cashout))
+        .route("/api/v1/credit/deposits",    get(api::credit::list_deposits))
+        .route("/api/v1/credit/withdrawals", get(api::credit::list_withdrawals))
         // Paper wallets — printable YEET banknotes
         .route("/api/v1/paper-wallets",          post(api::paper_wallets::create))
         .route("/api/v1/paper-wallets",          get(api::paper_wallets::list_mine))

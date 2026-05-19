@@ -15,7 +15,7 @@ pub struct User {
     pub country_code: Option<String>,
     pub is_verified: bool,
     pub age_verified: bool, // for 18+ content
-    pub yeet_token_balance: f64,
+    pub yeet_credit_balance: f64,
     pub created_at: DateTime<Utc>,
 }
 

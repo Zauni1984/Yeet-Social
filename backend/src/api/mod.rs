@@ -6,6 +6,8 @@
 // preserving the lint everywhere else.
 #![allow(clippy::type_complexity)]
 pub mod auth;
+pub mod credit;
+pub mod credit_ops;
 pub mod feed;
 pub mod middleware;
 pub mod posts;

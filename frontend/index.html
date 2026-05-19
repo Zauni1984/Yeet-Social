@@ -10,8 +10,306 @@ if('serviceWorker' in navigator){
   caches.keys().then(function(keys){
     keys.forEach(function(k){caches.delete(k);});
   });
-  
+
 }
+</script>
+
+<!--
+  DontYeet Wallet — non-custodial WASM crypto bundle.
+  Provides browser-side BIP-39 / BIP-44 / EIP-155 signing for the
+  wallet. See /wallet/src/lib.rs (in the Rust workspace) for the
+  public surface. The bundle initialises asynchronously; consumers
+  on the page should await `window.dontyeetReady` before calling
+  anything on `window.dontyeet`.
+-->
+<script type="module">
+import init, {
+  init_wallet,
+  has_wallet,
+  is_unlocked,
+  create_wallet,
+  import_wallet,
+  login,
+  logout,
+  current_address,
+  export_mnemonic,
+  change_password,
+  sign_evm_transfer,
+  sign_evm_call,
+  generate_paper_wallet,
+  enable_factor,
+  unlock_with_factor,
+  disable_factor,
+  list_factors,
+  get_chain_address,
+  supported_chains,
+  chain_send,
+  chain_balance,
+} from './wallet/pkg/wallet.js';
+
+// Resolved once `init_wallet` finishes syncing session state with
+// localStorage. UI flows that depend on knowing whether a wallet
+// already exists (signup vs. login) should `await` this.
+window.dontyeetReady = (async () => {
+  await init();          // load the wasm binary
+  await init_wallet();   // sync session state
+})();
+
+window.dontyeetReady
+  .then(() => console.log('DontYeet Wallet ready'))
+  .catch(err => console.error('DontYeet Wallet failed to initialize:', err));
+
+// Single namespace for non-module page code. u64 params are
+// BigInt-ed at the call site since wasm-bindgen expects bigint for
+// 64-bit integers and the JS-side Number type tops out at 2^53.
+window.dontyeet = {
+  hasWallet:        () => has_wallet(),
+  isUnlocked:       () => is_unlocked(),
+  createWallet:     (password) => create_wallet(password),
+  importWallet:     (mnemonic, password) => import_wallet(mnemonic, password),
+  login:            (password) => login(password),
+  logout:           () => logout(),
+  currentAddress:   () => current_address(),
+  exportMnemonic:   () => export_mnemonic(),
+  changePassword:   (oldPw, newPw) => change_password(oldPw, newPw),
+  signTransfer:     (to, valueWei, gasPriceWei, gasLimit, nonce, chainId) =>
+                      sign_evm_transfer(to, valueWei, gasPriceWei,
+                                        BigInt(gasLimit), BigInt(nonce), BigInt(chainId)),
+  signCall:         (to, valueWei, dataHex, gasPriceWei, gasLimit, nonce, chainId) =>
+                      sign_evm_call(to, valueWei, dataHex, gasPriceWei,
+                                    BigInt(gasLimit), BigInt(nonce), BigInt(chainId)),
+  paperWallet:      () => generate_paper_wallet(),
+  enableFactor:     (label, keyHex, password) => enable_factor(label, keyHex, password),
+  unlockWithFactor: (label, keyHex) => unlock_with_factor(label, keyHex),
+  disableFactor:    (label) => disable_factor(label),
+  listFactors:      () => list_factors(),
+  // Multichain — same mnemonic, address per chain. `chainSend` signs
+  // and broadcasts via the chain's in-browser pipeline; `chainBalance`
+  // reads via the chain's public RPC and returns
+  // { raw, display, symbol, decimals }.
+  getChainAddress:  (chainId) => get_chain_address(chainId),
+  supportedChains:  () => supported_chains(),
+  chainSend:        (chainId, to, amountRaw) => chain_send(chainId, to, amountRaw),
+  chainBalance:     (chainId, address) => chain_balance(chainId, address),
+};
+</script>
+
+<!--
+  DontYeet Wallet — biometric unlock (WebAuthn PRF).
+
+  Lets the user unlock the wallet with Touch ID / Face ID / Windows
+  Hello / Android fingerprint instead of a password. Strictly safer
+  than the legacy "encrypt-under-credential-id" pattern: the encryption
+  key is the authenticator's PRF output for a fixed salt, so an
+  attacker with localStorage read access can't replay it without
+  passing the biometric prompt.
+
+  - The 32-byte PRF output is fed into the wasm shim's
+    `enableFactor("biometric", prfKeyHex, password)` on setup.
+  - On unlock, the same PRF re-derivation hands the same 32 bytes back,
+    and `unlockWithFactor("biometric", prfKeyHex)` recovers the
+    primary password and unlocks the wallet.
+
+  Mobile-prioritised in the auto-unlock prompt, but works anywhere
+  WebAuthn PRF is supported (Chrome 132+, Safari 18+, Edge).
+-->
+<script>
+(function(){
+  // SHA-256 salt input. Different from any other Yeet WebAuthn salt
+  // (e.g. E2EE identity) so the derivation chains stay independent.
+  const PRF_SALT_TEXT     = 'dontyeet-bio-prf-v1';
+  // localStorage key holding the base64url credential ID.
+  const STORAGE_CRED_ID   = 'dontyeet_bio_credential_id';
+  // localStorage key telling whether the user already declined the
+  // enrollment prompt, so we don't nag.
+  const STORAGE_DISMISSED = 'dontyeet_bio_prompt_dismissed';
+
+  function isSupported(){
+    return !!(window.PublicKeyCredential &&
+              navigator.credentials &&
+              navigator.credentials.create);
+  }
+  function isMobile(){
+    return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+           (window.matchMedia && window.matchMedia('(pointer:coarse)').matches);
+  }
+  function isRegistered(){
+    return !!localStorage.getItem(STORAGE_CRED_ID);
+  }
+
+  async function sha256(bytes){
+    return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  }
+  function bytesToHex(bytes){
+    let s = '';
+    for (let i=0; i<bytes.length; i++) s += bytes[i].toString(16).padStart(2,'0');
+    return s;
+  }
+  function bytesToB64Url(bytes){
+    let s = '';
+    for (let i=0; i<bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  function b64UrlToBytes(b64u){
+    const padded = b64u.replace(/-/g,'+').replace(/_/g,'/');
+    const pad = padded.length % 4 === 0 ? '' : '='.repeat(4 - (padded.length % 4));
+    const s = atob(padded + pad);
+    const out = new Uint8Array(s.length);
+    for (let i=0; i<s.length; i++) out[i] = s.charCodeAt(i);
+    return out;
+  }
+  async function prfSalt(){
+    return await sha256(new TextEncoder().encode(PRF_SALT_TEXT));
+  }
+
+  // Register a platform authenticator with PRF support, then
+  // immediately request an assertion to obtain the 32-byte PRF
+  // output and enroll it as the "biometric" factor on the wallet.
+  // `password` is the user's current primary wallet password; it is
+  // encrypted under the PRF output and stored as the factor blob.
+  async function register(password){
+    if (!isSupported()) throw new Error('WebAuthn not supported');
+    if (!password)      throw new Error('password required for enrollment');
+
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name:'Yeet', id: location.hostname },
+        user: {
+          id: userId,
+          name: 'yeet-wallet',
+          displayName: 'Yeet Wallet'
+        },
+        // ES256 preferred; RS256 for Windows Hello / older devices.
+        pubKeyCredParams: [
+          { type:'public-key', alg:-7 },
+          { type:'public-key', alg:-257 }
+        ],
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required',
+          requireResidentKey: false
+        },
+        extensions: { prf: {} },
+        timeout: 60000,
+        attestation: 'none'
+      }
+    });
+    if (!cred) throw new Error('credential creation cancelled');
+
+    const ext = cred.getClientExtensionResults();
+    if (!ext || !ext.prf || ext.prf.enabled !== true) {
+      throw new Error('authenticator does not support PRF');
+    }
+
+    // Stash the credential ID so future unlocks can target it.
+    const credIdB64 = bytesToB64Url(new Uint8Array(cred.rawId));
+    localStorage.setItem(STORAGE_CRED_ID, credIdB64);
+
+    // Immediately re-prompt for an assertion — `create` doesn't return
+    // PRF results, only an "enabled" flag, so we need an actual `get`
+    // call to materialise the 32 bytes.
+    const salt = await prfSalt();
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type:'public-key', id: new Uint8Array(cred.rawId) }],
+        userVerification: 'required',
+        extensions: { prf: { eval: { first: salt } } },
+        timeout: 60000
+      }
+    });
+    if (!assertion) throw new Error('biometric assertion cancelled');
+
+    const aext = assertion.getClientExtensionResults();
+    const prfBuf = aext && aext.prf && aext.prf.results && aext.prf.results.first;
+    if (!prfBuf) {
+      // Clean up the credential ID — without PRF output, the
+      // enrollment is unusable.
+      localStorage.removeItem(STORAGE_CRED_ID);
+      throw new Error('PRF assertion returned no output');
+    }
+    const prfKey = new Uint8Array(prfBuf);
+    if (prfKey.length !== 32) {
+      localStorage.removeItem(STORAGE_CRED_ID);
+      throw new Error('PRF output not 32 bytes (got ' + prfKey.length + ')');
+    }
+
+    await window.dontyeetReady;
+    await window.dontyeet.enableFactor('biometric', bytesToHex(prfKey), password);
+  }
+
+  // Re-derive the PRF output for the enrolled credential and unlock
+  // the wallet. Returns the wallet's BSC address on success.
+  async function unlock(){
+    if (!isSupported()) throw new Error('WebAuthn not supported');
+    const credIdB64 = localStorage.getItem(STORAGE_CRED_ID);
+    if (!credIdB64) throw new Error('biometric not registered');
+
+    const credId = b64UrlToBytes(credIdB64);
+    const salt = await prfSalt();
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type:'public-key', id: credId }],
+        userVerification: 'required',
+        extensions: { prf: { eval: { first: salt } } },
+        timeout: 60000
+      }
+    });
+    if (!assertion) throw new Error('biometric prompt cancelled');
+
+    const ext = assertion.getClientExtensionResults();
+    const prfBuf = ext && ext.prf && ext.prf.results && ext.prf.results.first;
+    if (!prfBuf) throw new Error('PRF output missing from assertion');
+
+    const prfKey = new Uint8Array(prfBuf);
+    await window.dontyeetReady;
+    return await window.dontyeet.unlockWithFactor('biometric', bytesToHex(prfKey));
+  }
+
+  // Forget the local credential ID and the factor blob. The actual
+  // authenticator credential is orphaned (WebAuthn has no
+  // programmatic delete) but is never referenced again.
+  async function disable(){
+    localStorage.removeItem(STORAGE_CRED_ID);
+    await window.dontyeetReady;
+    await window.dontyeet.disableFactor('biometric');
+  }
+
+  function dismissPrompt(){
+    localStorage.setItem(STORAGE_DISMISSED, '1');
+  }
+  function promptDismissed(){
+    return localStorage.getItem(STORAGE_DISMISSED) === '1';
+  }
+
+  window.dontyeetBio = {
+    isSupported, isMobile, isRegistered,
+    register, unlock, disable,
+    dismissPrompt, promptDismissed
+  };
+
+  // On page load: if the wallet exists, is locked, and biometric is
+  // registered, silently attempt an unlock. The browser will show the
+  // platform's biometric sheet; if the user dismisses it they can
+  // still log in with their password.
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      await window.dontyeetReady;
+      if (!(await window.dontyeet.hasWallet())) return;
+      if (await window.dontyeet.isUnlocked())   return;
+      if (!isRegistered())                       return;
+      await unlock();
+      console.log('DontYeet Wallet unlocked via biometric');
+    } catch (err) {
+      // Silent — the user just sees the regular login flow if this
+      // didn't go through.
+      console.warn('Biometric auto-unlock skipped:', err && err.message);
+    }
+  });
+})();
 </script>
 
 <meta charset="UTF-8">
@@ -552,6 +850,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#" onclick="openPaperWalletModal();return false;">&#128181; Paper Wallets</a>
     <div class="nav-section">Account</div>
     <a class="nav-link" href="#" onclick="showMyProfile();return false;">&#128100; Profile</a>
+    <a class="nav-link" href="#" onclick="openWalletCard();return false;">&#128176; Wallet</a>
     <a class="nav-link" href="#" onclick="openSettingsModal();return false;">&#9881; Settings</a>
   </aside>
 
@@ -1683,6 +1982,65 @@ if(window.matchMedia('(display-mode:standalone)').matches){
   }
 function closeTipModal(e){if(!e||e.target===document.getElementById('tipModal'))document.getElementById('tipModal').classList.remove('on');}
 function setTipAmt(n){document.getElementById('tipAmount').value=n;}
+
+// Chain + token config comes from the backend's /api/v1/credit/info
+// endpoint. The frontend deliberately holds no hardcoded RPC / chain id
+// constants — operators flip mainnet ↔ testnet by setting BSC_CHAIN_ID
+// on the server and the UI follows automatically.
+//
+// 90k gas covers a typical BEP-20 `transfer` with a comfortable margin;
+// undershoot is much worse than overshoot (the tx reverts and gas burns).
+const _BEP20_TRANSFER_GAS = 90000;
+
+// Minimal JSON-RPC client. Posts a single `{method, params}` call to a
+// node and returns the `result` field; throws on JSON-RPC error.
+async function _rpcCall(url, method, params){
+  const r = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({jsonrpc:'2.0', id:1, method:method, params:params || []})
+  });
+  const j = await r.json();
+  if (j.error) throw new Error('RPC ' + method + ': ' + (j.error.message || JSON.stringify(j.error)));
+  return j.result;
+}
+
+// Try to send a YEET tip signed by the in-browser DontYeetWallet,
+// broadcast directly to a BSC RPC node. Returns the tx hash on success
+// or `null` if the wallet path isn't available (locked / no wallet /
+// address mismatch with the user's on-file `wallet_address`). Throws
+// on actual signing or broadcast errors so the caller can decide
+// whether to fall back to MetaMask / backend ledger.
+async function _tipViaDontYeet(toAddr, amount){
+  if (!window.dontyeet) return null;
+  await window.dontyeetReady;
+  if (!(await window.dontyeet.isUnlocked())) return null;
+  const cfg = await _chainConfig();
+  const from = await window.dontyeet.currentAddress();
+  // Build ERC-20 transfer(address,uint256) calldata.
+  //   selector       = 0xa9059cbb
+  //   to (32 bytes)  = address left-padded with zeros
+  //   amount (32B)   = uint256 in wei
+  const toHex   = toAddr.replace(/^0x/,'').toLowerCase().padStart(64,'0');
+  const amtWei  = BigInt(Math.floor(amount * 1e18));
+  const amtHex  = amtWei.toString(16).padStart(64,'0');
+  const data    = '0xa9059cbb' + toHex + amtHex;
+  // Fetch nonce + gas price from the RPC node. `pending` so two tips
+  // queued back-to-back don't collide on the same nonce.
+  const nonceHex    = await _rpcCall(cfg.rpc_url, 'eth_getTransactionCount', [from, 'pending']);
+  const gasPriceHex = await _rpcCall(cfg.rpc_url, 'eth_gasPrice', []);
+  const signed = await window.dontyeet.signCall(
+    cfg.yeet_token_address,
+    '0',                                 // value_wei (no native BNB attached)
+    data,                                // data_hex
+    BigInt(gasPriceHex).toString(),      // gas_price_wei as decimal
+    _BEP20_TRANSFER_GAS,                 // gas_limit
+    Number(BigInt(nonceHex)),            // nonce
+    cfg.chain_id                         // chain_id
+  );
+  return await _rpcCall(cfg.rpc_url, 'eth_sendRawTransaction', [signed]);
+}
+
 async function sendTip(){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt)return;
@@ -1695,7 +2053,28 @@ async function sendTip(){
   const btn=modal.querySelector('button[onclick="sendTip()"]');
   if(btn){btn.disabled=true;btn.textContent='Sending...';}
 
-  // Try on-chain first if MetaMask available
+  // 1) DontYeetWallet path — preferred. Signs locally, broadcasts
+  //    directly to BSC RPC. Works for email-signup users (no MetaMask
+  //    needed) and for MetaMask users whose in-app wallet is unlocked.
+  //    No popup, no extra confirmation step.
+  try{
+    const txHash = await _tipViaDontYeet(toAddr, amount);
+    if(txHash){
+      showToast('Tip sent on-chain! TX: ' + txHash.slice(0,12) + '...');
+      if(btn){btn.disabled=false;btn.textContent='Send Tip';}
+      closeTipModal();
+      // Notify backend so the indexer / feed picks it up faster than
+      // the chain-watcher loop would on its own.
+      fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId,tx_hash:txHash})}).catch(function(){});
+      return;
+    }
+  } catch(err){
+    console.warn('DontYeetWallet tip failed, trying MetaMask:', err && err.message);
+  }
+
+  // 2) MetaMask path — fallback for users who declined the in-app wallet
+  //    or whose session is locked. Same on-chain transfer, signed via
+  //    the injected provider (popup confirmation).
   if(window.ethereum&&connectedAddress){
     try{
       const chainId=await window.ethereum.request({method:'eth_chainId'});
@@ -1804,44 +2183,721 @@ function openNFTModal(postId,content){
   document.getElementById('nftModal').classList.add('on');
 }
 function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal'))document.getElementById('nftModal').classList.remove('on');}
+// =================== Wallet provider chooser ===================
+//
+// Pops up a modal asking the user which wallet to sign with — used by
+// flows that have multiple plausible signing paths (NFT mint, future
+// on-chain features). Returns one of:
+//   'yeetwallet'    — the in-browser YeetWallet (window.dontyeet)
+//   'metamask'      — injected provider, MetaMask-style
+//   'trustwallet'   — injected provider, Trust Wallet
+//   'walletconnect' — stubbed; returns the string but caller no-ops
+//   null            — user dismissed
+async function pickWalletProvider(opts){
+  const purpose = (opts && opts.purpose) || 'this transaction';
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    overlay.innerHTML = ''
+      + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:340px;width:100%">'
+      + '<div style="font-size:16px;font-weight:800;margin-bottom:6px">Sign '+purpose+' with</div>'
+      + '<div style="font-size:12px;color:#888;margin-bottom:16px">Choose which wallet signs the transaction.</div>'
+      + '<button data-w="yeetwallet" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:10px;font-weight:800;font-size:14px;margin-bottom:8px;cursor:pointer">YeetWallet (in-browser)</button>'
+      + '<button data-w="metamask" style="width:100%;background:#1a1a1a;color:#e8e8e8;border:1px solid #333;padding:12px;border-radius:10px;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">MetaMask</button>'
+      + '<button data-w="trustwallet" style="width:100%;background:#1a1a1a;color:#e8e8e8;border:1px solid #333;padding:12px;border-radius:10px;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">Trust Wallet</button>'
+      + '<button data-w="walletconnect" style="width:100%;background:#1a1a1a;color:#888;border:1px solid #333;padding:12px;border-radius:10px;font-weight:700;font-size:14px;margin-bottom:8px;cursor:pointer">WalletConnect <span style="color:#666;font-weight:400">(soon)</span></button>'
+      + '<button data-w="cancel" style="width:100%;background:transparent;color:#888;border:none;padding:8px;cursor:pointer;font-size:12px">Cancel</button>'
+      + '</div>';
+    overlay.addEventListener('click', e => {
+      const w = e.target && e.target.dataset && e.target.dataset.w;
+      if (!w) { if (e.target === overlay) { document.body.removeChild(overlay); resolve(null); } return; }
+      document.body.removeChild(overlay);
+      resolve(w === 'cancel' ? null : w);
+    });
+    document.body.appendChild(overlay);
+  });
+}
+
+// Ensure the active injected provider is on the configured BSC chain
+// (mainnet or testnet, picked server-side via BSC_CHAIN_ID). Prompts an
+// `addChain` if the user has never seen this network before. Throws on
+// user rejection so the caller can surface the error.
+async function _ensureBscChain(){
+  const cfg = await _chainConfig();
+  const targetHex = '0x' + cfg.chain_id.toString(16);
+  const chainId = await window.ethereum.request({method:'eth_chainId'});
+  if (chainId === targetHex) return;
+  const native = cfg.chain_id === 56
+    ? {name:'BNB', symbol:'BNB', decimals:18}
+    : {name:'tBNB', symbol:'tBNB', decimals:18};
+  try {
+    await window.ethereum.request({method:'wallet_switchEthereumChain', params:[{chainId: targetHex}]});
+  } catch (e) {
+    if (e.code === 4902) {
+      await window.ethereum.request({method:'wallet_addEthereumChain', params:[{
+        chainId: targetHex,
+        chainName: cfg.chain_name,
+        nativeCurrency: native,
+        rpcUrls: [cfg.rpc_url],
+        blockExplorerUrls: cfg.explorer_url ? [cfg.explorer_url] : []
+      }]});
+    } else { throw e; }
+  }
+}
+
+// Build the calldata for YeetNFT.mintPost(address,string,string). Uses
+// ethers.js's ABI encoder so the selector + tail-encoded strings are
+// byte-perfect — the previous hardcoded `0x12345678` placeholder
+// produced a no-op tx that the contract refused.
+async function _buildMintNftCalldata(to, postId, tokenURI){
+  const ethers = await _waitForEthers();
+  const iface = new ethers.Interface(NFT_ABI);
+  return iface.encodeFunctionData('mintPost', [to, postId, tokenURI]);
+}
+
 async function mintNFT(){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt||!_nftPostId){showToast('Connect wallet first');return;}
-  if(!window.ethereum){showToast('MetaMask not found');return;}
   const btn=document.getElementById('mintBtn');
   const status=document.getElementById('nftStatus');
-  btn.disabled=true;btn.textContent='Minting...';status.textContent='Preparing transaction...';
-  try{
-    await window.ethereum.request({method:'eth_requestAccounts'});
-    const chainId=await window.ethereum.request({method:'eth_chainId'});
-    if(chainId!=='0x61'){
-      status.textContent='Switching to BSC Testnet...';
-      await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
-        if(e2.code===4902){
-          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
-        }
-      });
-    }
+
+  const choice = await pickWalletProvider({purpose:'NFT mint'});
+  if (!choice) return;
+
+  if (choice === 'walletconnect') {
+    showToast('WalletConnect support is coming soon');
+    return;
+  }
+
+  btn.disabled=true; btn.textContent='Minting...'; status.textContent='Preparing transaction...';
+  try {
+    const cfg = await _chainConfig();
     const name=document.getElementById('nftName').value||'YEET NFT';
     const desc=document.getElementById('nftDesc').value||'YEET Social Post';
-    const tokenURI='data:application/json;base64,'+btoa(JSON.stringify({name:name,description:desc,content:_nftPostContent,platform:'YEET Social',chainId:97}));
-    const from=(await window.ethereum.request({method:'eth_accounts'}))[0];
-    const data='0x'+[
-      'mintPost(address,string,string)',
-    ].map(function(){
-      var sel='0x'+[...new TextEncoder().encode('mintPost(address,string,string)')].reduce(function(a,b){return a+b.toString(16).padStart(2,'0');},'');
-      return sel.slice(2,10);
-    })[0];
-    status.textContent='Please confirm in MetaMask...';
-    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:from,to:NFT_CONTRACT_ADDR,data:'0x12345678',gas:'0x30000'}]});
-    status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'...</span>';
-    showToast('NFT Minted successfully!');
-    setTimeout(function(){closeNFTModal();},3000);
-  }catch(err){
-    status.innerHTML='<span style="color:var(--red)">'+err.message.slice(0,60)+'</span>';
-  }finally{
-    btn.disabled=false;btn.textContent='Mint NFT';
+    const tokenURI='data:application/json;base64,'+btoa(JSON.stringify({
+      name, description:desc, content:_nftPostContent, platform:'YEET Social', chainId:cfg.chain_id
+    }));
+    const GAS_LIMIT = 0x60000;  // mint is more than a transfer; 393k gas
+
+    if (choice === 'yeetwallet') {
+      // In-browser signing path — no popup, signs locally.
+      await window.dontyeetReady;
+      if (!(await window.dontyeet.isUnlocked())) {
+        status.innerHTML='<span style="color:var(--red)">YeetWallet is locked — sign in first.</span>';
+        return;
+      }
+      const from = await window.dontyeet.currentAddress();
+      const data = await _buildMintNftCalldata(from, _nftPostId, tokenURI);
+      status.textContent='Signing with YeetWallet…';
+      const nonceHex    = await _rpcCall(cfg.rpc_url, 'eth_getTransactionCount', [from, 'pending']);
+      const gasPriceHex = await _rpcCall(cfg.rpc_url, 'eth_gasPrice', []);
+      const signed = await window.dontyeet.signCall(
+        NFT_CONTRACT_ADDR, '0', data,
+        BigInt(gasPriceHex).toString(),
+        GAS_LIMIT, Number(BigInt(nonceHex)), cfg.chain_id
+      );
+      status.textContent='Broadcasting…';
+      const txHash = await _rpcCall(cfg.rpc_url, 'eth_sendRawTransaction', [signed]);
+      status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'…</span>';
+      showToast('NFT Minted via YeetWallet');
+      setTimeout(closeNFTModal, 3000);
+      return;
+    }
+
+    // Injected-provider path (MetaMask, Trust Wallet — both EIP-1193).
+    if (!window.ethereum) {
+      const name = choice === 'trustwallet' ? 'Trust Wallet' : 'MetaMask';
+      status.innerHTML='<span style="color:var(--red)">'+name+' not detected</span>';
+      return;
+    }
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    status.textContent='Switching to '+cfg.chain_name+'…';
+    await _ensureBscChain();
+    const from = (await window.ethereum.request({method:'eth_accounts'}))[0];
+    const data = await _buildMintNftCalldata(from, _nftPostId, tokenURI);
+    status.textContent='Please confirm in your wallet…';
+    const txHash = await window.ethereum.request({method:'eth_sendTransaction', params:[{
+      from, to: NFT_CONTRACT_ADDR, data, gas: '0x'+GAS_LIMIT.toString(16)
+    }]});
+    status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'…</span>';
+    showToast('NFT Minted!');
+    setTimeout(closeNFTModal, 3000);
+  } catch(err) {
+    status.innerHTML='<span style="color:var(--red)">'+(err.message||String(err)).slice(0,80)+'</span>';
+  } finally {
+    btn.disabled=false; btn.textContent='Mint NFT';
   }
+}
+
+// =================== NFT gallery (stub) ===================
+//
+// Will eventually list every NFT minted by / owned by a user. For now
+// the placeholder explains what's coming so the entry point is
+// discoverable while the real implementation lands.
+function openNftGallery(userAddressOrId){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:420px;width:100%">'
+    + '<div style="font-size:18px;font-weight:800;margin-bottom:8px">NFT Gallery</div>'
+    + '<div style="font-size:13px;color:#aaa;margin-bottom:16px">'
+    + 'Browsing NFTs for '+(userAddressOrId||'this account')+'.'
+    + '</div>'
+    + '<div style="background:#1a1a1a;border:1px dashed #333;border-radius:10px;padding:24px;text-align:center;color:#666;margin-bottom:16px">'
+    + 'Gallery view is coming soon.<br><span style="font-size:11px">Will fetch ERC-721 ownership from BSC and render each post-NFT with its embedded media.</span>'
+    + '</div>'
+    + '<button data-close="1" style="width:100%;background:#222;color:#e8e8e8;border:none;padding:10px;border-radius:8px;cursor:pointer">Close</button>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
+}
+
+// ============== Insufficient-YEET shortcut ==============
+//
+// Standardised toast for "user tried to spend YEET they don't have".
+// Shows a Deposit button so they're one tap away from fixing it.
+// `amountShortBy` is optional and pre-fills the deposit modal.
+function showInsufficientYeetToast(amountShortBy){
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #ff4444;border-radius:10px;padding:12px 16px;z-index:10001;display:flex;gap:12px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.5);max-width:90vw';
+  const msg = amountShortBy
+    ? 'Insufficient YEET — need ' + amountShortBy + ' more'
+    : 'Insufficient YEET';
+  t.innerHTML =
+      '<span style="color:#e8e8e8;font-size:13px">'+msg+'</span>'
+    + '<button id="_iyDepositBtn" style="background:var(--yeet);color:#000;border:none;padding:6px 12px;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer">Deposit</button>'
+    + '<button id="_iyDismissBtn" style="background:transparent;color:#888;border:none;cursor:pointer;font-size:16px;padding:0 4px">×</button>';
+  document.body.appendChild(t);
+  document.getElementById('_iyDepositBtn').onclick = () => {
+    try { document.body.removeChild(t); } catch(_){}
+    if (typeof openDepositModal === 'function') openDepositModal(amountShortBy);
+  };
+  document.getElementById('_iyDismissBtn').onclick = () => {
+    try { document.body.removeChild(t); } catch(_){}
+  };
+  setTimeout(() => { try { document.body.removeChild(t); } catch(_){} }, 9000);
+}
+
+// =================== YEET Credit wallet card ===================
+//
+// Renders the user's on-chain YEET (live balanceOf via BSC RPC) and
+// off-chain YEET Credit (via /api/v1/tokens/balance) side-by-side.
+// Deposit and Cashout buttons open dedicated modals. The on-chain
+// balance is cached for ~15 s so opening the card repeatedly doesn't
+// hammer the public RPC.
+
+// Minimal ERC-20 fragment for `transfer(to, amount)` ABI encoding and
+// `balanceOf(addr)` read. Used by deposit broadcasts and the on-chain
+// balance lookup.
+const ERC20_FRAGMENT = [
+  { name:'transfer',  type:'function', stateMutability:'nonpayable',
+    inputs:[{name:'to',type:'address'},{name:'amount',type:'uint256'}],
+    outputs:[{type:'bool'}] },
+  { name:'balanceOf', type:'function', stateMutability:'view',
+    inputs:[{name:'owner',type:'address'}],
+    outputs:[{type:'uint256'}] }
+];
+
+let _creditInfoCache = null;
+async function _fetchCreditInfo(){
+  if (_creditInfoCache) return _creditInfoCache;
+  const r = await fetch('/api/v1/credit/info');
+  const j = await r.json();
+  if (!j.success || !j.data) throw new Error('credit/info failed');
+  _creditInfoCache = j.data;
+  return _creditInfoCache;
+}
+
+// Single source of truth for chain RPC / chain id / token / explorer
+// in the frontend. Wraps the cached /credit/info response in the
+// friendly shape every signing path expects. Flip the operator's
+// `BSC_CHAIN_ID` env var server-side and every browser-side call
+// follows automatically — no frontend redeploy for mainnet ↔ testnet.
+async function _chainConfig(){
+  const info = await _fetchCreditInfo();
+  return {
+    chain_id:           info.chain_id,
+    rpc_url:            info.bsc_rpc_url,
+    chain_name:         info.chain_name,
+    explorer_url:       info.explorer_url,
+    yeet_token_address: info.yeet_token_address,
+    deposit_address:    info.deposit_address,
+  };
+}
+
+let _onChainBalanceCache = { addr:null, value:null, at:0 };
+const _ON_CHAIN_BALANCE_TTL_MS = 15_000;
+
+// Read the YEET balanceOf for `address` from BSC. Cached briefly so
+// the wallet card can poll without thrashing the RPC.
+async function _fetchOnChainYeetBalance(address, tokenAddress){
+  const now = Date.now();
+  if (_onChainBalanceCache.addr === address
+      && (now - _onChainBalanceCache.at) < _ON_CHAIN_BALANCE_TTL_MS) {
+    return _onChainBalanceCache.value;
+  }
+  const cfg = await _chainConfig();
+  const ethers = await _waitForEthers();
+  const iface = new ethers.Interface(ERC20_FRAGMENT);
+  const data = iface.encodeFunctionData('balanceOf', [address]);
+  const result = await _rpcCall(cfg.rpc_url, 'eth_call', [
+    { to: tokenAddress, data }, 'latest'
+  ]);
+  const [bal] = iface.decodeFunctionResult('balanceOf', result);
+  // bal is a BigInt; convert to YEET decimal.
+  const denom = 10n ** 18n;
+  const whole = bal / denom;
+  const frac = bal % denom;
+  const fracStr = String(frac).padStart(18, '0').slice(0, 4).replace(/0+$/, '');
+  const display = fracStr ? `${whole}.${fracStr}` : `${whole}`;
+  _onChainBalanceCache = { addr:address, value:display, at:now };
+  return display;
+}
+
+async function _buildErc20TransferCalldata(to, amountWeiBigInt){
+  const ethers = await _waitForEthers();
+  const iface = new ethers.Interface(ERC20_FRAGMENT);
+  return iface.encodeFunctionData('transfer', [to, amountWeiBigInt]);
+}
+
+// Fetch the caller's credit balance + wallet_address from the backend.
+async function _fetchCreditBalance(){
+  const jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if (!jwt) throw new Error('not signed in');
+  const r = await fetch('/api/v1/tokens/balance', { headers:{ Authorization:'Bearer '+jwt } });
+  const j = await r.json();
+  if (!j.success || !j.data) throw new Error('balance fetch failed');
+  return j.data;  // { credit_balance, pending_yeet, wallet_address }
+}
+
+// ---------- main wallet card ----------
+
+async function openWalletCard(){
+  const jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if (!jwt) { showToast('Sign in first'); return; }
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:420px;width:100%">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    +   '<div style="font-size:18px;font-weight:800">Wallet</div>'
+    +   '<button data-close="1" style="background:transparent;color:#888;border:none;cursor:pointer;font-size:18px">×</button>'
+    + '</div>'
+    + '<div id="walletCardBody" style="font-size:13px;color:#bbb">Loading…</div>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
+
+  try {
+    const [info, bal] = await Promise.all([_fetchCreditInfo(), _fetchCreditBalance()]);
+    const wallet = bal.wallet_address || '';
+    let onChain = '—';
+    if (wallet && info.yeet_token_address) {
+      try { onChain = await _fetchOnChainYeetBalance(wallet, info.yeet_token_address); }
+      catch (e) { onChain = '?'; console.warn('balanceOf failed:', e); }
+    }
+    const credit = (bal.credit_balance != null) ? bal.credit_balance : 0;
+    const pending = bal.pending_yeet || 0;
+    const depositDisabled = !info.deposit_address ? 'disabled style="background:#333;color:#666;cursor:not-allowed"' : 'style="background:var(--yeet);color:#000;cursor:pointer"';
+
+    document.getElementById('walletCardBody').innerHTML = ''
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+      +   '<div style="background:#1a1a1a;border:1px solid #222;border-radius:10px;padding:12px">'
+      +     '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">Wallet</div>'
+      +     '<div style="font-size:20px;font-weight:800;color:var(--yeet);margin-top:4px">'+onChain+'</div>'
+      +     '<div style="font-size:10px;color:#666;margin-top:4px;font-family:monospace">'+(wallet ? wallet.slice(0,10)+'…'+wallet.slice(-6) : 'no wallet')+'</div>'
+      +   '</div>'
+      +   '<div style="background:#1a1a1a;border:1px solid #222;border-radius:10px;padding:12px">'
+      +     '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px">In-app</div>'
+      +     '<div style="font-size:20px;font-weight:800;color:var(--yeet);margin-top:4px">'+credit+'</div>'
+      +     (pending ? '<div style="font-size:10px;color:#888;margin-top:4px">+'+pending+' pending rewards</div>' : '<div style="height:14px"></div>')
+      +   '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:8px;margin-bottom:8px">'
+      +   '<button id="walletDepositBtn" '+depositDisabled+' style="flex:1;border:none;padding:11px;border-radius:9px;font-weight:700;font-size:13px;background:var(--yeet);color:#000;cursor:pointer">Deposit</button>'
+      +   '<button id="walletCashoutBtn" style="flex:1;background:#1a1a1a;color:#e8e8e8;border:1px solid #333;padding:11px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer">Cashout</button>'
+      + '</div>'
+      + '<button id="walletMultichainBtn" style="width:100%;background:#1a1a1a;color:#e8e8e8;border:1px solid #333;padding:11px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:14px">Other chains</button>'
+      + (!info.deposit_address
+          ? '<div style="font-size:11px;color:#666;text-align:center">Deposit address not configured yet.</div>'
+          : '<div style="font-size:11px;color:#666;text-align:center;line-height:1.5">Wallet YEET is yours on BSC.<br>In-app YEET spends instantly on PPV, DM tips, and paper-wallet gifts.</div>');
+
+    const depBtn = document.getElementById('walletDepositBtn');
+    if (depBtn && !depBtn.disabled) {
+      depBtn.onclick = () => { document.body.removeChild(overlay); openDepositModal(); };
+    }
+    const cashBtn = document.getElementById('walletCashoutBtn');
+    if (cashBtn) {
+      cashBtn.onclick = () => { document.body.removeChild(overlay); openCashoutModal(credit); };
+    }
+    const multiBtn = document.getElementById('walletMultichainBtn');
+    if (multiBtn) {
+      multiBtn.onclick = () => { document.body.removeChild(overlay); openMultichainReceive(); };
+    }
+  } catch (err) {
+    document.getElementById('walletCardBody').innerHTML =
+      '<div style="color:var(--red)">Failed to load: '+(err.message||err)+'</div>';
+  }
+}
+
+// ---------- deposit modal ----------
+
+async function openDepositModal(prefillAmount){
+  const jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if (!jwt) { showToast('Sign in first'); return; }
+  let info;
+  try { info = await _fetchCreditInfo(); }
+  catch (e) { showToast('Could not load deposit info'); return; }
+  if (!info.deposit_address) { showToast('Deposit address not configured'); return; }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:380px;width:100%">'
+    + '<div style="font-size:18px;font-weight:800;margin-bottom:6px">Deposit YEET</div>'
+    + '<div style="font-size:11px;color:#888;margin-bottom:14px">Moves on-chain YEET into your in-app Credit. Signs a transfer to the platform custodian.</div>'
+    + '<label style="font-size:11px;color:#aaa">Amount (YEET)</label>'
+    + '<input id="depAmount" type="number" min="0" step="0.01" placeholder="10" value="'+(prefillAmount||'')+'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#e8e8e8;margin-top:4px;margin-bottom:10px;font-size:14px">'
+    + '<div style="font-size:10px;color:#666;margin-bottom:14px;font-family:monospace;word-break:break-all">→ '+info.deposit_address+'</div>'
+    + '<div id="depStatus" style="font-size:12px;min-height:18px;margin-bottom:10px"></div>'
+    + '<button id="depSendBtn" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:10px;font-weight:800;font-size:14px;margin-bottom:8px;cursor:pointer">Send</button>'
+    + '<button data-close="1" style="width:100%;background:transparent;color:#888;border:none;padding:8px;cursor:pointer;font-size:12px">Cancel</button>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
+
+  document.getElementById('depSendBtn').onclick = async () => {
+    const amount = parseFloat(document.getElementById('depAmount').value);
+    const status = document.getElementById('depStatus');
+    const btn = document.getElementById('depSendBtn');
+    if (!isFinite(amount) || amount <= 0) {
+      status.innerHTML = '<span style="color:var(--red)">Enter a positive amount</span>';
+      return;
+    }
+    const choice = await pickWalletProvider({purpose:'deposit'});
+    if (!choice) return;
+    if (choice === 'walletconnect') { showToast('WalletConnect coming soon'); return; }
+
+    btn.disabled = true; btn.textContent = 'Signing…';
+    try {
+      const amountWei = BigInt(Math.floor(amount * 1e18));
+      const data = await _buildErc20TransferCalldata(info.deposit_address, amountWei);
+      let txHash;
+
+      if (choice === 'yeetwallet') {
+        await window.dontyeetReady;
+        if (!(await window.dontyeet.isUnlocked())) {
+          throw new Error('YeetWallet is locked — sign in first');
+        }
+        const from = await window.dontyeet.currentAddress();
+        const nonceHex    = await _rpcCall(info.bsc_rpc_url, 'eth_getTransactionCount', [from, 'pending']);
+        const gasPriceHex = await _rpcCall(info.bsc_rpc_url, 'eth_gasPrice', []);
+        const signed = await window.dontyeet.signCall(
+          info.yeet_token_address, '0', data,
+          BigInt(gasPriceHex).toString(),
+          90000, Number(BigInt(nonceHex)), info.chain_id
+        );
+        status.textContent = 'Broadcasting…';
+        txHash = await _rpcCall(info.bsc_rpc_url, 'eth_sendRawTransaction', [signed]);
+      } else {
+        // MetaMask / Trust Wallet — both EIP-1193 via window.ethereum.
+        if (!window.ethereum) throw new Error('Wallet not detected');
+        await window.ethereum.request({method:'eth_requestAccounts'});
+        await _ensureBscChain();
+        const from = (await window.ethereum.request({method:'eth_accounts'}))[0];
+        status.textContent = 'Confirm in wallet…';
+        txHash = await window.ethereum.request({method:'eth_sendTransaction', params:[{
+          from, to: info.yeet_token_address, data, gas: '0x15F90'
+        }]});
+      }
+
+      status.textContent = 'Recording deposit…';
+      const r = await fetch('/api/v1/credit/deposit', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+        body: JSON.stringify({ tx_hash: txHash })
+      });
+      const j = await r.json();
+      if (!r.ok || !j.success) throw new Error((j.error && j.error.message) || j.error || 'deposit POST failed');
+      status.innerHTML = '<span style="color:var(--yeet)">Credited '+(j.data.credited_amount||amount)+' YEET — balance now '+j.data.new_credit_balance+'</span>';
+      showToast('Deposit confirmed');
+      _onChainBalanceCache = { addr:null, value:null, at:0 };  // invalidate
+      setTimeout(() => { try { document.body.removeChild(overlay); } catch(_){} }, 2500);
+    } catch (e) {
+      status.innerHTML = '<span style="color:var(--red)">'+(e.message||String(e)).slice(0,100)+'</span>';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send';
+    }
+  };
+}
+
+// ---------- multichain wallet view (send + receive) ----------
+//
+// Same mnemonic, different chains, different addresses. Lists every
+// chain the wasm shim can derive an address for, fetches each chain's
+// native-coin balance in parallel, and offers a per-row Send button
+// that opens a chain-specific send form. Balance fetches resolve
+// independently so a slow / failing RPC on one chain doesn't gate the
+// rest of the list.
+
+async function openMultichainReceive(){
+  await window.dontyeetReady;
+  if (!(await window.dontyeet.isUnlocked())) {
+    showToast('Sign in to your wallet first'); return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+    +   '<div style="font-size:18px;font-weight:800">Other chains</div>'
+    +   '<button data-close="1" style="background:transparent;color:#888;border:none;cursor:pointer;font-size:18px">×</button>'
+    + '</div>'
+    + '<div style="font-size:11px;color:#888;margin-bottom:14px">Same seed phrase, an address per chain. Receive on any chain; send directly from here.</div>'
+    + '<div id="multichainBody" style="overflow-y:auto;font-size:13px">Loading addresses…</div>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
+
+  try {
+    const chains = await window.dontyeet.supportedChains();
+    // Derive every address in parallel — pure-crypto in-WASM, fast,
+    // and independent.
+    const rows = await Promise.all(chains.map(async (c) => {
+      try { return { ...c, address: await window.dontyeet.getChainAddress(c.id) }; }
+      catch (e) { return { ...c, address: null, error: (e.message||String(e)).slice(0, 80) }; }
+    }));
+
+    const body = document.getElementById('multichainBody');
+    body.innerHTML = rows.map((r, i) => {
+      if (!r.address) {
+        return ''
+          + '<div style="border-bottom:1px solid #1a1a1a;padding:10px 0">'
+          +   '<div style="font-weight:700;font-size:13px">'+r.name+'</div>'
+          +   '<div style="font-size:11px;color:var(--red)">'+(r.error||'derivation failed')+'</div>'
+          + '</div>';
+      }
+      return ''
+        + '<div style="border-bottom:1px solid #1a1a1a;padding:10px 0">'
+        +   '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">'
+        +     '<div style="font-weight:700;font-size:13px;color:#e8e8e8">'+r.name+'</div>'
+        +     '<div id="chainBal_'+i+'" style="font-size:12px;color:#888">…</div>'
+        +   '</div>'
+        +   '<div style="font-family:monospace;font-size:11px;color:#aaa;word-break:break-all;line-height:1.4;margin-bottom:6px">'+r.address+'</div>'
+        +   '<div style="display:flex;gap:6px">'
+        +     '<button data-send="'+i+'" style="flex:1;background:var(--yeet);color:#000;border:none;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">Send</button>'
+        +     '<button data-copy="'+i+'" style="background:#222;color:#e8e8e8;border:1px solid #333;border-radius:6px;padding:6px 10px;font-size:12px;cursor:pointer">Copy</button>'
+        +   '</div>'
+        + '</div>';
+    }).join('');
+
+    // Kick off balance fetches per chain after render — slow chains
+    // don't gate fast ones.
+    rows.forEach((r, i) => {
+      if (!r.address) return;
+      window.dontyeet.chainBalance(r.id, r.address)
+        .then(bal => {
+          const el = document.getElementById('chainBal_'+i);
+          if (el) el.textContent = bal.display + ' ' + bal.symbol;
+        })
+        .catch(() => {
+          const el = document.getElementById('chainBal_'+i);
+          if (el) el.textContent = '—';
+        });
+    });
+
+    body.addEventListener('click', (e) => {
+      const ds = e.target && e.target.dataset;
+      if (!ds) return;
+      if (ds.copy != null) {
+        const row = rows[Number(ds.copy)];
+        if (row && row.address) {
+          navigator.clipboard?.writeText(row.address);
+          showToast('Address copied');
+        }
+      } else if (ds.send != null) {
+        const row = rows[Number(ds.send)];
+        if (row && row.address) {
+          document.body.removeChild(overlay);
+          openChainSendModal(row);
+        }
+      }
+    });
+  } catch (err) {
+    document.getElementById('multichainBody').innerHTML =
+      '<div style="color:var(--red)">Failed to load chains: '+(err.message||err)+'</div>';
+  }
+}
+
+// Per-chain send modal. `chain` is the row object built by
+// openMultichainReceive: { id, name, symbol, decimals, address }.
+// The `address` field is the SENDER address (informational); the
+// recipient is typed by the user.
+async function openChainSendModal(chain){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:380px;width:100%">'
+    + '<div style="font-size:18px;font-weight:800;margin-bottom:4px">Send '+chain.symbol+'</div>'
+    + '<div style="font-size:11px;color:#888;margin-bottom:14px">on '+chain.name+'</div>'
+    + '<label style="font-size:11px;color:#aaa">Recipient address</label>'
+    + '<input id="csTo" type="text" placeholder="Paste address" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#e8e8e8;margin-top:4px;margin-bottom:10px;font-family:monospace;font-size:12px">'
+    + '<label style="font-size:11px;color:#aaa">Amount ('+chain.symbol+')</label>'
+    + '<input id="csAmount" type="text" inputmode="decimal" placeholder="0.0" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#e8e8e8;margin-top:4px;margin-bottom:14px;font-size:14px">'
+    + '<div id="csStatus" style="font-size:12px;min-height:18px;margin-bottom:10px"></div>'
+    + '<button id="csSendBtn" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:10px;font-weight:800;font-size:14px;margin-bottom:8px;cursor:pointer">Send</button>'
+    + '<button data-close="1" style="width:100%;background:transparent;color:#888;border:none;padding:8px;cursor:pointer;font-size:12px">Cancel</button>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
+
+  document.getElementById('csSendBtn').onclick = async () => {
+    const to = document.getElementById('csTo').value.trim();
+    const amountStr = document.getElementById('csAmount').value.trim();
+    const status = document.getElementById('csStatus');
+    const btn = document.getElementById('csSendBtn');
+    if (!to) {
+      status.innerHTML = '<span style="color:var(--red)">Enter a recipient</span>';
+      return;
+    }
+    let amountRaw;
+    try { amountRaw = _decimalToSmallestUnit(amountStr, chain.decimals); }
+    catch (e) {
+      status.innerHTML = '<span style="color:var(--red)">'+e.message+'</span>';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Signing & broadcasting…';
+    status.textContent = '';
+    try {
+      const txHash = await window.dontyeet.chainSend(chain.id, to, amountRaw);
+      status.innerHTML = '<span style="color:var(--yeet)">Sent! TX: '+txHash.slice(0, 20)+'…</span>';
+      showToast(amountStr+' '+chain.symbol+' sent');
+      setTimeout(() => { try { document.body.removeChild(overlay); } catch(_){} }, 2500);
+    } catch (err) {
+      status.innerHTML = '<span style="color:var(--red)">'+(err.message||String(err)).slice(0, 110)+'</span>';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send';
+    }
+  };
+}
+
+// Convert a user-typed decimal amount ("0.5", "1.234") to the chain's
+// smallest unit as a decimal string. BigInt arithmetic avoids float
+// precision loss on the larger-decimals chains (18-decimal EVM,
+// 12-decimal Kadena).
+function _decimalToSmallestUnit(amountStr, decimals){
+  if (!amountStr || !/^\d+(\.\d+)?$/.test(amountStr)) {
+    throw new Error('Enter a positive decimal amount');
+  }
+  const parts = amountStr.split('.');
+  const whole = BigInt(parts[0] || '0');
+  let frac = (parts[1] || '').slice(0, decimals);
+  frac = frac.padEnd(decimals, '0');
+  const total = whole * 10n ** BigInt(decimals) + BigInt(frac);
+  if (total <= 0n) throw new Error('Amount must be greater than 0');
+  return total.toString();
+}
+
+// ---------- cashout modal ----------
+
+async function openCashoutModal(maxCredit){
+  const jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  if (!jwt) { showToast('Sign in first'); return; }
+  let info;
+  try { info = await _fetchCreditInfo(); }
+  catch (e) { showToast('Could not load cashout info'); return; }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:380px;width:100%">'
+    + '<div style="font-size:18px;font-weight:800;margin-bottom:6px">Cashout YEET</div>'
+    + '<div style="font-size:11px;color:#888;margin-bottom:14px">Moves Credit back to your on-chain wallet. Processed within an hour by the payout worker.</div>'
+    + '<label style="font-size:11px;color:#aaa">Amount (YEET) — min '+info.min_cashout+', available '+(maxCredit||0)+'</label>'
+    + '<input id="coAmount" type="number" min="'+info.min_cashout+'" step="0.01" placeholder="'+info.min_cashout+'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#e8e8e8;margin-top:4px;margin-bottom:14px;font-size:14px">'
+    + '<div id="coStatus" style="font-size:12px;min-height:18px;margin-bottom:10px"></div>'
+    + '<button id="coSendBtn" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:10px;font-weight:800;font-size:14px;margin-bottom:8px;cursor:pointer">Request Cashout</button>'
+    + '<button data-close="1" style="width:100%;background:transparent;color:#888;border:none;padding:8px;cursor:pointer;font-size:12px">Cancel</button>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
+
+  document.getElementById('coSendBtn').onclick = async () => {
+    const amount = parseFloat(document.getElementById('coAmount').value);
+    const status = document.getElementById('coStatus');
+    const btn = document.getElementById('coSendBtn');
+    if (!isFinite(amount) || amount < info.min_cashout) {
+      status.innerHTML = '<span style="color:var(--red)">Min cashout is '+info.min_cashout+' YEET</span>';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    try {
+      const r = await fetch('/api/v1/credit/cashout', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+        body: JSON.stringify({ amount })
+      });
+      const j = await r.json();
+      if (!r.ok || !j.success) throw new Error((j.error && j.error.message) || j.error || 'cashout failed');
+      status.innerHTML = '<span style="color:var(--yeet)">Queued. '+amount+' YEET will land in your wallet within an hour. Remaining credit: '+j.data.remaining_credit+'</span>';
+      showToast('Cashout queued');
+      setTimeout(() => { try { document.body.removeChild(overlay); } catch(_){} }, 3000);
+    } catch (e) {
+      status.innerHTML = '<span style="color:var(--red)">'+(e.message||String(e)).slice(0,100)+'</span>';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Request Cashout';
+    }
+  };
+}
+
+// =================== NFT transfer (stub) ===================
+//
+// Will eventually sign a `safeTransferFrom(from,to,tokenId)` call via
+// the chosen wallet provider. Stubbed: shows the form + a disabled
+// confirm button so the entry point is discoverable.
+function openTransferNftModal(tokenId){
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  overlay.innerHTML = ''
+    + '<div style="background:#111;border:1px solid #222;border-radius:14px;padding:22px;max-width:380px;width:100%">'
+    + '<div style="font-size:18px;font-weight:800;margin-bottom:6px">Transfer NFT</div>'
+    + '<div style="font-size:12px;color:#888;margin-bottom:14px">Token #'+(tokenId||'—')+'</div>'
+    + '<label style="font-size:11px;color:#aaa">Recipient address or @handle</label>'
+    + '<input type="text" placeholder="0x… or @yeet" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#e8e8e8;margin-top:4px;margin-bottom:14px;font-family:monospace;font-size:12px">'
+    + '<button disabled style="width:100%;background:#333;color:#666;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:not-allowed;margin-bottom:8px">Send (coming soon)</button>'
+    + '<button data-close="1" style="width:100%;background:transparent;color:#888;border:none;padding:8px;cursor:pointer;font-size:12px">Cancel</button>'
+    + '</div>';
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay || (e.target.dataset && e.target.dataset.close)) {
+      document.body.removeChild(overlay);
+    }
+  });
+  document.body.appendChild(overlay);
 }
 function openSettingsModal(){
   // Prefill from localStorage first (instant)
@@ -2146,6 +3202,15 @@ async function uploadProfileImage(input, kind){
   window.loadRSS = loadRSS;
   window.closeNFTModal = closeNFTModal;
   window.mintNFT = mintNFT;
+  window.pickWalletProvider = pickWalletProvider;
+  window.openNftGallery = openNftGallery;
+  window.openTransferNftModal = openTransferNftModal;
+  window.openWalletCard = openWalletCard;
+  window.openDepositModal = openDepositModal;
+  window.openCashoutModal = openCashoutModal;
+  window.openMultichainReceive = openMultichainReceive;
+  window.openChainSendModal = openChainSendModal;
+  window.showInsufficientYeetToast = showInsufficientYeetToast;
   window.openSettingsModal = openSettingsModal;
   window.showLoginGate = showLoginGate;
   window.uploadProfileImage = uploadProfileImage;
@@ -3089,7 +4154,15 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
       }
     } else {
       var msg = (res.d && res.d.error && res.d.error.message) || window.t('toast.unlockFailed');
-      showToast(window.t('common.error')+': '+msg, 'error');
+      // "Insufficient YEET" gets the dedicated toast with a Deposit
+      // shortcut pre-filled to this post's PPV price — one tap to fix
+      // the balance and try again. Other errors fall through to the
+      // generic toast.
+      if (/insufficient yeet/i.test(msg) && typeof window.showInsufficientYeetToast === 'function') {
+        window.showInsufficientYeetToast(price);
+      } else {
+        showToast(window.t('common.error')+': '+msg, 'error');
+      }
       if(btn){btn.disabled=false; btn.textContent=window.t('ppv.unlock');}
     }
   }).catch(function(){
@@ -3413,27 +4486,107 @@ function showExternalLinkWarning(e,url){
     });
   }
 
-  // Proper BIP39 + BIP44 (m/44'/60'/0'/0/0) wallet generation. Replaces
-  // the legacy hash+LCG scheme that produced non-recoverable addresses.
-  // Returns { words:[...], address:'0x...' }. Throws if ethers fails to
-  // load (network) — caller surfaces a user-facing error.
-  async function _generateWallet(){
-    var ethers = await _waitForEthers();
-    // 128 bits of crypto-strong entropy → 12-word BIP39 mnemonic with a
-    // valid checksum, identical to MetaMask / Trezor / Ledger.
-    var entropy = window.crypto.getRandomValues(new Uint8Array(16));
-    var hex = '0x';
-    for(var i=0;i<entropy.length;i++) hex += entropy[i].toString(16).padStart(2,'0');
-    var mnemonic = ethers.Mnemonic.fromEntropy(hex);
-    // HDNodeWallet.fromPhrase derives at the default Ethereum/BSC path
-    // m/44'/60'/0'/0/0 (BIP44), giving an address compatible with every
-    // EVM wallet on both testnet and mainnet.
-    var w = ethers.HDNodeWallet.fromPhrase(mnemonic.phrase);
+  // Generate the user's non-custodial wallet via the DontYeet WASM
+  // bundle. Unlike the previous ethers-only path, this *encrypts* the
+  // BIP-39 mnemonic at rest in localStorage under `password` (AES-GCM
+  // with an Argon2id-derived key) — so the user ends up with a real
+  // persisted in-browser wallet, not just an address they would have to
+  // re-import elsewhere to use. The seed words are still returned for
+  // the backup-display flow; after that, the only retrieval paths are
+  // `dontyeet.exportMnemonic()` (requires unlocked session) or restoring
+  // from the words the user wrote down.
+  //
+  // Returns { words:[...], address:'0x...' }. Throws if the wasm bundle
+  // fails to load or if a wallet already exists in this browser.
+  async function _generateWallet(password){
+    await window.dontyeetReady;
+    var res = await window.dontyeet.createWallet(password);
     return {
-      words: mnemonic.phrase.split(/\s+/),
-      address: w.address.toLowerCase()
+      words: res.mnemonic.split(/\s+/),
+      address: res.address.toLowerCase()
     };
   }
+
+  // Ask MetaMask to sign the wallet-derivation message and return the
+  // raw hex signature. The signature is purely client-side material;
+  // the backend never sees it. A different message is used than for the
+  // E2EE identity key so the two derivations stay independent.
+  async function _signWalletDerivationMessage(addr){
+    var SIGN_MESSAGE = 'DontYeet wallet derivation v1';
+    var sig = await window.ethereum.request({
+      method:'personal_sign', params:[SIGN_MESSAGE, addr]
+    });
+    if (typeof sig !== 'string' || !sig.startsWith('0x'))
+      throw new Error('bad MetaMask signature');
+    return sig;
+  }
+
+  // SHA-256 of a UTF-8 string, returned as a lowercase hex string.
+  async function _sha256Hex(input){
+    var bytes = new TextEncoder().encode(input);
+    var digest = new Uint8Array(await window.crypto.subtle.digest('SHA-256', bytes));
+    var out = '';
+    for (var i=0; i<digest.length; i++) out += digest[i].toString(16).padStart(2,'0');
+    return out;
+  }
+
+  // Create or unlock the DontYeetWallet for a MetaMask-authenticated
+  // user. Idempotent — safe to call on every login.
+  //
+  // Design: both the wallet password AND the BIP-39 mnemonic entropy
+  // are deterministically derived from one MetaMask signature on a
+  // fixed message (different from the auth nonce signature). Same
+  // MetaMask key → same wallet on every device, so a returning user
+  // on a new browser auto-reproduces their existing wallet — no
+  // seed-phrase backup or import step.
+  //
+  // Domain-separated derivations from the same signature:
+  //   pw     = sha256("pw|"      + signature)   (wallet encryption password)
+  //   entropy = sha256("entropy|" + signature)  (first 16 bytes → 12-word BIP-39)
+  async function _attachDontYeetWalletForMetaMask(addr){
+    await window.dontyeetReady;
+    var sig = await _signWalletDerivationMessage(addr);
+    var pw  = await _sha256Hex('pw|' + sig);
+    if (await window.dontyeet.hasWallet()) {
+      await window.dontyeet.login(pw);
+    } else {
+      var entropyFullHex = await _sha256Hex('entropy|' + sig);
+      var entropyHex = '0x' + entropyFullHex.slice(0, 32);  // 16 bytes → 12 words
+      var ethers = await _waitForEthers();
+      var mnemonic = ethers.Mnemonic.fromEntropy(entropyHex).phrase;
+      await window.dontyeet.importWallet(mnemonic, pw);
+    }
+    // Mobile-only offer to add biometric on top of the MetaMask-
+    // derived password. Touch ID unlocks the wallet without the
+    // second MetaMask popup on returning visits.
+    _maybeOfferBiometric(pw);
+  }
+
+  // Offer to enroll the platform authenticator's biometric (Touch ID,
+  // Face ID, Windows Hello) as a no-password unlock factor. Mobile-
+  // only by default per product call; respects a one-time dismissal so
+  // we never nag the user twice. Soft-fails on every error path — the
+  // password unlock is always still available.
+  function _maybeOfferBiometric(password){
+    if (!window.dontyeetBio || !password) return;
+    if (!window.dontyeetBio.isSupported()) return;
+    if (!window.dontyeetBio.isMobile())     return;
+    if (window.dontyeetBio.isRegistered())  return;
+    if (window.dontyeetBio.promptDismissed()) return;
+    // Defer so the welcome toast lands first.
+    setTimeout(async () => {
+      const yes = confirm('Enable Touch ID / Face ID for faster wallet unlock next time?');
+      if (!yes) { window.dontyeetBio.dismissPrompt(); return; }
+      try {
+        await window.dontyeetBio.register(password);
+        if (typeof _toast === 'function') _toast('Biometric unlock enabled');
+      } catch (e) {
+        console.error('Biometric enrollment failed:', e);
+        window.dontyeetBio.dismissPrompt();
+      }
+    }, 1500);
+  }
+  window._maybeOfferBiometric = _maybeOfferBiometric;
 
   // Re-derive a wallet address from a seed phrase and compare to the
   // expected address. Used by the verify-recovery-phrase flow so a user
@@ -3633,6 +4786,13 @@ function showExternalLinkWarning(e,url){
       if(!vr.ok)throw new Error((vd.error&&vd.error.message)||'Auth failed');
       var payload=vd.data||vd;
       var tok=payload.access_token||payload.token||'';
+      // Create or unlock the user's separate DontYeetWallet. MetaMask
+      // here is purely the login channel; the in-app wallet is a
+      // distinct non-custodial key generated below. Soft-fail: if the
+      // wallet attach hiccups the user is still logged in and can
+      // retry from settings.
+      try { await _attachDontYeetWalletForMetaMask(addr); }
+      catch(walletErr){ console.error('DontYeetWallet attach failed (login proceeds):', walletErr); }
       _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
       window.closeAuthModal();
       _toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
@@ -3669,11 +4829,19 @@ function showExternalLinkWarning(e,url){
     var btn = document.getElementById('regNext1Btn');
     if(btn){ btn.disabled = true; btn.dataset.oldText = btn.textContent; btn.textContent = '...'; }
     try {
-      var gen = await _generateWallet();
+      var gen = await _generateWallet(p);
       _seedWords = gen.words;
       _regData = {username:u, email:e, password:p, wallet_address: gen.address, display_name:u, consent:true};
     } catch(err){
-      _showErr('Could not generate wallet (network).');
+      var msg = (err && err.message) ? err.message : '';
+      // `dontyeet_account` returns "AlreadyExists" when a wallet is
+      // already in this browser's localStorage (a stale registration
+      // attempt or another Yeet account on the same browser).
+      if (msg.indexOf('AlreadyExists') >= 0 || msg.indexOf('already exists') >= 0) {
+        _showErr('A wallet already exists on this device. Log in instead, or clear site data to start over.');
+      } else {
+        _showErr('Could not create wallet: ' + (msg || 'unknown error'));
+      }
       if(btn){ btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Next'; }
       return;
     }
@@ -3710,6 +4878,10 @@ function showExternalLinkWarning(e,url){
       window.closeAuthModal();
       _toast('Welcome to YEET, @'+(payload.username||_regData.username));
       if(payload.email_verified===false)_showVerifyBanner(_regData.email);
+      // Mobile: offer biometric enrollment now that the wallet exists
+      // and we still have the password in scope. No-op on desktop or
+      // when the user has previously dismissed the prompt.
+      _maybeOfferBiometric(_regData.password);
     }catch(e){_showErr(e.message)}
   };
   window.copySeedAuth = function(){navigator.clipboard?.writeText(_seedWords.join(' '));_toast('Seed phrase copied - store offline!')};
@@ -5555,7 +6727,12 @@ info@blocksocial.eu</address>
       });
       if(!r.ok){
         var d = await r.json().catch(function(){return {};});
-        window.showToast((d.error && d.error.message) || T('common.error'),'error');
+        var msg = (d.error && d.error.message) || T('common.error');
+        if (/insufficient yeet/i.test(msg) && typeof window.showInsufficientYeetToast === 'function') {
+          window.showInsufficientYeetToast(amt);
+        } else {
+          window.showToast(msg,'error');
+        }
         return;
       }
       window.showToast(T('dm.tipSent',{amount:amt}),'success');
