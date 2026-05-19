@@ -35,6 +35,16 @@ fn check_admin(secret: &str) -> AppResult<()> {
     Ok(())
 }
 
+// Cheap secret-check endpoint the dashboard can call on open to
+// surface a precise diagnostic ("bad secret" vs. "DB error" vs.
+// "network") instead of conflating them on every metric call.
+pub async fn ping(
+    Query(q): Query<ActionsQuery>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    check_admin(&q.secret)?;
+    Ok(Json(ApiResponse::ok("ok")))
+}
+
 async fn resolve_target(state: &AppState, address_or_id: &str)
     -> AppResult<(Uuid, Option<String>)>
 {

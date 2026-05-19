@@ -5264,7 +5264,18 @@ info@blocksocial.eu</address>
     _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
     try {
       var r = await fetch('/api/v1/admin/stats?secret=' + encodeURIComponent(secret()));
-      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret or backend error.</div>'; return; }
+      if(!r.ok){
+        var ed = await r.json().catch(function(){return{};});
+        var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
+        _adminContent.innerHTML =
+            '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
+          + '<b>Admin call failed:</b> '+ esc(msg) +' (status '+ r.status +')'
+          + (r.status === 401
+              ? '<div style="margin-top:10px;color:#ffb84d;font-size:12px">The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.</div>'
+              : '')
+          + '</div>';
+        return;
+      }
       var d = await r.json();
       var s = (d && d.data) || {};
       _adminContent.innerHTML =
@@ -5286,7 +5297,18 @@ info@blocksocial.eu</address>
     _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
     try {
       var r = await fetch('/api/v1/admin/reports?secret=' + encodeURIComponent(secret()));
-      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret or backend error.</div>'; return; }
+      if(!r.ok){
+        var ed = await r.json().catch(function(){return{};});
+        var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
+        _adminContent.innerHTML =
+            '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
+          + '<b>Admin call failed:</b> '+ esc(msg) +' (status '+ r.status +')'
+          + (r.status === 401
+              ? '<div style="margin-top:10px;color:#ffb84d;font-size:12px">The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.</div>'
+              : '')
+          + '</div>';
+        return;
+      }
       var d = await r.json();
       var posts = (d && d.data) || [];
       if(!posts.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No open reports.</div>'; return; }
