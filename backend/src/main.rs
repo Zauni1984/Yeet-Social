@@ -153,6 +153,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/admin/posts/:id",      delete(api::report::admin_remove_post))
         .route("/api/v1/admin/posts/:id/hard", delete(api::report::admin_hard_delete_post))
         .route("/api/v1/admin/posts/:id/unflag", post(api::report::admin_unflag_post))
+        .route("/api/v1/admin/posts/:id/restore", post(api::report::admin_restore_post))
         .route("/api/v1/admin/users/:address/ban-post",   post(api::admin_mod::ban_post))
         .route("/api/v1/admin/users/:address/unban-post", post(api::admin_mod::unban_post))
         .route("/api/v1/admin/users/:address/delete",     post(api::admin_mod::delete_user))

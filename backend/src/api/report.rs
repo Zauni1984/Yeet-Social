@@ -13,9 +13,11 @@ pub struct ReportRequest {
 pub struct AdminQuery {
     pub secret: Option<String>,
     pub page: Option<i64>,
+    /// "all" (default) | "flagged" | "removed" | "active"
+    pub filter: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, sqlx::FromRow)]
 pub struct ReportedPost {
     pub id: Uuid,
     pub content: String,
@@ -88,7 +90,10 @@ fn check_admin(secret: &str) -> AppResult<()> {
     Ok(())
 }
 
-/// GET /api/v1/admin/posts?secret=X&page=1 — list all posts with report info
+/// GET /api/v1/admin/posts?secret=X&page=1&filter=all|flagged|removed|active
+/// Lists posts with their report + removal state. Hard-purged posts
+/// (the messaging-cleanup job's 30-day cap, the ephemeral-post
+/// cleanup, etc.) are NOT visible — they no longer exist in the DB.
 pub async fn admin_list_posts(
     State(state): State<AppState>,
     Query(q): Query<AdminQuery>,
@@ -96,16 +101,26 @@ pub async fn admin_list_posts(
     check_admin(q.secret.as_deref().unwrap_or(""))?;
     let page = q.page.unwrap_or(1).max(1);
     let offset = (page - 1) * 50;
-    let posts = sqlx::query_as!(ReportedPost,
-        r#"SELECT p.id, p.content, p.author_id,
-            u.display_name as author_name,
-            p.report_count, p.is_flagged, p.is_removed,
-            p.created_at, p.removed_reason
+    let where_clause = match q.filter.as_deref().unwrap_or("all") {
+        "flagged" => "WHERE p.is_flagged = TRUE AND p.is_removed = FALSE",
+        "removed" => "WHERE p.is_removed = TRUE",
+        "active"  => "WHERE p.is_removed = FALSE",
+        _ /* all */ => "",
+    };
+    let sql = format!(
+        "SELECT p.id, p.content, p.author_id,
+                u.display_name AS author_name,
+                p.report_count, p.is_flagged, p.is_removed,
+                p.created_at, p.removed_reason
            FROM posts p
            LEFT JOIN users u ON u.id = p.author_id
-           ORDER BY p.is_flagged DESC, p.report_count DESC, p.created_at DESC
-           LIMIT 50 OFFSET $1"#, offset
-    ).fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+           {where_clause}
+          ORDER BY p.is_flagged DESC, p.report_count DESC, p.created_at DESC
+          LIMIT 50 OFFSET $1"
+    );
+    let posts: Vec<ReportedPost> = sqlx::query_as::<_, ReportedPost>(&sql)
+        .bind(offset)
+        .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(posts)))
 }
 
@@ -153,6 +168,25 @@ pub async fn admin_hard_delete_post(
     sqlx::query("DELETE FROM posts WHERE id = $1")
         .bind(post_id)
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(())))
+}
+
+/// POST /api/v1/admin/posts/:id/restore — un-remove a soft-deleted post
+pub async fn admin_restore_post(
+    State(state): State<AppState>,
+    Path(post_id): Path<Uuid>,
+    Json(req): Json<RemoveRequest>,
+) -> AppResult<Json<ApiResponse<()>>> {
+    check_admin(&req.secret)?;
+    sqlx::query(
+        "UPDATE posts
+            SET is_removed = FALSE,
+                removed_at = NULL,
+                removed_reason = NULL
+          WHERE id = $1"
+    )
+    .bind(post_id)
+    .execute(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(())))
 }
 

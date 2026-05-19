@@ -187,6 +187,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .adm-metric .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
 .adm-btn{padding:6px 10px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:12px;font-weight:600;margin-right:4px}
 .adm-btn:hover{border-color:var(--yeet);color:var(--yeet)}
+.adm-btn.on{border-color:var(--yeet);color:var(--yeet);background:rgba(200,255,0,.08)}
 .adm-btn.danger{border-color:#5a2a2a;color:#ff7f7f}
 .adm-btn.danger:hover{background:#3a1a1a}
 .adm-btn.warn{border-color:#5a4a1a;color:#ffb84d}
@@ -4796,7 +4797,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
     <h1>&#128737; <span data-i18n="admin.title">Admin dashboard</span></h1>
     <div id="adminTabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin:14px 0 18px;flex-wrap:wrap">
       <button class="adm-tab" data-tab="overview">Overview</button>
-      <button class="adm-tab" data-tab="reports">Reports</button>
+      <button class="adm-tab" data-tab="posts">Posts</button>
       <button class="adm-tab" data-tab="users">Users</button>
       <button class="adm-tab" data-tab="audit">Audit log</button>
     </div>
@@ -5250,7 +5251,7 @@ info@blocksocial.eu</address>
       b.classList.toggle('on', b.dataset.tab === name);
     });
     if(name === 'overview') renderOverview();
-    else if(name === 'reports') renderReports();
+    else if(name === 'posts') renderPosts();
     else if(name === 'users') renderUsers();
     else if(name === 'audit') renderAudit();
   }
@@ -5293,14 +5294,42 @@ info@blocksocial.eu</address>
   }
 
   // --- Reports ---
-  async function renderReports(){
-    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+  // Reports tab is now a full Posts browser: every post in the DB
+  // (including soft-removed ones) is listed, filtered by state, with
+  // the appropriate action set per row. Posts that were hard-deleted
+  // or auto-purged by retention are simply not in the DB anymore so
+  // they cannot show up here.
+  var _postsFilter = 'flagged';
+  var _postsPage = 1;
+  async function renderPosts(){
+    _adminContent.innerHTML =
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
+      +   '<button class="adm-btn" data-pf="flagged">Flagged</button>'
+      +   '<button class="adm-btn" data-pf="active">Active</button>'
+      +   '<button class="adm-btn" data-pf="removed">Removed</button>'
+      +   '<button class="adm-btn" data-pf="all">All</button>'
+      + '</div>'
+      + '<div id="admPostList"></div>'
+      + '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;align-items:center">'
+      +   '<button class="adm-btn" onclick="admPostPagePrev()" id="admPostPrev">&larr; Prev</button>'
+      +   '<span id="admPostPageLabel" style="color:var(--muted);font-size:12px">Page '+ _postsPage +'</span>'
+      +   '<button class="adm-btn" onclick="admPostPageNext()">Next &rarr;</button>'
+      + '</div>';
+    [].forEach.call(document.querySelectorAll('#adminContent .adm-btn[data-pf]'), function(b){
+      if(b.dataset.pf === _postsFilter) b.classList.add('on');
+      b.onclick = function(){ _postsFilter = b.dataset.pf; _postsPage = 1; renderPosts(); };
+    });
+    var list = document.getElementById('admPostList');
+    list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">Loading...</div>';
     try {
-      var r = await fetch('/api/v1/admin/reports?secret=' + encodeURIComponent(secret()));
+      var url = '/api/v1/admin/posts?secret=' + encodeURIComponent(secret())
+              + '&filter=' + encodeURIComponent(_postsFilter)
+              + '&page=' + _postsPage;
+      var r = await fetch(url);
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
-        _adminContent.innerHTML =
+        list.innerHTML =
             '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
           + '<b>Admin call failed:</b> '+ esc(msg) +' (status '+ r.status +')'
           + (r.status === 401
@@ -5311,26 +5340,48 @@ info@blocksocial.eu</address>
       }
       var d = await r.json();
       var posts = (d && d.data) || [];
-      if(!posts.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No open reports.</div>'; return; }
-      _adminContent.innerHTML = posts.map(function(p){
+      var prev = document.getElementById('admPostPrev');
+      if(prev) prev.disabled = _postsPage <= 1;
+      var pl = document.getElementById('admPostPageLabel');
+      if(pl) pl.textContent = 'Page '+ _postsPage +' &middot; '+ posts.length +' shown';
+      if(!posts.length){
+        list.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No posts match this filter.</div>';
+        return;
+      }
+      list.innerHTML = posts.map(function(p){
         var snippet = esc((p.content || '').slice(0, 240));
+        var meta = '@'+ esc(p.author_name||'user') +' &middot; '+ fmtTime(p.created_at);
+        var badges = '';
+        if(p.is_flagged && !p.is_removed) badges += ' <span class="adm-badge flagged">'+ (p.report_count||0) +' reports</span>';
+        if(p.is_removed) badges += ' <span class="adm-badge banned">removed</span>';
+        if(!p.is_flagged && !p.is_removed) badges += ' <span class="adm-badge ok">active</span>';
+        var reason = p.removed_reason ? '<div style="color:#ff7f7f;font-size:11px;margin-top:4px">Reason: '+ esc(p.removed_reason) +'</div>' : '';
+        // Action set varies by post state.
+        var actions = '';
+        if(p.is_removed){
+          actions =   '<button class="adm-btn" onclick="adminRestorePost(\''+ p.id +'\')">Restore</button>'
+                   + '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">Hard delete</button>';
+        } else {
+          if(p.is_flagged) actions += '<button class="adm-btn" onclick="adminUnflagPost(\''+ p.id +'\')">Unflag</button>';
+          actions +=   '<button class="adm-btn warn" onclick="adminRemovePost(\''+ p.id +'\')">Remove</button>'
+                     + '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">Hard delete</button>';
+        }
+        var snippetStyle = p.is_removed ? 'text-decoration:line-through;color:#888' : 'color:#eee';
         return '<div class="adm-card">'
           + '<div style="flex:1;min-width:0">'
-          +   '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">@'+ esc(p.author_name||'user') +' &middot; '+ fmtTime(p.created_at) +' &middot; '
-          +     '<span class="adm-badge flagged">'+ (p.report_count||0) +' reports</span></div>'
-          +   '<div style="font-size:13px;white-space:pre-wrap;word-break:break-word">'+ snippet +'</div>'
+          +   '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">'+ meta + badges +'</div>'
+          +   '<div style="font-size:13px;white-space:pre-wrap;word-break:break-word;'+ snippetStyle +'">'+ snippet +'</div>'
+          +   reason
           + '</div>'
-          + '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">'
-          +   '<button class="adm-btn" onclick="adminUnflagPost(\''+ p.id +'\')">Unflag</button>'
-          +   '<button class="adm-btn warn" onclick="adminRemovePost(\''+ p.id +'\')">Remove</button>'
-          +   '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">Hard delete</button>'
-          + '</div>'
+          + '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">'+ actions +'</div>'
           + '</div>';
       }).join('');
     } catch(e){
-      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+      list.innerHTML = '<div style="color:#ff6666;padding:14px">Network error.</div>';
     }
   }
+  window.admPostPagePrev = function(){ if(_postsPage > 1){ _postsPage--; renderPosts(); } };
+  window.admPostPageNext = function(){ _postsPage++; renderPosts(); };
   async function _postSecret(path, extra){
     var body = Object.assign({ secret: secret() }, extra || {});
     var r = await fetch(path, {
@@ -5342,8 +5393,13 @@ info@blocksocial.eu</address>
   }
   window.adminUnflagPost = async function(id){
     var r = await _postSecret('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/unflag', {});
-    if(r.ok){ window.showToast('Unflagged','success'); renderReports(); }
+    if(r.ok){ window.showToast('Unflagged','success'); renderPosts(); }
     else window.showToast('Unflag failed','error');
+  };
+  window.adminRestorePost = async function(id){
+    var r = await _postSecret('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/restore', {});
+    if(r.ok){ window.showToast('Post restored','success'); renderPosts(); }
+    else window.showToast('Restore failed','error');
   };
   window.adminRemovePost = async function(id){
     var reason = prompt('Removal reason (visible to author):', '');
@@ -5355,7 +5411,7 @@ info@blocksocial.eu</address>
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ secret: secret(), reason: reason })
     });
-    if(r.ok){ window.showToast('Post removed','success'); renderReports(); }
+    if(r.ok){ window.showToast('Post removed','success'); renderPosts(); }
     else window.showToast('Remove failed','error');
   };
   window.adminHardDeletePost = async function(id){
@@ -5365,7 +5421,7 @@ info@blocksocial.eu</address>
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ secret: secret(), reason: 'admin hard delete' })
     });
-    if(r.ok){ window.showToast('Post hard-deleted','success'); renderReports(); }
+    if(r.ok){ window.showToast('Post hard-deleted','success'); renderPosts(); }
     else window.showToast('Hard delete failed','error');
   };
 
