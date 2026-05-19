@@ -1,0 +1,35 @@
+[package]
+name = "dontyeet-crypto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Offline cryptographic operations — BIP-39/SLIP-39, BIP-44, AES-256-GCM, ML-KEM, Argon2id. Zero network/IO."
+
+[dependencies]
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+zeroize.workspace = true
+subtle.workspace = true
+rand.workspace = true
+
+# Mnemonic + HD derivation
+bip39.workspace = true
+bip32.workspace = true
+
+# Encryption — classical (quantum-safe symmetric)
+aes.workspace = true
+aes-gcm.workspace = true
+
+# Encryption — post-quantum
+ml-kem.workspace = true
+
+# Password hashing
+argon2.workspace = true
+
+# Hash functions
+sha2.workspace = true
+sha3.workspace = true
+hmac.workspace = true
+hkdf.workspace = true

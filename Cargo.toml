@@ -1,25 +1,119 @@
 [workspace]
-members = ["backend", "shared", "wallet"]
 resolver = "2"
+members = [
+    "backend",
+    "shared",
+    "wallet",
+    # Vendored crypto-engine crates (formerly external; vendored so
+    # the YeetSocial repo is self-contained and has no path
+    # dependencies outside its own tree).
+    "crates/dontyeet-primitives",
+    "crates/dontyeet-crypto",
+    "crates/dontyeet-storage",
+    "crates/dontyeet-chain",
+    "crates/dontyeet-account",
+    "crates/dontyeet-network",
+    "crates/dontyeet-chain-evm",
+    "crates/dontyeet-chain-bitcoin",
+    "crates/dontyeet-chain-solana",
+    "crates/dontyeet-chain-cardano",
+    "crates/dontyeet-chain-xrp",
+    "crates/dontyeet-chain-algorand",
+    "crates/dontyeet-chain-tron",
+    "crates/dontyeet-chain-kaspa",
+    "crates/dontyeet-chain-kadena",
+]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
 authors = ["Yeet Team <dev@yeet.social>"]
 
+# Shared dependency versions inherited by workspace members via
+# `name.workspace = true`. Backend pins its own direct versions
+# (e.g. thiserror "1") and is unaffected by these defaults.
 [workspace.dependencies]
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["full"] }
-tracing = "0.1"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1", features = ["v4", "serde"] }
-thiserror = "1"
+# Error handling
+thiserror = "2"
 anyhow = "1"
 
-# Optimised release profile for the backend binary. Cargo only honours
-# `[profile.*]` declared at the workspace root, so the matching block
-# that previously lived in `backend/Cargo.toml` is consolidated here.
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Crypto — secrets
+zeroize = { version = "1", features = ["derive"] }
+subtle = "2"
+rand = "0.8"
+
+# Crypto — BIP39/BIP32
+bip39 = "2"
+bip32 = "0.5"
+
+# Crypto — algorithms
+aes = "0.8"
+aes-gcm = "0.10"
+ctr = "0.9"
+argon2 = "0.5"
+sha2 = "0.10"
+sha3 = "0.10"
+hmac = "0.12"
+hkdf = "0.12"
+
+# Crypto — post-quantum
+ml-kem = "0.2"
+
+# Elliptic curves
+k256 = { version = "0.13", features = ["ecdsa", "sha256"] }
+ed25519-dalek = "2"
+
+# Networking
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "socks"], default-features = false }
+url = "2"
+percent-encoding = "2"
+
+# Web framework
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+
+# Encoding
+hex = "0.4"
+bs58 = "0.5"
+bech32 = "0.11"
+rlp = "0.6"
+data-encoding = "2"
+rmp-serde = "1"
+minicbor = { version = "0.25", features = ["derive", "alloc"] }
+
+# Hashing (additional)
+blake2 = "0.10"
+base64 = "0.22"
+
+# Configuration
+toml = "0.8"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Identifiers
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Testing
+proptest = "1"
+mockall = "0.13"
+
+# Optimised release profile for the backend binary + wallet wasm.
+# Cargo only honours [profile.*] at the workspace root.
 [profile.release]
 opt-level     = 3
 lto           = true

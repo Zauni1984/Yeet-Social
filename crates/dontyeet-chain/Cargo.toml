@@ -1,0 +1,17 @@
+[package]
+name = "dontyeet-chain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Chain-agnostic wallet orchestration — validate, preflight, delegate, format"
+
+[dependencies]
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

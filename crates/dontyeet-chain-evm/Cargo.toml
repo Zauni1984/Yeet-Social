@@ -1,0 +1,56 @@
+[package]
+name = "dontyeet-chain-evm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "EVM chain plugin — Ethereum, Polygon, BNB, Avalanche, Sonic"
+
+[features]
+# `rpc` pulls in everything needed to talk to a node: the ChainPlugin
+# trait impl, JSON-RPC client, nonce manager, transaction broadcasting,
+# fee estimation, and history fetcher. Default-on so existing server
+# consumers (dontyeet-app) keep working without a Cargo.toml change.
+#
+# Disabling it (e.g. `default-features = false` in WASM consumers)
+# leaves only the pure-crypto pieces — key derivation, EIP-55 address
+# encoding, RLP transaction encoding — which compile to wasm32 cleanly.
+default = ["rpc"]
+rpc = [
+    "dep:dontyeet-chain",
+    "dep:dontyeet-network",
+    "dep:async-trait",
+    "dep:tokio",
+    "dep:tracing",
+]
+
+[dependencies]
+# Always-on (pure crypto + types — WASM-compatible).
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+dontyeet-crypto = { path = "../dontyeet-crypto" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+hex.workspace = true
+sha3.workspace = true
+k256.workspace = true
+rlp.workspace = true
+zeroize.workspace = true
+
+# RPC-only (gated behind `rpc` feature).
+dontyeet-chain = { path = "../dontyeet-chain", optional = true }
+dontyeet-network = { path = "../dontyeet-network", optional = true }
+async-trait = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["sync"], optional = true }
+
+# Browser-side balance reads (Phase M.3.2). The `wasm` module uses
+# `gloo_net::http::Request` to talk to public RPCs directly from inside
+# the WASM bundle, sidestepping the server. Lives outside the `rpc`
+# feature gate because `gloo-net` is fundamentally browser-only — and
+# only enters the dep graph on `wasm32` targets.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-net = { version = "0.6", features = ["json"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

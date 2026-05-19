@@ -23,23 +23,23 @@ crate-type = ["cdylib", "rlib"]
 # pieces (signing, RLP, address encoding).
 # ---------------------------------------------------------------------------
 [dependencies]
-dontyeet-primitives = { package = "hyperhub-primitives", path = "../../HyperHUb/crates/hyperhub-primitives" }
-dontyeet-crypto     = { package = "hyperhub-crypto",     path = "../../HyperHUb/crates/hyperhub-crypto" }
-dontyeet-storage    = { package = "hyperhub-storage",    path = "../../HyperHUb/crates/hyperhub-storage" }
-dontyeet-account    = { package = "hyperhub-account",    path = "../../HyperHUb/crates/hyperhub-account" }
+dontyeet-primitives = { path = "../crates/dontyeet-primitives" }
+dontyeet-crypto     = { path = "../crates/dontyeet-crypto" }
+dontyeet-storage    = { path = "../crates/dontyeet-storage" }
+dontyeet-account    = { path = "../crates/dontyeet-account" }
 
 # Per-chain pure-crypto crates. `default-features = false` drops the
-# `rpc` module from each — the browser shim only needs the
-# address-derivation paths, not the server-side network plumbing.
-dontyeet-chain-evm      = { package = "hyperhub-chain-evm",      path = "../../HyperHUb/crates/hyperhub-chain-evm",      default-features = false }
-dontyeet-chain-bitcoin  = { package = "hyperhub-chain-bitcoin",  path = "../../HyperHUb/crates/hyperhub-chain-bitcoin",  default-features = false }
-dontyeet-chain-solana   = { package = "hyperhub-chain-solana",   path = "../../HyperHUb/crates/hyperhub-chain-solana",   default-features = false }
-dontyeet-chain-cardano  = { package = "hyperhub-chain-cardano",  path = "../../HyperHUb/crates/hyperhub-chain-cardano",  default-features = false }
-dontyeet-chain-xrp      = { package = "hyperhub-chain-xrp",      path = "../../HyperHUb/crates/hyperhub-chain-xrp",      default-features = false }
-dontyeet-chain-algorand = { package = "hyperhub-chain-algorand", path = "../../HyperHUb/crates/hyperhub-chain-algorand", default-features = false }
-dontyeet-chain-tron     = { package = "hyperhub-chain-tron",     path = "../../HyperHUb/crates/hyperhub-chain-tron",     default-features = false }
-dontyeet-chain-kaspa    = { package = "hyperhub-chain-kaspa",    path = "../../HyperHUb/crates/hyperhub-chain-kaspa",    default-features = false }
-dontyeet-chain-kadena   = { package = "hyperhub-chain-kadena",   path = "../../HyperHUb/crates/hyperhub-chain-kadena",   default-features = false }
+# server-only `rpc` modules — the browser shim only needs the
+# address-derivation + signing paths, not the native RPC plumbing.
+dontyeet-chain-evm      = { path = "../crates/dontyeet-chain-evm",      default-features = false }
+dontyeet-chain-bitcoin  = { path = "../crates/dontyeet-chain-bitcoin",  default-features = false }
+dontyeet-chain-solana   = { path = "../crates/dontyeet-chain-solana",   default-features = false }
+dontyeet-chain-cardano  = { path = "../crates/dontyeet-chain-cardano",  default-features = false }
+dontyeet-chain-xrp      = { path = "../crates/dontyeet-chain-xrp",      default-features = false }
+dontyeet-chain-algorand = { path = "../crates/dontyeet-chain-algorand", default-features = false }
+dontyeet-chain-tron     = { path = "../crates/dontyeet-chain-tron",     default-features = false }
+dontyeet-chain-kaspa    = { path = "../crates/dontyeet-chain-kaspa",    default-features = false }
+dontyeet-chain-kadena   = { path = "../crates/dontyeet-chain-kadena",   default-features = false }
 
 # WASM/JS interop
 wasm-bindgen          = "0.2"

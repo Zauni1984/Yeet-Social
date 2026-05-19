@@ -1,0 +1,45 @@
+[package]
+name = "dontyeet-chain-solana"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Solana chain plugin — Ed25519 keys, Base58 addresses, JSON-RPC"
+
+[features]
+# `rpc` gates the JSON-RPC client + plugin. Default-on for the
+# server; WASM consumers opt out via `default-features = false`.
+default = ["rpc"]
+rpc = [
+    "dep:dontyeet-chain",
+    "dep:dontyeet-network",
+    "dep:async-trait",
+    "dep:tracing",
+]
+
+[dependencies]
+# Always-on (pure crypto + types).
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+dontyeet-crypto = { path = "../dontyeet-crypto" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+hex.workspace = true
+bs58.workspace = true
+ed25519-dalek.workspace = true
+zeroize.workspace = true
+data-encoding.workspace = true
+
+# RPC-only.
+dontyeet-chain = { path = "../dontyeet-chain", optional = true }
+dontyeet-network = { path = "../dontyeet-network", optional = true }
+async-trait = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
+# Browser-side balance reads (Phase M.3.2.5). Talks to the Solana
+# JSON-RPC node via `gloo_net::http::Request`. Browser-only.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-net = { version = "0.6", features = ["json"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

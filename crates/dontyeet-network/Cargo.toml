@@ -1,0 +1,18 @@
+[package]
+name = "dontyeet-network"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "HTTP client abstraction, JSON-RPC, caching, rate limiting, Tor privacy"
+
+[dependencies]
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+tokio = { workspace = true, features = ["time", "sync"] }
+reqwest.workspace = true
+url.workspace = true
+percent-encoding.workspace = true
+tracing.workspace = true

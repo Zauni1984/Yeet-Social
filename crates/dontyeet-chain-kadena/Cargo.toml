@@ -1,0 +1,55 @@
+[package]
+name = "dontyeet-chain-kadena"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Kadena community chain plugin for DontYeetWallet (Chainweb PoW, 20 parallel chains)"
+
+[features]
+# `rpc` gates the Chainweb REST client + plugin trait impl. Default-on
+# for the server; WASM consumers opt out via `default-features = false`.
+default = ["rpc"]
+rpc = [
+    "dep:dontyeet-chain",
+    "dep:dontyeet-network",
+    "dep:async-trait",
+    "dep:tracing",
+    "dep:sha2",
+]
+
+[dependencies]
+# Always-on (pure crypto + types). `blake2` and `base64` are part of
+# the always-on Pact-command pipeline (Phase M.4.8): the in-browser
+# `wasm::send` and the server-side `plugin::send_transfer` both call
+# `signing::build_signed_transfer`, which Blake2b-256 hashes the cmd
+# string and URL-safe-base64s the result.
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+dontyeet-crypto = { path = "../dontyeet-crypto" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+hex.workspace = true
+ed25519-dalek.workspace = true
+zeroize.workspace = true
+blake2.workspace = true
+base64.workspace = true
+
+# RPC-only.
+dontyeet-chain = { path = "../dontyeet-chain", optional = true }
+dontyeet-network = { path = "../dontyeet-network", optional = true }
+async-trait = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+
+# Browser-side balance reads (Phase M.3.2.8) and signing
+# (Phase M.4.8). Talks to the Chainweb Pact API via
+# `gloo_net::http::Request`; the M.4.8 send pipeline reads the
+# current Unix time via `js_sys::Date::now()` for the Pact
+# `creationTime` field — hence the `js-sys` entry below.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-net = { version = "0.6", features = ["json"] }
+js-sys = "0.3"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

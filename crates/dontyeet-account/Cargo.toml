@@ -1,0 +1,27 @@
+[package]
+name = "dontyeet-account"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Account lifecycle — create, login, logout, delete, mnemonic management"
+
+[dependencies]
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+dontyeet-crypto = { path = "../dontyeet-crypto" }
+dontyeet-storage = { path = "../dontyeet-storage" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+zeroize.workspace = true
+chrono.workspace = true
+rand.workspace = true
+# Drop-in `Instant` replacement that uses `performance.now()` on WASM
+# and `std::time::Instant` natively. Without this, calling
+# `Instant::now()` panics with "time not implemented on this platform"
+# in the browser bundle.
+web-time = "1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

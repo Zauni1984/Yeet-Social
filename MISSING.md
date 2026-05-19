@@ -88,7 +88,7 @@ Cardano, XRP, Algorand, Tron, Kaspa, Kadena.
 - Effort: 1-2 days for complete coverage
 
 #### Transaction history per chain
-- HyperHub UI has per-chain history modules; not ported to Yeet's wasm shim
+- Per-chain history modules aren't in the wasm shim yet
 - For now, frontend can link out to the explorer (block-explorer URL helper would help — also missing)
 - Effort: ~30 min for explorer-URL helper; ~1 day for in-app history view
 
@@ -99,8 +99,8 @@ Cardano, XRP, Algorand, Tron, Kaspa, Kadena.
 
 #### Cardano operator config
 - The Cardano plugin needs a config (genesis-related) on the server side
-- The wasm path in `hyperhub-chain-cardano::wasm` is self-contained but
-  uses public Koios endpoints — verify the operator is OK with that
+- The wasm path in `crates/dontyeet-chain-cardano/src/wasm.rs` is self-contained
+  but uses public Koios endpoints — verify the operator is OK with that
 - Effort: validate / document the default
 
 ---
@@ -188,10 +188,11 @@ Cardano, XRP, Algorand, Tron, Kaspa, Kadena.
 ## 10. Known build / dev quirks
 
 - **`wasm-opt` disabled** in `wallet/Cargo.toml` — the version bundled with wasm-pack can't validate the wallet's wasm-bindgen output once all chain crates are linked in. Rust's own `opt-level = 3 + lto = "thin"` still optimises; bundle is ~10-15% bigger than it would be with `wasm-opt`. Re-enable when wasm-pack ships a newer wasm-opt.
-- **Path dependencies** in `wallet/Cargo.toml` — point at `../../HyperHUb/crates/...` on the local dev machine. For CI / fresh clones, two options:
-  - Vendor the crates into `wallet/vendor/` (full self-contained, larger repo)
-  - Add the upstream crates as git submodules
-  - For now, contributors need a local clone at the expected sibling path
+- **Vendored crypto crates** in `crates/dontyeet-*/` — 15 crates copied in-tree
+  so the repo is fully self-contained. `wallet/Cargo.toml` uses local
+  `path = "../crates/dontyeet-X"` deps; no external sibling clones required.
+  Re-vendoring on upstream updates is a manual sweep (copy + sed) — see the
+  commit history for the pattern.
 - **Backend `[profile.release]`** is at the workspace root (was duplicated in `backend/Cargo.toml`; Cargo ignored it there and warned on every build). Single source of truth now.
 - **`SQLX_OFFLINE=true`** required for `cargo check -p backend` on machines without a live PostgreSQL — `backend/.sqlx/` holds the cached query metadata.
 

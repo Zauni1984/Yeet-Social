@@ -1,0 +1,18 @@
+[package]
+name = "dontyeet-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Encrypted key-value storage abstraction"
+
+[dependencies]
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+dontyeet-crypto = { path = "../dontyeet-crypto" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+rand.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

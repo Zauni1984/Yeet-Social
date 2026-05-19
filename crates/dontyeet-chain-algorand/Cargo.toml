@@ -1,0 +1,54 @@
+[package]
+name = "dontyeet-chain-algorand"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Algorand chain plugin — Ed25519, ASA tokens, Algod REST v2"
+
+[features]
+# `rpc` gates the Algod REST client + plugin trait impl. Default-on
+# for the server; WASM consumers opt out via `default-features = false`.
+default = ["rpc"]
+rpc = [
+    "dep:dontyeet-chain",
+    "dep:dontyeet-network",
+    "dep:async-trait",
+    "dep:tracing",
+    "dep:rmp-serde",
+]
+
+[dependencies]
+# Always-on (pure crypto + types). `data-encoding` is required for
+# Base32 address encoding which is part of derive_address.
+dontyeet-primitives = { path = "../dontyeet-primitives" }
+dontyeet-crypto = { path = "../dontyeet-crypto" }
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+hex.workspace = true
+sha2.workspace = true
+ed25519-dalek.workspace = true
+zeroize.workspace = true
+data-encoding.workspace = true
+
+# RPC-only.
+dontyeet-chain = { path = "../dontyeet-chain", optional = true }
+dontyeet-network = { path = "../dontyeet-network", optional = true }
+async-trait = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+rmp-serde = { workspace = true, optional = true }
+
+# Browser-side balance reads (Phase M.3.2.6) and signing
+# (Phase M.4.6). Talks to Nodely's Algod REST v2 via
+# `gloo_net::http::Request`; the M.4.6 send pipeline broadcasts
+# raw msgpack with `Content-Type: application/x-binary`, which
+# requires building a `js_sys::Uint8Array` for the body — hence the
+# extra `js-sys` and `wasm-bindgen` entries below.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-net = { version = "0.6", features = ["json"] }
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
