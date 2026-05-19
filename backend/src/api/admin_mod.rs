@@ -350,3 +350,94 @@ pub async fn lookup_user(
         post_count, reported_count,
     })))
 }
+
+// ---------- list users ----------
+
+#[derive(Debug, Deserialize)]
+pub struct UserListQuery {
+    pub secret: String,
+    pub page: Option<i64>,
+    pub q: Option<String>,
+    /// "all" (default) | "banned" | "active"
+    pub filter: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AdminUserRow {
+    pub id: Uuid,
+    pub username: Option<String>,
+    pub display_name: Option<String>,
+    pub wallet_address: Option<String>,
+    pub email: Option<String>,
+    pub avatar_url: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub posting_banned_until: Option<DateTime<Utc>>,
+    pub post_ban_reason: Option<String>,
+    pub post_count: i64,
+}
+
+/// Paginated list of every user in the DB, optionally narrowed by a
+/// free-text query against username / display_name / wallet / email.
+/// Filter chips: "all" (default), "banned" (active posting bans), or
+/// "active" (no current ban). 50 users per page.
+pub async fn list_users(
+    State(state): State<AppState>,
+    Query(q): Query<UserListQuery>,
+) -> AppResult<Json<ApiResponse<Vec<AdminUserRow>>>> {
+    check_admin(&q.secret)?;
+    let page = q.page.unwrap_or(1).max(1);
+    let offset: i64 = (page - 1) * 50;
+
+    // Hard-coded enum mapping keeps the value out of the SQL string.
+    let filter_sql = match q.filter.as_deref().unwrap_or("all") {
+        "banned" => "WHERE u.posting_banned_until IS NOT NULL AND u.posting_banned_until > NOW()",
+        "active" => "WHERE (u.posting_banned_until IS NULL OR u.posting_banned_until <= NOW())",
+        _ /* all */ => "",
+    };
+
+    // Optional free-text narrowing. Empty/short query means no filter.
+    let term = q.q.as_deref().map(|s| s.trim().trim_start_matches('@')).unwrap_or("");
+    let (where_clause, has_q) = if term.len() >= 2 {
+        let extra = "u.username ILIKE $2 OR u.display_name ILIKE $2 OR LOWER(u.wallet_address) LIKE LOWER($2) OR LOWER(u.email) LIKE LOWER($2)";
+        if filter_sql.is_empty() {
+            (format!("WHERE ({})", extra), true)
+        } else {
+            (format!("{} AND ({})", filter_sql, extra), true)
+        }
+    } else {
+        (filter_sql.to_string(), false)
+    };
+
+    let sql = format!(
+        "SELECT u.id, u.username, u.display_name, u.wallet_address, u.email,
+                u.avatar_url, u.created_at, u.posting_banned_until, u.post_ban_reason,
+                COALESCE((SELECT COUNT(*) FROM posts p
+                           WHERE p.author_id = u.id AND p.is_removed = FALSE), 0)::bigint AS post_count
+           FROM users u
+           {where_clause}
+          ORDER BY u.created_at DESC
+          LIMIT 50 OFFSET $1"
+    );
+
+    let rows: Vec<(Uuid, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>,
+                   DateTime<Utc>, Option<DateTime<Utc>>, Option<String>, i64)> = if has_q {
+        sqlx::query_as(&sql)
+            .bind(offset)
+            .bind(format!("%{}%", term))
+            .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
+    } else {
+        sqlx::query_as(&sql)
+            .bind(offset)
+            .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
+    };
+
+    let out: Vec<AdminUserRow> = rows.into_iter().map(|r| AdminUserRow {
+        id: r.0, username: r.1, display_name: r.2,
+        wallet_address: r.3, email: r.4, avatar_url: r.5,
+        created_at: r.6,
+        posting_banned_until: r.7, post_ban_reason: r.8,
+        post_count: r.9,
+    }).collect();
+
+    Ok(Json(ApiResponse::ok(out)))
+}

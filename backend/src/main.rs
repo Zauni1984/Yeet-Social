@@ -161,6 +161,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/admin/stats",                     get(api::admin_mod::stats))
         .route("/api/v1/admin/ping",                      get(api::admin_mod::ping))
         .route("/api/v1/admin/user-lookup",               get(api::admin_mod::lookup_user))
+        .route("/api/v1/admin/users",                     get(api::admin_mod::list_users))
         .route("/api/v1/tips",             post(api::tips::send_tip))
         .route("/api/v1/tokens/balance",   get(api::tokens::get_balance))
         .route("/api/v1/tokens/rewards",   get(api::tokens::get_rewards))
