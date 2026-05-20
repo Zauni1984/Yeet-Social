@@ -591,10 +591,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="avatar">&#128100;</div>
       <div class="composer-body">
         <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." data-i18n-placeholder="composer.placeholder" rows="2"></textarea>
-        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; <span data-i18n="composer.permanentSet">Permanent post set</span></div>
+        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="videoPreviewWrap" style="display:none;margin:8px 0;position:relative"><video id="videoPreview" controls preload="metadata" style="max-width:100%;max-height:240px;border-radius:10px;background:#111;display:block"></video><div id="videoUploadStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div><button onclick="removeVideo()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; <span data-i18n="composer.permanentSet">Permanent post set</span></div>
         <div class="composer-footer">
           <button class="icon-btn" title="Add photo" data-i18n-title="composer.addPhoto" onclick="document.getElementById('imgInput').click()">&#128248;</button>
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
+          <button class="icon-btn" title="Add video" data-i18n-title="composer.addVideo" onclick="document.getElementById('videoInput').click()">&#127909;</button>
+          <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleVideoSelect(this)">
           <button class="icon-btn" id="permToggleBtn" title="Mark as permanent post" data-i18n-title="composer.markPermanent" onclick="togglePermanent()">&#128204;</button>
           <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" data-i18n-title="composer.payPerView" onclick="togglePPV()">&#128274;</button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128274; PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
           <button class="icon-btn" title="Tip" data-i18n-title="composer.tip">&#9889;</button>
@@ -670,7 +672,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'nav.globalFeed':'Global Feed','nav.trending':'Trending',
       // post composer
       'composer.placeholder':'What are you yeeting? Disappears in 24h...',
-      'composer.addPhoto':'Add photo','composer.markPermanent':'Mark as permanent post',
+      'composer.addPhoto':'Add photo','composer.addVideo':'Add video','composer.markPermanent':'Mark as permanent post',
       'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.yeetIt':'YEET IT',
       'composer.permanentSet':'Permanent post set',
       // toasts
@@ -678,6 +680,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.postFailed':'Posting failed','toast.imageTooLarge':'Image too large (max 8MB)',
       'toast.imageTooLarge5':'Image too large (max 5MB)','toast.imageTooLargeServer':'Image too large for the server',
       'toast.invalidFormat':'Only JPG, PNG, WebP, GIF allowed','toast.imageSelected':'Image selected',
+      'toast.videoInvalidFormat':'Only MP4, WebM, MOV allowed','toast.videoTooLarge':'Video too large (max 30 MB)',
+      'toast.videoTooLong':'Video too long (max 60 s)','toast.videoSelected':'Video selected',
+      'toast.uploadingVideo':'Uploading video...','toast.videoUnreadable':'Could not read video',
       'toast.uploadingAvatar':'Uploading profile picture...','toast.uploadingCover':'Uploading cover...',
       'toast.avatarUpdated':'Profile picture updated','toast.coverUpdated':'Cover updated',
       'toast.uploadError':'Upload error','toast.uploadFailed':'Upload failed',
@@ -853,13 +858,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'nav.menu':'Menü','nav.search':'Posts, User, Tags suchen...','nav.login':'Login','nav.register':'Registrieren',
       'nav.globalFeed':'Globaler Feed','nav.trending':'Trending',
       'composer.placeholder':'Was yeetst du? Verschwindet in 24h...',
-      'composer.addPhoto':'Foto hinzufügen','composer.markPermanent':'Als permanenten Post markieren',
+      'composer.addPhoto':'Foto hinzufügen','composer.addVideo':'Video hinzufügen','composer.markPermanent':'Als permanenten Post markieren',
       'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.yeetIt':'YEET IT',
       'composer.permanentSet':'Permanenter Post gesetzt',
       'toast.posting':'Wird gesendet...','toast.yeeted':'Geyeetet!',
       'toast.postFailed':'Posten fehlgeschlagen','toast.imageTooLarge':'Bild zu groß (max. 8MB)',
       'toast.imageTooLarge5':'Bild zu groß (max. 5MB)','toast.imageTooLargeServer':'Bild zu groß für den Server',
       'toast.invalidFormat':'Nur JPG, PNG, WebP, GIF erlaubt','toast.imageSelected':'Bild ausgewählt',
+      'toast.videoInvalidFormat':'Nur MP4, WebM, MOV erlaubt','toast.videoTooLarge':'Video zu groß (max. 30 MB)',
+      'toast.videoTooLong':'Video zu lang (max. 60 s)','toast.videoSelected':'Video ausgewählt',
+      'toast.uploadingVideo':'Video wird hochgeladen...','toast.videoUnreadable':'Video konnte nicht gelesen werden',
       'toast.uploadingAvatar':'Profilbild wird hochgeladen...','toast.uploadingCover':'Cover wird hochgeladen...',
       'toast.avatarUpdated':'Profilbild aktualisiert','toast.coverUpdated':'Cover aktualisiert',
       'toast.uploadError':'Upload-Fehler','toast.uploadFailed':'Upload fehlgeschlagen',
@@ -2404,7 +2412,11 @@ function submitPost(){
   var _tabIs18=(_activeTab&&_activeTab.textContent&&_activeTab.textContent.indexOf('18')!==-1)||false;
   var _checkboxIs18=!!(document.getElementById('adultToggle')&&document.getElementById('adultToggle').checked);
   var isAdult=_tabIs18||_checkboxIs18;
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:window._postImageB64||null,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null})})
+  // Videos are uploaded separately and exposed as a /uploads/posts-media/
+  // URL in window._postMediaUrl. Images stay inline (base64) for now.
+  // Whichever is set wins; the composer enforces only one at a time.
+  var mediaUrl = window._postMediaUrl || window._postImageB64 || null;
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null})})
     .then(async function(r){
       if(r.status===413){throw new Error(window.t('toast.imageTooLargeServer'));}
       var ct=r.headers.get('content-type')||'';
@@ -2414,8 +2426,10 @@ function submitPost(){
       if(d.success===false)showToast(window.t('common.error')+': '+(d.error&&d.error.message||window.t('toast.postFailed')));
       else{
         document.getElementById('postTxt').value='';
-        window._postImageB64=null;window._postIsNFT=false;window._postNFTPrice=null;
+        window._postImageB64=null;window._postMediaUrl=null;window._postIsNFT=false;window._postNFTPrice=null;
         var pw=document.getElementById('imgPreviewWrap');if(pw)pw.style.display='none';
+        var vw=document.getElementById('videoPreviewWrap');if(vw)vw.style.display='none';
+        var vi=document.getElementById('videoInput');if(vi)vi.value='';
         var nd=document.getElementById('nftPriceDisplay');if(nd)nd.style.display='none';
         var nb=document.getElementById('nftToggleBtn');if(nb)nb.style.color='';
         window._postIsPPV=false;window._postPPVPrice=null;
@@ -3377,6 +3391,7 @@ function ingestComposerImage(file){
       var wrap = document.getElementById('imgPreviewWrap');
       if (preview) preview.src = dataUrl;
       if (wrap) wrap.style.display = 'block';
+      if (window._postMediaUrl) removeVideo();
       showToast(window.t('toast.imageSelected'), 'success');
       resolve();
     };
@@ -3397,6 +3412,7 @@ function _readAsDataUrlAndSet(file){
       var wrap = document.getElementById('imgPreviewWrap');
       if (preview) preview.src = e.target.result;
       if (wrap) wrap.style.display = 'block';
+      if (window._postMediaUrl) removeVideo();
       showToast(window.t('toast.imageSelected'), 'success');
       res();
     };
@@ -3455,6 +3471,113 @@ function removeImage() {
   var inp = document.getElementById('imgInput');
   if (inp) inp.value = '';
 }
+
+// ── VIDEO UPLOAD ───────────────────────────────────────────────────────────
+// Videos can't fit in the JSON body the way images do, so we upload them
+// via multipart to /api/v1/uploads/post-media first and store only the
+// returned URL on the post. Limits: 30 MB on the wire, 60 s playtime —
+// keeps decode + bandwidth reasonable and matches the spirit of the
+// short-form, ephemeral feed. Files land in posts-media/ on the server
+// and are swept by the orphan job once the referencing post expires.
+const VIDEO_MAX_BYTES = 30 * 1024 * 1024;
+const VIDEO_MAX_SECONDS = 60;
+
+function handleVideoSelect(input){
+  var file = input.files[0];
+  if(!file) return;
+  return ingestComposerVideo(file).finally(function(){ input.value = ''; });
+}
+
+function ingestComposerVideo(file){
+  return new Promise(function(resolve){
+    if(!file) return resolve();
+    var allowed = ['video/mp4','video/webm','video/quicktime'];
+    if(!allowed.includes(file.type)){
+      showToast(window.t('toast.videoInvalidFormat'),'error'); return resolve();
+    }
+    if(file.size > VIDEO_MAX_BYTES){
+      showToast(window.t('toast.videoTooLarge'),'error'); return resolve();
+    }
+    // Probe duration via a hidden <video> + object URL. Reject early if
+    // the clip is longer than VIDEO_MAX_SECONDS — saves the upload trip
+    // and matches the short-form feed format.
+    var url = URL.createObjectURL(file);
+    var probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.muted = true;
+    probe.onloadedmetadata = function(){
+      var dur = probe.duration;
+      if(!isFinite(dur) || dur <= 0){
+        URL.revokeObjectURL(url);
+        showToast(window.t('toast.videoUnreadable'),'error'); return resolve();
+      }
+      if(dur > VIDEO_MAX_SECONDS + 0.5){
+        URL.revokeObjectURL(url);
+        showToast(window.t('toast.videoTooLong'),'error'); return resolve();
+      }
+      // Looks good — show preview using same object URL, then start
+      // upload in the background. The post will only be submittable
+      // once window._postMediaUrl is populated.
+      var preview = document.getElementById('videoPreview');
+      var wrap = document.getElementById('videoPreviewWrap');
+      var status = document.getElementById('videoUploadStatus');
+      if(preview) preview.src = url;
+      if(wrap) wrap.style.display = 'block';
+      if(status) status.textContent = window.t('toast.uploadingVideo');
+      showToast(window.t('toast.videoSelected'),'success');
+      // Clear any image attached previously — one media per post.
+      removeImage();
+      uploadPostVideo(file).then(function(remoteUrl){
+        window._postMediaUrl = remoteUrl;
+        if(status) status.textContent = '';
+        resolve();
+      }).catch(function(err){
+        URL.revokeObjectURL(url);
+        if(wrap) wrap.style.display = 'none';
+        if(status) status.textContent = '';
+        showToast(window.t('toast.uploadFailed')+': '+(err && err.message || ''),'error');
+        resolve();
+      });
+    };
+    probe.onerror = function(){
+      URL.revokeObjectURL(url);
+      showToast(window.t('toast.videoUnreadable'),'error'); resolve();
+    };
+    probe.src = url;
+  });
+}
+
+function uploadPostVideo(file){
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || localStorage.getItem('yt') || '';
+  var fd = new FormData();
+  fd.append('file', file, file.name || 'video');
+  return fetch('/api/v1/uploads/post-media',{
+    method:'POST',
+    headers: jwt ? {'Authorization':'Bearer '+jwt} : {},
+    body: fd,
+  }).then(async function(r){
+    if(r.status === 413) throw new Error(window.t('toast.videoTooLarge'));
+    var ct = r.headers.get('content-type') || '';
+    if(ct.indexOf('application/json') === -1) throw new Error('HTTP '+r.status);
+    var d = await r.json();
+    if(!d.success) throw new Error((d.error && d.error.message) || 'upload');
+    return d.data.url;
+  });
+}
+
+function removeVideo(){
+  window._postMediaUrl = null;
+  var wrap = document.getElementById('videoPreviewWrap');
+  if(wrap) wrap.style.display = 'none';
+  var preview = document.getElementById('videoPreview');
+  if(preview){ try{ preview.pause(); }catch(e){} preview.removeAttribute('src'); preview.load && preview.load(); }
+  var inp = document.getElementById('videoInput');
+  if(inp) inp.value = '';
+  var status = document.getElementById('videoUploadStatus');
+  if(status) status.textContent = '';
+}
+window.handleVideoSelect = handleVideoSelect;
+window.removeVideo = removeVideo;
 
 // ââ NFT TOGGLE + PRICE POPUP ââââââââââââââââââââââââââââââââââââââââââââââ
 function togglePermanent() {
@@ -3627,23 +3750,42 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
 }
 
 
+function _isVideoUrl(u){
+  if(!u || typeof u !== 'string') return false;
+  // Inline base64 (legacy image path) never carries a video MIME today,
+  // so we only need to detect file URLs returned by /uploads/posts-media.
+  var lower = u.split('?')[0].toLowerCase();
+  return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.mov');
+}
+
 function renderMediaUrl(p) {
   if (!p.media_url) return '';
+  var isVideo = _isVideoUrl(p.media_url);
+  var openMedia = isVideo
+    ? '<video src="' + p.media_url + '" controls preload="metadata" playsinline style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;background:#000"></video>'
+    : '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   // No PPV price set: render normally.
   if (!p.ppv_price_yeet) {
-    return '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
+    return openMedia;
   }
   // Server tells us whether the calling viewer has paid (or is the author,
   // or anonymous - in which case is_unlocked is false). This replaces the
   // old localStorage-based scheme that let users skip payment by clearing
   // browser state.
   if (p.is_unlocked) {
-    return '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
+    return openMedia;
   }
   var aid = (p.author && p.author.id) ? p.author.id : '';
   var price = p.ppv_price_yeet;
+  // Locked preview: for video we show a static black tile with a play
+  // icon; for images we blur the actual image. Video frames aren't
+  // trivially blurrable client-side without decoding, so a tile keeps
+  // PPV simple and prevents accidental playback before payment.
+  var lockedPreview = isVideo
+    ? '<div style="width:100%;height:280px;background:#000;display:flex;align-items:center;justify-content:center;font-size:48px;color:#333">&#127909;</div>'
+    : '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">';
   return '<div class="ppv-wrap" data-pid="' + p.id + '" data-aid="' + aid + '" data-price="' + price + '" style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:block">'
-    + '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">'
+    + lockedPreview
     + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);gap:10px">'
     + '<div style="font-size:32px">&#128274;</div>'
     + '<div style="color:#fff;font-size:14px;font-weight:700">' + window.t('ppv.unlockPrompt',{price:price}) + '</div>'

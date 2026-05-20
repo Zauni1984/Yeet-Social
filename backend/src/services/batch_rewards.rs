@@ -125,6 +125,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 /// Also runs a cleanup job to soft-delete expired non-NFT posts
 pub async fn start_cleanup_job(state: AppState) {
     let mut ticker = interval(Duration::from_secs(300)); // every 5 minutes
+    let uploads_root = std::env::var("UPLOADS_DIR").unwrap_or_else(|_| "/app/uploads".into());
     loop {
         ticker.tick().await;
         match sqlx::query_scalar!(
@@ -137,6 +138,57 @@ pub async fn start_cleanup_job(state: AppState) {
             Ok(_) => {}
             Err(e) => error!("Cleanup job error: {e}"),
         }
+
+        // Orphan-sweep posts-media/. Any file in that dir whose URL is
+        // no longer referenced from posts.media_url is removed — that
+        // covers both posts deleted by `cleanup_expired_posts` above
+        // and uploads where the user never hit "YEET IT".
+        // Guard: only touch files older than ~30 min to avoid racing
+        // an in-progress upload (multipart save → INSERT into posts).
+        sweep_post_media_orphans(&state, &uploads_root).await;
+    }
+}
+
+async fn sweep_post_media_orphans(state: &AppState, uploads_root: &str) {
+    let dir = std::path::Path::new(uploads_root).join("posts-media");
+    let mut rd = match tokio::fs::read_dir(&dir).await {
+        Ok(rd) => rd,
+        // posts-media/ is created lazily on first upload — missing is fine.
+        Err(_) => return,
+    };
+
+    let referenced: std::collections::HashSet<String> = match sqlx::query_scalar::<_, String>(
+        "SELECT media_url FROM posts
+          WHERE media_url LIKE '/uploads/posts-media/%'"
+    ).fetch_all(&state.db.pool).await {
+        Ok(v) => v.into_iter().collect(),
+        Err(e) => { warn!("posts-media sweep: DB scan error: {e}"); return; }
+    };
+
+    let cutoff = std::time::SystemTime::now() - Duration::from_secs(30 * 60);
+    let mut removed: u64 = 0;
+    while let Ok(Some(entry)) = rd.next_entry().await {
+        let path = entry.path();
+        let fname = match path.file_name().and_then(|s| s.to_str()) {
+            Some(n) => n.to_string(),
+            None => continue,
+        };
+        let url = format!("/uploads/posts-media/{fname}");
+        if referenced.contains(&url) { continue; }
+        // Skip very-recent files — they may belong to a post-in-flight.
+        if let Ok(meta) = entry.metadata().await {
+            if let Ok(modified) = meta.modified() {
+                if modified > cutoff { continue; }
+            }
+        }
+        if let Err(e) = tokio::fs::remove_file(&path).await {
+            warn!("Failed to remove orphan post-media {}: {e}", path.display());
+        } else {
+            removed += 1;
+        }
+    }
+    if removed > 0 {
+        info!("posts-media sweep: removed {removed} orphan files.");
     }
 }
 

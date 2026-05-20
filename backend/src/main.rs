@@ -104,6 +104,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me/verify-age", post(api::users::verify_age))
         .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar))
         .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover))
+        .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
         .route("/api/v1/users/:address/posts",     get(api::feed::get_user_posts))
         .route("/api/v1/users/:address/followers", get(api::users::list_followers))
@@ -170,8 +171,10 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/paper-wallets",          get(api::paper_wallets::list_mine))
         .route("/api/v1/paper-wallets/redeem",   post(api::paper_wallets::redeem))
         .route("/api/v1/paper-wallets/:id/void", post(api::paper_wallets::void))
-        // Allow base64-encoded images (5 MB * 4/3 ≈ 6.7 MB) in JSON bodies
-        .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
+        // Sized for the largest accepted upload: a 32 MB video via the
+        // multipart endpoint (`/api/v1/uploads/post-media`) plus envelope
+        // overhead. Base64-encoded JSON image bodies (≤7 MB) easily fit too.
+        .layer(DefaultBodyLimit::max(40 * 1024 * 1024))
         .layer(ServiceBuilder::new()
             .layer(TraceLayer::new_for_http())
             .layer(cors)

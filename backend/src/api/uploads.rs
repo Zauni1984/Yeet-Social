@@ -116,3 +116,82 @@ pub async fn upload_cover(
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(UploadResponse { url })))
 }
+
+/// Post media upload — images OR short videos.
+///
+/// Returns a public /uploads/posts-media/<file> URL. The frontend
+/// stores it as posts.media_url. The orphan-cleanup sweep in the
+/// background services purges any file whose URL no longer appears
+/// in the posts table (matching the 24h ephemeral retention rule).
+const POST_VIDEO_MAX_BYTES: usize = 32 * 1024 * 1024; // 32 MB
+
+fn post_media_ext(ct: Option<&str>, filename: Option<&str>) -> Option<(&'static str, bool)> {
+    // Returns (extension, is_video).
+    let ct = ct.unwrap_or("").to_ascii_lowercase();
+    let name = filename.unwrap_or("").to_ascii_lowercase();
+    match ct.as_str() {
+        "image/jpeg" | "image/jpg" => return Some(("jpg", false)),
+        "image/png"                => return Some(("png", false)),
+        "image/webp"               => return Some(("webp", false)),
+        "image/gif"                => return Some(("gif", false)),
+        "video/mp4" | "video/quicktime" => return Some(("mp4", true)),
+        "video/webm"               => return Some(("webm", true)),
+        _ => {}
+    }
+    if name.ends_with(".jpg") || name.ends_with(".jpeg") { return Some(("jpg", false)); }
+    if name.ends_with(".png")  { return Some(("png", false)); }
+    if name.ends_with(".webp") { return Some(("webp", false)); }
+    if name.ends_with(".gif")  { return Some(("gif", false)); }
+    if name.ends_with(".mp4")  { return Some(("mp4", true)); }
+    if name.ends_with(".mov")  { return Some(("mp4", true)); } // we accept .mov as mp4 for now
+    if name.ends_with(".webm") { return Some(("webm", true)); }
+    None
+}
+
+pub async fn upload_post_media(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    mut mp: Multipart,
+) -> AppResult<Json<ApiResponse<UploadResponse>>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+
+    let field = mp.next_field().await
+        .map_err(|e| AppError::Validation(format!("Multipart parse error: {e}")))?
+        .ok_or_else(|| AppError::Validation("No file field".into()))?;
+    let ct = field.content_type().map(|s| s.to_string());
+    let name = field.file_name().map(|s| s.to_string());
+    let (ext, is_video) = post_media_ext(ct.as_deref(), name.as_deref())
+        .ok_or_else(|| AppError::Validation(
+            "Allowed formats: JPG, PNG, WebP, GIF, MP4, MOV, WebM".into()))?;
+
+    let bytes = field.bytes().await
+        .map_err(|e| AppError::Validation(format!("Read error: {e}")))?;
+    if bytes.is_empty() {
+        return Err(AppError::Validation("Empty file".into()));
+    }
+    // Per-kind size limit. Images keep the existing 8 MB cap; videos
+    // get a separate 32 MB cap (~30 s at 720p H.264).
+    let cap = if is_video { POST_VIDEO_MAX_BYTES } else { MAX_BYTES };
+    if bytes.len() > cap {
+        return Err(AppError::Validation(format!(
+            "{} too large (max {} MB)",
+            if is_video { "Video" } else { "Image" },
+            cap / (1024 * 1024)
+        )));
+    }
+
+    let dir = uploads_dir().join("posts-media");
+    tokio::fs::create_dir_all(&dir).await
+        .map_err(|e| AppError::Internal(format!("mkdir: {e}")))?;
+
+    let rand_suffix: u32 = rand::thread_rng().gen();
+    let filename = format!("{user_id}-{rand_suffix:08x}.{ext}");
+    let path = dir.join(&filename);
+    let mut f = tokio::fs::File::create(&path).await
+        .map_err(|e| AppError::Internal(format!("create: {e}")))?;
+    f.write_all(&bytes).await.map_err(|e| AppError::Internal(format!("write: {e}")))?;
+    f.flush().await.map_err(|e| AppError::Internal(format!("flush: {e}")))?;
+
+    let url = format!("/uploads/posts-media/{filename}");
+    Ok(Json(ApiResponse::ok(UploadResponse { url })))
+}
