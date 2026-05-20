@@ -2222,21 +2222,25 @@ function liveSearch(q){
 }
 async function runSearch(q, force){
   var jwt = localStorage.getItem('yeet_jwt');
-  if(!jwt){ showToast(window.t('common.pleaseLogin')); return; }
+  if(!jwt){
+    setSearchDropdown('<div style="padding:14px;color:var(--muted);font-size:13px">'+ window.t('common.pleaseLogin') +'</div>');
+    return;
+  }
   var mySeq = ++_searchSeq;
   ensureSearchDropdown();
   setSearchDropdown('<div style="padding:14px;color:var(--muted);font-size:13px">'+ window.t('common.loading') +'</div>');
-  try {
-    var r = await fetch('/api/v1/search?q=' + encodeURIComponent(q), {
-      headers:{ 'Authorization':'Bearer '+jwt }
-    });
-    if(mySeq !== _searchSeq) return; // out-of-order
-    if(!r.ok){ setSearchDropdown('<div style="padding:14px;color:#ff6666;font-size:13px">'+ window.t('common.error') +'</div>'); return; }
-    var d = await r.json();
-    renderSearchResults(d.data || {users:[],posts:[]}, q);
-  } catch(e){
-    setSearchDropdown('<div style="padding:14px;color:#ff6666;font-size:13px">'+ window.t('common.networkError') +'</div>');
+  // Use yeetFetch so a stale JWT is transparently refreshed before
+  // we declare the search dead.
+  var res = await (window.yeetFetch
+    ? window.yeetFetch('/api/v1/search?q=' + encodeURIComponent(q))
+    : fetch('/api/v1/search?q=' + encodeURIComponent(q), { headers:{ 'Authorization':'Bearer '+jwt } })
+        .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, status:r.status, data:d&&d.data, error:!r.ok?'http_'+r.status:undefined }; }); }));
+  if(mySeq !== _searchSeq) return;
+  if(!res.ok){
+    setSearchDropdown('<div style="padding:14px;color:#ff6666;font-size:13px">'+ (res.status===401 ? window.t('common.pleaseLogin') : window.t('common.error')) +'</div>');
+    return;
   }
+  renderSearchResults(res.data || {users:[],posts:[]}, q);
 }
 function ensureSearchDropdown(){
   if(document.getElementById('searchResults')) return;
@@ -2244,16 +2248,38 @@ function ensureSearchDropdown(){
   if(!input) return;
   var box = document.createElement('div');
   box.id = 'searchResults';
-  box.style.cssText = 'position:absolute;top:calc(100% + 4px);left:0;right:0;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;max-height:60vh;overflow-y:auto;z-index:240;box-shadow:0 10px 40px rgba(0,0,0,.6);display:none';
-  // Place relative to .search container
-  var wrap = input.closest('.search') || input.parentNode;
-  if(wrap){ wrap.style.position = 'relative'; wrap.appendChild(box); }
+  // Position:fixed + body-mount so the nav's overflow:hidden does not
+  // clip the dropdown. Position is recalculated each time the
+  // dropdown is shown via positionSearchDropdown().
+  box.style.cssText = 'position:fixed;background:#0d0d0d;border:1px solid var(--border);border-radius:10px;max-height:60vh;overflow-y:auto;z-index:1000;box-shadow:0 10px 40px rgba(0,0,0,.6);display:none';
+  document.body.appendChild(box);
+}
+function positionSearchDropdown(){
+  var input = document.getElementById('searchInput');
+  var box   = document.getElementById('searchResults');
+  if(!input || !box) return;
+  var r = input.getBoundingClientRect();
+  box.style.top   = (r.bottom + 4) + 'px';
+  box.style.left  = r.left + 'px';
+  box.style.width = r.width + 'px';
 }
 function setSearchDropdown(html){
   ensureSearchDropdown();
   var box = document.getElementById('searchResults');
-  if(box){ box.innerHTML = html; box.style.display = 'block'; }
+  if(box){
+    positionSearchDropdown();
+    box.innerHTML = html;
+    box.style.display = 'block';
+  }
 }
+window.addEventListener('resize', function(){
+  var box = document.getElementById('searchResults');
+  if(box && box.style.display !== 'none') positionSearchDropdown();
+});
+window.addEventListener('scroll', function(){
+  var box = document.getElementById('searchResults');
+  if(box && box.style.display !== 'none') positionSearchDropdown();
+}, true);
 function closeSearchResults(){
   var box = document.getElementById('searchResults');
   if(box){ box.style.display = 'none'; box.innerHTML = ''; }
