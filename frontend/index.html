@@ -1281,7 +1281,7 @@ async function loadFeed(){
         });
         const el=document.createElement('div');
         el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML=_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+        el.innerHTML=_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="Reshare">&#8634; <span>'+(p.repost_count||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
         if(foundUrls.length>0){
           var previewEl=document.createElement('div');
           previewEl.style.cssText='margin:8px 0 4px';
@@ -1367,8 +1367,9 @@ async function onConnected(address,walletName,provider){
     const signature=await provider.request({method:'personal_sign',params:[message,address]});
     const verR=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address,signature,message,nonce})});
     const verD=await verR.json();
-    if(verD.success&&verD.data?.token){
-      localStorage.setItem('yeet_jwt',verD.data.token);
+    if(verD.success && verD.data && (verD.data.token || verD.data.access_token)){
+      localStorage.setItem('yeet_jwt', verD.data.token || verD.data.access_token);
+      if(verD.data.refresh_token) try{ localStorage.setItem('yeet_refresh', verD.data.refresh_token); }catch(e){}
       localStorage.setItem('yeet_address',address);
       btn.textContent=short;
       showToast(' Signed in: '+walletName+' ('+short+')');
@@ -1403,30 +1404,73 @@ function showToast(msg){
 // Returns ok=false on network failure so callers don't have to wrap
 // every call in try/catch; the error text is the network-error i18n.
 window._sessionExpiredAt = 0;
+window._refreshPromise = null;
+
+// One refresh in flight at a time. If multiple requests 401 at the
+// same moment they all share the same refresh call.
+async function _doTokenRefresh(){
+  if(window._refreshPromise) return window._refreshPromise;
+  window._refreshPromise = (async function(){
+    var rt = localStorage.getItem('yeet_refresh');
+    if(!rt) return false;
+    try {
+      var r = await fetch('/api/v1/auth/refresh', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ refresh_token: rt })
+      });
+      if(!r.ok) return false;
+      var d = await r.json();
+      var pl = (d && d.data) || d;
+      if(pl && pl.access_token){
+        localStorage.setItem('yeet_jwt', pl.access_token);
+        if(pl.refresh_token) localStorage.setItem('yeet_refresh', pl.refresh_token);
+        return true;
+      }
+      return false;
+    } catch(e){ return false; }
+    finally { setTimeout(function(){ window._refreshPromise = null; }, 100); }
+  })();
+  return window._refreshPromise;
+}
+
 async function yeetFetch(path, opts){
   opts = opts || {};
   opts.headers = Object.assign({}, opts.headers || {});
-  // Default Content-Type only for JSON-body requests; multipart sets its own.
   if(opts.body && typeof opts.body === 'string' && !opts.headers['Content-Type']){
     opts.headers['Content-Type'] = 'application/json';
   }
-  var jwt = localStorage.getItem('yeet_jwt');
-  if(jwt && !opts.headers['Authorization']) opts.headers['Authorization'] = 'Bearer ' + jwt;
+  function attachAuth(){
+    var jwt = localStorage.getItem('yeet_jwt');
+    if(jwt) opts.headers['Authorization'] = 'Bearer ' + jwt;
+  }
+  attachAuth();
   var r;
-  try {
-    r = await fetch(path, opts);
-  } catch(e){
+  try { r = await fetch(path, opts); }
+  catch(e){
     return { ok:false, status:0, data:undefined, error: (window.t ? window.t('common.networkError') : 'Network error') };
   }
-  // Try to parse JSON regardless; some endpoints return JSON on errors too.
+  // 401: try one transparent refresh before giving up. If the refresh
+  // works the original request is retried once with the new token.
+  if(r.status === 401){
+    var refreshed = await _doTokenRefresh();
+    if(refreshed){
+      attachAuth();
+      try { r = await fetch(path, opts); }
+      catch(e){
+        return { ok:false, status:0, data:undefined, error: (window.t ? window.t('common.networkError') : 'Network error') };
+      }
+    }
+  }
   var d = null;
   try { d = await r.clone().json(); } catch(e){ /* not JSON, fine */ }
   if(r.status === 401){
-    // Throttle so a feed of failed requests doesn't pop the modal repeatedly.
+    // Refresh failed or no refresh token — true session expiry.
     var now = Date.now();
     if(now - window._sessionExpiredAt > 5000){
       window._sessionExpiredAt = now;
       try { localStorage.removeItem('yeet_jwt'); } catch(e){}
+      try { localStorage.removeItem('yeet_refresh'); } catch(e){}
       try { localStorage.removeItem('yeet_address'); } catch(e){}
       if(window.showToast) showToast(window.t ? window.t('toast.sessionExpired') : 'Session expired');
       if(typeof window.openAuthModal === 'function'){
@@ -3229,8 +3273,11 @@ function handleImageSelect(input) {
   return ingestComposerImage(file).finally(function(){ input.value = ''; });
 }
 
-// Validate + preview a File from any source (file picker, drag-drop,
-// clipboard paste). Returns a promise so callers can chain on it.
+// Validate + auto-compress + preview a File from any source (file
+// picker, drag-drop, clipboard paste). Images larger than ~700 KB are
+// down-scaled to a sensible max edge and re-encoded as JPEG-0.85,
+// which keeps the post under the backend size cap without ever
+// rejecting a perfectly-fine 4 K phone photo.
 function ingestComposerImage(file){
   return new Promise(function(resolve){
     if (!file) return resolve();
@@ -3238,18 +3285,66 @@ function ingestComposerImage(file){
     if (!allowed.includes(file.type)) {
       showToast(window.t('toast.invalidFormat'), 'error'); return resolve();
     }
-    if (file.size > 5 * 1024 * 1024) {
-      showToast(window.t('toast.imageTooLarge5'), 'error'); return resolve();
+    // GIFs are not re-encodable without dropping the animation; pass through.
+    var passThrough = (file.type === 'image/gif') || (file.size <= 700 * 1024);
+    if (passThrough) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast(window.t('toast.imageTooLarge5'), 'error'); return resolve();
+      }
+      return _readAsDataUrlAndSet(file).then(resolve);
     }
+    // Compress path. Decode to canvas, resize, re-encode.
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      var MAX = 1920;
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if(w <= 0 || h <= 0){ showToast(window.t('toast.invalidFormat'),'error'); return resolve(); }
+      var scale = Math.min(1, MAX / Math.max(w, h));
+      w = Math.round(w * scale); h = Math.round(h * scale);
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      var quality = 0.85;
+      var dataUrl = c.toDataURL('image/jpeg', quality);
+      // Approximate base64 size in bytes: length * 0.75 (1 char ≈ 0.75 B).
+      var approxBytes = dataUrl.length * 0.75;
+      while(approxBytes > 5 * 1024 * 1024 && quality > 0.4){
+        quality -= 0.1;
+        dataUrl = c.toDataURL('image/jpeg', quality);
+        approxBytes = dataUrl.length * 0.75;
+      }
+      if(approxBytes > 5 * 1024 * 1024){
+        showToast(window.t('toast.imageTooLarge5'),'error'); return resolve();
+      }
+      window._postImageB64 = dataUrl;
+      var preview = document.getElementById('imgPreview');
+      var wrap = document.getElementById('imgPreviewWrap');
+      if (preview) preview.src = dataUrl;
+      if (wrap) wrap.style.display = 'block';
+      showToast(window.t('toast.imageSelected'), 'success');
+      resolve();
+    };
+    img.onerror = function(){
+      URL.revokeObjectURL(url);
+      showToast(window.t('toast.invalidFormat'),'error'); resolve();
+    };
+    img.src = url;
+  });
+}
+
+function _readAsDataUrlAndSet(file){
+  return new Promise(function(res){
     var reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function(e){
       window._postImageB64 = e.target.result;
       var preview = document.getElementById('imgPreview');
       var wrap = document.getElementById('imgPreviewWrap');
       if (preview) preview.src = e.target.result;
       if (wrap) wrap.style.display = 'block';
       showToast(window.t('toast.imageSelected'), 'success');
-      resolve();
+      res();
     };
     reader.readAsDataURL(file);
   });
@@ -4117,6 +4212,7 @@ function showExternalLinkWarning(e,url){
       if(!vr.ok)throw new Error((vd.error&&vd.error.message)||'Auth failed');
       var payload=vd.data||vd;
       var tok=payload.access_token||payload.token||'';
+      if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
       window.closeAuthModal();
       _toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
@@ -4133,6 +4229,7 @@ function showExternalLinkWarning(e,url){
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Login failed');
       var payload=d.data||d;
       var tok=payload.access_token||payload.token||'';
+      if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       var usr={username:payload.username||'user',email_verified:payload.email_verified===true};
       _setLoggedIn(tok,usr,null);
       window.closeAuthModal();
@@ -4189,6 +4286,7 @@ function showExternalLinkWarning(e,url){
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Registration failed');
       var payload=d.data||d;
       var tok=payload.access_token||payload.token||'';
+      if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       var usr={username:payload.username||_regData.username,email_verified:payload.email_verified===true};
       _setLoggedIn(tok,usr,_regData.wallet_address);
       window.closeAuthModal();

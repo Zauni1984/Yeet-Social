@@ -93,6 +93,40 @@ pub async fn block(
     .bind(&dm_pair_key).bind(blocker).bind(blocked)
     .execute(&mut *tx).await.map_err(AppError::Database)?;
 
+    // 4. Remove both parties from any group conversations they share so
+    //    a block stops both DMs *and* group-chat reach. The remaining
+    //    members' group_key envelopes are NULL'd to force a key rotation
+    //    on the next admin load — same protocol as `kick`.
+    let shared_groups: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT cm1.conversation_id
+           FROM conversation_members cm1
+           JOIN conversation_members cm2
+             ON cm1.conversation_id = cm2.conversation_id
+           JOIN conversations c ON c.id = cm1.conversation_id
+          WHERE c.kind = 'group'
+            AND cm1.user_id = $1
+            AND cm2.user_id = $2"
+    )
+    .bind(blocker).bind(blocked)
+    .fetch_all(&mut *tx).await.map_err(AppError::Database)?;
+
+    if !shared_groups.is_empty() {
+        sqlx::query(
+            "DELETE FROM conversation_members
+              WHERE conversation_id = ANY($1) AND user_id IN ($2, $3)"
+        )
+        .bind(&shared_groups[..]).bind(blocker).bind(blocked)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+
+        sqlx::query(
+            "UPDATE conversation_members
+                SET encrypted_group_key = NULL
+              WHERE conversation_id = ANY($1)"
+        )
+        .bind(&shared_groups[..])
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    }
+
     tx.commit().await.map_err(AppError::Database)?;
 
     Ok(Json(ApiResponse::ok("blocked")))
