@@ -36,6 +36,12 @@ struct FeedRow {
     tip_total_yeet: Option<f64>,
     #[sqlx(default)]
     is_unlocked: Option<bool>,
+    #[sqlx(default)]
+    reposted_from: Option<Uuid>,
+    #[sqlx(default)]
+    reposted_from_author_name: Option<String>,
+    #[sqlx(default)]
+    reposted_from_author_username: Option<String>,
 }
 
 pub async fn get_feed(
@@ -55,6 +61,9 @@ pub async fn get_feed(
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            p.reposted_from,
+            (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
+            (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $3
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
@@ -118,6 +127,9 @@ pub async fn get_following_feed(
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            p.reposted_from,
+            (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
+            (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $1
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $1 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
@@ -170,6 +182,9 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
         is_permanent: r.is_permanent.unwrap_or(false),
         ppv_price_yeet: r.ppv_price_yeet,
         is_unlocked: r.is_unlocked.unwrap_or(false),
+        reposted_from: r.reposted_from,
+        reposted_from_author_name: r.reposted_from_author_name,
+        reposted_from_author_username: r.reposted_from_author_username,
     }
 }
 
@@ -238,6 +253,9 @@ pub async fn get_user_posts(
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            p.reposted_from,
+            (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
+            (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $4
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $4 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id

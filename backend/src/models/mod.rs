@@ -89,6 +89,14 @@ pub struct FeedPost {
     /// report true (no unlock needed). Anonymous viewers always false.
     #[serde(default)]
     pub is_unlocked: bool,
+    /// If this post is a reshare/repost wrapper, the id + display info
+    /// of the *original* post's author so the UI can label it as such.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reposted_from: Option<Uuid>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reposted_from_author_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reposted_from_author_username: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

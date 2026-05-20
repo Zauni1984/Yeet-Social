@@ -58,6 +58,9 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         is_permanent: false,
         ppv_price_yeet: None,
         is_unlocked: false,
+        reposted_from: None,
+        reposted_from_author_name: None,
+        reposted_from_author_username: None,
     }
 }
 

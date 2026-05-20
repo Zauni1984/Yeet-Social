@@ -48,14 +48,14 @@ pub async fn get_profile(
         "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
-                (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
+                (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
                 u.age_verified_at, u.e2ee_public_key
          FROM users u WHERE u.id = $1::uuid"
     } else {
         "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
-                (SELECT COUNT(*) FROM posts WHERE author_id = u.id AND expires_at > NOW())::bigint as post_count,
+                (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
                 u.age_verified_at, u.e2ee_public_key
          FROM users u WHERE u.wallet_address = $1"
     };
