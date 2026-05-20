@@ -93,6 +93,11 @@ pub struct ConversationSummary {
     // For group conversations: this caller's envelope of the
     // group_key (NULL until the admin (re-)distributes it).
     pub encrypted_group_key: Option<String>,
+    // Who wrapped the encrypted_group_key above + their current
+    // e2ee_public_key. The invitee derives ECDH(self_sk, wrapper_pk)
+    // to unwrap. For the creator's own envelope this is self.
+    pub wrapper_user_id: Option<Uuid>,
+    pub wrapper_public_key: Option<String>,
     pub role: Option<String>,
     pub last_message_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
@@ -174,6 +179,8 @@ pub async fn create_dm(
         peer_avatar_url: row.3,
         peer_public_key: peer_pk,
         encrypted_group_key: None,
+        wrapper_user_id: None,
+        wrapper_public_key: None,
         role: Some("member".into()),
         last_message_at: None,
         created_at,
@@ -192,12 +199,15 @@ pub async fn list_mine(
         Uuid, String, Option<String>, DateTime<Utc>,
         Option<Uuid>, Option<String>, Option<String>, Option<String>, Option<String>,
         Option<String>, String,
+        Option<Uuid>, Option<String>,
         Option<DateTime<Utc>>
     )> = sqlx::query_as(
         "SELECT c.id, c.kind, c.name, c.created_at,
                 peer.id AS peer_id, peer.username, peer.display_name,
                 peer.avatar_url, peer.e2ee_public_key,
                 cm.encrypted_group_key, cm.role,
+                cm.wrapper_user_id,
+                (SELECT e2ee_public_key FROM users WHERE id = cm.wrapper_user_id) AS wrapper_public_key,
                 (SELECT MAX(created_at) FROM messages m WHERE m.conversation_id = c.id)
            FROM conversations c
            JOIN conversation_members cm ON cm.conversation_id = c.id AND cm.user_id = $1
@@ -222,7 +232,8 @@ pub async fn list_mine(
         peer_id: r.4, peer_username: r.5, peer_display_name: r.6,
         peer_avatar_url: r.7, peer_public_key: r.8,
         encrypted_group_key: r.9, role: Some(r.10),
-        last_message_at: r.11,
+        wrapper_user_id: r.11, wrapper_public_key: r.12,
+        last_message_at: r.13,
     }).collect();
 
     Ok(Json(ApiResponse::ok(out)))

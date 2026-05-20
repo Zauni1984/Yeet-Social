@@ -1894,15 +1894,41 @@ async function deletePost(id){
 }
 function openWebboardsModal(){document.getElementById('webboardsModal').classList.add('on');}
 function closeWebboardsModal(e){if(!e||e.target===document.getElementById('webboardsModal'))document.getElementById('webboardsModal').classList.remove('on');}
+function _wbBackButton(){
+  // Lightweight 'back to feed list' button injected once per visit.
+  var t = document.getElementById('wbFeedTitle');
+  if(!t || t.querySelector('.wb-back')) return;
+  var btn = document.createElement('button');
+  btn.className = 'wb-back';
+  btn.textContent = '← Back';
+  btn.style.cssText = 'background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:11px;margin-right:8px;cursor:pointer';
+  btn.onclick = function(){
+    document.getElementById('wbFeed').style.display='none';
+    document.getElementById('wbList').style.display='';
+  };
+  t.prepend(btn);
+}
 async function loadRSS(url,name){
   document.getElementById('wbList').style.display='none';
   document.getElementById('wbFeed').style.display='';
-  document.getElementById('wbFeedTitle').textContent=name+' - Loading...';
+  document.getElementById('wbFeedTitle').textContent = name + ' — Loading…';
+  _wbBackButton();
   document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--muted)">Loading feed...</p>';
   try{
     const proxy='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=10';
-    const d2=await fetch(proxy).then(function(r2){return r2.json();});
+    const r2=await fetch(proxy);
+    if(!r2.ok){
+      document.getElementById('wbFeedTitle').textContent = name + ' — Error';
+      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">RSS proxy returned HTTP '+ r2.status +'. Try again in a minute.</p>';
+      _wbBackButton(); return;
+    }
+    const d2=await r2.json();
+    if(d2.status && d2.status !== 'ok'){
+      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">'+ String(d2.message||'Feed could not be parsed.') +'</p>';
+      _wbBackButton(); return;
+    }
     document.getElementById('wbFeedTitle').textContent=(d2.feed&&d2.feed.title)||name;
+    _wbBackButton();
     const items=d2.items||[];
     const container=document.getElementById('wbFeedItems');
     if(items.length>0){
@@ -6166,38 +6192,38 @@ info@blocksocial.eu</address>
     return await window.YeetE2EE.deriveConvKey(id.sk, peerPk, id.pk, peerPubB64);
   }
 
-  async function unwrapGroupKey(envelopeB64){
+  async function unwrapGroupKey(envelopeB64, wrapperPubB64){
+    // The conversation_members row now records who wrapped each
+    // envelope. The unwrap key is therefore ECDH(self_sk, wrapper_pk).
+    // For the creator's own row wrapper_pk == self_pk, which still
+    // yields a valid (self-paired) ECDH key. For invitees the wrapper
+    // is the inviter, exposed as conv.wrapper_public_key by the API.
     var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
-    // Group-key envelopes are wrapped with the inviter's
-    // ECDH(my_sk, my_pk) self-key for creator, or with the
-    // shared (inviter_sk, invitee_pk) key for invited members.
-    // The unwrap key is therefore ECDH(my_sk, inviter_pk) — but we
-    // don't know the inviter, so we try both (a) self-key (admin/
-    // creator case) and (b) some peer pks. v1 simplification:
-    // we only wrap envelopes under the *self-key* derived from
-    // ECDH(my_sk, my_pk). createGroup already does this for the
-    // creator's envelope; for invited members the invite handler
-    // re-uses the invitation row's envelope which was wrapped under
-    // ECDH(creator_sk, invitee_pk). To decrypt we need the
-    // *inviter's pubkey* — which we don't currently have in the
-    // conversation summary. v1 limit: any user who accepted the
-    // invitation via /accept stores the envelope under self-key,
-    // because the create flow wraps each envelope under the
-    // creator's view of the conversation. NOTE: this is the place
-    // to plug a richer protocol later.
-    var rawSelfPk = await window.YeetE2EE.importPubSpki(id.pk);
-    var selfKey = await window.YeetE2EE.deriveConvKey(id.sk, rawSelfPk, id.pk, id.pk);
+    var wrapPk = wrapperPubB64
+      ? await window.YeetE2EE.importPubSpki(wrapperPubB64)
+      : await window.YeetE2EE.importPubSpki(id.pk);
+    var wrapKey = await window.YeetE2EE.deriveConvKey(
+      id.sk, wrapPk, id.pk, wrapperPubB64 || id.pk);
     var all = window.YeetE2EE.b64ToBytes(envelopeB64);
     var iv = all.slice(0, 12);
     var ct = all.slice(12);
     var raw;
     try {
       raw = new Uint8Array(await window.crypto.subtle.decrypt(
-        { name:'AES-GCM', iv: iv }, selfKey, ct));
+        { name:'AES-GCM', iv: iv }, wrapKey, ct));
     } catch(e){
-      // For non-creator members, we don't have a reliable way to
-      // recover the inviter's pubkey in v1, so fail gracefully.
-      throw new Error('group_key_unwrap_failed');
+      // Final fallback: legacy rows where wrapper_public_key wasn't
+      // recorded — try self-key.
+      if(wrapperPubB64){
+        try {
+          var selfPk = await window.YeetE2EE.importPubSpki(id.pk);
+          var selfKey = await window.YeetE2EE.deriveConvKey(id.sk, selfPk, id.pk, id.pk);
+          raw = new Uint8Array(await window.crypto.subtle.decrypt(
+            { name:'AES-GCM', iv: iv }, selfKey, ct));
+        } catch(e2){ throw new Error('group_key_unwrap_failed'); }
+      } else {
+        throw new Error('group_key_unwrap_failed');
+      }
     }
     return await window.crypto.subtle.importKey(
       'raw', raw, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
@@ -6208,7 +6234,7 @@ info@blocksocial.eu</address>
     var k;
     if(c.kind === 'group'){
       if(!c.encrypted_group_key) throw new Error('no_group_key');
-      k = await unwrapGroupKey(c.encrypted_group_key);
+      k = await unwrapGroupKey(c.encrypted_group_key, c.wrapper_public_key);
     } else {
       if(!c.peer_public_key) throw new Error('no_peer_key');
       k = await dmKeyFor(c.peer_public_key);

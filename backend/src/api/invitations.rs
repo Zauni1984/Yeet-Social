@@ -63,10 +63,13 @@ pub async fn create_group(
 
     // Creator is admin with their own envelope (they computed the
     // group_key locally and sent their own envelope in the request).
+    // wrapper_user_id is themselves: their envelope was wrapped under
+    // ECDH(self_sk, self_pk).
     let creator_env = req.members.iter().find(|m| m.user_id == me).map(|m| m.encrypted_group_key.clone());
     sqlx::query(
-        "INSERT INTO conversation_members (conversation_id, user_id, role, encrypted_group_key)
-         VALUES ($1, $2, 'admin', $3)"
+        "INSERT INTO conversation_members
+            (conversation_id, user_id, role, encrypted_group_key, wrapper_user_id)
+         VALUES ($1, $2, 'admin', $3, $2)"
     )
     .bind(conv.0).bind(me).bind(creator_env)
     .execute(&mut *tx).await.map_err(AppError::Database)?;
@@ -78,8 +81,8 @@ pub async fn create_group(
         }
         sqlx::query(
             "INSERT INTO group_invitations
-                (conversation_id, invited_by, invited_user, encrypted_group_key)
-             VALUES ($1, $2, $3, $4)
+                (conversation_id, invited_by, invited_user, encrypted_group_key, wrapper_user_id)
+             VALUES ($1, $2, $3, $4, $2)
              ON CONFLICT DO NOTHING"
         )
         .bind(conv.0).bind(me).bind(m.user_id).bind(&m.encrypted_group_key)
@@ -143,8 +146,9 @@ pub async fn invite(
     if member { return Err(AppError::Conflict("User already a member".into())); }
 
     let id: Uuid = sqlx::query_scalar(
-        "INSERT INTO group_invitations (conversation_id, invited_by, invited_user, encrypted_group_key)
-         VALUES ($1, $2, $3, $4) RETURNING id"
+        "INSERT INTO group_invitations
+            (conversation_id, invited_by, invited_user, encrypted_group_key, wrapper_user_id)
+         VALUES ($1, $2, $3, $4, $2) RETURNING id"
     )
     .bind(conv_id).bind(me).bind(invitee).bind(&req.encrypted_group_key)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
@@ -200,23 +204,24 @@ pub async fn accept(
     let me = caller_user_id(&state, &auth).await?;
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 
-    let row: Option<(Uuid, String)> = sqlx::query_as(
+    let row: Option<(Uuid, String, Option<Uuid>)> = sqlx::query_as(
         "UPDATE group_invitations
             SET status = 'accepted', responded_at = NOW()
           WHERE id = $1 AND invited_user = $2 AND status = 'pending'
-          RETURNING conversation_id, encrypted_group_key"
+          RETURNING conversation_id, encrypted_group_key, wrapper_user_id"
     )
     .bind(inv_id).bind(me)
     .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
 
-    let (conv_id, env) = row.ok_or_else(|| AppError::NotFound("Invitation not found".into()))?;
+    let (conv_id, env, wrapper) = row.ok_or_else(|| AppError::NotFound("Invitation not found".into()))?;
 
     sqlx::query(
-        "INSERT INTO conversation_members (conversation_id, user_id, role, encrypted_group_key)
-         VALUES ($1, $2, 'member', $3)
+        "INSERT INTO conversation_members
+            (conversation_id, user_id, role, encrypted_group_key, wrapper_user_id)
+         VALUES ($1, $2, 'member', $3, $4)
          ON CONFLICT DO NOTHING"
     )
-    .bind(conv_id).bind(me).bind(&env)
+    .bind(conv_id).bind(me).bind(&env).bind(wrapper)
     .execute(&mut *tx).await.map_err(AppError::Database)?;
 
     tx.commit().await.map_err(AppError::Database)?;
@@ -359,12 +364,17 @@ pub async fn rotate_key(
         return Err(AppError::Forbidden("Admins only".into()));
     }
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+    // Each envelope was wrapped by the caller (the admin doing the
+    // rotation). Update wrapper_user_id so members can re-derive the
+    // right unwrap key.
     for env in &req.envelopes {
         sqlx::query(
-            "UPDATE conversation_members SET encrypted_group_key = $3
+            "UPDATE conversation_members
+                SET encrypted_group_key = $3,
+                    wrapper_user_id = $4
               WHERE conversation_id = $1 AND user_id = $2"
         )
-        .bind(conv_id).bind(env.user_id).bind(&env.encrypted_group_key)
+        .bind(conv_id).bind(env.user_id).bind(&env.encrypted_group_key).bind(me)
         .execute(&mut *tx).await.map_err(AppError::Database)?;
     }
     tx.commit().await.map_err(AppError::Database)?;
