@@ -313,6 +313,14 @@ pub async fn redeem(
 
     tx.commit().await.map_err(AppError::Database)?;
 
+    // Tell the issuer their bill was just cashed in. Best-effort.
+    crate::api::notifications::notify(
+        state.db.pool(), issuer_id, Some(claimer_id),
+        "paper_wallet_redeemed",
+        &format!("Your paper wallet {} ({} {}) was redeemed", serial, amount, currency),
+        None,
+    ).await;
+
     Ok(Json(ApiResponse::ok(RedeemResponse { serial, amount, currency })))
 }
 

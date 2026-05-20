@@ -126,6 +126,20 @@ pub async fn repost_post(
         .execute(state.db.pool())
         .await;
 
+    // Notify the original author someone reshared. Best-effort.
+    if let Some(author_id) = sqlx::query_scalar::<_, Uuid>(
+        "SELECT author_id FROM posts WHERE id = $1"
+    ).bind(post_id).fetch_optional(state.db.pool()).await.ok().flatten() {
+        let actor = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+        ).bind(user_id).fetch_optional(state.db.pool()).await
+         .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+        crate::api::notifications::notify(
+            state.db.pool(), author_id, Some(user_id),
+            "reshare", &format!("{} reshared your post", actor), Some(post_id),
+        ).await;
+    }
+
     Ok(Json(ApiResponse::ok(SimpleOk { success: true })))
 }
 

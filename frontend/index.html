@@ -1470,23 +1470,40 @@ async function refreshTokenBalance(){
   var jwt = localStorage.getItem('yeet_jwt');
   var pill = document.getElementById('balancePill');
   var amt  = document.getElementById('balanceAmt');
-  if(!jwt || !pill || !amt){ return; }
-  // yeetFetch handles 401 -> session-expired flow centrally so a
-  // background refresh against an expired token surfaces a single
-  // 'session expired' toast and an auth modal instead of silent fails.
+  if(!pill || !amt) return;
+  if(!jwt){
+    // Logged out: show a neutral dash; parent walletArea is already
+    // display:none, so this is just a defensive baseline.
+    amt.textContent = '—';
+    return;
+  }
+  var debug = /[\?&]debug=balance\b/.test(location.search);
   var res = await yeetFetch('/api/v1/tokens/balance');
-  if(!res.ok || !res.data) return;
-  var n = Number(res.data.yeet_balance || 0);
-  // Compact format: integers under 100 keep up to 2 decimals,
-  // 100-999 are rounded, 1k+ -> 1.2k, 1m+ -> 1.2m.
+  if(debug) try { console.log('[balance]', res); } catch(e){}
+  if(!res.ok){
+    // Don't leave the pill at the original em-dash forever — surface
+    // the failure clearly so 'no balance' looks intentional, not broken.
+    amt.textContent = (res.status === 401 ? '—' : '?');
+    pill.style.borderColor = 'var(--border)';
+    pill.style.color       = 'var(--muted)';
+    pill.title = res.status === 401 ? 'Session expired' : ('Balance API error '+res.status);
+    return;
+  }
+  // Server always returns yeet_balance even when zero; treat any non-
+  // number as zero to keep the formatter safe.
+  var raw = (res.data && res.data.yeet_balance);
+  var n = typeof raw === 'number' && isFinite(raw) ? raw : 0;
   var pretty;
   if(n >= 1e6)      pretty = (n/1e6).toFixed(2).replace(/\.?0+$/, '') + 'm';
   else if(n >= 1e3) pretty = (n/1e3).toFixed(2).replace(/\.?0+$/, '') + 'k';
   else if(n >= 100) pretty = n.toFixed(0);
-  else              pretty = n.toFixed(2).replace(/\.?0+$/, '');
+  else              pretty = n.toFixed(2).replace(/\.?0+$/, '') || '0';
   amt.textContent = pretty;
-  pill.style.borderColor = n > 0 ? 'var(--yeet)' : 'var(--border)';
-  pill.style.color       = n > 0 ? 'var(--yeet)' : 'var(--muted)';
+  // Lime when authenticated even if balance is zero — looks intentional
+  // ("you have 0 YEET, top up to tip"), not broken.
+  pill.style.borderColor = 'var(--yeet)';
+  pill.style.color       = n > 0 ? 'var(--yeet)' : 'rgba(200,255,0,.55)';
+  pill.title = (window.t ? window.t('balance.title') : 'Your YEET balance');
   window._yeetBalance = n;
 }
 window.refreshTokenBalance = refreshTokenBalance;

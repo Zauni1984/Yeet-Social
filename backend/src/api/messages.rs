@@ -155,6 +155,30 @@ pub async fn send(
 
     tx.commit().await.map_err(AppError::Database)?;
 
+    // Notify the other party (DM) or every other member (group) that
+    // a new message arrived. Best-effort; ciphertext is not surfaced.
+    let recipients: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT user_id FROM conversation_members
+          WHERE conversation_id = $1 AND user_id <> $2"
+    )
+    .bind(conv_id).bind(me)
+    .fetch_all(state.db.pool()).await.unwrap_or_default();
+    let actor_name = sqlx::query_scalar::<_, Option<String>>(
+        "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+    ).bind(me).fetch_optional(state.db.pool()).await
+     .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+    let body = if req.kind == "tip" {
+        format!("{} sent you YEET in a private message", actor_name)
+    } else {
+        format!("New message from {}", actor_name)
+    };
+    for r_id in recipients {
+        crate::api::notifications::notify(
+            state.db.pool(), r_id, Some(me),
+            "dm_message", &body, None,
+        ).await;
+    }
+
     // Tip amount echoed back from the tips row for the convenience of the UI.
     let tip_amount: Option<f64> = if let Some(tid) = tip_id {
         sqlx::query_scalar("SELECT amount::float8 FROM tips WHERE id = $1")

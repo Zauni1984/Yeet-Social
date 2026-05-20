@@ -220,6 +220,29 @@ pub async fn accept(
     .execute(&mut *tx).await.map_err(AppError::Database)?;
 
     tx.commit().await.map_err(AppError::Database)?;
+
+    // Notify the admins of the group that someone joined.
+    let actor = sqlx::query_scalar::<_, Option<String>>(
+        "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+    ).bind(me).fetch_optional(state.db.pool()).await
+     .ok().flatten().flatten().unwrap_or_else(|| "Someone".into());
+    let conv_name: Option<String> = sqlx::query_scalar(
+        "SELECT name FROM conversations WHERE id = $1"
+    ).bind(conv_id).fetch_optional(state.db.pool()).await.unwrap_or(None);
+    let label = conv_name.unwrap_or_else(|| "your group".into());
+    let admins: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT user_id FROM conversation_members
+          WHERE conversation_id = $1 AND role = 'admin' AND user_id <> $2"
+    ).bind(conv_id).bind(me).fetch_all(state.db.pool()).await.unwrap_or_default();
+    for a_id in admins {
+        crate::api::notifications::notify(
+            state.db.pool(), a_id, Some(me),
+            "group_join",
+            &format!("{} joined {}", actor, label),
+            None,
+        ).await;
+    }
+
     Ok(Json(ApiResponse::ok(conv_id)))
 }
 
