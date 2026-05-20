@@ -5742,7 +5742,9 @@ info@blocksocial.eu</address>
           : '<span class="adm-badge ok">Active</span>';
         var addr = u.wallet_address || u.id;
         var name = u.display_name || u.username || (u.wallet_address ? u.wallet_address.slice(0,8)+'…' : '?');
-        var initial = (name[0] || '?').toUpperCase();
+        // display_name is user-controlled and can include '<', so the
+        // single-char initial must be escaped before splicing into innerHTML.
+        var initial = esc((name[0] || '?').toUpperCase());
         var avatar = u.avatar_url
           ? '<img src="'+ esc(u.avatar_url) +'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">'
           : '<div style="width:40px;height:40px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">'+ initial +'</div>';
