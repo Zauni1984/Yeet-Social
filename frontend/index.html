@@ -762,6 +762,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'balance.title':'Your YEET balance — click for wallet options',
       'notif.title':'Notifications','notif.empty':'No notifications yet.','notif.markAll':'Mark all read',
       'search.users':'People','search.posts':'Posts','search.empty':'No matches.',
+      'admin.title':'Admin dashboard',
       'dm.groupCreated':'Group created','dm.leave':'Leave group',
       'dm.leaveConfirm':'Leave this group?','dm.left':'You left the group.',
       // tip modal
@@ -940,6 +941,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'balance.title':'Dein YEET-Guthaben — Klick für Wallet-Optionen',
       'notif.title':'Benachrichtigungen','notif.empty':'Noch keine Benachrichtigungen.','notif.markAll':'Alle gelesen',
       'search.users':'Personen','search.posts':'Posts','search.empty':'Keine Treffer.',
+      'admin.title':'Admin-Dashboard',
       'dm.groupCreated':'Gruppe erstellt','dm.leave':'Gruppe verlassen',
       'dm.leaveConfirm':'Diese Gruppe wirklich verlassen?','dm.left':'Gruppe verlassen.',
       'tip.title':'YEET Tokens senden','tip.subtitle':'Unterstütze diesen Post mit YEET-Tokens',
@@ -5030,7 +5032,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 <div class="legal-page" id="adminPage" role="region" aria-label="Admin dashboard" style="display:none">
   <div class="legal-page-inner" style="max-width:1024px">
     <button class="legal-back" onclick="closeAdminPage()" type="button">&larr; Back to YEET Social</button>
-    <h1>&#128737; <span data-i18n="admin.title">Admin dashboard</span></h1>
+    <h1>&#128737; <span data-i18n="admin.title">Admin dashboard</span> <span id="adminWhoami" style="font-size:14px;font-weight:400;color:var(--muted);margin-left:8px"></span></h1>
     <div id="adminTabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin:14px 0 18px;flex-wrap:wrap">
       <button class="adm-tab" data-tab="overview">Overview</button>
       <button class="adm-tab" data-tab="posts">Posts</button>
@@ -5464,7 +5466,7 @@ info@blocksocial.eu</address>
   var _activeTab = 'overview';
   var _adminPage, _adminContent;
 
-  window.openAdminPage = function(){
+  window.openAdminPage = async function(){
     if(!secret()){
       window.showToast('Set admin secret in Settings first','error');
       return;
@@ -5474,6 +5476,20 @@ info@blocksocial.eu</address>
     if(!_adminPage) return;
     _adminPage.style.display = 'block';
     _adminPage.classList.add('on');
+    // Surface the logged-in user next to the heading so the admin
+    // knows under which account their audit entries will appear.
+    var who = document.getElementById('adminWhoami');
+    if(who){
+      who.textContent = '';
+      try {
+        var meRes = await (window.yeetFetch ? window.yeetFetch('/api/v1/users/me') : Promise.resolve({ok:false}));
+        if(meRes && meRes.ok && meRes.data){
+          var u = meRes.data;
+          var nm = u.display_name || u.username || (u.wallet_address ? u.wallet_address.slice(0,8)+'…' : 'admin');
+          who.textContent = '· ' + nm + (u.username ? ' (@'+u.username+')' : '');
+        }
+      } catch(e){ /* non-critical */ }
+    }
     setTab(_activeTab);
   };
   window.closeAdminPage = function(){
@@ -5819,14 +5835,19 @@ info@blocksocial.eu</address>
       if(!rows.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No admin actions logged yet.</div>'; return; }
       _adminContent.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="color:var(--muted);text-align:left">'
         + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">When</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">By</th>'
         + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Action</th>'
         + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Target</th>'
         + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Duration</th>'
         + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Reason</th>'
         + '</tr></thead><tbody>'
         + rows.map(function(a){
+            var by = a.admin_username
+              ? '@'+ esc(a.admin_username)
+              : (a.admin_user_id ? esc(a.admin_user_id.slice(0,8)) : '<span style="color:var(--muted)">unknown</span>');
             return '<tr style="border-bottom:1px solid var(--border)">'
               + '<td style="padding:6px 8px;color:var(--muted);white-space:nowrap">'+ fmtTime(a.created_at) +'</td>'
+              + '<td style="padding:6px 8px;white-space:nowrap">'+ by +'</td>'
               + '<td style="padding:6px 8px"><b>'+ esc(a.action_type) +'</b></td>'
               + '<td style="padding:6px 8px">'+ esc(a.target_username || (a.target_user_id?a.target_user_id.slice(0,8):'—')) +'</td>'
               + '<td style="padding:6px 8px">'+ (a.duration_hours ? a.duration_hours+' h' : '—') +'</td>'

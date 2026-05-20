@@ -21,6 +21,34 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{AppError, AppResult, AppState, models::ApiResponse};
+use crate::api::middleware::OptionalAuth;
+
+/// Resolve the admin actor (the logged-in user) from an optional JWT.
+/// Returns (id, username) — both None if the caller isn't signed in
+/// (admin-secret-only flow). Used for audit-log attribution.
+async fn admin_actor(state: &AppState, viewer: &OptionalAuth) -> (Option<Uuid>, Option<String>) {
+    let auth = match &viewer.0 { Some(a) => a, None => return (None, None) };
+    let id_opt: Option<Uuid> = if let Some(rest) = auth.address.strip_prefix("email:") {
+        Uuid::parse_str(rest).ok()
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool())
+            .await
+            .ok()
+            .flatten()
+    };
+    let Some(id) = id_opt else { return (None, None); };
+    let username: Option<String> = sqlx::query_scalar(
+        "SELECT username FROM users WHERE id = $1"
+    )
+    .bind(id)
+    .fetch_optional(state.db.pool())
+    .await
+    .ok()
+    .flatten();
+    (Some(id), username)
+}
 
 /// Allowed posting-ban durations, in hours. The frontend should only
 /// ever submit one of these; anything else is rejected with 422.
@@ -69,6 +97,7 @@ async fn resolve_target(state: &AppState, address_or_id: &str)
     Err(AppError::NotFound("User not found".into()))
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn record_action(
     pool: &sqlx::PgPool,
     target_id: Option<Uuid>,
@@ -76,16 +105,22 @@ async fn record_action(
     action_type: &str,
     duration_hours: Option<i32>,
     reason: Option<&str>,
+    admin_user_id: Option<Uuid>,
+    admin_username: Option<&str>,
 ) {
     let res = sqlx::query(
-        "INSERT INTO admin_actions (target_user_id, target_username, action_type, duration_hours, reason)
-         VALUES ($1, $2, $3, $4, $5)"
+        "INSERT INTO admin_actions
+            (target_user_id, target_username, action_type, duration_hours, reason,
+             admin_user_id, admin_username)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)"
     )
     .bind(target_id)
     .bind(target_username)
     .bind(action_type)
     .bind(duration_hours)
     .bind(reason)
+    .bind(admin_user_id)
+    .bind(admin_username)
     .execute(pool).await;
     if let Err(e) = res {
         tracing::warn!(error = %e, "admin_actions insert failed");
@@ -110,6 +145,7 @@ pub struct BanResponse {
 
 pub async fn ban_post(
     State(state): State<AppState>,
+    viewer: OptionalAuth,
     Path(address): Path<String>,
     Json(req): Json<BanPostRequest>,
 ) -> AppResult<Json<ApiResponse<BanResponse>>> {
@@ -119,6 +155,7 @@ pub async fn ban_post(
             "duration_hours must be 12, 24, 168 or 720".into()));
     }
     let (id, username) = resolve_target(&state, &address).await?;
+    let (admin_id, admin_name) = admin_actor(&state, &viewer).await;
 
     let row: (DateTime<Utc>,) = sqlx::query_as(
         "UPDATE users
@@ -137,6 +174,7 @@ pub async fn ban_post(
     record_action(
         state.db.pool(), Some(id), username.as_deref(),
         "ban_post", Some(req.duration_hours), req.reason.as_deref(),
+        admin_id, admin_name.as_deref(),
     ).await;
 
     Ok(Json(ApiResponse::ok(BanResponse {
@@ -154,11 +192,13 @@ pub struct UnbanPostRequest {
 
 pub async fn unban_post(
     State(state): State<AppState>,
+    viewer: OptionalAuth,
     Path(address): Path<String>,
     Json(req): Json<UnbanPostRequest>,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
     check_admin(&req.secret)?;
     let (id, username) = resolve_target(&state, &address).await?;
+    let (admin_id, admin_name) = admin_actor(&state, &viewer).await;
     sqlx::query(
         "UPDATE users SET posting_banned_until = NULL, post_ban_reason = NULL WHERE id = $1"
     )
@@ -167,6 +207,7 @@ pub async fn unban_post(
     record_action(
         state.db.pool(), Some(id), username.as_deref(),
         "unban_post", None, req.reason.as_deref(),
+        admin_id, admin_name.as_deref(),
     ).await;
 
     Ok(Json(ApiResponse::ok("unbanned")))
@@ -186,6 +227,7 @@ pub struct DeleteUserRequest {
 
 pub async fn delete_user(
     State(state): State<AppState>,
+    viewer: OptionalAuth,
     Path(address): Path<String>,
     Json(req): Json<DeleteUserRequest>,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
@@ -200,6 +242,7 @@ pub async fn delete_user(
         return Err(AppError::Validation(
             "Confirmation must exactly match the target's username.".into()));
     }
+    let (admin_id, admin_name) = admin_actor(&state, &viewer).await;
 
     // Defensive ordering: explicitly clear references that aren't
     // ON DELETE CASCADE before the DELETE FROM users.
@@ -216,6 +259,7 @@ pub async fn delete_user(
     record_action(
         pool, None /* target_user is gone */, Some(&expected),
         "delete_user", None, req.reason.as_deref(),
+        admin_id, admin_name.as_deref(),
     ).await;
 
     Ok(Json(ApiResponse::ok("deleted")))
@@ -237,6 +281,8 @@ pub struct AuditRow {
     pub duration_hours: Option<i32>,
     pub reason: Option<String>,
     pub created_at: DateTime<Utc>,
+    pub admin_user_id: Option<Uuid>,
+    pub admin_username: Option<String>,
 }
 
 pub async fn list_actions(
@@ -244,18 +290,22 @@ pub async fn list_actions(
     Query(q): Query<ActionsQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<AuditRow>>>> {
     check_admin(&q.secret)?;
-    let rows: Vec<(Uuid, Option<Uuid>, Option<String>, String, Option<i32>, Option<String>, DateTime<Utc>)> =
-        sqlx::query_as(
-            "SELECT id, target_user_id, target_username, action_type,
-                    duration_hours, reason, created_at
-               FROM admin_actions
-              ORDER BY created_at DESC
-              LIMIT 200"
-        )
-        .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    let rows: Vec<(
+        Uuid, Option<Uuid>, Option<String>, String, Option<i32>, Option<String>,
+        DateTime<Utc>, Option<Uuid>, Option<String>
+    )> = sqlx::query_as(
+        "SELECT id, target_user_id, target_username, action_type,
+                duration_hours, reason, created_at,
+                admin_user_id, admin_username
+           FROM admin_actions
+          ORDER BY created_at DESC
+          LIMIT 200"
+    )
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     let out = rows.into_iter().map(|r| AuditRow {
         id: r.0, target_user_id: r.1, target_username: r.2,
         action_type: r.3, duration_hours: r.4, reason: r.5, created_at: r.6,
+        admin_user_id: r.7, admin_username: r.8,
     }).collect();
     Ok(Json(ApiResponse::ok(out)))
 }
