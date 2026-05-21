@@ -42,6 +42,10 @@ struct FeedRow {
     reposted_from_author_name: Option<String>,
     #[sqlx(default)]
     reposted_from_author_username: Option<String>,
+    #[sqlx(default)]
+    promoted_live_id: Option<Uuid>,
+    #[sqlx(default)]
+    pinned_until: Option<DateTime<Utc>>,
 }
 
 pub async fn get_feed(
@@ -64,6 +68,7 @@ pub async fn get_feed(
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
+            p.promoted_live_id, p.pinned_until,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $3
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
@@ -71,7 +76,10 @@ pub async fn get_feed(
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                            WHERE (ub.blocker_id = $3 AND ub.blocked_id = u.id)
                               OR (ub.blocker_id = u.id AND ub.blocked_id = $3))
-        ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
+        ORDER BY (p.pinned_until IS NOT NULL AND p.pinned_until > NOW()) DESC,
+                 p.pinned_until DESC NULLS LAST,
+                 p.created_at DESC
+        LIMIT $1 OFFSET $2"
     )
     .bind(per_page).bind(offset).bind(viewer_id)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
@@ -130,6 +138,7 @@ pub async fn get_following_feed(
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
+            p.promoted_live_id, p.pinned_until,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $1
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $1 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
@@ -138,7 +147,10 @@ pub async fn get_following_feed(
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                            WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
                               OR (ub.blocker_id = u.id AND ub.blocked_id = $1))
-        ORDER BY p.created_at DESC LIMIT $2 OFFSET $3"
+        ORDER BY (p.pinned_until IS NOT NULL AND p.pinned_until > NOW()) DESC,
+                 p.pinned_until DESC NULLS LAST,
+                 p.created_at DESC
+        LIMIT $2 OFFSET $3"
     )
     .bind(user_id).bind(per_page).bind(offset)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
@@ -185,6 +197,8 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
         reposted_from: r.reposted_from,
         reposted_from_author_name: r.reposted_from_author_name,
         reposted_from_author_username: r.reposted_from_author_username,
+        promoted_live_id: r.promoted_live_id,
+        pinned_until: r.pinned_until,
     }
 }
 
@@ -256,12 +270,16 @@ pub async fn get_user_posts(
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
+            p.promoted_live_id, p.pinned_until,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $4
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $4 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.author_id = $1 AND p.expires_at > NOW()
           AND p.is_removed = FALSE AND p.deleted_at IS NULL{}
-        ORDER BY p.created_at DESC LIMIT $2 OFFSET $3",
+        ORDER BY (p.pinned_until IS NOT NULL AND p.pinned_until > NOW()) DESC,
+                 p.pinned_until DESC NULLS LAST,
+                 p.created_at DESC
+        LIMIT $2 OFFSET $3",
         include_adult_sql
     );
     let rows = sqlx::query_as::<_, FeedRow>(&list_sql)
@@ -317,7 +335,10 @@ pub async fn get_adult_feed(
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE
           AND p.deleted_at IS NULL AND p.is_adult = TRUE
-        ORDER BY p.created_at DESC LIMIT $1 OFFSET $2"
+        ORDER BY (p.pinned_until IS NOT NULL AND p.pinned_until > NOW()) DESC,
+                 p.pinned_until DESC NULLS LAST,
+                 p.created_at DESC
+        LIMIT $1 OFFSET $2"
     )
     .bind(per_page).bind(offset)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;

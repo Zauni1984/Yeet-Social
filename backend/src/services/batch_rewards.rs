@@ -359,14 +359,60 @@ pub async fn start_lives_sweep_job(state: AppState) {
             warn!("lives sweep (stuck-live): {e}");
         }
 
-        if let Err(e) = sqlx::query(
-            "UPDATE lives
-                SET status = 'cancelled'
-              WHERE status = 'scheduled'
-                AND scheduled_for IS NOT NULL
-                AND scheduled_for < NOW() - INTERVAL '2 hours'"
-        ).execute(&state.db.pool).await {
-            warn!("lives sweep (expired-scheduled): {e}");
+        // Cancelling expired-scheduled lives also needs to refund any
+        // promo the host pre-paid for. Do both in one tx so we never
+        // leak YEET if the second statement fails mid-flight.
+        match state.db.pool.begin().await {
+            Ok(mut tx) => {
+                let scan = sqlx::query_scalar::<_, uuid::Uuid>(
+                    "SELECT id FROM lives
+                      WHERE status = 'scheduled'
+                        AND scheduled_for IS NOT NULL
+                        AND scheduled_for < NOW() - INTERVAL '2 hours'
+                      FOR UPDATE"
+                ).fetch_all(&mut *tx).await;
+                let expired_ids: Vec<uuid::Uuid> = match scan {
+                    Ok(v) => v,
+                    Err(e) => {
+                        warn!("lives sweep (expired-scheduled scan): {e}");
+                        let _ = tx.rollback().await;
+                        continue;
+                    }
+                };
+                for live_id in &expired_ids {
+                    if let Err(e) = sqlx::query("UPDATE lives SET status = 'cancelled' WHERE id = $1")
+                        .bind(live_id).execute(&mut *tx).await {
+                        warn!("lives sweep (cancel {live_id}): {e}");
+                        continue;
+                    }
+                    // Inline refund — same logic as the API path, but
+                    // we can't call refund_promotion_in_tx from here
+                    // without leaking a circular import, so we duplicate
+                    // the SQL. Keep it identical to api::lives.
+                    let promo: Option<(uuid::Uuid, uuid::Uuid, f64)> = sqlx::query_as(
+                        "SELECT id, user_id, cost_yeet::float8
+                           FROM live_promotions
+                          WHERE live_id = $1 AND status = 'booked'
+                          FOR UPDATE"
+                    ).bind(live_id).fetch_optional(&mut *tx).await.ok().flatten();
+                    if let Some((promo_id, user_id, cost)) = promo {
+                        let _ = sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance + $1 WHERE id = $2")
+                            .bind(cost).bind(user_id).execute(&mut *tx).await;
+                        let _ = sqlx::query("UPDATE fee_wallet_balance SET total_yeet = total_yeet - $1 WHERE id = 1")
+                            .bind(cost).execute(&mut *tx).await;
+                        let _ = sqlx::query(
+                            "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
+                             VALUES ('live_promo_refund', $1, $2, $2, 0)"
+                        ).bind(promo_id).bind(-cost).execute(&mut *tx).await;
+                        let _ = sqlx::query("UPDATE live_promotions SET status = 'refunded', refunded_at = NOW() WHERE id = $1")
+                            .bind(promo_id).execute(&mut *tx).await;
+                    }
+                }
+                if let Err(e) = tx.commit().await {
+                    warn!("lives sweep (expired-scheduled commit): {e}");
+                }
+            }
+            Err(e) => warn!("lives sweep (expired-scheduled tx): {e}"),
         }
 
         if let Err(e) = sqlx::query(

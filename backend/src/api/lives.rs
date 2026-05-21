@@ -274,13 +274,31 @@ pub async fn start_live(
         "ended" | "cancelled" => return Err(AppError::Validation("Live already finished".into())),
         _ => {}
     }
-    // Phase 2 will mint a LiveKit room name + token here.
+
+    // Phase 2 will mint a LiveKit room name + token here. For now we
+    // wrap the state flip in the same tx that materialises any booked
+    // promotion, so the announcement post is guaranteed to appear if
+    // and only if the broadcast actually transitions to live.
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     sqlx::query(
         "UPDATE lives
             SET status = 'live',
                 started_at = COALESCE(started_at, NOW())
           WHERE id = $1"
-    ).bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
+    ).bind(id).execute(&mut *tx).await.map_err(AppError::Database)?;
+
+    // Pending promotion? Apply it now (auto-post + optional pin).
+    let pending: Option<(Uuid, String, Option<i32>)> = sqlx::query_as(
+        "SELECT id, tier, boost_minutes
+           FROM live_promotions
+          WHERE live_id = $1 AND status = 'booked'
+          FOR UPDATE"
+    ).bind(id).fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
+    if let Some((promo_id, tier, boost_minutes)) = pending {
+        apply_promotion_in_tx(&mut tx, id, promo_id, &tier, boost_minutes, user_id).await?;
+    }
+    tx.commit().await.map_err(AppError::Database)?;
+
     Ok(Json(ApiResponse::ok(())))
 }
 
@@ -323,8 +341,13 @@ pub async fn cancel_live(
     if status != "scheduled" {
         return Err(AppError::Validation("Only scheduled lives can be cancelled".into()));
     }
+    // Refund any booked promotion in the same tx so we never leak the
+    // host's YEET on a cancelled broadcast.
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     sqlx::query("UPDATE lives SET status = 'cancelled' WHERE id = $1")
-        .bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
+        .bind(id).execute(&mut *tx).await.map_err(AppError::Database)?;
+    refund_promotion_in_tx(&mut tx, id).await?;
+    tx.commit().await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(())))
 }
 
@@ -407,6 +430,255 @@ pub async fn tip_live(
     ).bind(id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     Ok(Json(ApiResponse::ok(TipLiveResponse { tip_id, tip_total_yeet: total })))
+}
+
+// ─── Paid promotions ──────────────────────────────────────────────────────
+//
+// Hosts can boost their live by paying YEET. Two tiers, fixed prices,
+// charged at booking time. If the live is later cancelled, the cost is
+// refunded; if it actually starts, an auto-post lands in the public
+// feed announcing the broadcast. The 'boost' tier additionally pins
+// that post to the top of For-You / Following feeds for 60 minutes.
+//
+// Cost goes 100% to the platform fee wallet (no creator split) — this
+// is ad spend, not a tip.
+
+const PROMO_BASIC_YEET: f64 = 10.0;
+const PROMO_BOOST_YEET: f64 = 50.0;
+const PROMO_BOOST_MINUTES: i64 = 60;
+
+fn promo_cost(tier: &str) -> AppResult<f64> {
+    match tier {
+        "basic" => Ok(PROMO_BASIC_YEET),
+        "boost" => Ok(PROMO_BOOST_YEET),
+        _ => Err(AppError::Validation("tier must be 'basic' or 'boost'".into())),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BookPromotionRequest {
+    pub tier: String, // 'basic' | 'boost'
+}
+
+#[derive(Debug, Serialize)]
+pub struct BookPromotionResponse {
+    pub promotion_id: Uuid,
+    pub tier: String,
+    pub cost_yeet: f64,
+    pub new_balance: f64,
+}
+
+/// Book a paid promotion for an upcoming or already-live broadcast.
+/// Charges the host's YEET balance immediately. Idempotent per live:
+/// the unique index `uq_live_promotions_active` rejects a second active
+/// booking with a clear validation error.
+pub async fn book_promotion(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(live_id): Path<Uuid>,
+    Json(req): Json<BookPromotionRequest>,
+) -> AppResult<Json<ApiResponse<BookPromotionResponse>>> {
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+    let cost = promo_cost(&req.tier)?;
+
+    // Verify the live exists, belongs to the caller, and is in a
+    // bookable state. We allow booking on already-live broadcasts so
+    // a host who didn't pre-book can still buy a promo mid-stream;
+    // ended/cancelled lives are rejected.
+    let row: Option<(Uuid, String)> = sqlx::query_as(
+        "SELECT host_user_id, status FROM lives WHERE id = $1"
+    ).bind(live_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let (host_id, status) = row.ok_or_else(|| AppError::NotFound("Live not found".into()))?;
+    if host_id != user_id {
+        return Err(AppError::Forbidden("Only the host can promote this live".into()));
+    }
+    if status == "ended" || status == "cancelled" {
+        return Err(AppError::Validation("Cannot promote an ended live".into()));
+    }
+
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+
+    // Lock + check balance.
+    let balance: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(yeet_token_balance, 0)::float8 FROM users WHERE id = $1 FOR UPDATE"
+    )
+    .bind(user_id).fetch_one(&mut *tx).await.map_err(AppError::Database)?;
+    if balance < cost {
+        return Err(AppError::Validation(format!(
+            "Insufficient YEET balance: have {balance:.2}, need {cost:.2}"
+        )));
+    }
+
+    // Insert the promo row first so the unique-active index can
+    // reject duplicates before we touch any balances.
+    let boost_minutes = if req.tier == "boost" { Some(PROMO_BOOST_MINUTES as i32) } else { None };
+    let promo_id: Uuid = match sqlx::query_scalar(
+        "INSERT INTO live_promotions (live_id, user_id, tier, cost_yeet, boost_minutes)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id"
+    )
+    .bind(live_id).bind(user_id).bind(&req.tier).bind(cost).bind(boost_minutes)
+    .fetch_one(&mut *tx).await
+    {
+        Ok(id) => id,
+        Err(sqlx::Error::Database(e)) if e.constraint() == Some("uq_live_promotions_active") => {
+            return Err(AppError::Conflict("This live already has an active promotion".into()));
+        }
+        Err(e) => return Err(AppError::Database(e)),
+    };
+
+    // Debit the host, credit the platform fee wallet, ledger entry.
+    sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance - $1 WHERE id = $2")
+        .bind(cost).bind(user_id)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    sqlx::query("UPDATE fee_wallet_balance SET total_yeet = total_yeet + $1 WHERE id = 1")
+        .bind(cost)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    sqlx::query(
+        "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
+         VALUES ('live_promo', $1, $2, $2, 0)"
+    )
+    .bind(promo_id).bind(cost)
+    .execute(&mut *tx).await.map_err(AppError::Database)?;
+
+    // If the live is already live, apply the promotion now so the
+    // auto-post hits the feed immediately. Otherwise it'll be applied
+    // by `start_live`.
+    if status == "live" {
+        apply_promotion_in_tx(&mut tx, live_id, promo_id, &req.tier, boost_minutes, user_id).await?;
+    }
+
+    let new_balance: f64 = sqlx::query_scalar(
+        "SELECT COALESCE(yeet_token_balance, 0)::float8 FROM users WHERE id = $1"
+    ).bind(user_id).fetch_one(&mut *tx).await.map_err(AppError::Database)?;
+
+    tx.commit().await.map_err(AppError::Database)?;
+
+    Ok(Json(ApiResponse::ok(BookPromotionResponse {
+        promotion_id: promo_id,
+        tier: req.tier,
+        cost_yeet: cost,
+        new_balance,
+    })))
+}
+
+/// Inside an open transaction: turn a 'booked' promotion into 'applied'
+/// by inserting the announcement post. Called from `start_live` and
+/// also from `book_promotion` when the live is already live.
+///
+/// The auto-post carries `promoted_live_id` so the client can render a
+/// "Watch live" CTA card instead of plain text. Boost-tier promos also
+/// set `pinned_until` so the feed query lifts them to the top.
+async fn apply_promotion_in_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    live_id: Uuid,
+    promo_id: Uuid,
+    tier: &str,
+    boost_minutes: Option<i32>,
+    host_id: Uuid,
+) -> AppResult<()> {
+    // Pull the live's title for the auto-post body.
+    let (title, is_adult): (String, bool) = sqlx::query_as(
+        "SELECT title, is_adult FROM lives WHERE id = $1"
+    ).bind(live_id).fetch_one(&mut **tx).await.map_err(AppError::Database)?;
+
+    // Trim to fit posts.content's 280-char limit while keeping the
+    // emoji + LIVE prefix readable. Title is the only variable bit.
+    let prefix = "🔴 LIVE NOW: ";
+    let max_title_len = 280usize.saturating_sub(prefix.len());
+    let title_clipped: String = title.chars().take(max_title_len).collect();
+    let body = format!("{prefix}{title_clipped}");
+
+    let pinned_until = if tier == "boost" {
+        let mins = boost_minutes.unwrap_or(PROMO_BOOST_MINUTES as i32) as i64;
+        Some(Utc::now() + chrono::Duration::minutes(mins))
+    } else {
+        None
+    };
+
+    // The auto-post lives in the normal feed and follows the usual 24h
+    // expiry so it dies cleanly even if the host disappears.
+    let post_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO posts
+           (author_id, content, media_urls, expires_at, is_adult,
+            promoted_live_id, pinned_until)
+         VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours', $4, $5, $6)
+         RETURNING id"
+    )
+    .bind(host_id).bind(&body).bind(Vec::<String>::new())
+    .bind(is_adult).bind(live_id).bind(pinned_until)
+    .fetch_one(&mut **tx).await.map_err(AppError::Database)?;
+
+    sqlx::query(
+        "UPDATE live_promotions
+            SET status = 'applied', applied_at = NOW(), auto_post_id = $1
+          WHERE id = $2"
+    )
+    .bind(post_id).bind(promo_id)
+    .execute(&mut **tx).await.map_err(AppError::Database)?;
+
+    Ok(())
+}
+
+/// Refund a booked-but-not-yet-applied promotion. Called from
+/// `cancel_live`. Best-effort: if there's no booked promo, this is a
+/// no-op so callers don't have to check first.
+async fn refund_promotion_in_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    live_id: Uuid,
+) -> AppResult<()> {
+    let promo: Option<(Uuid, Uuid, f64)> = sqlx::query_as(
+        "SELECT id, user_id, cost_yeet::float8
+           FROM live_promotions
+          WHERE live_id = $1 AND status = 'booked'
+          FOR UPDATE"
+    ).bind(live_id).fetch_optional(&mut **tx).await.map_err(AppError::Database)?;
+    let Some((promo_id, user_id, cost)) = promo else { return Ok(()); };
+
+    sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance + $1 WHERE id = $2")
+        .bind(cost).bind(user_id)
+        .execute(&mut **tx).await.map_err(AppError::Database)?;
+    sqlx::query("UPDATE fee_wallet_balance SET total_yeet = total_yeet - $1 WHERE id = 1")
+        .bind(cost)
+        .execute(&mut **tx).await.map_err(AppError::Database)?;
+    sqlx::query(
+        "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
+         VALUES ('live_promo_refund', $1, $2, $2, 0)"
+    )
+    .bind(promo_id).bind(-cost)
+    .execute(&mut **tx).await.map_err(AppError::Database)?;
+
+    sqlx::query("UPDATE live_promotions SET status = 'refunded', refunded_at = NOW() WHERE id = $1")
+        .bind(promo_id)
+        .execute(&mut **tx).await.map_err(AppError::Database)?;
+    Ok(())
+}
+
+#[derive(Debug, Serialize)]
+pub struct PromotionInfo {
+    pub id: Uuid,
+    pub tier: String,
+    pub cost_yeet: f64,
+    pub status: String,
+    pub boost_minutes: Option<i32>,
+    pub auto_post_id: Option<Uuid>,
+    pub booked_at: DateTime<Utc>,
+}
+
+pub async fn get_promotion(
+    State(state): State<AppState>,
+    Path(live_id): Path<Uuid>,
+) -> AppResult<Json<ApiResponse<Option<PromotionInfo>>>> {
+    let row: Option<(Uuid, String, f64, String, Option<i32>, Option<Uuid>, DateTime<Utc>)> =
+        sqlx::query_as(
+            "SELECT id, tier, cost_yeet::float8, status, boost_minutes, auto_post_id, booked_at
+               FROM live_promotions
+              WHERE live_id = $1 AND status IN ('booked','applied')
+              ORDER BY booked_at DESC LIMIT 1"
+        ).bind(live_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let info = row.map(|(id, tier, cost_yeet, status, boost_minutes, auto_post_id, booked_at)| {
+        PromotionInfo { id, tier, cost_yeet, status, boost_minutes, auto_post_id, booked_at }
+    });
+    Ok(Json(ApiResponse::ok(info)))
 }
 
 /// List the calling user's own scheduled + live + recent ended lives,

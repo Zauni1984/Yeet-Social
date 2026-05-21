@@ -97,6 +97,14 @@ pub struct FeedPost {
     pub reposted_from_author_name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reposted_from_author_username: Option<String>,
+    /// If set, this post is an auto-promo for the given live broadcast.
+    /// The client renders a "Watch live" CTA instead of plain text.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub promoted_live_id: Option<Uuid>,
+    /// Boost-tier promotions pin a post until this timestamp; feed
+    /// queries sort pinned posts above everything else until expiry.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pinned_until: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

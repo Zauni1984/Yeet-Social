@@ -61,6 +61,8 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         reposted_from: None,
         reposted_from_author_name: None,
         reposted_from_author_username: None,
+        promoted_live_id: None,
+        pinned_until: None,
     }
 }
 
