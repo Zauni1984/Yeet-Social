@@ -10,6 +10,20 @@ use tracing::{info, error, warn};
 
 use crate::AppState;
 
+#[derive(sqlx::FromRow)]
+struct DueScheduledPost {
+    id: uuid::Uuid,
+    author_id: uuid::Uuid,
+    content: String,
+    media_url: Option<String>,
+    is_adult: bool,
+    is_nft: bool,
+    nft_price_yeet: Option<f64>,
+    is_permanent: bool,
+    ppv_price_yeet: Option<f64>,
+    publish_at: chrono::DateTime<chrono::Utc>,
+}
+
 /// Batch reward job: runs every hour, collects pending off-chain
 /// rewards from DB and submits a single batchMintRewards tx to BSC.
 /// This keeps gas costs minimal (1 tx per hour instead of per action).
@@ -241,6 +255,126 @@ pub async fn start_message_cleanup_job(state: AppState) {
                 AND created_at < NOW() - INTERVAL '30 days'"
         ).execute(&state.db.pool).await {
             warn!("Old-invitations purge error: {e}");
+        }
+    }
+}
+
+/// Materialise due rows from `scheduled_posts` into `posts`. Runs once
+/// a minute — fine for "schedule for 14:32" granularity. The INSERT
+/// uses the scheduled row's own `publish_at` as the base for
+/// `expires_at`, so a post scheduled for next Tuesday at 9am vanishes
+/// next Wednesday at 9am, not 24h after the row was created. Permanent
+/// posts get the 100-year horizon used elsewhere.
+pub async fn start_scheduled_publish_job(state: AppState) {
+    let mut ticker = interval(Duration::from_secs(60));
+    loop {
+        ticker.tick().await;
+        // Two-step: select + delete + insert, all in one tx so we don't
+        // double-publish if the worker crashes mid-loop and restarts.
+        let mut tx = match state.db.pool.begin().await {
+            Ok(t) => t,
+            Err(e) => { error!("scheduled-publish: begin tx: {e}"); continue; }
+        };
+
+        let due: Vec<DueScheduledPost> = match sqlx::query_as(
+            "SELECT id, author_id, content, media_url, is_adult, is_nft,
+                    nft_price_yeet::float8 AS nft_price_yeet,
+                    is_permanent,
+                    ppv_price_yeet::float8 AS ppv_price_yeet,
+                    publish_at
+               FROM scheduled_posts
+              WHERE publish_at <= NOW()
+              ORDER BY publish_at ASC
+              LIMIT 500
+              FOR UPDATE SKIP LOCKED"
+        ).fetch_all(&mut *tx).await {
+            Ok(v) => v,
+            Err(e) => { error!("scheduled-publish: select: {e}"); let _ = tx.rollback().await; continue; }
+        };
+
+        if due.is_empty() {
+            let _ = tx.rollback().await;
+            continue;
+        }
+
+        let mut published = 0u64;
+        for row in &due {
+            let expires_at = if row.is_permanent || row.is_nft {
+                row.publish_at + chrono::Duration::hours(24 * 365 * 100)
+            } else {
+                row.publish_at + chrono::Duration::hours(24)
+            };
+            let media_arr: Vec<String> = row.media_url.iter().cloned().collect();
+            let insert = sqlx::query(
+                "INSERT INTO posts
+                   (author_id, content, media_urls, media_url, expires_at, is_adult,
+                    is_nft, nft_price_yeet, is_permanent, ppv_price_yeet, created_at)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)"
+            )
+            .bind(row.author_id).bind(&row.content).bind(&media_arr)
+            .bind(row.media_url.as_deref())
+            .bind(expires_at)
+            .bind(row.is_adult).bind(row.is_nft).bind(row.nft_price_yeet)
+            .bind(row.is_permanent).bind(row.ppv_price_yeet)
+            .bind(row.publish_at)
+            .execute(&mut *tx).await;
+            if let Err(e) = insert {
+                warn!("scheduled-publish: insert post {}: {e}", row.id);
+                continue;
+            }
+            if let Err(e) = sqlx::query("DELETE FROM scheduled_posts WHERE id = $1")
+                .bind(row.id).execute(&mut *tx).await
+            {
+                warn!("scheduled-publish: delete sched {}: {e}", row.id);
+                continue;
+            }
+            published += 1;
+        }
+
+        if let Err(e) = tx.commit().await {
+            error!("scheduled-publish: commit: {e}");
+        } else if published > 0 {
+            info!("Scheduled-publish: materialised {published} posts.");
+        }
+    }
+}
+
+/// Janitor for `lives`. Closes broadcasts that the host never properly
+/// ended (status='live' with no events for 6h — probably a client
+/// crash) and marks scheduled lives that were never started as
+/// 'cancelled' once they're 2h past their start slot. Also prunes
+/// fully-ended lives older than 30 days so the table doesn't grow
+/// unbounded.
+pub async fn start_lives_sweep_job(state: AppState) {
+    let mut ticker = interval(Duration::from_secs(600)); // 10 min
+    loop {
+        ticker.tick().await;
+
+        if let Err(e) = sqlx::query(
+            "UPDATE lives
+                SET status = 'ended', ended_at = NOW()
+              WHERE status = 'live'
+                AND started_at < NOW() - INTERVAL '6 hours'"
+        ).execute(&state.db.pool).await {
+            warn!("lives sweep (stuck-live): {e}");
+        }
+
+        if let Err(e) = sqlx::query(
+            "UPDATE lives
+                SET status = 'cancelled'
+              WHERE status = 'scheduled'
+                AND scheduled_for IS NOT NULL
+                AND scheduled_for < NOW() - INTERVAL '2 hours'"
+        ).execute(&state.db.pool).await {
+            warn!("lives sweep (expired-scheduled): {e}");
+        }
+
+        if let Err(e) = sqlx::query(
+            "DELETE FROM lives
+              WHERE status IN ('ended','cancelled')
+                AND COALESCE(ended_at, created_at) < NOW() - INTERVAL '30 days'"
+        ).execute(&state.db.pool).await {
+            warn!("lives sweep (old-rows): {e}");
         }
     }
 }

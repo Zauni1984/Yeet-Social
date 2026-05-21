@@ -28,3 +28,5 @@ pub mod messages;
 pub mod invitations;
 pub mod search;
 pub mod admin_mod;
+pub mod lives;
+pub mod scheduled_posts;

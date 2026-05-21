@@ -42,6 +42,8 @@ async fn main() {
     tokio::spawn(services::batch_rewards::start_reward_batch_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_cleanup_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_message_cleanup_job(state.clone()));
+    tokio::spawn(services::batch_rewards::start_scheduled_publish_job(state.clone()));
+    tokio::spawn(services::batch_rewards::start_lives_sweep_job(state.clone()));
     info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");
@@ -105,6 +107,21 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar))
         .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover))
         .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media))
+        // Live broadcasts
+        .route("/api/v1/lives",              post(api::lives::create_live))
+        .route("/api/v1/lives/active",       get(api::lives::list_active))
+        .route("/api/v1/lives/scheduled",    get(api::lives::list_scheduled))
+        .route("/api/v1/lives/mine",         get(api::lives::list_mine))
+        .route("/api/v1/lives/:id",          get(api::lives::get_live))
+        .route("/api/v1/lives/:id/start",    post(api::lives::start_live))
+        .route("/api/v1/lives/:id/end",      post(api::lives::end_live))
+        .route("/api/v1/lives/:id/cancel",   post(api::lives::cancel_live))
+        .route("/api/v1/lives/:id/viewers",  post(api::lives::ping_viewer_count))
+        .route("/api/v1/lives/:id/tip",      post(api::lives::tip_live))
+        // Scheduled posts
+        .route("/api/v1/scheduled-posts",       post(api::scheduled_posts::create))
+        .route("/api/v1/scheduled-posts/mine",  get(api::scheduled_posts::list_mine))
+        .route("/api/v1/scheduled-posts/:id",   delete(api::scheduled_posts::cancel))
         .route("/api/v1/users/:address",   get(api::users::get_profile))
         .route("/api/v1/users/:address/posts",     get(api::feed::get_user_posts))
         .route("/api/v1/users/:address/followers", get(api::users::list_followers))

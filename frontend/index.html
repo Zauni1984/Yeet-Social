@@ -584,7 +584,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div class="tabs">
       <div class="tab active" onclick="setTab(this)">FOR YOU</div>
       <div class="tab" onclick="setTab(this)">FOLLOWING</div>
-      
+      <div class="tab" onclick="setTab(this)">LIVE &#128308;</div>
       <div class="tab" onclick="setTab(this)">18+ &#128293;</div>
     </div>
     <div class="composer">
@@ -597,6 +597,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
           <button class="icon-btn" title="Add video" data-i18n-title="composer.addVideo" onclick="document.getElementById('videoInput').click()">&#127909;</button>
           <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleVideoSelect(this)">
+          <button class="icon-btn" id="schedToggleBtn" title="Schedule for later" data-i18n-title="sched.toggle" onclick="toggleScheduleUI()">&#128197;</button>
+          <input type="datetime-local" id="schedAt" style="display:none;background:#1a1a1a;border:1px solid #333;border-radius:8px;color:#fff;padding:4px 8px;font-size:12px">
           <button class="icon-btn" id="permToggleBtn" title="Mark as permanent post" data-i18n-title="composer.markPermanent" onclick="togglePermanent()">&#128204;</button>
           <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" data-i18n-title="composer.payPerView" onclick="togglePPV()">&#128274;</button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128274; PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
           <button class="icon-btn" title="Tip" data-i18n-title="composer.tip">&#9889;</button>
@@ -683,6 +685,22 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.videoInvalidFormat':'Only MP4, WebM, MOV allowed','toast.videoTooLarge':'Video too large (max 30 MB)',
       'toast.videoTooLong':'Video too long (max 60 s)','toast.videoSelected':'Video selected',
       'toast.uploadingVideo':'Uploading video...','toast.videoUnreadable':'Could not read video',
+      // Live + scheduling
+      'live.tab':'Live','live.goLive':'Go Live','live.schedule':'Schedule Live','live.cancel':'Cancel',
+      'live.watch':'Watch','live.endStream':'End live','live.startStream':'Start live',
+      'live.tipHost':'Tip host','live.tipAmount':'How many YEET?','live.tipped':'Thanks for the tip!',
+      'live.title':'Stream title','live.descr':'What is this stream about? (optional)',
+      'live.titlePh':'e.g. Yeet Q&A — drop your questions',
+      'live.activeNone':'No one is live right now','live.scheduledNone':'No scheduled lives',
+      'live.placeholder':'Live video pipeline (LiveKit) wires up in Phase 2. The host UI, tip flow, scheduling and ranking are already live here.',
+      'live.viewers':'viewers','live.startsAt':'Starts at','live.adult':'18+',
+      'live.confirmEnd':'End this live stream?','live.confirmCancel':'Cancel this scheduled live?',
+      'live.iAmTheHost':'You are the host',
+      'sched.toggle':'Schedule for later','sched.when':'Publish at',
+      'sched.minFuture':'Pick a time at least 1 minute from now',
+      'sched.maxFuture':'Cannot schedule more than 60 days ahead',
+      'sched.scheduled':'Post scheduled','sched.list':'Scheduled posts',
+      'sched.cancel':'Cancel','sched.none':'No scheduled posts',
       'toast.uploadingAvatar':'Uploading profile picture...','toast.uploadingCover':'Uploading cover...',
       'toast.avatarUpdated':'Profile picture updated','toast.coverUpdated':'Cover updated',
       'toast.uploadError':'Upload error','toast.uploadFailed':'Upload failed',
@@ -868,6 +886,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.videoInvalidFormat':'Nur MP4, WebM, MOV erlaubt','toast.videoTooLarge':'Video zu groß (max. 30 MB)',
       'toast.videoTooLong':'Video zu lang (max. 60 s)','toast.videoSelected':'Video ausgewählt',
       'toast.uploadingVideo':'Video wird hochgeladen...','toast.videoUnreadable':'Video konnte nicht gelesen werden',
+      'live.tab':'Live','live.goLive':'Jetzt live gehen','live.schedule':'Live planen','live.cancel':'Abbrechen',
+      'live.watch':'Anschauen','live.endStream':'Live beenden','live.startStream':'Live starten',
+      'live.tipHost':'Host tippen','live.tipAmount':'Wie viele YEET?','live.tipped':'Danke für den Tip!',
+      'live.title':'Stream-Titel','live.descr':'Worum geht’s? (optional)',
+      'live.titlePh':'z. B. Yeet Q&A — stellt eure Fragen',
+      'live.activeNone':'Gerade ist niemand live','live.scheduledNone':'Keine geplanten Lives',
+      'live.placeholder':'Echte Video-Übertragung (LiveKit) folgt in Phase 2. Host-UI, Tip-Flow, Planung & Ranking sind hier bereits live.',
+      'live.viewers':'Zuschauer','live.startsAt':'Beginnt um','live.adult':'18+',
+      'live.confirmEnd':'Diesen Live-Stream beenden?','live.confirmCancel':'Diesen geplanten Live abbrechen?',
+      'live.iAmTheHost':'Du bist der Host',
+      'sched.toggle':'Später posten','sched.when':'Veröffentlichen am',
+      'sched.minFuture':'Wähle einen Zeitpunkt mind. 1 Min. in der Zukunft',
+      'sched.maxFuture':'Maximal 60 Tage im Voraus planbar',
+      'sched.scheduled':'Post geplant','sched.list':'Geplante Posts',
+      'sched.cancel':'Abbrechen','sched.none':'Keine geplanten Posts',
       'toast.uploadingAvatar':'Profilbild wird hochgeladen...','toast.uploadingCover':'Cover wird hochgeladen...',
       'toast.avatarUpdated':'Profilbild aktualisiert','toast.coverUpdated':'Cover aktualisiert',
       'toast.uploadError':'Upload-Fehler','toast.uploadFailed':'Upload fehlgeschlagen',
@@ -1233,6 +1266,9 @@ async function loadProfile(){
     const d=await r.json();
     if(!d.success)return;
     const u=d.data;
+    // Cache the user's id so client-side checks (e.g. "am I the host
+    // of this live?") don't need an extra round trip.
+    if(u && u.id) localStorage.setItem('yeet_user_id', u.id);
     const addr=u.wallet_address||connectedAddress||'';
     const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):'';
     const pw=document.getElementById('profileWidget');
@@ -2364,7 +2400,14 @@ function setTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
   const label=t.textContent.trim();
+  // Reset state that the LIVE tab toggles: re-show composer + drop the
+  // lives panel before falling into the feed loaders.
+  if(!label.includes('LIVE')){
+    var comp = document.querySelector('.composer'); if(comp) comp.style.display='';
+    var lw = document.getElementById('lives-wrap'); if(lw) lw.remove();
+  }
   if(label.includes('18+')){ check18Plus(); return; }
+  if(label.includes('LIVE')){ loadLives(); return; }
   if(label.includes('NFT')){ loadFeedFiltered('nft'); return; }
   if(label.includes('FOLLOWING')){ loadFollowingFeed(); return; }
   loadFeed();
@@ -2416,6 +2459,44 @@ function submitPost(){
   // URL in window._postMediaUrl. Images stay inline (base64) for now.
   // Whichever is set wins; the composer enforces only one at a time.
   var mediaUrl = window._postMediaUrl || window._postImageB64 || null;
+  // Schedule branch: if the user picked a publish_at, route to the
+  // scheduled-posts endpoint instead of /posts. Server enforces the
+  // 1-min-in-the-future floor; we mirror it client-side so we don't
+  // burn a round-trip on an obvious mistake.
+  var schedInput = document.getElementById('schedAt');
+  var schedAtRaw = (schedInput && schedInput.style.display !== 'none') ? schedInput.value : '';
+  if(schedAtRaw){
+    var when = new Date(schedAtRaw);
+    if(!isFinite(when.getTime())){
+      showToast(window.t('sched.minFuture'),'error'); return;
+    }
+    if(when.getTime() < Date.now() + 60*1000){
+      showToast(window.t('sched.minFuture'),'error'); return;
+    }
+    if(when.getTime() > Date.now() + 60*86400*1000){
+      showToast(window.t('sched.maxFuture'),'error'); return;
+    }
+    fetch('/api/v1/scheduled-posts',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,
+        is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,
+        is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null,
+        publish_at:when.toISOString()})
+    }).then(r=>r.json()).then(d=>{
+      if(d && d.success){
+        document.getElementById('postTxt').value='';
+        window._postImageB64=null;window._postMediaUrl=null;window._postIsNFT=false;window._postNFTPrice=null;
+        var pw=document.getElementById('imgPreviewWrap');if(pw)pw.style.display='none';
+        var vw=document.getElementById('videoPreviewWrap');if(vw)vw.style.display='none';
+        if(schedInput){ schedInput.value=''; schedInput.style.display='none'; }
+        showToast(window.t('sched.scheduled'),'success');
+      } else {
+        showToast(window.t('common.error')+': '+((d&&d.error&&d.error.message)||''),'error');
+      }
+    }).catch(e=>showToast(window.t('toast.postFailed')+': '+(e.message||''),'error'));
+    return;
+  }
   fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null})})
     .then(async function(r){
       if(r.status===413){throw new Error(window.t('toast.imageTooLargeServer'));}
@@ -3749,6 +3830,334 @@ function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
   });
 }
 
+
+// ── SCHEDULE TOGGLE ────────────────────────────────────────────────────────
+// Compact UX: a calendar icon toggles a datetime-local input inline.
+// When the field is visible AND filled, submitPost routes to the
+// scheduled-posts endpoint instead of /posts.
+function toggleScheduleUI(){
+  var inp = document.getElementById('schedAt');
+  var btn = document.getElementById('schedToggleBtn');
+  if(!inp) return;
+  if(inp.style.display === 'none' || !inp.style.display){
+    // Default to ~10 min from now in the user's local timezone.
+    var when = new Date(Date.now() + 10*60*1000);
+    var pad = function(n){ return (n<10?'0':'')+n; };
+    inp.value = when.getFullYear()+'-'+pad(when.getMonth()+1)+'-'+pad(when.getDate())+
+                'T'+pad(when.getHours())+':'+pad(when.getMinutes());
+    inp.style.display = 'inline-block';
+    if(btn) btn.style.color = '#c6f135';
+  } else {
+    inp.style.display = 'none';
+    inp.value = '';
+    if(btn) btn.style.color = '';
+  }
+}
+window.toggleScheduleUI = toggleScheduleUI;
+
+// ── SCHEDULED POSTS LIST (own profile) ─────────────────────────────────────
+function loadScheduledPosts(){
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); return; }
+  fetch('/api/v1/scheduled-posts/mine',{headers:{'Authorization':'Bearer '+jwt}})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var box = document.getElementById('schedListBox');
+      if(!box) return;
+      if(!d || !d.success || !d.data || !d.data.length){
+        box.innerHTML = '<div style="color:var(--muted);padding:12px;font-size:13px">'+window.t('sched.none')+'</div>';
+        return;
+      }
+      var html = '';
+      for(var i=0;i<d.data.length;i++){
+        var p = d.data[i];
+        var when = new Date(p.publish_at);
+        var content = String(p.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += '<div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start">'
+              + '<div style="flex:1;min-width:0">'
+              + '<div style="font-size:12px;color:#c6f135">'+when.toLocaleString()+'</div>'
+              + '<div style="font-size:13px;margin-top:4px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">'+content+'</div>'
+              + '</div>'
+              + '<button onclick="cancelScheduledPost(\''+p.id+'\')" style="background:transparent;border:1px solid #555;border-radius:6px;color:#f55;padding:4px 10px;font-size:11px;cursor:pointer">'+window.t('sched.cancel')+'</button>'
+              + '</div>';
+      }
+      box.innerHTML = html;
+    })
+    .catch(function(){ /* silent */ });
+}
+function cancelScheduledPost(id){
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  fetch('/api/v1/scheduled-posts/'+encodeURIComponent(id),{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}})
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && d.success){ loadScheduledPosts(); }
+      else showToast(window.t('common.error'),'error');
+    });
+}
+window.loadScheduledPosts = loadScheduledPosts;
+window.cancelScheduledPost = cancelScheduledPost;
+
+// ── LIVE STREAMS ───────────────────────────────────────────────────────────
+// Loads + renders the LIVE tab: currently-broadcasting at top sorted by
+// tip total DESC, scheduled lives below. The "Go Live" / "Schedule"
+// buttons appear at the top. The actual video pipe is Phase 2; for
+// now the host/viewer pages show a clear placeholder so the social
+// scaffolding (ranking, tipping, scheduling) can be exercised today.
+function loadLives(){
+  // Hide the composer + normal feed posts while in the LIVE tab.
+  var comp = document.querySelector('.composer'); if(comp) comp.style.display='none';
+  var old = document.getElementById('feed-posts'); if(old) old.remove();
+  var empty = document.querySelector('.empty'); if(empty) empty.style.display='none';
+  var existing = document.getElementById('lives-wrap');
+  if(existing) existing.remove();
+
+  var wrap = document.createElement('div');
+  wrap.id = 'lives-wrap';
+  wrap.style.cssText = 'padding:12px 16px';
+  wrap.innerHTML = ''
+    + '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">'
+    +   '<button class="btn-yeet" onclick="openCreateLive(false)">&#128308; '+window.t('live.goLive')+'</button>'
+    +   '<button class="btn-sm" onclick="openCreateLive(true)">&#128197; '+window.t('live.schedule')+'</button>'
+    + '</div>'
+    + '<div id="lives-active-list"></div>'
+    + '<h3 style="margin:22px 0 8px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">'+window.t('live.schedule')+'</h3>'
+    + '<div id="lives-scheduled-list"></div>';
+
+  var compEl = document.querySelector('.composer');
+  if(compEl && compEl.parentNode) compEl.parentNode.insertBefore(wrap, compEl.nextSibling);
+
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var headers = jwt ? {'Authorization':'Bearer '+jwt} : {};
+  fetch('/api/v1/lives/active',{headers}).then(function(r){return r.json();}).then(function(d){
+    var box = document.getElementById('lives-active-list'); if(!box) return;
+    if(!d || !d.success || !d.data || !d.data.length){
+      box.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:13px">'+window.t('live.activeNone')+'</div>';
+      return;
+    }
+    box.innerHTML = d.data.map(renderLiveCard).join('');
+  });
+  fetch('/api/v1/lives/scheduled',{headers}).then(function(r){return r.json();}).then(function(d){
+    var box = document.getElementById('lives-scheduled-list'); if(!box) return;
+    if(!d || !d.success || !d.data || !d.data.length){
+      box.innerHTML = '<div style="padding:14px;color:var(--muted);font-size:13px">'+window.t('live.scheduledNone')+'</div>';
+      return;
+    }
+    box.innerHTML = d.data.map(renderLiveCard).join('');
+  });
+}
+window.loadLives = loadLives;
+
+function renderLiveCard(l){
+  var name = (l.host && (l.host.display_name || l.host.wallet_address)) || '@user';
+  name = String(name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var title = String(l.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var isLive = l.status === 'live';
+  var schedHtml = '';
+  if(l.scheduled_for){
+    var dt = new Date(l.scheduled_for);
+    schedHtml = '<div style="font-size:11px;color:#c6f135;margin-top:2px">'+window.t('live.startsAt')+' '+dt.toLocaleString()+'</div>';
+  }
+  var adultBadge = l.is_adult ? '<span style="font-size:10px;background:#f5a623;color:#000;padding:1px 6px;border-radius:8px;margin-left:6px">'+window.t('live.adult')+'</span>' : '';
+  var liveBadge = isLive ? '<span style="font-size:10px;background:#e63946;color:#fff;padding:1px 6px;border-radius:8px;margin-left:6px">&#128308; LIVE</span>' : '';
+  var tipsRow = isLive
+    ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">&#128293; '+(l.tip_total_yeet||0).toFixed(2)+' YEET &middot; &#128065; '+(l.viewer_count||0)+' '+window.t('live.viewers')+'</div>'
+    : '';
+  var myId = localStorage.getItem('yeet_user_id') || '';
+  var isMine = myId && l.host && l.host.id === myId;
+  var actions = '';
+  if(isLive){
+    actions += '<button class="btn-sm" onclick="openLiveViewer(\''+l.id+'\')">'+window.t('live.watch')+'</button> ';
+    actions += '<button class="btn-sm" onclick="tipLivePrompt(\''+l.id+'\')" style="background:#f5a623;color:#000">&#127873; '+window.t('live.tipHost')+'</button>';
+    if(isMine) actions += ' <button class="btn-sm" onclick="endLive(\''+l.id+'\')" style="background:#e63946;color:#fff">'+window.t('live.endStream')+'</button>';
+  } else if(l.status === 'scheduled'){
+    if(isMine){
+      actions += '<button class="btn-sm" onclick="startLive(\''+l.id+'\')" style="background:#c6f135;color:#000">'+window.t('live.startStream')+'</button> ';
+      actions += '<button class="btn-sm" onclick="cancelLive(\''+l.id+'\')" style="background:transparent;color:#f55;border:1px solid #f55">'+window.t('live.cancel')+'</button>';
+    } else {
+      actions += '<span style="font-size:12px;color:var(--muted)">'+window.t('live.startsAt')+'</span>';
+    }
+  }
+  return '<div style="padding:12px 14px;border:1px solid var(--border);border-radius:12px;margin:8px 0;background:#0e0e0e">'
+    + '<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:16px;overflow:hidden">'+_avatarInner(l.host||{})+'</div>'
+    + '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">'+title+liveBadge+adultBadge+'</div>'
+    + '<div style="font-size:12px;color:var(--muted)">'+name+'</div>'+schedHtml+tipsRow+'</div></div>'
+    + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+actions+'</div>'
+    + '</div>';
+}
+
+function openCreateLive(scheduled){
+  var existing = document.getElementById('liveCreateModal');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'liveCreateModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px';
+  var nowLocal = '';
+  if(scheduled){
+    var d = new Date(Date.now()+15*60*1000);
+    var pad=function(n){return (n<10?'0':'')+n;};
+    nowLocal = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+  modal.innerHTML = ''
+    + '<div style="background:#111;border:1px solid var(--border);border-radius:14px;max-width:420px;width:100%;padding:18px">'
+    + '<h3 style="margin:0 0 10px;font-size:16px">'+(scheduled?window.t('live.schedule'):window.t('live.goLive'))+'</h3>'
+    + '<label style="font-size:11px;color:var(--muted)">'+window.t('live.title')+'</label>'
+    + '<input id="liveTitle" maxlength="120" placeholder="'+window.t('live.titlePh')+'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;margin:4px 0 10px">'
+    + '<label style="font-size:11px;color:var(--muted)">'+window.t('live.descr')+'</label>'
+    + '<textarea id="liveDescr" maxlength="500" rows="2" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;margin:4px 0 10px;resize:vertical"></textarea>'
+    + (scheduled
+        ? ('<label style="font-size:11px;color:var(--muted)">'+window.t('sched.when')+'</label>'
+           +'<input id="liveSchedAt" type="datetime-local" value="'+nowLocal+'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;margin:4px 0 10px">')
+        : '')
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;margin:0 0 12px"><input type="checkbox" id="liveAdult" style="accent-color:#f5a623"> 18+</label>'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end">'
+    +   '<button class="btn-sm" onclick="document.getElementById(\'liveCreateModal\').remove()">'+window.t('live.cancel')+'</button>'
+    +   '<button class="btn-yeet" id="liveCreateGo">'+(scheduled?window.t('live.schedule'):window.t('live.goLive'))+'</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
+  document.getElementById('liveCreateGo').onclick = function(){ submitCreateLive(scheduled); };
+}
+window.openCreateLive = openCreateLive;
+
+function submitCreateLive(scheduled){
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); return; }
+  var title = document.getElementById('liveTitle').value.trim();
+  var descr = document.getElementById('liveDescr').value.trim();
+  var adult = !!document.getElementById('liveAdult').checked;
+  if(!title){ showToast(window.t('live.title'),'error'); return; }
+  var body = { title:title, description:descr||null, is_adult:adult };
+  if(scheduled){
+    var raw = document.getElementById('liveSchedAt').value;
+    var when = new Date(raw);
+    if(!isFinite(when.getTime()) || when.getTime() < Date.now()){
+      showToast(window.t('sched.minFuture'),'error'); return;
+    }
+    body.scheduled_for = when.toISOString();
+  }
+  fetch('/api/v1/lives',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify(body)})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d && d.success){
+        var modal = document.getElementById('liveCreateModal'); if(modal) modal.remove();
+        if(scheduled){
+          showToast(window.t('sched.scheduled'),'success');
+          loadLives();
+        } else {
+          openLiveViewer(d.data, /*asHost*/ true);
+          loadLives();
+        }
+      } else {
+        showToast(window.t('common.error')+': '+((d&&d.error&&d.error.message)||''),'error');
+      }
+    });
+}
+
+function openLiveViewer(liveId, asHost){
+  var existing = document.getElementById('liveViewer'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'liveViewer';
+  modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9000;display:flex;flex-direction:column';
+  modal.innerHTML = ''
+    + '<div style="padding:12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #222">'
+    +   '<button onclick="closeLiveViewer()" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer">&larr;</button>'
+    +   '<div id="liveViewerTitle" style="flex:1;font-weight:700">…</div>'
+    +   '<div id="liveViewerMeta" style="font-size:12px;color:#c6f135"></div>'
+    + '</div>'
+    + '<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px">'
+    +   '<div style="max-width:480px;color:#aaa"><div style="font-size:42px;margin-bottom:14px">&#128249;</div>'
+    +   '<div style="font-size:14px;line-height:1.5">'+window.t('live.placeholder')+'</div>'
+    +   (asHost?'<div style="margin-top:14px;font-size:12px;color:#c6f135">'+window.t('live.iAmTheHost')+'</div>':'')+'</div>'
+    + '</div>'
+    + '<div style="padding:12px;border-top:1px solid #222;display:flex;gap:8px;flex-wrap:wrap">'
+    +   (asHost
+        ? '<button class="btn-sm" onclick="endLive(\''+liveId+'\')" style="background:#e63946;color:#fff">'+window.t('live.endStream')+'</button>'
+        : '<button class="btn-sm" onclick="tipLivePrompt(\''+liveId+'\')" style="background:#f5a623;color:#000">&#127873; '+window.t('live.tipHost')+'</button>')
+    + '</div>';
+  document.body.appendChild(modal);
+  modal.dataset.liveId = liveId;
+
+  // Hydrate the header + bump viewer count up.
+  fetch('/api/v1/lives/'+encodeURIComponent(liveId)).then(function(r){return r.json();}).then(function(d){
+    if(!d || !d.success) return;
+    var l = d.data;
+    document.getElementById('liveViewerTitle').textContent = l.title;
+    document.getElementById('liveViewerMeta').textContent =
+      '&#128293; '+(l.tip_total_yeet||0).toFixed(2)+' YEET · '+(l.viewer_count||0)+' '+window.t('live.viewers');
+    document.getElementById('liveViewerMeta').innerHTML =
+      '&#128293; '+(l.tip_total_yeet||0).toFixed(2)+' YEET &middot; '+(l.viewer_count||0)+' '+window.t('live.viewers');
+  });
+  if(!asHost){
+    fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewers',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delta:1})
+    });
+  }
+}
+window.openLiveViewer = openLiveViewer;
+
+function closeLiveViewer(){
+  var modal = document.getElementById('liveViewer');
+  if(!modal) return;
+  var liveId = modal.dataset.liveId;
+  if(liveId){
+    fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewers',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delta:-1})
+    });
+  }
+  modal.remove();
+}
+window.closeLiveViewer = closeLiveViewer;
+
+function startLive(id){
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  fetch('/api/v1/lives/'+encodeURIComponent(id)+'/start',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d && d.success){ openLiveViewer(id, true); loadLives(); }
+      else showToast(window.t('common.error'),'error');
+    });
+}
+function endLive(id){
+  if(!confirm(window.t('live.confirmEnd'))) return;
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  fetch('/api/v1/lives/'+encodeURIComponent(id)+'/end',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d && d.success){ closeLiveViewer(); loadLives(); }
+      else showToast(window.t('common.error'),'error');
+    });
+}
+function cancelLive(id){
+  if(!confirm(window.t('live.confirmCancel'))) return;
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  fetch('/api/v1/lives/'+encodeURIComponent(id)+'/cancel',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d && d.success){ loadLives(); }
+      else showToast(window.t('common.error'),'error');
+    });
+}
+function tipLivePrompt(id){
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); return; }
+  var raw = prompt(window.t('live.tipAmount'),'10');
+  if(raw === null) return;
+  var amt = parseFloat(raw);
+  if(!isFinite(amt) || amt <= 0){ showToast(window.t('common.error'),'error'); return; }
+  fetch('/api/v1/lives/'+encodeURIComponent(id)+'/tip',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+    body:JSON.stringify({amount:String(amt)})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d && d.success){
+      showToast(window.t('live.tipped'),'success');
+      // Re-rank by reloading the list — the tip just bumped this host.
+      loadLives();
+    } else {
+      showToast(((d&&d.error&&d.error.message)||window.t('common.error')),'error');
+    }
+  });
+}
+window.startLive = startLive;
+window.endLive = endLive;
+window.cancelLive = cancelLive;
+window.tipLivePrompt = tipLivePrompt;
 
 function _isVideoUrl(u){
   if(!u || typeof u !== 'string') return false;
