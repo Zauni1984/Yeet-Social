@@ -692,7 +692,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'live.title':'Stream title','live.descr':'What is this stream about? (optional)',
       'live.titlePh':'e.g. Yeet Q&A — drop your questions',
       'live.activeNone':'No one is live right now','live.scheduledNone':'No scheduled lives',
-      'live.placeholder':'Live video pipeline (LiveKit) wires up in Phase 2. The host UI, tip flow, scheduling and ranking are already live here.',
+      'live.placeholder':'Live streaming server is not configured yet. Set LIVEKIT_WS_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET on the backend and reload.',
       'live.viewers':'viewers','live.startsAt':'Starts at','live.adult':'18+',
       'live.confirmEnd':'End this live stream?','live.confirmCancel':'Cancel this scheduled live?',
       'live.iAmTheHost':'You are the host',
@@ -903,7 +903,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'live.title':'Stream-Titel','live.descr':'Worum geht’s? (optional)',
       'live.titlePh':'z. B. Yeet Q&A — stellt eure Fragen',
       'live.activeNone':'Gerade ist niemand live','live.scheduledNone':'Keine geplanten Lives',
-      'live.placeholder':'Echte Video-Übertragung (LiveKit) folgt in Phase 2. Host-UI, Tip-Flow, Planung & Ranking sind hier bereits live.',
+      'live.placeholder':'Live-Server ist noch nicht eingerichtet. Setze LIVEKIT_WS_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET im Backend und lade neu.',
       'live.viewers':'Zuschauer','live.startsAt':'Beginnt um','live.adult':'18+',
       'live.confirmEnd':'Diesen Live-Stream beenden?','live.confirmCancel':'Diesen geplanten Live abbrechen?',
       'live.iAmTheHost':'Du bist der Host',
@@ -4123,8 +4123,10 @@ function submitCreateLive(scheduled){
           showToast(window.t('sched.scheduled'),'success');
           loadLives();
         } else {
-          openLiveViewer(liveId, true);
-          loadLives();
+          // create_live inserts status='live' for "go live now", but
+          // we still go through startLive so the server mints the
+          // LiveKit publisher token in the same idempotent call.
+          startLive(liveId);
         }
       };
       if(promoTier === 'basic' || promoTier === 'boost'){
@@ -4189,7 +4191,13 @@ function openPromoteLive(liveId){
 }
 window.openPromoteLive = openPromoteLive;
 
-function openLiveViewer(liveId, asHost){
+// Live state held while a viewer is in the modal. Lazily connects to
+// LiveKit via the CDN bundle (window.LivekitClient); falls back to a
+// clear placeholder if the server is not yet configured or the bundle
+// hasn't finished loading.
+var _liveSession = { room: null, liveId: null, asHost: false };
+
+function openLiveViewer(liveId, asHost, hostToken){
   var existing = document.getElementById('liveViewer'); if(existing) existing.remove();
   var modal = document.createElement('div');
   modal.id = 'liveViewer';
@@ -4200,42 +4208,149 @@ function openLiveViewer(liveId, asHost){
     +   '<div id="liveViewerTitle" style="flex:1;font-weight:700">…</div>'
     +   '<div id="liveViewerMeta" style="font-size:12px;color:#c6f135"></div>'
     + '</div>'
-    + '<div style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px">'
-    +   '<div style="max-width:480px;color:#aaa"><div style="font-size:42px;margin-bottom:14px">&#128249;</div>'
-    +   '<div style="font-size:14px;line-height:1.5">'+window.t('live.placeholder')+'</div>'
-    +   (asHost?'<div style="margin-top:14px;font-size:12px;color:#c6f135">'+window.t('live.iAmTheHost')+'</div>':'')+'</div>'
+    + '<div id="liveStage" style="flex:1;position:relative;background:#000;overflow:hidden">'
+    +   '<div id="liveRemote" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"></div>'
+    +   '<div id="liveStatus" style="position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:11px;color:#aaa;background:rgba(0,0,0,.4);text-align:center">Connecting…</div>'
     + '</div>'
     + '<div style="padding:12px;border-top:1px solid #222;display:flex;gap:8px;flex-wrap:wrap">'
     +   (asHost
-        ? '<button class="btn-sm" onclick="endLive(\''+liveId+'\')" style="background:#e63946;color:#fff">'+window.t('live.endStream')+'</button>'
+        ? '<button class="btn-sm" id="liveMuteBtn" onclick="toggleLiveMute()">🎤 Mute</button>'
+          +'<button class="btn-sm" id="liveCamBtn" onclick="toggleLiveCam()">📷 Camera</button>'
+          +'<button class="btn-sm" onclick="endLive(\''+liveId+'\')" style="background:#e63946;color:#fff;margin-left:auto">'+window.t('live.endStream')+'</button>'
         : '<button class="btn-sm" onclick="tipLivePrompt(\''+liveId+'\')" style="background:#f5a623;color:#000">&#127873; '+window.t('live.tipHost')+'</button>')
     + '</div>';
   document.body.appendChild(modal);
   modal.dataset.liveId = liveId;
+  _liveSession = { room: null, liveId: liveId, asHost: !!asHost };
 
-  // Hydrate the header + bump viewer count up.
+  // Hydrate the header.
   fetch('/api/v1/lives/'+encodeURIComponent(liveId)).then(function(r){return r.json();}).then(function(d){
     if(!d || !d.success) return;
     var l = d.data;
-    document.getElementById('liveViewerTitle').textContent = l.title;
-    document.getElementById('liveViewerMeta').textContent =
-      '&#128293; '+(l.tip_total_yeet||0).toFixed(2)+' YEET · '+(l.viewer_count||0)+' '+window.t('live.viewers');
-    document.getElementById('liveViewerMeta').innerHTML =
-      '&#128293; '+(l.tip_total_yeet||0).toFixed(2)+' YEET &middot; '+(l.viewer_count||0)+' '+window.t('live.viewers');
+    var t = document.getElementById('liveViewerTitle'); if(t) t.textContent = l.title;
+    var m = document.getElementById('liveViewerMeta'); if(m)
+      m.innerHTML = '&#128293; '+(l.tip_total_yeet||0).toFixed(2)+' YEET &middot; '+(l.viewer_count||0)+' '+window.t('live.viewers');
   });
-  if(!asHost){
-    fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewers',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delta:1})
-    });
+
+  // Host got their token from startLive; viewers ask the server.
+  if(asHost){
+    if(hostToken && hostToken.token){ _attachLive(hostToken); }
+    else { _setLiveStatus(window.t('live.placeholder')); }
+    return;
   }
+  // Anonymous viewers are allowed.
+  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var headers = jwt ? {'Content-Type':'application/json','Authorization':'Bearer '+jwt}
+                    : {'Content-Type':'application/json'};
+  fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewers',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delta:1})
+  });
+  fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewer-token',{method:'POST',headers:headers})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d && d.success){ _attachLive(d.data); }
+      else { _setLiveStatus(window.t('live.placeholder')); }
+    }).catch(function(){ _setLiveStatus(window.t('live.placeholder')); });
 }
 window.openLiveViewer = openLiveViewer;
+
+function _setLiveStatus(text){
+  var s = document.getElementById('liveStatus'); if(s) s.textContent = text;
+}
+
+// Connect to a LiveKit room with the given (token, ws_url). For hosts
+// publish camera+mic; for viewers we just subscribe to whatever the
+// host is publishing. All codecs are royalty-free defaults
+// (VP8/VP9/Opus). If the LiveKit bundle hasn't finished loading or
+// the server returned no token, fall back to the Phase-1 placeholder.
+async function _attachLive(tok){
+  if(!tok || !tok.token || !tok.ws_url){
+    _setLiveStatus(window.t('live.placeholder')); return;
+  }
+  // Wait up to 5s for the CDN-loaded UMD to surface as window.LivekitClient.
+  var lk = window.LivekitClient;
+  if(!lk){
+    var deadline = Date.now() + 5000;
+    while(Date.now() < deadline && !window.LivekitClient){
+      await new Promise(function(r){ setTimeout(r, 100); });
+    }
+    lk = window.LivekitClient;
+  }
+  if(!lk){ _setLiveStatus('LiveKit client failed to load'); return; }
+
+  var room = new lk.Room({ adaptiveStream: true, dynacast: true });
+
+  // Remote tracks (audio + video) get appended to #liveRemote.
+  room.on(lk.RoomEvent.TrackSubscribed, function(track, _pub, _participant){
+    if(track.kind === 'video' || track.kind === 'audio'){
+      var el = track.attach();
+      if(track.kind === 'video'){
+        el.style.cssText = 'max-width:100%;max-height:100%;display:block;margin:auto';
+        el.autoplay = true; el.playsInline = true;
+      }
+      var box = document.getElementById('liveRemote'); if(box) box.appendChild(el);
+    }
+  });
+  room.on(lk.RoomEvent.TrackUnsubscribed, function(track){
+    try { track.detach().forEach(function(el){ el.remove(); }); } catch(e){}
+  });
+  room.on(lk.RoomEvent.Disconnected, function(){ _setLiveStatus('Disconnected'); });
+
+  try {
+    await room.connect(tok.ws_url, tok.token);
+    _liveSession.room = room;
+    _setLiveStatus(_liveSession.asHost ? 'Live — publishing' : 'Connected');
+    if(_liveSession.asHost){
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+        await room.localParticipant.setCameraEnabled(true);
+        // Show the host their own preview so they can frame the shot.
+        var cam = room.localParticipant.getTrack(lk.Track.Source.Camera);
+        if(cam && cam.track){
+          var preview = cam.track.attach();
+          preview.muted = true; preview.autoplay = true; preview.playsInline = true;
+          preview.style.cssText = 'max-width:100%;max-height:100%;display:block;margin:auto';
+          var box = document.getElementById('liveRemote'); if(box) box.appendChild(preview);
+        }
+      } catch(e){
+        _setLiveStatus('Camera/mic permission denied');
+      }
+    }
+  } catch(e){
+    _setLiveStatus('Connection error: '+(e && e.message || ''));
+  }
+}
+
+function toggleLiveMute(){
+  var room = _liveSession.room; if(!room) return;
+  var lp = room.localParticipant;
+  var enabled = lp.isMicrophoneEnabled;
+  lp.setMicrophoneEnabled(!enabled);
+  var btn = document.getElementById('liveMuteBtn');
+  if(btn) btn.textContent = enabled ? '🔇 Muted' : '🎤 Mute';
+}
+function toggleLiveCam(){
+  var room = _liveSession.room; if(!room) return;
+  var lp = room.localParticipant;
+  var enabled = lp.isCameraEnabled;
+  lp.setCameraEnabled(!enabled);
+  var btn = document.getElementById('liveCamBtn');
+  if(btn) btn.textContent = enabled ? '🚫 Camera off' : '📷 Camera';
+}
+window.toggleLiveMute = toggleLiveMute;
+window.toggleLiveCam = toggleLiveCam;
 
 function closeLiveViewer(){
   var modal = document.getElementById('liveViewer');
   if(!modal) return;
   var liveId = modal.dataset.liveId;
-  if(liveId){
+  var wasHost = _liveSession.asHost;
+  if(_liveSession.room){
+    try { _liveSession.room.disconnect(); } catch(e){}
+  }
+  _liveSession = { room: null, liveId: null, asHost: false };
+  // Only viewers decrement the counter — the host's "end" path is the
+  // /end endpoint which closes the broadcast entirely.
+  if(liveId && !wasHost){
     fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewers',{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delta:-1})
     });
@@ -4248,7 +4363,7 @@ function startLive(id){
   var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
   fetch('/api/v1/lives/'+encodeURIComponent(id)+'/start',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
     .then(function(r){return r.json();}).then(function(d){
-      if(d && d.success){ openLiveViewer(id, true); loadLives(); }
+      if(d && d.success){ openLiveViewer(id, true, d.data); loadLives(); }
       else showToast(window.t('common.error'),'error');
     });
 }
@@ -5282,6 +5397,10 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
      so accounts generated at registration are real Ethereum/BSC wallets importable into
      MetaMask, Trezor, Ledger etc. on both testnet and mainnet. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js" defer></script>
+<!-- LiveKit client (WebRTC). Royalty-free codecs (VP8/VP9/Opus). Loaded
+     lazily so the rest of the app boots without it; openLiveViewer
+     waits for window.LivekitClient before connecting. -->
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.6.4/dist/livekit-client.umd.min.js" defer></script>
 
 <script>
 // ---------- Paper Wallet (custodial claim-tickets) ----------

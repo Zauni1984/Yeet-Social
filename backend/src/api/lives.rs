@@ -18,6 +18,7 @@ use uuid::Uuid;
 
 use crate::{AppError, AppResult, AppState, models::ApiResponse};
 use crate::api::middleware::AuthUser;
+use crate::services::livekit;
 
 /// Resolve the calling user id from either a wallet address or the
 /// `email:UUID` synthetic address used by the email/password flow.
@@ -253,13 +254,28 @@ pub async fn get_live(
     Ok(Json(ApiResponse::ok(row_to_summary(row))))
 }
 
+#[derive(Debug, Serialize)]
+pub struct LiveTokenResponse {
+    /// LiveKit websocket URL (wss://...). None if the server hasn't
+    /// been configured yet — client falls back to the Phase-1 placeholder.
+    pub ws_url: Option<String>,
+    /// Signed LiveKit access token. None when LiveKit is unconfigured.
+    pub token: Option<String>,
+    /// Stable room name used by LiveKit. Useful for debugging; the
+    /// client doesn't need it because it's already baked into the token.
+    pub room: String,
+}
+
 /// Host transitions a scheduled broadcast to 'live'. Idempotent: if
-/// the live is already live, returns OK.
+/// the live is already live, returns OK and a fresh publisher token.
+/// Returns the LiveKit publisher token so the client can immediately
+/// connect and start publishing camera/mic; ws_url + token are None
+/// if the server's LIVEKIT_* env vars are unset.
 pub async fn start_live(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(id): Path<Uuid>,
-) -> AppResult<Json<ApiResponse<()>>> {
+) -> AppResult<Json<ApiResponse<LiveTokenResponse>>> {
     let user_id = resolve_user_id(&state, &auth.address).await?;
     // Verify the caller is the host and the live is in a startable state.
     let row: Option<(Uuid, String)> = sqlx::query_as(
@@ -269,37 +285,117 @@ pub async fn start_live(
     if host_id != user_id {
         return Err(AppError::Forbidden("Only the host can start this live".into()));
     }
-    match status.as_str() {
-        "live" => return Ok(Json(ApiResponse::ok(()))),
-        "ended" | "cancelled" => return Err(AppError::Validation("Live already finished".into())),
-        _ => {}
+    let room = livekit::room_name_for(id);
+
+    if status == "ended" || status == "cancelled" {
+        return Err(AppError::Validation("Live already finished".into()));
     }
 
-    // Phase 2 will mint a LiveKit room name + token here. For now we
-    // wrap the state flip in the same tx that materialises any booked
-    // promotion, so the announcement post is guaranteed to appear if
-    // and only if the broadcast actually transitions to live.
-    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
-    sqlx::query(
-        "UPDATE lives
-            SET status = 'live',
-                started_at = COALESCE(started_at, NOW())
-          WHERE id = $1"
-    ).bind(id).execute(&mut *tx).await.map_err(AppError::Database)?;
+    if status != "live" {
+        // First-time transition to 'live': flip state + apply promo
+        // in the same tx so the announcement post lands iff and only
+        // if the broadcast actually starts.
+        let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+        sqlx::query(
+            "UPDATE lives
+                SET status = 'live',
+                    started_at = COALESCE(started_at, NOW()),
+                    livekit_room = $2
+              WHERE id = $1"
+        ).bind(id).bind(&room).execute(&mut *tx).await.map_err(AppError::Database)?;
 
-    // Pending promotion? Apply it now (auto-post + optional pin).
-    let pending: Option<(Uuid, String, Option<i32>)> = sqlx::query_as(
-        "SELECT id, tier, boost_minutes
-           FROM live_promotions
-          WHERE live_id = $1 AND status = 'booked'
-          FOR UPDATE"
-    ).bind(id).fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
-    if let Some((promo_id, tier, boost_minutes)) = pending {
-        apply_promotion_in_tx(&mut tx, id, promo_id, &tier, boost_minutes, user_id).await?;
+        let pending: Option<(Uuid, String, Option<i32>)> = sqlx::query_as(
+            "SELECT id, tier, boost_minutes
+               FROM live_promotions
+              WHERE live_id = $1 AND status = 'booked'
+              FOR UPDATE"
+        ).bind(id).fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
+        if let Some((promo_id, tier, boost_minutes)) = pending {
+            apply_promotion_in_tx(&mut tx, id, promo_id, &tier, boost_minutes, user_id).await?;
+        }
+        tx.commit().await.map_err(AppError::Database)?;
     }
-    tx.commit().await.map_err(AppError::Database)?;
 
-    Ok(Json(ApiResponse::ok(())))
+    // Mint a publisher token if LiveKit is configured. We do this
+    // *after* the state flip so a misconfigured server doesn't leave
+    // the live stuck in 'scheduled'.
+    let token_resp = match livekit::config_from_env() {
+        Some(cfg) => {
+            let display = display_name_for(&state, user_id).await.unwrap_or_else(|| "host".into());
+            let token = livekit::mint_token(&cfg, &user_id.to_string(), &display, &room, true, 6 * 3600)
+                .map_err(|e| AppError::Internal(format!("LiveKit token mint: {e}")))?;
+            LiveTokenResponse { ws_url: Some(cfg.ws_url), token: Some(token), room }
+        }
+        None => LiveTokenResponse { ws_url: None, token: None, room },
+    };
+
+    Ok(Json(ApiResponse::ok(token_resp)))
+}
+
+async fn display_name_for(state: &AppState, user_id: Uuid) -> Option<String> {
+    sqlx::query_scalar::<_, Option<String>>(
+        "SELECT COALESCE(display_name, username) FROM users WHERE id = $1"
+    )
+    .bind(user_id)
+    .fetch_optional(state.db.pool()).await.ok().flatten().flatten()
+}
+
+/// Subscriber token for a currently-running live. Authenticated callers
+/// get a personalised identity; anonymous viewers get a deterministic
+/// per-session identity prefixed with `anon-`. Returns 503 if the
+/// LiveKit server isn't configured.
+pub async fn viewer_token(
+    State(state): State<AppState>,
+    auth_opt: Option<AuthUser>,
+    Path(id): Path<Uuid>,
+) -> AppResult<Json<ApiResponse<LiveTokenResponse>>> {
+    let row: Option<(String, Option<String>, bool)> = sqlx::query_as(
+        "SELECT status, livekit_room, is_adult FROM lives WHERE id = $1"
+    ).bind(id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let (status, room_db, _is_adult) = row.ok_or_else(|| AppError::NotFound("Live not found".into()))?;
+    if status != "live" {
+        return Err(AppError::Validation("Live not currently broadcasting".into()));
+    }
+
+    let cfg = livekit::config_from_env()
+        .ok_or_else(|| AppError::Internal("LIVE_NOT_CONFIGURED".into()))?;
+    let room = room_db.unwrap_or_else(|| livekit::room_name_for(id));
+
+    let (identity, display) = match auth_opt {
+        Some(auth) => {
+            let uid = resolve_user_id(&state, &auth.address).await?;
+            let name = display_name_for(&state, uid).await.unwrap_or_else(|| "viewer".into());
+            (uid.to_string(), name)
+        }
+        None => {
+            // Anonymous viewers still need a stable-enough identity.
+            // We don't care about uniqueness beyond "different from
+            // every other current viewer" so a random UUID is fine.
+            let anon = Uuid::new_v4();
+            (format!("anon-{anon}"), "viewer".to_string())
+        }
+    };
+
+    let token = livekit::mint_token(&cfg, &identity, &display, &room, false, 6 * 3600)
+        .map_err(|e| AppError::Internal(format!("LiveKit token mint: {e}")))?;
+    Ok(Json(ApiResponse::ok(LiveTokenResponse {
+        ws_url: Some(cfg.ws_url),
+        token: Some(token),
+        room,
+    })))
+}
+
+#[derive(Debug, Serialize)]
+pub struct LiveConfigStatus {
+    pub livekit_configured: bool,
+}
+
+/// Cheap "is LiveKit ready?" probe so the client can present a
+/// reasonable UX before the host tries to go live.
+pub async fn live_config_status() -> Json<ApiResponse<LiveConfigStatus>> {
+    Json(ApiResponse::ok(LiveConfigStatus {
+        livekit_configured: livekit::config_from_env().is_some(),
+    }))
 }
 
 pub async fn end_live(

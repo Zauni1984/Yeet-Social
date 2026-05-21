@@ -5,3 +5,4 @@ pub mod tokens;
 pub mod batch_rewards;
 pub mod webboard;
 pub mod email;
+pub mod livekit;

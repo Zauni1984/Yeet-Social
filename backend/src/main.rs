@@ -120,6 +120,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/lives/:id/tip",      post(api::lives::tip_live))
         .route("/api/v1/lives/:id/promote",  post(api::lives::book_promotion))
         .route("/api/v1/lives/:id/promotion", get(api::lives::get_promotion))
+        .route("/api/v1/lives/:id/viewer-token", post(api::lives::viewer_token))
+        .route("/api/v1/lives/config",       get(api::lives::live_config_status))
         // Scheduled posts
         .route("/api/v1/scheduled-posts",       post(api::scheduled_posts::create))
         .route("/api/v1/scheduled-posts/mine",  get(api::scheduled_posts::list_mine))
