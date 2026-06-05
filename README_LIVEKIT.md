@@ -1,5 +1,59 @@
 # LiveKit Deployment for YEET Social Phase 2
 
+## Status: parked
+
+The live-streaming feature is fully built end-to-end (UI, schedule,
+tip-ranking, paid promotions, WebRTC ingest, viewer rendering) but
+**deactivated in production** until Yeet hits the user base that
+justifies running a self-hosted LiveKit cluster — roughly **several
+million users**.
+
+Reasoning:
+
+- A LiveKit deployment that can handle thousands of concurrent
+  publishers + tens of thousands of viewers needs dedicated hardware
+  (CPU + outbound bandwidth) that's wasted on a smaller community.
+- Until the audience is large enough that "people are live right
+  now" is consistently true, an empty Live tab hurts the product
+  more than a parked tab.
+- Code stays in the repo so when we flip the flag we ship a feature
+  that's already been reviewed, not a months-old design doc.
+
+### What's deactivated, what isn't
+
+| Component                               | State on prod                         |
+|-----------------------------------------|---------------------------------------|
+| Frontend LIVE tab                       | Hidden (commented-out in `index.html`) |
+| Backend `/api/v1/lives/*` endpoints     | `403 LIVES_DEACTIVATED` if called     |
+| `lives` / `live_promotions` tables      | Migrated, empty                       |
+| Scheduled **posts** (separate feature)  | **Active** — unaffected               |
+| YEET tipping on regular posts           | Active — unaffected                   |
+| LiveKit server                          | Not deployed                          |
+
+### Re-enabling (when we're ready)
+
+1. Deploy LiveKit per the instructions below.
+2. Set on the backend:
+   ```
+   LIVES_FEATURE_ENABLED=true
+   LIVEKIT_WS_URL=wss://livekit.justyeet.it
+   LIVEKIT_API_KEY=<API_KEY>
+   LIVEKIT_API_SECRET=<API_SECRET>
+   ```
+3. In `frontend/index.html`, uncomment the LIVE tab in the tab bar
+   (search for "LIVE tab parked until Yeet has the user base").
+4. Restart the backend, redeploy the frontend.
+5. `curl /api/v1/lives/config` should return
+   `{ "livekit_configured": true, "feature_enabled": true }`.
+
+Everything else — the data model, the auto-promo posts, the YEET tip
+ranking, the host UI, the LiveKit token minting — is already in
+place and tested.
+
+---
+
+## Phase 2 deployment (when re-enabling)
+
 Phase 2 of the live-stream feature uses a self-hosted LiveKit server.
 The backend already knows how to mint tokens and the frontend already
 knows how to connect — you just need to deploy LiveKit and set three

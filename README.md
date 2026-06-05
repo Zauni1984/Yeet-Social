@@ -70,6 +70,21 @@ JWT_SECRET=<min 32 chars>
 - [ ] CD pipeline (auto-deploy on push)
 - [ ] YEET token smart contract (BNB Chain)
 
+### Parked: Live streaming
+
+A full live-streaming surface (host UI, scheduled lives, viewer
+ranking by YEET tips, paid auto-promo posts, WebRTC ingest via
+self-hosted LiveKit) is **built end-to-end but deactivated** until
+Yeet reaches **several million users**.
+
+Why parked: running a LiveKit cluster only makes sense once there
+are consistently dozens to hundreds of concurrent broadcasts; until
+then an empty Live tab hurts the product more than a parked tab.
+
+Code stays in the repo so re-enabling is a config flip, not a
+re-write. See [`README_LIVEKIT.md`](./README_LIVEKIT.md) for the
+deactivation/re-enable steps.
+
 ---
 
 ## Repository Structure

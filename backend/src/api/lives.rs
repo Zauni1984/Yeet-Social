@@ -20,6 +20,26 @@ use crate::{AppError, AppResult, AppState, models::ApiResponse};
 use crate::api::middleware::AuthUser;
 use crate::services::livekit;
 
+/// Master feature flag for the live-streaming surface. Reads
+/// `LIVES_FEATURE_ENABLED` once per call; defaults to false so the
+/// feature is parked until Yeet has the user base to justify running
+/// a self-hosted LiveKit cluster (see README_LIVEKIT.md).
+///
+/// Re-enable by setting `LIVES_FEATURE_ENABLED=true` on the backend.
+/// All code paths are intact behind this flag — no DB rows are
+/// touched in either direction by flipping it.
+fn lives_feature_enabled() -> bool {
+    matches!(
+        std::env::var("LIVES_FEATURE_ENABLED").ok().as_deref(),
+        Some("true") | Some("1") | Some("yes")
+    )
+}
+
+fn ensure_lives_feature() -> AppResult<()> {
+    if lives_feature_enabled() { Ok(()) }
+    else { Err(AppError::Forbidden("LIVES_DEACTIVATED".into())) }
+}
+
 /// Resolve the calling user id from either a wallet address or the
 /// `email:UUID` synthetic address used by the email/password flow.
 async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid> {
@@ -119,6 +139,7 @@ pub async fn create_live(
     auth: AuthUser,
     Json(req): Json<CreateLiveRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
+    ensure_lives_feature()?;
     let title = req.title.trim();
     if title.is_empty() || title.len() > 120 {
         return Err(AppError::Validation("Title must be 1-120 chars".into()));
@@ -174,6 +195,7 @@ pub async fn list_active(
     State(state): State<AppState>,
     Query(q): Query<ListLivesQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<LiveSummary>>>> {
+    ensure_lives_feature()?;
     let include_adult = q.include_adult.unwrap_or(false);
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
     let rows = sqlx::query_as::<_, LiveRow>(
@@ -207,6 +229,7 @@ pub async fn list_scheduled(
     State(state): State<AppState>,
     Query(q): Query<ListLivesQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<LiveSummary>>>> {
+    ensure_lives_feature()?;
     let include_adult = q.include_adult.unwrap_or(false);
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
     let rows = sqlx::query_as::<_, LiveRow>(
@@ -235,6 +258,7 @@ pub async fn get_live(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<LiveSummary>>> {
+    ensure_lives_feature()?;
     let row = sqlx::query_as::<_, LiveRow>(
         "SELECT l.id, l.host_user_id, l.title, l.description, l.status,
                 l.scheduled_for, l.started_at, l.ended_at,
@@ -276,6 +300,7 @@ pub async fn start_live(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<LiveTokenResponse>>> {
+    ensure_lives_feature()?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     // Verify the caller is the host and the live is in a startable state.
     let row: Option<(Uuid, String)> = sqlx::query_as(
@@ -349,6 +374,7 @@ pub async fn viewer_token(
     auth_opt: Option<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<LiveTokenResponse>>> {
+    ensure_lives_feature()?;
     let row: Option<(String, Option<String>, bool)> = sqlx::query_as(
         "SELECT status, livekit_room, is_adult FROM lives WHERE id = $1"
     ).bind(id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
@@ -388,13 +414,16 @@ pub async fn viewer_token(
 #[derive(Debug, Serialize)]
 pub struct LiveConfigStatus {
     pub livekit_configured: bool,
+    pub feature_enabled: bool,
 }
 
-/// Cheap "is LiveKit ready?" probe so the client can present a
-/// reasonable UX before the host tries to go live.
+/// Cheap "is the live surface available?" probe used by the client to
+/// decide whether to render the LIVE tab at all. Always reachable —
+/// gating it would make the frontend unable to detect the off state.
 pub async fn live_config_status() -> Json<ApiResponse<LiveConfigStatus>> {
     Json(ApiResponse::ok(LiveConfigStatus {
         livekit_configured: livekit::config_from_env().is_some(),
+        feature_enabled: lives_feature_enabled(),
     }))
 }
 
@@ -403,6 +432,7 @@ pub async fn end_live(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<()>>> {
+    ensure_lives_feature()?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     let row: Option<(Uuid, String)> = sqlx::query_as(
         "SELECT host_user_id, status FROM lives WHERE id = $1"
@@ -426,6 +456,7 @@ pub async fn cancel_live(
     auth: AuthUser,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<()>>> {
+    ensure_lives_feature()?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     let row: Option<(Uuid, String)> = sqlx::query_as(
         "SELECT host_user_id, status FROM lives WHERE id = $1"
@@ -462,6 +493,7 @@ pub async fn ping_viewer_count(
     Path(id): Path<Uuid>,
     Json(req): Json<JoinLeaveRequest>,
 ) -> AppResult<Json<ApiResponse<i32>>> {
+    ensure_lives_feature()?;
     let delta = req.delta.unwrap_or(1).clamp(-1, 1);
     let updated: Option<i32> = sqlx::query_scalar(
         "UPDATE lives
@@ -496,6 +528,7 @@ pub async fn tip_live(
     Path(id): Path<Uuid>,
     Json(req): Json<TipLiveRequest>,
 ) -> AppResult<Json<ApiResponse<TipLiveResponse>>> {
+    ensure_lives_feature()?;
     let from_id = resolve_user_id(&state, &auth.address).await?;
 
     // Look up the host so we can route the tip directly to them.
@@ -574,6 +607,7 @@ pub async fn book_promotion(
     Path(live_id): Path<Uuid>,
     Json(req): Json<BookPromotionRequest>,
 ) -> AppResult<Json<ApiResponse<BookPromotionResponse>>> {
+    ensure_lives_feature()?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     let cost = promo_cost(&req.tier)?;
 
@@ -764,6 +798,7 @@ pub async fn get_promotion(
     State(state): State<AppState>,
     Path(live_id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<Option<PromotionInfo>>>> {
+    ensure_lives_feature()?;
     let row: Option<(Uuid, String, f64, String, Option<i32>, Option<Uuid>, DateTime<Utc>)> =
         sqlx::query_as(
             "SELECT id, tier, cost_yeet::float8, status, boost_minutes, auto_post_id, booked_at
@@ -783,6 +818,7 @@ pub async fn list_mine(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<Vec<LiveSummary>>>> {
+    ensure_lives_feature()?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     let rows = sqlx::query_as::<_, LiveRow>(
         "SELECT l.id, l.host_user_id, l.title, l.description, l.status,
