@@ -89,22 +89,18 @@ pub async fn revoke_one(
     Path(session_id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
     let me = caller_user_id(&state, &auth).await?;
-    let row: Option<String> = sqlx::query_scalar(
-        "SELECT jti FROM user_sessions
+    // UPDATE … RETURNING in one shot: ensures the SELECT-vs-UPDATE race
+    // can't leave the row revoked but the JTI un-blacklisted.
+    let jti: Option<String> = sqlx::query_scalar(
+        "UPDATE user_sessions
+            SET revoked_at = NOW(), revoked_reason = 'user_revoke'
           WHERE id = $1 AND user_id = $2
-            AND revoked_at IS NULL"
+            AND revoked_at IS NULL
+         RETURNING jti"
     )
     .bind(session_id).bind(me)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let jti = row.ok_or_else(|| AppError::NotFound("Session not found".into()))?;
-
-    sqlx::query(
-        "UPDATE user_sessions
-            SET revoked_at = NOW(), revoked_reason = 'user_revoke'
-          WHERE id = $1"
-    )
-    .bind(session_id)
-    .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    let jti = jti.ok_or_else(|| AppError::NotFound("Session not found".into()))?;
 
     // Belt-and-braces: blacklist the refresh JTI in Redis so reissue
     // can't sneak through during the small window between DB update
@@ -119,20 +115,13 @@ pub async fn revoke_all(
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
     let me = caller_user_id(&state, &auth).await?;
     let jtis: Vec<String> = sqlx::query_scalar(
-        "SELECT jti FROM user_sessions
-          WHERE user_id = $1
-            AND revoked_at IS NULL"
+        "UPDATE user_sessions
+            SET revoked_at = NOW(), revoked_reason = 'user_revoke_all'
+          WHERE user_id = $1 AND revoked_at IS NULL
+         RETURNING jti"
     )
     .bind(me)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
-
-    sqlx::query(
-        "UPDATE user_sessions
-            SET revoked_at = NOW(), revoked_reason = 'user_revoke_all'
-          WHERE user_id = $1 AND revoked_at IS NULL"
-    )
-    .bind(me)
-    .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
     for jti in jtis {
         blacklist_session_jti(&state.cache, &jti, state.jwt.refresh_ttl_secs).await;
@@ -229,6 +218,15 @@ pub async fn rotate_refresh(
 
 /// Mark every session in a family as revoked. Called when refresh
 /// reuse is detected.
+///
+/// Atomicity: the UPDATE ... RETURNING jti runs as a single statement
+/// so a concurrent INSERT into the same family (e.g. a parallel
+/// refresh that hadn't yet been ratified) is either picked up by this
+/// UPDATE (and revoked + blacklisted) or happens after it completes
+/// (and lands as a fresh row that's already pointed at a non-existent
+/// parent — the next refresh will fail naturally because rotate_refresh
+/// uses FOR UPDATE on the presented jti). Either way we never end up
+/// with a DB-revoked row whose jti isn't blacklisted in Redis.
 pub async fn revoke_family(
     pool: &PgPool,
     cache: &Cache,
@@ -236,19 +234,13 @@ pub async fn revoke_family(
     refresh_ttl: u64,
 ) -> Result<(), sqlx::Error> {
     let jtis: Vec<String> = sqlx::query_scalar(
-        "SELECT jti FROM user_sessions
-          WHERE family_id = $1 AND revoked_at IS NULL"
+        "UPDATE user_sessions
+            SET revoked_at = NOW(), revoked_reason = 'refresh_reuse'
+          WHERE family_id = $1 AND revoked_at IS NULL
+         RETURNING jti"
     )
     .bind(family_id)
     .fetch_all(pool).await?;
-
-    sqlx::query(
-        "UPDATE user_sessions
-            SET revoked_at = NOW(), revoked_reason = 'refresh_reuse'
-          WHERE family_id = $1 AND revoked_at IS NULL"
-    )
-    .bind(family_id)
-    .execute(pool).await?;
 
     for jti in jtis {
         blacklist_session_jti(cache, &jti, refresh_ttl).await;
