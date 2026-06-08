@@ -169,6 +169,23 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/invitations",             get(api::invitations::list_mine))
         .route("/api/v1/invitations/:id/accept",     post(api::invitations::accept))
         .route("/api/v1/invitations/:id/decline",    post(api::invitations::decline))
+        // Messaging hardening: edit, delete-for-all, receipts,
+        // mute/archive/self-destruct, message reports, sessions.
+        .route("/api/v1/messages/:id/edit",        patch(api::messages::edit_message))
+        .route("/api/v1/messages/:id/all",         delete(api::messages::delete_for_all))
+        .route("/api/v1/messages/:id/report",      post(api::message_reports::report_message))
+        .route("/api/v1/messages/deliveries",      post(api::messages::mark_delivered))
+        .route("/api/v1/messages/reads",           post(api::messages::mark_read))
+        .route("/api/v1/messages/receipts",        get(api::messages::get_receipts))
+        .route("/api/v1/conversations/:id/mute",   post(api::conversations::mute))
+        .route("/api/v1/conversations/:id/archive",post(api::conversations::archive))
+        .route("/api/v1/conversations/:id/self-destruct", post(api::conversations::set_self_destruct))
+        .route("/api/v1/me/sessions",              get(api::sessions::list_mine))
+        .route("/api/v1/me/sessions/:id",          delete(api::sessions::revoke_one))
+        .route("/api/v1/me/sessions",              delete(api::sessions::revoke_all))
+        .route("/api/v1/admin/message-reports",    get(api::message_reports::admin_list_reports))
+        .route("/api/v1/admin/message-reports/:id/resolve",
+               post(api::message_reports::admin_resolve_report))
         // Tips & Tokens
         .route("/api/v1/admin/posts",          get(api::report::admin_list_posts))
         .route("/api/v1/admin/reports",        get(api::report::admin_list_reports))

@@ -154,6 +154,8 @@ pub async fn register(
     let (access_token, refresh_token) = auth::issue_token_pair(&subject, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
+    record_session_best_effort(&state, user_id, &refresh_token).await;
+
     Ok(Json(ApiResponse::ok(TokenResponse {
         access_token, refresh_token,
         token_type: "Bearer".into(),
@@ -188,12 +190,28 @@ pub async fn login(
     let (access_token, refresh_token) = auth::issue_token_pair(&subject, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
+    record_session_best_effort(&state, user_id, &refresh_token).await;
+
     Ok(Json(ApiResponse::ok(TokenResponse {
         access_token, refresh_token,
         token_type: "Bearer".into(),
         username,
         email_verified: verified_at.is_some(),
     })))
+}
+
+/// Decode the freshly-issued refresh token's JTI and insert a session
+/// row so /me/sessions surfaces this login and refresh-rotation can
+/// detect reuse. Failure is logged but never blocks the auth flow —
+/// the access-token blacklist still protects active sessions.
+async fn record_session_best_effort(state: &AppState, user_id: Uuid, refresh_token: &str) {
+    if let Ok(claims) = auth::verify_refresh_token(refresh_token, &state.jwt) {
+        if let Err(e) = crate::api::sessions::record_login(
+            state.db.pool(), user_id, &claims.jti, None, None,
+        ).await {
+            tracing::warn!(error = %e, "Failed to record session row");
+        }
+    }
 }
 
 pub async fn verify_email(

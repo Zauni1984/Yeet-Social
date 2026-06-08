@@ -256,6 +256,34 @@ pub async fn start_message_cleanup_job(state: AppState) {
         ).execute(&state.db.pool).await {
             warn!("Old-invitations purge error: {e}");
         }
+
+        // 4. Scrub disclosed_plaintext from resolved message reports
+        //    older than 90 days. Metadata stays for abuse-pattern
+        //    analysis; the content is purged so a future DB leak
+        //    can't expose old DMs that someone reported.
+        if let Err(e) = sqlx::query(
+            "UPDATE message_reports
+                SET disclosed_plaintext = NULL
+              WHERE status <> 'pending'
+                AND resolved_at IS NOT NULL
+                AND resolved_at < NOW() - INTERVAL '90 days'
+                AND disclosed_plaintext IS NOT NULL"
+        ).execute(&state.db.pool).await {
+            warn!("Report plaintext scrub error: {e}");
+        }
+
+        // 5. Hard-delete fully-revoked sessions older than the
+        //    refresh-token lifetime. Active and rotated rows stay so
+        //    reuse detection keeps its history during the refresh
+        //    window; only rows that already lost their grace period
+        //    get cleaned.
+        if let Err(e) = sqlx::query(
+            "DELETE FROM user_sessions
+              WHERE revoked_at IS NOT NULL
+                AND revoked_at < NOW() - INTERVAL '30 days'"
+        ).execute(&state.db.pool).await {
+            warn!("Session GC error: {e}");
+        }
     }
 }
 

@@ -101,6 +101,14 @@ pub struct ConversationSummary {
     pub role: Option<String>,
     pub last_message_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
+    /// Per-member UX state surfaced on list. Defaults preserve the
+    /// previous behaviour: not muted, not archived, no per-conv timer.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub muted_until: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub archived_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub self_destruct_seconds: Option<i32>,
 }
 
 pub async fn create_dm(
@@ -184,31 +192,62 @@ pub async fn create_dm(
         role: Some("member".into()),
         last_message_at: None,
         created_at,
+        muted_until: None,
+        archived_at: None,
+        self_destruct_seconds: None,
     })))
 }
 
 // ---------- List my conversations ----------
 
+#[derive(Debug, Deserialize)]
+pub struct ListConvsQuery {
+    /// When true, returns archived conversations instead of active.
+    /// Mute and self-destruct state is always surfaced regardless.
+    #[serde(default)]
+    pub archived: Option<bool>,
+}
+
+#[derive(sqlx::FromRow)]
+struct ConversationListRow {
+    id: Uuid,
+    kind: String,
+    name: Option<String>,
+    created_at: DateTime<Utc>,
+    peer_id: Option<Uuid>,
+    peer_username: Option<String>,
+    peer_display_name: Option<String>,
+    peer_avatar_url: Option<String>,
+    peer_public_key: Option<String>,
+    encrypted_group_key: Option<String>,
+    role: String,
+    wrapper_user_id: Option<Uuid>,
+    wrapper_public_key: Option<String>,
+    last_message_at: Option<DateTime<Utc>>,
+    muted_until: Option<DateTime<Utc>>,
+    archived_at: Option<DateTime<Utc>>,
+    self_destruct_seconds: Option<i32>,
+}
+
 pub async fn list_mine(
     State(state): State<AppState>,
     auth: AuthUser,
+    axum::extract::Query(q): axum::extract::Query<ListConvsQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<ConversationSummary>>>> {
     let me = caller_user_id(&state, &auth).await?;
+    let archived = q.archived.unwrap_or(false);
 
-    let rows: Vec<(
-        Uuid, String, Option<String>, DateTime<Utc>,
-        Option<Uuid>, Option<String>, Option<String>, Option<String>, Option<String>,
-        Option<String>, String,
-        Option<Uuid>, Option<String>,
-        Option<DateTime<Utc>>
-    )> = sqlx::query_as(
+    let rows: Vec<ConversationListRow> = sqlx::query_as(
         "SELECT c.id, c.kind, c.name, c.created_at,
-                peer.id AS peer_id, peer.username, peer.display_name,
-                peer.avatar_url, peer.e2ee_public_key,
+                peer.id AS peer_id, peer.username AS peer_username,
+                peer.display_name AS peer_display_name,
+                peer.avatar_url AS peer_avatar_url,
+                peer.e2ee_public_key AS peer_public_key,
                 cm.encrypted_group_key, cm.role,
                 cm.wrapper_user_id,
                 (SELECT e2ee_public_key FROM users WHERE id = cm.wrapper_user_id) AS wrapper_public_key,
-                (SELECT MAX(created_at) FROM messages m WHERE m.conversation_id = c.id)
+                (SELECT MAX(created_at) FROM messages m WHERE m.conversation_id = c.id) AS last_message_at,
+                cm.muted_until, cm.archived_at, c.self_destruct_seconds
            FROM conversations c
            JOIN conversation_members cm ON cm.conversation_id = c.id AND cm.user_id = $1
            LEFT JOIN conversation_members cm2
@@ -216,27 +255,143 @@ pub async fn list_mine(
                  AND c.kind = 'dm'
            LEFT JOIN users peer ON peer.id = cm2.user_id
           WHERE cm.hidden_at IS NULL
+            AND (CASE WHEN $2 THEN cm.archived_at IS NOT NULL
+                                 ELSE cm.archived_at IS NULL END)
           ORDER BY COALESCE(
             (SELECT MAX(created_at) FROM messages m WHERE m.conversation_id = c.id),
             c.created_at
           ) DESC
           LIMIT 200"
     )
-    .bind(me)
+    .bind(me).bind(archived)
     .fetch_all(state.db.pool())
     .await
     .map_err(AppError::Database)?;
 
     let out = rows.into_iter().map(|r| ConversationSummary {
-        id: r.0, kind: r.1, name: r.2, created_at: r.3,
-        peer_id: r.4, peer_username: r.5, peer_display_name: r.6,
-        peer_avatar_url: r.7, peer_public_key: r.8,
-        encrypted_group_key: r.9, role: Some(r.10),
-        wrapper_user_id: r.11, wrapper_public_key: r.12,
-        last_message_at: r.13,
+        id: r.id, kind: r.kind, name: r.name, created_at: r.created_at,
+        peer_id: r.peer_id, peer_username: r.peer_username,
+        peer_display_name: r.peer_display_name,
+        peer_avatar_url: r.peer_avatar_url, peer_public_key: r.peer_public_key,
+        encrypted_group_key: r.encrypted_group_key,
+        role: Some(r.role),
+        wrapper_user_id: r.wrapper_user_id,
+        wrapper_public_key: r.wrapper_public_key,
+        last_message_at: r.last_message_at,
+        muted_until: r.muted_until,
+        archived_at: r.archived_at,
+        self_destruct_seconds: r.self_destruct_seconds,
     }).collect();
 
     Ok(Json(ApiResponse::ok(out)))
+}
+
+// ---------- Mute / archive / self-destruct ----------
+
+#[derive(Debug, Deserialize)]
+pub struct MuteRequest {
+    /// 0 = unmute, else seconds-from-now until mute expires. Hard
+    /// capped at one year to avoid "permanent mute" stale state.
+    pub seconds: i64,
+}
+
+pub async fn mute(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(conv_id): Path<Uuid>,
+    Json(req): Json<MuteRequest>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    let me = caller_user_id(&state, &auth).await?;
+    assert_member(state.db.pool(), conv_id, me).await?;
+    let secs = req.seconds.clamp(0, 365 * 24 * 3600);
+    if secs == 0 {
+        sqlx::query(
+            "UPDATE conversation_members SET muted_until = NULL
+              WHERE conversation_id = $1 AND user_id = $2"
+        )
+        .bind(conv_id).bind(me)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+        return Ok(Json(ApiResponse::ok("unmuted")));
+    }
+    let until = Utc::now() + chrono::Duration::seconds(secs);
+    sqlx::query(
+        "UPDATE conversation_members SET muted_until = $3
+          WHERE conversation_id = $1 AND user_id = $2"
+    )
+    .bind(conv_id).bind(me).bind(until)
+    .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok("muted")))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ArchiveRequest { pub archive: bool }
+
+pub async fn archive(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(conv_id): Path<Uuid>,
+    Json(req): Json<ArchiveRequest>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    let me = caller_user_id(&state, &auth).await?;
+    assert_member(state.db.pool(), conv_id, me).await?;
+    if req.archive {
+        sqlx::query(
+            "UPDATE conversation_members SET archived_at = NOW()
+              WHERE conversation_id = $1 AND user_id = $2"
+        )
+        .bind(conv_id).bind(me)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+        Ok(Json(ApiResponse::ok("archived")))
+    } else {
+        sqlx::query(
+            "UPDATE conversation_members SET archived_at = NULL
+              WHERE conversation_id = $1 AND user_id = $2"
+        )
+        .bind(conv_id).bind(me)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+        Ok(Json(ApiResponse::ok("unarchived")))
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SelfDestructRequest {
+    /// NULL or 0 disables the per-conversation timer; otherwise
+    /// 5-2_592_000 (5s to 30d). Any member can set this for DMs; only
+    /// admins can set it for groups. The cap is enforced by the DB
+    /// CHECK constraint as a second line of defence.
+    pub seconds: Option<i32>,
+}
+
+pub async fn set_self_destruct(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(conv_id): Path<Uuid>,
+    Json(req): Json<SelfDestructRequest>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    let me = caller_user_id(&state, &auth).await?;
+    let row: Option<(String, String)> = sqlx::query_as(
+        "SELECT c.kind, cm.role
+           FROM conversations c
+           JOIN conversation_members cm
+             ON cm.conversation_id = c.id AND cm.user_id = $2
+          WHERE c.id = $1"
+    )
+    .bind(conv_id).bind(me)
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let (kind, role) = row.ok_or_else(|| AppError::Forbidden("Not a member".into()))?;
+    if kind == "group" && role != "admin" {
+        return Err(AppError::Forbidden("Only group admins can change self-destruct".into()));
+    }
+
+    let val = match req.seconds {
+        None | Some(0) => None,
+        Some(s) if (5..=30 * 24 * 3600).contains(&s) => Some(s),
+        _ => return Err(AppError::Validation("seconds must be 5..=2_592_000 or null".into())),
+    };
+    sqlx::query("UPDATE conversations SET self_destruct_seconds = $2 WHERE id = $1")
+        .bind(conv_id).bind(val)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(match val { Some(_) => "set", None => "cleared" })))
 }
 
 // ---------- Hide / leave ----------

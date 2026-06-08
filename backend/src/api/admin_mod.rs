@@ -55,12 +55,41 @@ async fn admin_actor(state: &AppState, viewer: &OptionalAuth) -> (Option<Uuid>, 
 const ALLOWED_BAN_HOURS: &[i32] = &[12, 24, 24 * 7, 24 * 30];
 
 fn check_admin(secret: &str) -> AppResult<()> {
-    let admin_secret = std::env::var("ADMIN_SECRET")
-        .unwrap_or_else(|_| "yeet_admin_2024".to_string());
-    if secret != admin_secret {
+    check_admin_secret(secret)
+}
+
+/// Public version exposed to sibling admin endpoints (message reports,
+/// session forced-revocation, etc.). Hardened versus the previous
+/// behaviour:
+///   * No hardcoded default. If ADMIN_SECRET is missing or shorter
+///     than 24 chars the call fails closed with a generic 401 — same
+///     error a wrong-password attempt produces, so a misconfigured
+///     deploy doesn't telegraph "no auth required".
+///   * Constant-time comparison so the wall-clock can't be used to
+///     learn the secret length / prefix.
+pub fn check_admin_secret(secret: &str) -> AppResult<()> {
+    let admin_secret = match std::env::var("ADMIN_SECRET") {
+        Ok(s) if s.len() >= 24 => s,
+        _ => {
+            tracing::warn!(
+                "ADMIN_SECRET unset or too short (need ≥ 24 chars) — admin endpoints are disabled"
+            );
+            return Err(AppError::Unauthorised("Invalid admin secret".into()));
+        }
+    };
+    if !ct_eq(secret.as_bytes(), admin_secret.as_bytes()) {
         return Err(AppError::Unauthorised("Invalid admin secret".into()));
     }
     Ok(())
+}
+
+fn ct_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() { return false; }
+    let mut diff: u8 = 0;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
 }
 
 // Cheap secret-check endpoint the dashboard can call on open to
