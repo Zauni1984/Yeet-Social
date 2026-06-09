@@ -36,6 +36,11 @@ hex              = "0.4"
 # Ethereum wallet signature verification (lightweight — no ethers stack)
 sha3             = "0.10"
 k256             = { version = "0.13", features = ["ecdsa"] }
+# Web Push VAPID JWT signing uses P-256 (a.k.a. prime256v1). The
+# `p256` crate provides the curve + ECDSA support without dragging
+# in OpenSSL.
+p256             = { version = "0.13", features = ["ecdsa"] }
+base64           = "0.22"
 
 # Types
 uuid             = { version = "1", features = ["v4", "serde"] }

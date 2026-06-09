@@ -288,7 +288,26 @@ pub async fn send(
     targets.push(me);
     state.ws_hub.publish_to_users(&targets, &env).await;
 
+    // Tickle push to offline recipients only — anyone currently
+    // connected via WS just got the message in real time, so a
+    // duplicate notification would be noisy. The push body is empty;
+    // the SW renders a generic "new message" hint.
+    tickle_offline_recipients(&state, &recipients).await;
+
     Ok(Json(ApiResponse::ok(dto)))
+}
+
+async fn tickle_offline_recipients(state: &AppState, recipients: &[Uuid]) {
+    if recipients.is_empty() { return; }
+    let mut offline = Vec::with_capacity(recipients.len());
+    for u in recipients {
+        if !state.ws_hub.is_online(*u).await {
+            offline.push(*u);
+        }
+    }
+    if !offline.is_empty() {
+        crate::api::push::push_tickle_to_users(state, &offline).await;
+    }
 }
 
 const SELECT_MESSAGE_BY_IDEMP: &str =
@@ -873,6 +892,10 @@ pub async fn upload_image(
         data: serde_json::to_value(&dto).unwrap_or_default(),
     };
     state.ws_hub.publish_to_users(&members, &env).await;
+
+    // Don't tickle the sender; anyone else who isn't online gets one.
+    let recipients: Vec<Uuid> = members.into_iter().filter(|u| *u != me).collect();
+    tickle_offline_recipients(&state, &recipients).await;
 
     Ok(Json(ApiResponse::ok(dto)))
 }

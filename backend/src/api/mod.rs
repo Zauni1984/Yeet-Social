@@ -34,3 +34,4 @@ pub mod message_reports;
 pub mod sessions;
 pub mod messaging_prefs;
 pub mod ws;
+pub mod push;
