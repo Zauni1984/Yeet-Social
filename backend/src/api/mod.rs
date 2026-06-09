@@ -33,3 +33,4 @@ pub mod scheduled_posts;
 pub mod message_reports;
 pub mod sessions;
 pub mod messaging_prefs;
+pub mod ws;

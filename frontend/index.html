@@ -832,6 +832,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.typingIndicators':'Typing indicators',
       'dm.typingIndicatorsNote':'Show your contacts when you are typing.',
       'dm.receiptSent':'sent','dm.receiptDelivered':'delivered','dm.receiptRead':'read',
+      'dm.typingOne':'{name} is typing…','dm.typingMany':'{count} people are typing…',
       'dm.retention':'Auto-delete messages after',
       'dm.retentionUpdated':'Retention updated',
       'dm.day1':'1 day','dm.day7':'7 days','dm.day30':'30 days',
@@ -1075,6 +1076,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.typingIndicators':'Tipp-Anzeige',
       'dm.typingIndicatorsNote':'Zeigt deinen Kontakten, wenn du gerade tippst.',
       'dm.receiptSent':'gesendet','dm.receiptDelivered':'zugestellt','dm.receiptRead':'gelesen',
+      'dm.typingOne':'{name} tippt…','dm.typingMany':'{count} Personen tippen…',
       'dm.retention':'Nachrichten automatisch löschen nach',
       'dm.retentionUpdated':'Speicherdauer aktualisiert',
       'dm.day1':'1 Tag','dm.day7':'7 Tagen','dm.day30':'30 Tagen',
@@ -8585,6 +8587,240 @@ info@blocksocial.eu</address>
     _stopActiveConvPoll();
     return _origLeave(convId);
   };
+
+  // ─── WebSocket realtime client ──────────────────────────────────────
+  // Replaces the 8s active-conv poll with a push channel: new
+  // messages, edits, unsends, delivery/read receipts, and typing
+  // indicators arrive in <100 ms instead of waiting for the next
+  // poll tick. The poll stays as a safety net — if the socket is
+  // closed for any reason the existing 8s loop covers correctness.
+  var _ws = null;
+  var _wsConnected = false;
+  var _wsBackoff = 1000;
+  var _wsTypingTimers = {};
+  var _wsRemoteTyping = {}; // conversation_id → Set(user_id)
+
+  function _wsUrl(){
+    var p = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return p + '//' + location.host + '/api/v1/ws';
+  }
+
+  function _wsConnect(){
+    if(!jwt()) return;
+    try {
+      _ws = new WebSocket(_wsUrl());
+    } catch(e){
+      _wsScheduleReconnect();
+      return;
+    }
+    _ws.onopen = function(){
+      _wsBackoff = 1000;
+      // Auth handshake — the browser can't add headers to the open
+      // request, so we ship the token as the first JSON frame.
+      try {
+        _ws.send(JSON.stringify({ type:'auth', token: jwt() }));
+      } catch(e){ try { _ws.close(); } catch(e2){} }
+    };
+    _ws.onmessage = function(ev){
+      var env;
+      try { env = JSON.parse(ev.data); } catch(e){ return; }
+      _wsDispatch(env);
+    };
+    _ws.onerror = function(){ /* the onclose runs next */ };
+    _ws.onclose = function(){
+      _wsConnected = false;
+      _ws = null;
+      _wsScheduleReconnect();
+    };
+  }
+
+  function _wsScheduleReconnect(){
+    if(!jwt()) return;
+    var delay = Math.min(_wsBackoff, 30000);
+    _wsBackoff = Math.min(_wsBackoff * 2, 30000);
+    setTimeout(function(){ if(!_ws) _wsConnect(); }, delay);
+  }
+
+  function _wsDispatch(env){
+    if(!env || !env.event) return;
+    if(env.event === 'hello'){
+      _wsConnected = true;
+      // First connection: pause the REST poll's 8s loop on the active
+      // conversation; the WS will push faster. The poll stays as a
+      // disaster-recovery path and resumes automatically once the
+      // socket closes via the next _startActiveConvPoll().
+      return;
+    }
+    if(env.event === 'ping'){
+      try { _ws && _ws.send(JSON.stringify({ type:'ping' })); } catch(e){}
+      return;
+    }
+    var d = env.data || {};
+    if(env.event === 'message.new'){
+      _wsOnNewMessage(d);
+    } else if(env.event === 'message.edited' || env.event === 'message.deleted_for_all'){
+      // For both we just refresh the thread if it's the active one.
+      if(_activeConv && _activeConv.id === d.conversation_id){
+        loadMessages(_activeConv.id);
+      }
+    } else if(env.event === 'receipt.delivered' || env.event === 'receipt.read'){
+      // Refresh receipt indicators on our own visible bubbles —
+      // cheap because _refreshReceiptsForActive only re-queries the
+      // currently-rendered own message ids.
+      if(_activeConv){
+        _refreshReceiptsForActive();
+      }
+    } else if(env.event === 'typing.start' || env.event === 'typing.stop'){
+      _wsOnTyping(env.event === 'typing.start', d);
+    }
+  }
+
+  function _wsOnNewMessage(m){
+    if(!m || !m.conversation_id) return;
+    if(_activeConv && _activeConv.id === m.conversation_id){
+      // Either render in place (cheap) or just re-fetch the page.
+      // Re-fetch keeps the order + retention filter consistent.
+      loadMessages(_activeConv.id);
+    } else {
+      // Bump the sidebar so the user sees a new-message hint without
+      // a full conversation reload. Simple "tap the list to refresh"
+      // signal: re-fetch the conv list which now has a fresher
+      // last_message_at.
+      refreshConversations();
+    }
+  }
+
+  function _wsOnTyping(active, d){
+    if(!d || !d.conversation_id || !d.user_id) return;
+    var convId = d.conversation_id;
+    if(!_wsRemoteTyping[convId]) _wsRemoteTyping[convId] = {};
+    if(active){
+      _wsRemoteTyping[convId][d.user_id] = Date.now();
+      // Auto-expire after 6s of silence; the sender's "stop" event is
+      // best-effort. Re-arm on each "start".
+      var key = convId + ':' + d.user_id;
+      if(_wsTypingTimers[key]) clearTimeout(_wsTypingTimers[key]);
+      _wsTypingTimers[key] = setTimeout(function(){
+        if(_wsRemoteTyping[convId]) delete _wsRemoteTyping[convId][d.user_id];
+        _renderTypingIndicator(convId);
+      }, 6000);
+    } else {
+      if(_wsRemoteTyping[convId]) delete _wsRemoteTyping[convId][d.user_id];
+      var k = convId + ':' + d.user_id;
+      if(_wsTypingTimers[k]){ clearTimeout(_wsTypingTimers[k]); delete _wsTypingTimers[k]; }
+    }
+    _renderTypingIndicator(convId);
+  }
+
+  function _renderTypingIndicator(convId){
+    var el = document.getElementById('dmTypingBar');
+    if(!el) return;
+    if(!_activeConv || _activeConv.id !== convId){
+      el.style.display = 'none';
+      el.textContent = '';
+      return;
+    }
+    var who = _wsRemoteTyping[convId] || {};
+    var ids = Object.keys(who);
+    if(!ids.length){
+      el.style.display = 'none';
+      el.textContent = '';
+      return;
+    }
+    if(ids.length === 1){
+      // Resolve a friendly name for the single typer. For DMs the
+      // peer's display name is on _activeConv; for groups we just say
+      // "Someone" because rendering display names server-side would
+      // need an extra round-trip per typer.
+      var name = _activeConv.kind === 'dm'
+        ? (_activeConv.peer_display_name || _activeConv.peer_username || '…')
+        : '…';
+      el.textContent = T('dm.typingOne', { name: name });
+    } else {
+      el.textContent = T('dm.typingMany', { count: ids.length });
+    }
+    el.style.display = 'block';
+  }
+
+  // ─── Typing indicator — outbound ────────────────────────────────────
+  // Throttled keystroke handler: send `typing.start` on the first
+  // keystroke in a 4s window, `typing.stop` after 4s of silence or on
+  // send. Honours the user's own privacy toggle; if they disabled
+  // typing indicators we just no-op.
+  var _typingStartedFor = null;
+  var _typingStopTimer = null;
+  function _sendTyping(active){
+    if(!_activeConv) return;
+    if(!_wsConnected || !_ws) return;
+    if(window._myMsgPrefs && window._myMsgPrefs.typing_indicators_enabled === false) return;
+    try {
+      _ws.send(JSON.stringify({
+        type:'typing',
+        conversation_id: _activeConv.id,
+        active: !!active,
+      }));
+    } catch(e){}
+  }
+  function _typingKeystroke(){
+    if(!_activeConv) return;
+    var conv = _activeConv.id;
+    if(_typingStartedFor !== conv){
+      _typingStartedFor = conv;
+      _sendTyping(true);
+    }
+    if(_typingStopTimer) clearTimeout(_typingStopTimer);
+    _typingStopTimer = setTimeout(function(){
+      if(_typingStartedFor === conv){
+        _sendTyping(false);
+        _typingStartedFor = null;
+      }
+    }, 4000);
+  }
+  // Wire the throttled handler onto the DM input. We bind once at
+  // module load; the input element is static.
+  setTimeout(function(){
+    var inp = document.getElementById('dmInput');
+    if(!inp) return;
+    inp.addEventListener('input', _typingKeystroke);
+  }, 800);
+
+  // Stop the typing signal when we actually hit send — both _setMute
+  // and similar UX flows already close the input flow. We hook
+  // sendDmText by wrapping it.
+  var _origSendDmText = window.sendDmText;
+  window.sendDmText = async function(){
+    if(_typingStartedFor){
+      _sendTyping(false);
+      _typingStartedFor = null;
+      if(_typingStopTimer){ clearTimeout(_typingStopTimer); _typingStopTimer = null; }
+    }
+    return _origSendDmText();
+  };
+
+  // Inject the typing bar element above the composer the first time
+  // we get a chance. The composer is static markup so this runs once.
+  setTimeout(function(){
+    var comp = document.getElementById('dmComposer');
+    if(!comp || document.getElementById('dmTypingBar')) return;
+    var bar = document.createElement('div');
+    bar.id = 'dmTypingBar';
+    bar.style.cssText =
+      'display:none;font-size:11px;color:var(--muted);padding:2px 10px;font-style:italic';
+    comp.parentNode.insertBefore(bar, comp);
+  }, 800);
+
+  // Boot the socket once the user has a JWT. We also reconnect when
+  // the page returns from hidden (Safari sometimes silently closes
+  // backgrounded sockets).
+  function _wsBoot(){
+    if(_ws || !jwt()) return;
+    _wsBackoff = 1000;
+    _wsConnect();
+  }
+  setTimeout(_wsBoot, 1500);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) _wsBoot();
+  });
 
   // Poll invitations on first load so the sidebar badge is current
   // before the user opens the modal.

@@ -4,6 +4,7 @@ use tracing::info;
 use crate::db::Database;
 use crate::services::cache::Cache;
 use crate::services::email::EmailConfig;
+use crate::services::ws_hub::Hub;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -28,6 +29,9 @@ pub struct AppState {
     pub jwt: JwtConfig,
     pub blockchain: BlockchainConfig,
     pub email: Option<Arc<EmailConfig>>,
+    /// In-memory WebSocket fan-out registry. Cloned cheaply on
+    /// AppState clone (Arc inside).
+    pub ws_hub: Hub,
 }
 
 impl AppState {
@@ -63,7 +67,7 @@ impl AppState {
             info!("⚠  SMTP not configured — email verification will fail silently");
         }
 
-        Ok(Self { db, cache, jwt, blockchain, email })
+        Ok(Self { db, cache, jwt, blockchain, email, ws_hub: Hub::new() })
     }
 }
 

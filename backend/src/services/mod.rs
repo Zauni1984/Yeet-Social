@@ -7,3 +7,4 @@ pub mod webboard;
 pub mod email;
 pub mod livekit;
 pub mod rate_limit;
+pub mod ws_hub;

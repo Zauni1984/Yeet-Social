@@ -36,6 +36,7 @@ use crate::api::middleware::AuthUser;
 use crate::api::conversations::{caller_user_id, assert_member};
 use crate::api::uploads::uploads_dir;
 use crate::services::rate_limit::{self, RateLimitOutcome};
+use crate::services::ws_hub::WsEnvelope;
 
 const CIPHERTEXT_MAX_LEN: usize = 32_000; // ~24 KB plaintext, plenty for text
 const IV_LEN: usize = 24; // base64 of 12 bytes = 16 chars; round up
@@ -268,14 +269,26 @@ pub async fn send(
     } else {
         format!("New message from {}", actor_name)
     };
-    for r_id in recipients {
+    for r_id in &recipients {
         crate::api::notifications::notify(
-            state.db.pool(), r_id, Some(me),
+            state.db.pool(), *r_id, Some(me),
             "dm_message", &body, None,
         ).await;
     }
 
-    Ok(Json(ApiResponse::ok(m.into_dto(conv_id))))
+    let dto = m.into_dto(conv_id);
+    // Fan the new message out in real-time. We include the sender so
+    // the originating client's other devices catch up too without a
+    // server round-trip — they distinguish via sender_id == me.
+    let env = WsEnvelope {
+        event: "message.new".into(),
+        data: serde_json::to_value(&dto).unwrap_or_default(),
+    };
+    let mut targets = recipients.clone();
+    targets.push(me);
+    state.ws_hub.publish_to_users(&targets, &env).await;
+
+    Ok(Json(ApiResponse::ok(dto)))
 }
 
 const SELECT_MESSAGE_BY_IDEMP: &str =
@@ -446,7 +459,20 @@ pub async fn edit_message(
     .bind(msg_id).bind(&req.ciphertext).bind(&req.iv).bind(me)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     let m = m.ok_or_else(|| AppError::NotFound("Message not found or not yours".into()))?;
-    Ok(Json(ApiResponse::ok(m.into_dto(conv_id))))
+    let dto = m.into_dto(conv_id);
+
+    let members: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT user_id FROM conversation_members WHERE conversation_id = $1"
+    )
+    .bind(conv_id)
+    .fetch_all(state.db.pool()).await.unwrap_or_default();
+    let env = WsEnvelope {
+        event: "message.edited".into(),
+        data: serde_json::to_value(&dto).unwrap_or_default(),
+    };
+    state.ws_hub.publish_to_users(&members, &env).await;
+
+    Ok(Json(ApiResponse::ok(dto)))
 }
 
 // ─── Delete-for-everyone ───────────────────────────────────────────────
@@ -464,15 +490,15 @@ pub async fn delete_for_all(
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
     let me = caller_user_id(&state, &auth).await?;
 
-    let row: Option<(String, DateTime<Utc>, Option<String>)> = sqlx::query_as(
-        "SELECT kind, created_at, blob_path
+    let row: Option<(Uuid, String, DateTime<Utc>, Option<String>)> = sqlx::query_as(
+        "SELECT conversation_id, kind, created_at, blob_path
            FROM messages
           WHERE id = $1 AND sender_id = $2
             AND deleted_for_all_at IS NULL"
     )
     .bind(msg_id).bind(me)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let (_kind, created_at, blob_path) = row
+    let (conv_id, _kind, created_at, blob_path) = row
         .ok_or_else(|| AppError::NotFound("Message not found or not yours".into()))?;
     if Utc::now() - created_at > chrono::Duration::hours(24) {
         return Err(AppError::Validation("Delete-for-everyone window has passed".into()));
@@ -498,6 +524,24 @@ pub async fn delete_for_all(
             let _ = tokio::fs::remove_file(&full).await;
         }
     }
+
+    // Broadcast the unsend so every connected client (including the
+    // sender's other devices) renders the placeholder without needing
+    // the 8s REST poll to catch up.
+    let members: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT user_id FROM conversation_members WHERE conversation_id = $1"
+    )
+    .bind(conv_id)
+    .fetch_all(state.db.pool()).await.unwrap_or_default();
+    let env = WsEnvelope {
+        event: "message.deleted_for_all".into(),
+        data: serde_json::json!({
+            "id": msg_id,
+            "conversation_id": conv_id,
+        }),
+    };
+    state.ws_hub.publish_to_users(&members, &env).await;
+
     Ok(Json(ApiResponse::ok("deleted_for_all")))
 }
 
@@ -540,6 +584,13 @@ pub async fn mark_delivered(
     )
     .bind(&req.message_ids).bind(me)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    // Broadcast delivery receipts to the original senders so their UI
+    // can flip ✓ → ✓✓ live. We address by sender_id, not by
+    // conversation, so a sender only ever sees receipts for messages
+    // they themselves sent.
+    fanout_receipts(&state, &req.message_ids, me, "receipt.delivered").await;
+
     Ok(Json(ApiResponse::ok(ReceiptCounts { recorded: result.rows_affected() as i64 })))
 }
 
@@ -582,7 +633,47 @@ pub async fn mark_read(
     )
     .bind(&req.message_ids).bind(me)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    // Read-receipt fan-out is gated by the same opt-out the REST get
+    // path honours: if the reader disabled receipts we already aborted
+    // before this point, so reaching here means it's safe to publish.
+    fanout_receipts(&state, &req.message_ids, me, "receipt.read").await;
+
     Ok(Json(ApiResponse::ok(ReceiptCounts { recorded: result.rows_affected() as i64 })))
+}
+
+/// Push a receipt envelope ("receipt.delivered" or "receipt.read") to
+/// every original sender of the given messages. We only group by
+/// sender so each one gets a single envelope listing exactly the
+/// message ids that pertain to them.
+async fn fanout_receipts(
+    state: &AppState,
+    message_ids: &[Uuid],
+    actor_id: Uuid,
+    event: &str,
+) {
+    let rows: Vec<(Uuid, Uuid)> = sqlx::query_as(
+        "SELECT id, sender_id FROM messages
+          WHERE id = ANY($1) AND sender_id IS NOT NULL"
+    )
+    .bind(message_ids)
+    .fetch_all(state.db.pool()).await.unwrap_or_default();
+
+    let mut by_sender: std::collections::HashMap<Uuid, Vec<Uuid>> = std::collections::HashMap::new();
+    for (mid, sender) in rows {
+        if sender == actor_id { continue; }
+        by_sender.entry(sender).or_default().push(mid);
+    }
+    for (sender, ids) in by_sender {
+        let env = WsEnvelope {
+            event: event.into(),
+            data: serde_json::json!({
+                "message_ids": ids,
+                "user_id": actor_id,
+            }),
+        };
+        state.ws_hub.publish_to_user(sender, &env).await;
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -771,6 +862,18 @@ pub async fn upload_image(
 
     let mut dto = m.into_dto(conv_id);
     dto.blob_path = Some(rel_path);
+
+    let members: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT user_id FROM conversation_members WHERE conversation_id = $1"
+    )
+    .bind(conv_id)
+    .fetch_all(state.db.pool()).await.unwrap_or_default();
+    let env = WsEnvelope {
+        event: "message.new".into(),
+        data: serde_json::to_value(&dto).unwrap_or_default(),
+    };
+    state.ws_hub.publish_to_users(&members, &env).await;
+
     Ok(Json(ApiResponse::ok(dto)))
 }
 
