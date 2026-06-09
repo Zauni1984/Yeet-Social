@@ -514,6 +514,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128241; <span data-i18n="settings.sessions">Devices &amp; sessions</span></div>
+        <div id="sessionsList" style="display:flex;flex-direction:column;gap:8px;font-size:13px"><div style="color:var(--muted)" data-i18n="settings.sessionsLoad">Loading…</div></div>
+        <button onclick="window.revokeAllSessions && window.revokeAllSessions()" style="margin-top:10px;width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:8px;cursor:pointer;font-size:13px" data-i18n="settings.sessionsRevokeAll">Sign out everywhere else</button>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128172; <span data-i18n="dm.title">Messages</span></div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:8px" data-i18n="dm.retention">Auto-delete messages after</div>
         <select id="settingDmRetention" onchange="window.updateDmRetention && window.updateDmRetention(this.value)" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px">
@@ -739,6 +744,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.title':'Settings','settings.content':'Content','settings.adult':'18+ content',
       'settings.autoload':'Auto-load feed','settings.network':'Network','settings.account':'Account',
       'settings.linkWallet':'Link Wallet','settings.disconnect':'Disconnect Wallet',
+      'settings.sessions':'Devices & sessions','settings.sessionsLoad':'Loading…',
+      'settings.sessionsEmpty':'No active sessions',
+      'settings.sessionCurrent':'This device','settings.sessionRevoke':'Sign out',
+      'settings.sessionsRevokeAll':'Sign out everywhere else',
+      'settings.sessionsRevokeAllConfirm':'Sign out every device except this one?',
+      'settings.sessionsRevoked':'Session revoked',
       'settings.verifySeed':'Verify recovery phrase',
       'settings.verifySeedPrompt':'Enter your 12-word recovery phrase to verify it unlocks your wallet:',
       'settings.verifyOk':'✓ Phrase matches your wallet',
@@ -775,9 +786,32 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.tipAmount':'How much YEET to send?',
       'dm.tipSent':'Sent {amount} YEET',
       'dm.deleted':'[message deleted]','dm.deletedToast':'Message deleted',
+      'dm.deletedForAll':'[deleted for everyone]',
       'dm.deleteConfirm':'Delete this message? It will be removed for both of you.',
-      'dm.decryptFailed':'[unable to decrypt]',
-      'dm.safetyNumber':'Safety number',
+      'dm.deleteForAllConfirm':'Unsend this message for everyone in the conversation? Cannot be undone.',
+      'dm.edit':'Edit','dm.editPrompt':'Edit your message:','dm.edited':'edited',
+      'dm.editTooLate':'Edit window (15 minutes) has passed',
+      'dm.deleteForMe':'Delete for me','dm.deleteForAll':'Delete for everyone',
+      'dm.report':'Report','dm.reportTitle':'Report this message',
+      'dm.reportCategory':'Why are you reporting this?',
+      'dm.reportSpam':'Spam','dm.reportAbuse':'Harassment / abuse',
+      'dm.reportSexual':'Sexual content','dm.reportIllegal':'Illegal content',
+      'dm.reportOther':'Other',
+      'dm.reportReason':'Tell moderators more (optional)',
+      'dm.reportShareCopy':'Share the decrypted message text with moderators',
+      'dm.reportShareNote':'Without sharing, only metadata reaches moderation. The reported content is normally end-to-end encrypted.',
+      'dm.reportSubmit':'Submit report','dm.reportSent':'Report submitted',
+      'dm.reportRateLimited':'Too many reports — please wait a moment',
+      'dm.menu':'More','dm.muteTitle':'Mute conversation',
+      'dm.muteFor':'Mute for','dm.mute1h':'1 hour','dm.mute8h':'8 hours',
+      'dm.mute24h':'24 hours','dm.mute7d':'7 days','dm.muteForever':'Until I unmute',
+      'dm.unmute':'Unmute','dm.muted':'Muted','dm.muteUntil':'Muted until',
+      'dm.archive':'Archive','dm.unarchive':'Unarchive','dm.archived':'Archived',
+      'dm.selfDestruct':'Self-destruct timer','dm.selfDestructOff':'Off',
+      'dm.selfDestruct1m':'1 minute','dm.selfDestruct1h':'1 hour',
+      'dm.selfDestruct1d':'24 hours','dm.selfDestruct7d':'7 days',
+      'dm.selfDestructAdminOnly':'Only group admins can change this',
+      'dm.selfDestructSet':'Self-destruct set',
       'dm.retention':'Auto-delete messages after',
       'dm.retentionUpdated':'Retention updated',
       'dm.day1':'1 day','dm.day7':'7 days','dm.day30':'30 days',
@@ -948,6 +982,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.title':'Einstellungen','settings.content':'Inhalt','settings.adult':'18+ Inhalt',
       'settings.autoload':'Feed automatisch laden','settings.network':'Netzwerk','settings.account':'Konto',
       'settings.linkWallet':'Wallet verknüpfen','settings.disconnect':'Wallet trennen',
+      'settings.sessions':'Geräte & Sitzungen','settings.sessionsLoad':'Wird geladen…',
+      'settings.sessionsEmpty':'Keine aktiven Sitzungen',
+      'settings.sessionCurrent':'Dieses Gerät','settings.sessionRevoke':'Abmelden',
+      'settings.sessionsRevokeAll':'Überall sonst abmelden',
+      'settings.sessionsRevokeAllConfirm':'Wirklich von allen anderen Geräten abmelden?',
+      'settings.sessionsRevoked':'Sitzung beendet',
       'settings.verifySeed':'Recovery-Phrase prüfen',
       'settings.verifySeedPrompt':'Gib deine 12-Wort-Recovery-Phrase ein, um zu prüfen ob sie deine Wallet entsperrt:',
       'settings.verifyOk':'✓ Phrase passt zu deiner Wallet',
@@ -982,9 +1022,32 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.tipAmount':'Wieviel YEET senden?',
       'dm.tipSent':'{amount} YEET gesendet',
       'dm.deleted':'[Nachricht gelöscht]','dm.deletedToast':'Nachricht gelöscht',
+      'dm.deletedForAll':'[für alle gelöscht]',
       'dm.deleteConfirm':'Diese Nachricht löschen? Sie wird für beide Seiten entfernt.',
-      'dm.decryptFailed':'[konnte nicht entschlüsselt werden]',
-      'dm.safetyNumber':'Sicherheitsnummer',
+      'dm.deleteForAllConfirm':'Diese Nachricht für alle in der Konversation zurückziehen? Das kann nicht rückgängig gemacht werden.',
+      'dm.edit':'Bearbeiten','dm.editPrompt':'Nachricht bearbeiten:','dm.edited':'bearbeitet',
+      'dm.editTooLate':'Bearbeitungsfenster (15 Min) abgelaufen',
+      'dm.deleteForMe':'Für mich löschen','dm.deleteForAll':'Für alle löschen',
+      'dm.report':'Melden','dm.reportTitle':'Diese Nachricht melden',
+      'dm.reportCategory':'Warum meldest du das?',
+      'dm.reportSpam':'Spam','dm.reportAbuse':'Belästigung / Missbrauch',
+      'dm.reportSexual':'Sexuelle Inhalte','dm.reportIllegal':'Illegale Inhalte',
+      'dm.reportOther':'Sonstiges',
+      'dm.reportReason':'Den Moderatoren mehr mitteilen (optional)',
+      'dm.reportShareCopy':'Den entschlüsselten Nachrichtentext mit Moderatoren teilen',
+      'dm.reportShareNote':'Ohne Freigabe erreichen nur Metadaten die Moderation. Der gemeldete Inhalt ist normalerweise Ende-zu-Ende-verschlüsselt.',
+      'dm.reportSubmit':'Meldung senden','dm.reportSent':'Meldung gesendet',
+      'dm.reportRateLimited':'Zu viele Meldungen — bitte kurz warten',
+      'dm.menu':'Mehr','dm.muteTitle':'Konversation stummschalten',
+      'dm.muteFor':'Stummschalten für','dm.mute1h':'1 Stunde','dm.mute8h':'8 Stunden',
+      'dm.mute24h':'24 Stunden','dm.mute7d':'7 Tage','dm.muteForever':'Bis ich entstummschalte',
+      'dm.unmute':'Entstummschalten','dm.muted':'Stumm','dm.muteUntil':'Stumm bis',
+      'dm.archive':'Archivieren','dm.unarchive':'Aus Archiv','dm.archived':'Archiviert',
+      'dm.selfDestruct':'Selbstzerstörungs-Timer','dm.selfDestructOff':'Aus',
+      'dm.selfDestruct1m':'1 Minute','dm.selfDestruct1h':'1 Stunde',
+      'dm.selfDestruct1d':'24 Stunden','dm.selfDestruct7d':'7 Tage',
+      'dm.selfDestructAdminOnly':'Nur Gruppen-Admins können das ändern',
+      'dm.selfDestructSet':'Selbstzerstörung gesetzt',
       'dm.retention':'Nachrichten automatisch löschen nach',
       'dm.retentionUpdated':'Speicherdauer aktualisiert',
       'dm.day1':'1 Tag','dm.day7':'7 Tagen','dm.day30':'30 Tagen',
@@ -2111,6 +2174,7 @@ function openSettingsModal(){
       .then(function(d){ if(d && d.data) retSel.value = String(d.data.dm_retention_days); })
       .catch(function(){});
   }
+  if(typeof window.loadSessions === 'function') window.loadSessions();
   document.getElementById('settingsModal').classList.add('on');
   // Show "Link Wallet" only for email-only users (no wallet yet)
   const lw=document.getElementById('linkWalletBtn');
@@ -7385,13 +7449,40 @@ info@blocksocial.eu</address>
       }
       bodyEl.innerHTML = pieces.join('');
       bodyEl.scrollTop = bodyEl.scrollHeight;
+
+      // Fire-and-forget receipt batches: anything we just rendered and
+      // didn't send ourselves is "delivered"; if the user has receipts
+      // on it's also "read" (the server symmetrically filters readers
+      // who opted out, so this can't expose anything the user wants
+      // hidden).
+      try {
+        var inboundIds = msgs.filter(function(m){
+          return m && m.id && (!conv.peer_id || m.sender_id !== _myUserId());
+        }).map(function(m){ return m.id; });
+        if(inboundIds.length){
+          api('/api/v1/messages/deliveries', {
+            method:'POST', body: JSON.stringify({ message_ids: inboundIds })
+          }).catch(function(){});
+          api('/api/v1/messages/reads', {
+            method:'POST', body: JSON.stringify({ message_ids: inboundIds })
+          }).catch(function(){});
+        }
+      } catch(e){}
     } catch(e){
       console.error(e);
       document.getElementById('dmThreadBody').innerHTML = '<div style="color:#ff6666;font-size:13px">'+ T('common.networkError') +'</div>';
     }
   }
 
+  function _myUserId(){ return localStorage.getItem('yeet_user_id') || ''; }
+
   async function renderMessageBody(m, convKey){
+    // delete_for_all takes precedence over the sender-only tombstone:
+    // every recipient sees a permanent placeholder once the sender
+    // unsends. Server already stripped ciphertext + iv on this kind.
+    if(m.deleted_for_all_at){
+      return '<span style="color:var(--muted);font-style:italic">'+ T('dm.deletedForAll') +'</span>';
+    }
     if(m.deleted_at){
       return '<span style="color:var(--muted);font-style:italic">'+ T('dm.deleted') +'</span>';
     }
@@ -7413,15 +7504,35 @@ info@blocksocial.eu</address>
   function messageBubble(m, mine, label, rendered){
     var side = mine ? 'flex-end' : 'flex-start';
     var bg   = mine ? '#1f2a14' : '#1a1a1a';
-    var del  = mine && !m.deleted_at && m.kind !== 'tip'
-      ? '<button onclick="deleteDmMessage(\''+ m.id +'\')" title="delete" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 4px">&times;</button>'
+    var tombstoned = !!(m.deleted_at || m.deleted_for_all_at);
+    // Menu shows different options depending on ownership + age.
+    // Mounted as a kebab button; the menu itself is rendered lazily by
+    // openMessageMenu() so we don't bloat every bubble with hidden DOM.
+    var menu = tombstoned ? '' :
+      '<button onclick="openMessageMenu(\''+ m.id +'\', event)" title="'+ T('dm.menu') +'" '
+      +   'style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px">&#8942;</button>';
+    var editedBadge = m.edited_at
+      ? ' &middot; <span style="font-style:italic">'+ T('dm.edited') +'</span>'
       : '';
-    return '<div style="align-self:'+ side +';max-width:80%">'
+    return '<div data-mid="'+ m.id +'" data-mine="'+ (mine?'1':'0') +'" data-kind="'+ (m.kind||'text') +'" '
+      +    'data-created="'+ (m.created_at||'') +'" data-delall="'+ (m.deleted_for_all_at?'1':'0') +'" '
+      +    'style="align-self:'+ side +';max-width:80%">'
       + '<div style="background:'+ bg +';border:1px solid #2a2a2a;border-radius:12px;padding:6px 10px;font-size:13px;color:#eee;word-wrap:break-word">'+ rendered +'</div>'
       + '<div style="display:flex;justify-content:'+ (mine?'flex-end':'flex-start') +';gap:6px;font-size:10px;color:var(--muted);margin-top:2px">'
-      +   '<span>'+ fmtTime(m.created_at) +'</span>'
-      +   del
+      +   '<span>'+ fmtTime(m.created_at) + editedBadge +'</span>'
+      +   menu
       + '</div></div>';
+  }
+
+  // crypto.randomUUID() is widely available; the fallback covers
+  // ancient browsers. Used for client_message_id so server-side
+  // idempotency catches retries and accidental double-clicks.
+  function _genCmid(){
+    try { if(window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID(); } catch(e){}
+    var b = window.crypto.getRandomValues(new Uint8Array(16));
+    b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+    var h = Array.from(b).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
+    return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20,32);
   }
 
   window.sendDmText = async function(){
@@ -7435,7 +7546,10 @@ info@blocksocial.eu</address>
       var blob = await window.YeetE2EE.encryptWithKey(key, text);
       var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
         method:'POST',
-        body: JSON.stringify({ kind:'text', ciphertext: blob.ciphertext, iv: blob.iv })
+        body: JSON.stringify({
+          kind:'text', ciphertext: blob.ciphertext, iv: blob.iv,
+          client_message_id: _genCmid()
+        })
       });
       if(!r.ok){
         var d = await r.json().catch(function(){return {};});
@@ -7465,7 +7579,10 @@ info@blocksocial.eu</address>
       var blob = await window.YeetE2EE.encryptWithKey(key, 'TIP:'+amt);
       var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
         method:'POST',
-        body: JSON.stringify({ kind:'tip', ciphertext: blob.ciphertext, iv: blob.iv, tip_amount: String(amt) })
+        body: JSON.stringify({
+          kind:'tip', ciphertext: blob.ciphertext, iv: blob.iv,
+          tip_amount: String(amt), client_message_id: _genCmid()
+        })
       });
       if(!r.ok){
         var d = await r.json().catch(function(){return {};});
@@ -7559,9 +7676,10 @@ info@blocksocial.eu</address>
       var ct  = new Uint8Array(await window.crypto.subtle.encrypt(
         { name:'AES-GCM', iv: iv }, key, buf));
       var ivB64 = window.YeetE2EE.bytesToB64(iv);
-      // Multipart: iv + file
+      // Multipart: iv + file + client_message_id for idempotency.
       var form = new FormData();
       form.append('iv', ivB64);
+      form.append('client_message_id', _genCmid());
       form.append('file', new Blob([ct], { type:'application/octet-stream' }), 'enc.bin');
       var r = await fetch('/api/v1/conversations/'+ _activeConv.id +'/messages/image', {
         method:'POST',
@@ -7824,6 +7942,423 @@ info@blocksocial.eu</address>
     out.set(iv, 0); out.set(ct, iv.length);
     return window.YeetE2EE.bytesToB64(out);
   }
+
+  // ─── Message action menu (edit, delete-for-me, delete-for-all, report) ──
+  // The menu is rendered on demand from openMessageMenu(); state stays
+  // small and we close on any outside click.
+  function _closeMessageMenu(){
+    var m = document.getElementById('dmMessageMenu');
+    if(m && m.parentNode) m.parentNode.removeChild(m);
+  }
+  document.addEventListener('click', function(ev){
+    var m = document.getElementById('dmMessageMenu');
+    if(!m) return;
+    if(!m.contains(ev.target)) _closeMessageMenu();
+  }, true);
+
+  window.openMessageMenu = function(messageId, ev){
+    ev.preventDefault(); ev.stopPropagation();
+    _closeMessageMenu();
+    var bubble = document.querySelector('[data-mid="'+ messageId.replace(/[^a-zA-Z0-9-]/g,'') +'"]');
+    if(!bubble) return;
+    var mine = bubble.getAttribute('data-mine') === '1';
+    var kind = bubble.getAttribute('data-kind') || 'text';
+    var created = bubble.getAttribute('data-created');
+    var delAll = bubble.getAttribute('data-delall') === '1';
+    if(delAll) return;
+    var ageMs = created ? (Date.now() - new Date(created).getTime()) : 0;
+    var canEdit = mine && kind === 'text' && ageMs < 15 * 60 * 1000;
+    var canDelAll = mine && ageMs < 24 * 60 * 60 * 1000;
+
+    var rect = ev.target.getBoundingClientRect();
+    var menu = document.createElement('div');
+    menu.id = 'dmMessageMenu';
+    menu.style.cssText =
+      'position:fixed;background:#161616;border:1px solid #2a2a2a;border-radius:10px;'+
+      'box-shadow:0 8px 24px rgba(0,0,0,.6);padding:4px;z-index:9999;'+
+      'min-width:180px;font-size:13px;color:#eee';
+    var top = Math.min(rect.bottom + 4, window.innerHeight - 200);
+    var left = Math.min(rect.left, window.innerWidth - 200);
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+
+    function item(label, onClick, danger){
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText =
+        'display:block;width:100%;text-align:left;background:transparent;border:none;'+
+        'padding:8px 12px;cursor:pointer;border-radius:6px;color:'+(danger?'#ff7f7f':'#eee')+';font-size:13px';
+      b.onmouseover = function(){ b.style.background = '#222'; };
+      b.onmouseout  = function(){ b.style.background = 'transparent'; };
+      b.onclick = function(e){ e.stopPropagation(); _closeMessageMenu(); onClick(); };
+      menu.appendChild(b);
+    }
+
+    if(canEdit) item(T('dm.edit'), function(){ window.editMessagePrompt(messageId); });
+    if(mine)    item(T('dm.deleteForMe'), function(){ window.deleteDmMessage(messageId); }, true);
+    if(canDelAll) item(T('dm.deleteForAll'), function(){ window.deleteMessageForAll(messageId); }, true);
+    if(!mine)   item(T('dm.report'), function(){ window.openReportMessage(messageId); });
+
+    document.body.appendChild(menu);
+  };
+
+  window.editMessagePrompt = async function(messageId){
+    if(!_activeConv) return;
+    var bubble = document.querySelector('[data-mid="'+ messageId.replace(/[^a-zA-Z0-9-]/g,'') +'"] > div');
+    if(!bubble) return;
+    // Pre-fill the prompt with the current decrypted text. We decrypt
+    // locally; the server never sees plaintext on either side of an edit.
+    var current = bubble.textContent || '';
+    var next = prompt(T('dm.editPrompt'), current);
+    if(next === null) return;
+    next = String(next).trim();
+    if(!next || next === current) return;
+    try {
+      var key = await convKeyForConv(_activeConv);
+      var blob = await window.YeetE2EE.encryptWithKey(key, next);
+      var r = await api('/api/v1/messages/'+ encodeURIComponent(messageId) +'/edit', {
+        method:'PATCH',
+        body: JSON.stringify({ ciphertext: blob.ciphertext, iv: blob.iv })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        var msg = (d.error && d.error.message) || T('common.error');
+        if(/window/.test(msg)) msg = T('dm.editTooLate');
+        window.showToast(msg, 'error');
+        return;
+      }
+      await loadMessages(_activeConv.id);
+    } catch(e){
+      window.showToast(T('common.networkError'), 'error');
+    }
+  };
+
+  window.deleteMessageForAll = async function(messageId){
+    if(!confirm(T('dm.deleteForAllConfirm'))) return;
+    try {
+      var r = await api('/api/v1/messages/'+ encodeURIComponent(messageId) +'/all', { method:'DELETE' });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'), 'error');
+        return;
+      }
+      if(_activeConv) await loadMessages(_activeConv.id);
+    } catch(e){
+      window.showToast(T('common.networkError'), 'error');
+    }
+  };
+
+  // ─── Report message ──────────────────────────────────────────────────
+  // The reporter is asked whether to share the decrypted message text
+  // with moderators (off by default). If they share, the client
+  // decrypts locally and ships the plaintext in disclosed_plaintext,
+  // which only ever lives on the message_reports row.
+  window.openReportMessage = async function(messageId){
+    if(!_activeConv) return;
+    var existing = document.getElementById('dmReportModal');
+    if(existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'dmReportModal';
+    modal.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;'+
+      'display:flex;align-items:center;justify-content:center;padding:18px';
+    modal.innerHTML = ''
+      + '<div style="background:#111;border:1px solid var(--border);border-radius:14px;max-width:420px;width:100%;padding:18px;color:#eee">'
+      +   '<h3 style="margin:0 0 10px;font-size:16px">'+ T('dm.reportTitle') +'</h3>'
+      +   '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">'+ T('dm.reportCategory') +'</div>'
+      +   '<select id="dmReportCat" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#eee;margin-bottom:10px">'
+      +     '<option value="spam">'+ T('dm.reportSpam') +'</option>'
+      +     '<option value="abuse">'+ T('dm.reportAbuse') +'</option>'
+      +     '<option value="sexual">'+ T('dm.reportSexual') +'</option>'
+      +     '<option value="illegal">'+ T('dm.reportIllegal') +'</option>'
+      +     '<option value="other">'+ T('dm.reportOther') +'</option>'
+      +   '</select>'
+      +   '<textarea id="dmReportReason" rows="2" maxlength="500" placeholder="'+ T('dm.reportReason') +'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#eee;margin-bottom:10px;resize:vertical;box-sizing:border-box"></textarea>'
+      +   '<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#ccc;margin-bottom:6px">'
+      +     '<input type="checkbox" id="dmReportShare" style="margin-top:3px"> '
+      +     '<span>'+ T('dm.reportShareCopy') +'</span>'
+      +   '</label>'
+      +   '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">'+ T('dm.reportShareNote') +'</div>'
+      +   '<div style="display:flex;justify-content:flex-end;gap:8px">'
+      +     '<button onclick="document.getElementById(\'dmReportModal\').remove()" style="background:transparent;border:1px solid #444;color:#ccc;border-radius:8px;padding:8px 14px;cursor:pointer">'+ T('live.cancel') +'</button>'
+      +     '<button id="dmReportGo" style="background:var(--yeet);border:none;color:#000;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">'+ T('dm.reportSubmit') +'</button>'
+      +   '</div>'
+      + '</div>';
+    document.body.appendChild(modal);
+    document.getElementById('dmReportGo').onclick = function(){ _submitReport(messageId); };
+  };
+  async function _submitReport(messageId){
+    var cat = document.getElementById('dmReportCat').value;
+    var reason = (document.getElementById('dmReportReason').value || '').trim();
+    var share = !!document.getElementById('dmReportShare').checked;
+    var disclosed = null;
+    if(share){
+      // Decrypt the bubble locally so the moderators only ever see
+      // what the reporter chose to share. We try the cached body
+      // first; if it's not on-screen we fall back to a fresh fetch.
+      try {
+        var bubble = document.querySelector('[data-mid="'+ messageId.replace(/[^a-zA-Z0-9-]/g,'') +'"] > div');
+        if(bubble) disclosed = bubble.textContent || null;
+      } catch(e){}
+    }
+    try {
+      var r = await api('/api/v1/messages/'+ encodeURIComponent(messageId) +'/report', {
+        method:'POST',
+        body: JSON.stringify({
+          category: cat,
+          reason: reason || null,
+          disclosed_plaintext: disclosed
+        })
+      });
+      if(r.status === 429){ window.showToast(T('dm.reportRateLimited'), 'error'); return; }
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'), 'error');
+        return;
+      }
+      var m = document.getElementById('dmReportModal'); if(m) m.remove();
+      window.showToast(T('dm.reportSent'), 'success');
+    } catch(e){
+      window.showToast(T('common.networkError'), 'error');
+    }
+  }
+
+  // ─── Conversation header menu: mute, archive, self-destruct ─────────
+  window.openConversationMenu = function(ev){
+    ev.preventDefault(); ev.stopPropagation();
+    _closeMessageMenu();
+    if(!_activeConv) return;
+    var rect = ev.target.getBoundingClientRect();
+    var menu = document.createElement('div');
+    menu.id = 'dmMessageMenu';
+    menu.style.cssText =
+      'position:fixed;background:#161616;border:1px solid #2a2a2a;border-radius:10px;'+
+      'box-shadow:0 8px 24px rgba(0,0,0,.6);padding:6px;z-index:9999;'+
+      'min-width:200px;font-size:13px;color:#eee';
+    menu.style.top = Math.min(rect.bottom + 4, window.innerHeight - 260) + 'px';
+    menu.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
+
+    var c = _activeConv;
+    var mutedNow = c.muted_until && new Date(c.muted_until).getTime() > Date.now();
+    var archived = !!c.archived_at;
+    var sd = c.self_destruct_seconds || 0;
+
+    function header(text){
+      var d = document.createElement('div');
+      d.textContent = text;
+      d.style.cssText = 'font-size:11px;color:var(--muted);padding:6px 10px;text-transform:uppercase;letter-spacing:.06em';
+      menu.appendChild(d);
+    }
+    function item(label, onClick, danger){
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.style.cssText =
+        'display:block;width:100%;text-align:left;background:transparent;border:none;'+
+        'padding:7px 12px;cursor:pointer;border-radius:6px;color:'+(danger?'#ff7f7f':'#eee')+';font-size:13px';
+      b.onmouseover = function(){ b.style.background = '#222'; };
+      b.onmouseout  = function(){ b.style.background = 'transparent'; };
+      b.onclick = function(e){ e.stopPropagation(); _closeMessageMenu(); onClick(); };
+      menu.appendChild(b);
+    }
+
+    header(T('dm.muteTitle'));
+    if(mutedNow){
+      item(T('dm.unmute'), function(){ _setMute(0); });
+    } else {
+      item(T('dm.mute1h'), function(){ _setMute(3600); });
+      item(T('dm.mute8h'), function(){ _setMute(8*3600); });
+      item(T('dm.mute24h'), function(){ _setMute(24*3600); });
+      item(T('dm.mute7d'), function(){ _setMute(7*24*3600); });
+    }
+    header(T('dm.archive'));
+    item(archived ? T('dm.unarchive') : T('dm.archive'), function(){ _setArchive(!archived); });
+
+    header(T('dm.selfDestruct'));
+    // For groups only admins can change this; show as disabled label
+    // for non-admins so they know why nothing happens.
+    var isGroupNonAdmin = c.kind === 'group' && c.role !== 'admin';
+    if(isGroupNonAdmin){
+      var note = document.createElement('div');
+      note.textContent = T('dm.selfDestructAdminOnly');
+      note.style.cssText = 'font-size:11px;color:var(--muted);padding:6px 12px;font-style:italic';
+      menu.appendChild(note);
+    } else {
+      item((sd === 0 ? '✓ ' : '') + T('dm.selfDestructOff'), function(){ _setSelfDestruct(0); });
+      item((sd === 60 ? '✓ ' : '') + T('dm.selfDestruct1m'), function(){ _setSelfDestruct(60); });
+      item((sd === 3600 ? '✓ ' : '') + T('dm.selfDestruct1h'), function(){ _setSelfDestruct(3600); });
+      item((sd === 86400 ? '✓ ' : '') + T('dm.selfDestruct1d'), function(){ _setSelfDestruct(86400); });
+      item((sd === 604800 ? '✓ ' : '') + T('dm.selfDestruct7d'), function(){ _setSelfDestruct(604800); });
+    }
+    document.body.appendChild(menu);
+  };
+
+  async function _setMute(seconds){
+    if(!_activeConv) return;
+    try {
+      var r = await api('/api/v1/conversations/'+ _activeConv.id +'/mute', {
+        method:'POST', body: JSON.stringify({ seconds: seconds })
+      });
+      if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
+      await refreshConversations();
+      _activeConv = _conversations.find(function(x){ return x.id === _activeConv.id; }) || _activeConv;
+      _renderConvHeader();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  }
+  async function _setArchive(archive){
+    if(!_activeConv) return;
+    try {
+      var r = await api('/api/v1/conversations/'+ _activeConv.id +'/archive', {
+        method:'POST', body: JSON.stringify({ archive: archive })
+      });
+      if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
+      await refreshConversations();
+      _activeConv = _conversations.find(function(x){ return x.id === _activeConv.id; }) || _activeConv;
+      _renderConvHeader();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  }
+  async function _setSelfDestruct(seconds){
+    if(!_activeConv) return;
+    try {
+      var r = await api('/api/v1/conversations/'+ _activeConv.id +'/self-destruct', {
+        method:'POST', body: JSON.stringify({ seconds: seconds === 0 ? null : seconds })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error'); return;
+      }
+      window.showToast(T('dm.selfDestructSet'),'success');
+      await refreshConversations();
+      _activeConv = _conversations.find(function(x){ return x.id === _activeConv.id; }) || _activeConv;
+      _renderConvHeader();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  }
+
+  // Re-render the conversation header in place (so menu actions can
+  // refresh the muted/archived badges without re-opening the thread).
+  function _renderConvHeader(){
+    var c = _activeConv; if(!c) return;
+    var hdr = document.getElementById('dmThreadHeader'); if(!hdr) return;
+    var name = c.kind === 'group'
+      ? (c.name || T('dm.groupNew'))
+      : (c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : '?'));
+    var badges = '';
+    if(c.muted_until && new Date(c.muted_until).getTime() > Date.now()){
+      badges += ' <span style="font-size:10px;color:#aaa;background:#222;border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('dm.muted') +'</span>';
+    }
+    if(c.archived_at){
+      badges += ' <span style="font-size:10px;color:#aaa;background:#222;border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('dm.archived') +'</span>';
+    }
+    if(c.self_destruct_seconds){
+      badges += ' <span style="font-size:10px;color:#000;background:#c6f135;border-radius:8px;padding:1px 6px;margin-left:6px">&#9203; '+ _fmtDur(c.self_destruct_seconds) +'</span>';
+    }
+    var leave = c.kind === 'group'
+      ? ' <button onclick="leaveGroupConv(\''+ c.id +'\')" style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px">'+ T('dm.leave') +'</button>'
+      : '';
+    var menuBtn = ' <button onclick="openConversationMenu(event)" title="'+ T('dm.menu') +'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;margin-left:6px">&#8942;</button>';
+    hdr.innerHTML = '<b style="color:#fff">'+ (c.kind==='group' ? '&#128101; ' : '') + escapeHtml(name) +'</b>'
+      + badges
+      + ' <span id="dmSafety" style="font-size:11px;color:var(--muted);margin-left:6px"></span>'
+      + menuBtn
+      + leave;
+  }
+  function _fmtDur(secs){
+    if(secs >= 86400) return Math.round(secs/86400)+'d';
+    if(secs >= 3600) return Math.round(secs/3600)+'h';
+    if(secs >= 60) return Math.round(secs/60)+'m';
+    return secs+'s';
+  }
+
+  // Patch the existing openConversation so the new header style + menu
+  // button replace the inline original. We re-use _renderConvHeader and
+  // then delegate the rest of the bootstrap to the underlying flow.
+  var _origOpenConv = window.openConversation;
+  window.openConversation = async function(convId){
+    var c = _conversations.find(function(x){ return x.id === convId; });
+    if(!c){ return; }
+    _activeConv = c;
+    renderConvList();
+    _renderConvHeader();
+    document.getElementById('dmThreadBody').innerHTML =
+      '<div style="color:var(--muted);font-size:13px;text-align:center">'+ T('common.loading') +'</div>';
+    var canCompose = c.kind === 'group' ? !!c.encrypted_group_key : !!c.peer_public_key;
+    document.getElementById('dmComposer').style.display = canCompose ? 'flex' : 'none';
+    if(!canCompose){
+      document.getElementById('dmThreadBody').innerHTML =
+        '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+
+        T(c.kind === 'group' ? 'dm.decryptFailed' : 'dm.peerNoKey') +'</div>';
+      return;
+    }
+    if(c.kind === 'dm'){
+      try {
+        var id = await window.YeetE2EE.ensureIdentity(T('dm.enablePrompt'));
+        var sn = await window.YeetE2EE.safetyNumber(id.pk, c.peer_public_key);
+        var sEl = document.getElementById('dmSafety');
+        if(sEl) sEl.textContent = T('dm.safetyNumber')+': '+ sn;
+      } catch(e){}
+    }
+    await loadMessages(convId);
+  };
+  // Reference the original to satisfy the linter; it stays callable in
+  // case any legacy path bypasses the wrapped version.
+  void _origOpenConv;
+
+  // ─── Sessions list (settings modal) ─────────────────────────────────
+  window.loadSessions = async function(){
+    var box = document.getElementById('sessionsList');
+    if(!box) return;
+    box.innerHTML = '<div style="color:var(--muted)">'+ T('settings.sessionsLoad') +'</div>';
+    try {
+      var r = await api('/api/v1/me/sessions');
+      if(!r.ok){
+        box.innerHTML = '<div style="color:#ff6666">'+ T('common.error') +'</div>';
+        return;
+      }
+      var d = await r.json();
+      var rows = (d && d.data) || [];
+      if(!rows.length){
+        box.innerHTML = '<div style="color:var(--muted)">'+ T('settings.sessionsEmpty') +'</div>';
+        return;
+      }
+      box.innerHTML = rows.map(function(s){
+        var label = escapeHtml(s.device_label || 'session');
+        var country = s.ip_country ? ' &middot; '+ escapeHtml(s.ip_country) : '';
+        var seen = s.last_seen_at ? new Date(s.last_seen_at).toLocaleString() : '';
+        var current = s.is_current
+          ? ' <span style="font-size:10px;color:#000;background:#c6f135;border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('settings.sessionCurrent') +'</span>'
+          : '';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px">'
+          + '<div style="min-width:0;flex:1">'
+          +   '<div style="font-size:13px;color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ label + current +'</div>'
+          +   '<div style="font-size:11px;color:var(--muted)">'+ seen + country +'</div>'
+          + '</div>'
+          + (s.is_current
+              ? ''
+              : '<button onclick="window.revokeSession(\''+ s.id +'\')" style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">'+ T('settings.sessionRevoke') +'</button>')
+          + '</div>';
+      }).join('');
+    } catch(e){
+      box.innerHTML = '<div style="color:#ff6666">'+ T('common.networkError') +'</div>';
+    }
+  };
+
+  window.revokeSession = async function(sessionId){
+    try {
+      var r = await api('/api/v1/me/sessions/'+ encodeURIComponent(sessionId), { method:'DELETE' });
+      if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
+      window.showToast(T('settings.sessionsRevoked'),'success');
+      window.loadSessions();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
+
+  window.revokeAllSessions = async function(){
+    if(!confirm(T('settings.sessionsRevokeAllConfirm'))) return;
+    try {
+      var r = await api('/api/v1/me/sessions', { method:'DELETE' });
+      if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
+      window.showToast(T('settings.sessionsRevoked'),'success');
+      window.loadSessions();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
 
   // Poll invitations on first load so the sidebar badge is current
   // before the user opens the modal.
