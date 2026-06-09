@@ -180,6 +180,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/conversations/:id/mute",   post(api::conversations::mute))
         .route("/api/v1/conversations/:id/archive",post(api::conversations::archive))
         .route("/api/v1/conversations/:id/self-destruct", post(api::conversations::set_self_destruct))
+        .route("/api/v1/conversations/:id/members",       get(api::conversations::list_members))
         .route("/api/v1/me/sessions",              get(api::sessions::list_mine))
         .route("/api/v1/me/sessions/:id",          delete(api::sessions::revoke_one))
         .route("/api/v1/me/sessions",              delete(api::sessions::revoke_all))

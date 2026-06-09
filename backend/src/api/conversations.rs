@@ -362,6 +362,44 @@ pub struct SelfDestructRequest {
     pub seconds: Option<i32>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct MemberRow {
+    pub user_id: Uuid,
+    pub username: Option<String>,
+    pub display_name: Option<String>,
+    pub avatar_url: Option<String>,
+    pub role: String,
+}
+
+/// GET /api/v1/conversations/:id/members — list every member of a
+/// conversation the caller belongs to. Used by the client for the
+/// per-recipient receipt expansion ("read by Alice, Bob"), the
+/// typing indicator name resolution in groups, and the group admin
+/// UX. Returns 403 if the caller isn't a member; we don't want
+/// non-members enumerating who's in someone else's group.
+pub async fn list_members(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(conv_id): Path<Uuid>,
+) -> AppResult<Json<ApiResponse<Vec<MemberRow>>>> {
+    let me = caller_user_id(&state, &auth).await?;
+    assert_member(state.db.pool(), conv_id, me).await?;
+    let rows: Vec<MemberRow> = sqlx::query_as::<_, (Uuid, Option<String>, Option<String>, Option<String>, String)>(
+        "SELECT u.id, u.username, u.display_name, u.avatar_url, cm.role
+           FROM conversation_members cm
+           JOIN users u ON u.id = cm.user_id
+          WHERE cm.conversation_id = $1
+          ORDER BY cm.joined_at ASC
+          LIMIT 500"
+    )
+    .bind(conv_id)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
+    .into_iter().map(|r| MemberRow {
+        user_id: r.0, username: r.1, display_name: r.2, avatar_url: r.3, role: r.4,
+    }).collect();
+    Ok(Json(ApiResponse::ok(rows)))
+}
+
 pub async fn set_self_destruct(
     State(state): State<AppState>,
     auth: AuthUser,

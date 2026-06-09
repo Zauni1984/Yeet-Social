@@ -15,7 +15,7 @@ if('serviceWorker' in navigator){
 </script>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
 <title>YEET &mdash; Web3 Social</title>
 <style>
@@ -115,6 +115,22 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .btn-secondary{background:none;color:var(--muted);border:1px solid var(--border);padding:10px 24px;border-radius:12px;font-size:14px;cursor:pointer;width:100%}
 .pwa-banner{position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:150}
 .pwa-banner.hide{display:none}
+/* iOS Safari zooms the entire page when an input/textarea/select
+   that's about to receive focus has a font-size below 16px. Many of
+   the inputs in this file are styled at 13–15px for layout reasons,
+   which is fine on desktop but causes the disorienting auto-zoom on
+   mobile. Force 16px on the form controls themselves below the
+   tablet breakpoint — visual density is preserved by the surrounding
+   container styles, and the controls themselves stay touch-friendly.
+   We use 16.01px instead of 16px because some older WebKit builds
+   triggered the zoom at exactly 16. */
+@media(max-width:768px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),
+  textarea,
+  select{
+    font-size:16.01px !important;
+  }
+}
 @media(max-width:1100px){.layout{grid-template-columns:200px 1fr 260px}}
 @media(max-width:900px){.sidebar-right{display:none}.layout{grid-template-columns:180px 1fr}}
 @media(max-width:700px){
@@ -7532,6 +7548,36 @@ info@blocksocial.eu</address>
 
   function _myUserId(){ return localStorage.getItem('yeet_user_id') || ''; }
 
+  // Cache of conversation_id → array of { user_id, display_name }.
+  // Populated lazily on openConversation; the per-recipient receipt
+  // renderer and the typing indicator both pull names from here.
+  var _convMembers = {};
+
+  async function _ensureMembers(convId){
+    if(_convMembers[convId]) return _convMembers[convId];
+    try {
+      var r = await api('/api/v1/conversations/'+ encodeURIComponent(convId) +'/members');
+      if(!r.ok) return [];
+      var d = await r.json();
+      var rows = (d && d.data) || [];
+      _convMembers[convId] = rows.map(function(m){
+        return {
+          user_id: m.user_id,
+          name: m.display_name || m.username || (m.user_id ? m.user_id.slice(0,6) : '?'),
+        };
+      });
+      return _convMembers[convId];
+    } catch(e){ return []; }
+  }
+
+  function _nameForUser(convId, userId){
+    var list = _convMembers[convId] || [];
+    for(var i = 0; i < list.length; i++){
+      if(list[i].user_id === userId) return list[i].name;
+    }
+    return '?';
+  }
+
   async function renderMessageBody(m, convKey){
     // delete_for_all takes precedence over the sender-only tombstone:
     // every recipient sees a permanent placeholder once the sender
@@ -8487,28 +8533,52 @@ info@blocksocial.eu</address>
       var rows = (d && d.data) || [];
       var by = {};
       rows.forEach(function(row){ by[row.message_id] = row; });
+      var isGroup = _activeConv && _activeConv.kind === 'group';
+      // Total non-sender members for the "X/N" suffix in groups.
+      // Sender is excluded from the receipt universe by design.
+      var groupRecipientCount = 0;
+      if(isGroup){
+        var members = _convMembers[_activeConv.id] || [];
+        groupRecipientCount = Math.max(0, members.length - 1);
+      }
       bubbles.forEach(function(el){
         var mid = el.getAttribute('data-mid');
         var st = by[mid];
         var existing = el.querySelector('.dm-receipt');
         if(existing) existing.remove();
         if(!st) return;
-        var delivered = (st.delivered_to || []).length > 0;
-        var read = (st.read_by || []).length > 0;
-        if(!delivered && !read) return;
+        var deliveredArr = st.delivered_to || [];
+        var readArr      = st.read_by || [];
+        if(!deliveredArr.length && !readArr.length) return;
         var meta = el.querySelector('div:last-child');
         if(!meta) return;
+
         var glyph, colour, label;
-        if(read){
+        if(readArr.length){
           glyph = '✓✓'; colour = '#c6f135'; label = T('dm.receiptRead');
         } else {
           glyph = '✓✓'; colour = 'var(--muted)'; label = T('dm.receiptDelivered');
         }
+
+        // For groups, show "X/N" so the sender can tell if everyone
+        // has caught up. Tooltip lists the people who read so they
+        // can resolve "who's missing" at a glance.
+        var groupSuffix = '';
+        if(isGroup && groupRecipientCount > 0){
+          var visibleCount = readArr.length || deliveredArr.length;
+          groupSuffix = ' '+ visibleCount +'/'+ groupRecipientCount;
+          var names = (readArr.length ? readArr : deliveredArr)
+            .map(function(uid){ return _nameForUser(_activeConv.id, uid); });
+          if(names.length){
+            label = label + ': ' + names.join(', ');
+          }
+        }
+
         var span = document.createElement('span');
         span.className = 'dm-receipt';
         span.title = label;
-        span.style.cssText = 'margin-left:4px;color:'+ colour +';font-weight:700';
-        span.textContent = glyph;
+        span.style.cssText = 'margin-left:4px;color:'+ colour +';font-weight:700;cursor:default';
+        span.textContent = glyph + groupSuffix;
         meta.appendChild(span);
       });
     } catch(e){}
@@ -8557,6 +8627,10 @@ info@blocksocial.eu</address>
   window.openConversation = async function(convId){
     await _outerOpen(convId);
     _startActiveConvPoll();
+    // Prime the members cache so per-recipient receipts and the
+    // typing indicator can render names without an extra round-trip
+    // on every event.
+    _ensureMembers(convId);
     // First receipt refresh right away rather than waiting 8s.
     setTimeout(_refreshReceiptsForActive, 600);
   };
@@ -8754,13 +8828,14 @@ info@blocksocial.eu</address>
       return;
     }
     if(ids.length === 1){
-      // Resolve a friendly name for the single typer. For DMs the
-      // peer's display name is on _activeConv; for groups we just say
-      // "Someone" because rendering display names server-side would
-      // need an extra round-trip per typer.
-      var name = _activeConv.kind === 'dm'
-        ? (_activeConv.peer_display_name || _activeConv.peer_username || '…')
-        : '…';
+      // Group typers are resolved through the members cache; DMs
+      // already have the peer name on _activeConv.
+      var name;
+      if(_activeConv.kind === 'group'){
+        name = _nameForUser(_activeConv.id, ids[0]);
+      } else {
+        name = _activeConv.peer_display_name || _activeConv.peer_username || '…';
+      }
       el.textContent = T('dm.typingOne', { name: name });
     } else {
       el.textContent = T('dm.typingMany', { count: ids.length });
