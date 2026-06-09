@@ -183,6 +183,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/sessions",              get(api::sessions::list_mine))
         .route("/api/v1/me/sessions/:id",          delete(api::sessions::revoke_one))
         .route("/api/v1/me/sessions",              delete(api::sessions::revoke_all))
+        .route("/api/v1/me/messaging-prefs",       get(api::messaging_prefs::get_prefs))
+        .route("/api/v1/me/messaging-prefs",       patch(api::messaging_prefs::update_prefs))
         .route("/api/v1/admin/message-reports",    get(api::message_reports::admin_list_reports))
         .route("/api/v1/admin/message-reports/:id/resolve",
                post(api::message_reports::admin_resolve_report))

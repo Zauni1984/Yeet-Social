@@ -519,6 +519,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <button onclick="window.revokeAllSessions && window.revokeAllSessions()" style="margin-top:10px;width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:8px;cursor:pointer;font-size:13px" data-i18n="settings.sessionsRevokeAll">Sign out everywhere else</button>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128274; <span data-i18n="dm.privacy">Messaging privacy</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:14px" data-i18n="dm.readReceipts">Read receipts</span>
+          <input type="checkbox" id="settingReadReceipts" onchange="window.updateMessagingPrefs && window.updateMessagingPrefs('read_receipts_enabled', this.checked)" style="width:18px;height:18px;cursor:pointer">
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px" data-i18n="dm.readReceiptsNote">When off, neither you nor your contacts see read receipts in your chats.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:14px" data-i18n="dm.typingIndicators">Typing indicators</span>
+          <input type="checkbox" id="settingTypingIndicators" onchange="window.updateMessagingPrefs && window.updateMessagingPrefs('typing_indicators_enabled', this.checked)" style="width:18px;height:18px;cursor:pointer">
+        </div>
+        <div style="font-size:11px;color:var(--muted)" data-i18n="dm.typingIndicatorsNote">Show your contacts when you are typing.</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128172; <span data-i18n="dm.title">Messages</span></div>
         <div style="font-size:13px;color:var(--muted);margin-bottom:8px" data-i18n="dm.retention">Auto-delete messages after</div>
         <select id="settingDmRetention" onchange="window.updateDmRetention && window.updateDmRetention(this.value)" style="width:100%;background:#111;border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:14px">
@@ -812,6 +825,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.selfDestruct1d':'24 hours','dm.selfDestruct7d':'7 days',
       'dm.selfDestructAdminOnly':'Only group admins can change this',
       'dm.selfDestructSet':'Self-destruct set',
+      'dm.muteCustom':'Custom…','dm.muteCustomPrompt':'Mute until (date & time):',
+      'dm.privacy':'Messaging privacy',
+      'dm.readReceipts':'Read receipts',
+      'dm.readReceiptsNote':'When off, neither you nor your contacts see read receipts in your chats.',
+      'dm.typingIndicators':'Typing indicators',
+      'dm.typingIndicatorsNote':'Show your contacts when you are typing.',
+      'dm.receiptSent':'sent','dm.receiptDelivered':'delivered','dm.receiptRead':'read',
       'dm.retention':'Auto-delete messages after',
       'dm.retentionUpdated':'Retention updated',
       'dm.day1':'1 day','dm.day7':'7 days','dm.day30':'30 days',
@@ -1048,6 +1068,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.selfDestruct1d':'24 Stunden','dm.selfDestruct7d':'7 Tage',
       'dm.selfDestructAdminOnly':'Nur Gruppen-Admins können das ändern',
       'dm.selfDestructSet':'Selbstzerstörung gesetzt',
+      'dm.muteCustom':'Eigene Zeit…','dm.muteCustomPrompt':'Stummschalten bis (Datum & Uhrzeit):',
+      'dm.privacy':'Nachrichten-Privatsphäre',
+      'dm.readReceipts':'Lesebestätigungen',
+      'dm.readReceiptsNote':'Wenn aus, sehen weder du noch deine Kontakte Lesebestätigungen.',
+      'dm.typingIndicators':'Tipp-Anzeige',
+      'dm.typingIndicatorsNote':'Zeigt deinen Kontakten, wenn du gerade tippst.',
+      'dm.receiptSent':'gesendet','dm.receiptDelivered':'zugestellt','dm.receiptRead':'gelesen',
       'dm.retention':'Nachrichten automatisch löschen nach',
       'dm.retentionUpdated':'Speicherdauer aktualisiert',
       'dm.day1':'1 Tag','dm.day7':'7 Tagen','dm.day30':'30 Tagen',
@@ -2175,6 +2202,7 @@ function openSettingsModal(){
       .catch(function(){});
   }
   if(typeof window.loadSessions === 'function') window.loadSessions();
+  if(typeof window.loadMessagingPrefs === 'function') window.loadMessagingPrefs();
   document.getElementById('settingsModal').classList.add('on');
   // Show "Link Wallet" only for email-only users (no wallet yet)
   const lw=document.getElementById('linkWalletBtn');
@@ -8169,6 +8197,7 @@ info@blocksocial.eu</address>
       item(T('dm.mute8h'), function(){ _setMute(8*3600); });
       item(T('dm.mute24h'), function(){ _setMute(24*3600); });
       item(T('dm.mute7d'), function(){ _setMute(7*24*3600); });
+      item(T('dm.muteCustom'), function(){ window.openCustomMute(); });
     }
     header(T('dm.archive'));
     item(archived ? T('dm.unarchive') : T('dm.archive'), function(){ _setArchive(!archived); });
@@ -8358,6 +8387,203 @@ info@blocksocial.eu</address>
       window.showToast(T('settings.sessionsRevoked'),'success');
       window.loadSessions();
     } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
+
+  // ─── Messaging privacy preferences ──────────────────────────────────
+  // Both columns live on `users` (see migration 0031). The toggles
+  // are symmetric: turning off read receipts both stops your client
+  // writing them AND stops the server returning others' receipts to
+  // you.
+  window.loadMessagingPrefs = async function(){
+    var rr = document.getElementById('settingReadReceipts');
+    var ti = document.getElementById('settingTypingIndicators');
+    if(!rr && !ti) return;
+    try {
+      var r = await api('/api/v1/me/messaging-prefs');
+      if(!r.ok) return;
+      var d = await r.json();
+      var p = (d && d.data) || {};
+      if(rr) rr.checked = p.read_receipts_enabled !== false;
+      if(ti) ti.checked = p.typing_indicators_enabled !== false;
+      // Cache so the active-conversation poll can decide whether to
+      // bother sending read receipts on the fast path.
+      window._myMsgPrefs = {
+        read_receipts_enabled: rr ? rr.checked : true,
+        typing_indicators_enabled: ti ? ti.checked : true
+      };
+    } catch(e){}
+  };
+  window.updateMessagingPrefs = async function(field, value){
+    var body = {}; body[field] = !!value;
+    try {
+      var r = await api('/api/v1/me/messaging-prefs', {
+        method:'PATCH', body: JSON.stringify(body)
+      });
+      if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
+      var d = await r.json();
+      var p = (d && d.data) || {};
+      window._myMsgPrefs = {
+        read_receipts_enabled: p.read_receipts_enabled !== false,
+        typing_indicators_enabled: p.typing_indicators_enabled !== false
+      };
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
+
+  // ─── Read-receipt rendering on own sent bubbles ─────────────────────
+  // We poll /messages/receipts for visible own messages. The render
+  // shows ✓ (sent), ✓✓ (delivered to at least one peer), and ✓✓ in
+  // accent colour (read by at least one peer). For groups this is the
+  // minimum-viable signal — "anyone has received/read" — without
+  // surfacing who; full per-recipient state can come later.
+  async function _refreshReceiptsForActive(){
+    if(!_activeConv) return;
+    var bodyEl = document.getElementById('dmThreadBody');
+    if(!bodyEl) return;
+    var bubbles = bodyEl.querySelectorAll('[data-mid][data-mine="1"]');
+    var ids = [];
+    bubbles.forEach(function(el){
+      var mid = el.getAttribute('data-mid');
+      var kind = el.getAttribute('data-kind') || 'text';
+      var delAll = el.getAttribute('data-delall') === '1';
+      // Tip and delete-for-all bubbles don't get receipts in the UI:
+      // tips are a single-shot transactional event and delete-for-all
+      // strips the row server-side.
+      if(mid && !delAll && kind !== 'tip') ids.push(mid);
+    });
+    if(!ids.length) return;
+    try {
+      var qs = encodeURIComponent(ids.join(','));
+      var r = await api('/api/v1/messages/receipts?message_ids='+ qs);
+      if(!r.ok) return;
+      var d = await r.json();
+      var rows = (d && d.data) || [];
+      var by = {};
+      rows.forEach(function(row){ by[row.message_id] = row; });
+      bubbles.forEach(function(el){
+        var mid = el.getAttribute('data-mid');
+        var st = by[mid];
+        var existing = el.querySelector('.dm-receipt');
+        if(existing) existing.remove();
+        if(!st) return;
+        var delivered = (st.delivered_to || []).length > 0;
+        var read = (st.read_by || []).length > 0;
+        if(!delivered && !read) return;
+        var meta = el.querySelector('div:last-child');
+        if(!meta) return;
+        var glyph, colour, label;
+        if(read){
+          glyph = '✓✓'; colour = '#c6f135'; label = T('dm.receiptRead');
+        } else {
+          glyph = '✓✓'; colour = 'var(--muted)'; label = T('dm.receiptDelivered');
+        }
+        var span = document.createElement('span');
+        span.className = 'dm-receipt';
+        span.title = label;
+        span.style.cssText = 'margin-left:4px;color:'+ colour +';font-weight:700';
+        span.textContent = glyph;
+        meta.appendChild(span);
+      });
+    } catch(e){}
+  }
+
+  // Light polling for the active conversation. Fetches receipts so
+  // ✓/✓✓/✓✓-blue updates without a page refresh, and pulls newly-
+  // landed inbound messages so we don't need a full WebSocket layer
+  // for "feels-live" UX. Backoff when the tab is hidden.
+  var _activeConvPollHandle = null;
+  function _startActiveConvPoll(){
+    if(_activeConvPollHandle) clearInterval(_activeConvPollHandle);
+    _activeConvPollHandle = setInterval(async function(){
+      if(document.hidden) return;
+      if(!_activeConv) return;
+      var convId = _activeConv.id;
+      try {
+        // Refresh thread bodies if a new message landed for someone
+        // else in the active conversation. The server already gates
+        // visibility on membership, and the listing call is cheap.
+        var lastEl = document.querySelector('#dmThreadBody [data-mid]:last-child');
+        var lastCreated = lastEl ? lastEl.getAttribute('data-created') : null;
+        var url = '/api/v1/conversations/'+ encodeURIComponent(convId) +'/messages?limit=80';
+        var r = await api(url);
+        if(!r.ok) return;
+        var d = await r.json();
+        var fresh = (d && d.data) || [];
+        var newestServer = fresh.length ? fresh[fresh.length - 1] : null;
+        if(newestServer && newestServer.created_at !== lastCreated){
+          await loadMessages(convId);
+          return;
+        }
+      } catch(e){}
+      _refreshReceiptsForActive();
+    }, 8000);
+  }
+  function _stopActiveConvPoll(){
+    if(_activeConvPollHandle){
+      clearInterval(_activeConvPollHandle);
+      _activeConvPollHandle = null;
+    }
+  }
+  // Tie the poll to the wrapped openConversation: every successful
+  // open starts the loop; leaving the modal stops it.
+  var _outerOpen = window.openConversation;
+  window.openConversation = async function(convId){
+    await _outerOpen(convId);
+    _startActiveConvPoll();
+    // First receipt refresh right away rather than waiting 8s.
+    setTimeout(_refreshReceiptsForActive, 600);
+  };
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && _activeConv){
+      _refreshReceiptsForActive();
+    }
+  });
+
+  // ─── Custom mute duration picker ────────────────────────────────────
+  // Adds a "Custom…" entry to the mute menu via a separate flow because
+  // it needs a datetime-local input, not a button click. The picker
+  // mounts a tiny modal so the menu can close cleanly after.
+  window.openCustomMute = function(){
+    var existing = document.getElementById('dmCustomMute');
+    if(existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'dmCustomMute';
+    modal.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9100;'+
+      'display:flex;align-items:center;justify-content:center;padding:18px';
+    var d = new Date(Date.now() + 3600 * 1000);
+    var pad = function(n){ return (n < 10 ? '0' : '') + n; };
+    var iso = d.getFullYear() +'-'+ pad(d.getMonth()+1) +'-'+ pad(d.getDate())
+            +'T'+ pad(d.getHours()) +':'+ pad(d.getMinutes());
+    modal.innerHTML = ''
+      + '<div style="background:#111;border:1px solid var(--border);border-radius:14px;max-width:360px;width:100%;padding:18px;color:#eee">'
+      +   '<h3 style="margin:0 0 8px;font-size:15px">'+ T('dm.muteTitle') +'</h3>'
+      +   '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">'+ T('dm.muteCustomPrompt') +'</div>'
+      +   '<input id="dmCustomMuteAt" type="datetime-local" value="'+ iso +'" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px 10px;color:#fff;margin-bottom:12px">'
+      +   '<div style="display:flex;justify-content:flex-end;gap:8px">'
+      +     '<button onclick="document.getElementById(\'dmCustomMute\').remove()" style="background:transparent;border:1px solid #444;color:#ccc;border-radius:8px;padding:8px 14px;cursor:pointer">'+ T('live.cancel') +'</button>'
+      +     '<button id="dmCustomMuteGo" style="background:var(--yeet);border:none;color:#000;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">'+ T('dm.muted') +'</button>'
+      +   '</div>'
+      + '</div>';
+    document.body.appendChild(modal);
+    document.getElementById('dmCustomMuteGo').onclick = async function(){
+      var raw = document.getElementById('dmCustomMuteAt').value;
+      var when = new Date(raw);
+      if(!isFinite(when.getTime()) || when.getTime() <= Date.now()){
+        window.showToast(T('common.error'),'error'); return;
+      }
+      var secs = Math.floor((when.getTime() - Date.now()) / 1000);
+      modal.remove();
+      await _setMute(secs);
+    };
+  };
+
+  // Stop the poll on logout / hide-thread paths. We also re-stop it
+  // when the DM thread body is emptied (e.g. switching to another
+  // surface), so the poll doesn't run against a no-longer-active conv.
+  var _origLeave = window.leaveGroupConv;
+  window.leaveGroupConv = async function(convId){
+    _stopActiveConvPoll();
+    return _origLeave(convId);
   };
 
   // Poll invitations on first load so the sidebar badge is current
