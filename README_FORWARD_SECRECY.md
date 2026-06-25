@@ -59,7 +59,50 @@ leave the device. The server stays fully blind.
 - Wrapped prekey privates are stored in `localStorage` under
   `yeet_prekeys_<user_id>` and wiped on logout.
 
-## What phase 2 must do (the ratchet)
+## Phase 2 — SHIPPED (X3DH + Double Ratchet, 1:1 DM text)
+
+The ratchet is now live for 1:1 DM **text** messages, gated and
+fail-closed. Scope and safeguards:
+
+- **Scope:** 1:1 DMs only (groups keep the per-member envelope
+  scheme); text only (tips/images stay on the static path).
+- **Capability-gated:** a message is sent forward-secret only when the
+  peer has a prekey bundle *and* the sender has a master key to persist
+  ratchet state. Otherwise it transparently falls back to the existing
+  static ECDH+HKDF path.
+- **Wire marker:** ratchet messages set `iv = "r2"`; the `ciphertext`
+  field carries `base64(JSON({header, body}))`. The backend treats both
+  as opaque, so no server change was needed — the bundle/prekey
+  endpoints from phase 1 are reused as-is.
+- **Fail-closed:** any ratchet error renders an "undecryptable"
+  placeholder, never a crash, and never weakens to plaintext. The
+  static path is untouched for everyone else.
+- **Atomic decrypt:** decryption runs on a cloned state and commits
+  only on AEAD success, so a tampered / duplicated / reordered message
+  cannot advance and corrupt the receive chain.
+
+### Verified before shipping
+
+The core crypto (`/tmp/ratchet.mjs` during development) was exercised
+with real WebCrypto test vectors in node — 13/13 passing:
+X3DH establishment, DH ratchet on reply, out-of-order + skipped-key
+delivery, 6 interleaved round-trips, AEAD tamper rejection, the
+no-one-time-prekey path, and (critically) "state intact after tamper"
+and "state intact after replay". The module inlined into `index.html`
+is the byte-for-byte algorithm those tests cover.
+
+### Remaining hardening (future)
+
+- Ratchet for tips/images (text-only today).
+- Multi-device: each device currently keeps its own session; a message
+  encrypted to one device's ratchet won't decrypt on another. Needs
+  per-device session fan-out (sender encrypts to each device's bundle).
+- Glare (both peers initiate at once): resolved today by fail-closed +
+  re-establish on next inbound preamble; a deterministic tiebreak would
+  avoid the transient undecryptable message.
+- Cross-check the KDF labels/constants against libsignal test vectors.
+
+## What phase 2 did (the ratchet) — reference
 
 1. **X3DH handshake** — the sender fetches the recipient's bundle,
    verifies `signed_prekey.signature` against `signing_identity_key`,

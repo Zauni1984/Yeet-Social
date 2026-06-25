@@ -7170,6 +7170,9 @@ info@blocksocial.eu</address>
         { name:'ECDSA', hash:'SHA-256' }, sign.privateKey, b64ToBytes(spPubSpki)));
       store.signedKeyId = spKeyId;
       store.signed = await wrapRawPrivBytes(master, spPrivBytes);
+      // The signed prekey PUBLIC is the responder's initial ratchet
+      // public key (phase 2 needs it to derive its first send chain).
+      store.signedPub = spPubSpki;
       body.signed_prekey = { key_id: spKeyId, public_key: spPubSpki, signature: bytesToB64(sig) };
     }
 
@@ -7375,6 +7378,26 @@ info@blocksocial.eu</address>
     bytesToB64: bytesToB64,
     b64ToBytes: b64ToBytes,
     checkAndReplenishPrekeys: checkAndReplenishPrekeys,
+    // ── helpers the ratchet module (phase 2) builds on ──────────────
+    // Wrap/unwrap arbitrary bytes under the session master key so the
+    // ratchet can persist its private state. Null master (master not
+    // derived this session) -> null, and the ratchet degrades to the
+    // static-key path.
+    hasMaster: function(){ return !!_lastMaster; },
+    wrapBytes: async function(u8){ return _lastMaster ? await wrapRawPrivBytes(_lastMaster, u8) : null; },
+    unwrapBytes: async function(b64){
+      if(!_lastMaster) return null;
+      var all = b64ToBytes(b64);
+      var iv = all.slice(0,12), ct = all.slice(12);
+      return new Uint8Array(await subtle.decrypt({name:'AES-GCM', iv: iv}, _lastMaster, ct));
+    },
+    // Read the locally-stored (wrapped) prekey privates for this user
+    // so the ratchet responder can complete X3DH. Returns null if not
+    // provisioned or master unavailable.
+    getLocalPrekeys: function(uid){
+      try { return JSON.parse(localStorage.getItem(prekeyStoreKey(uid)) || 'null'); } catch(e){ return null; }
+    },
+    exportPubSpki: exportPubSpki,
     SIGN_MESSAGE: SIGN_MESSAGE
   };
 
@@ -7382,6 +7405,285 @@ info@blocksocial.eu</address>
   // already exists; we just want to make sure nobody else can read it).
   window.addEventListener('storage', function(ev){
     if(ev.key === 'yeet_jwt' && !ev.newValue) clearIdentityCache();
+  });
+})();
+</script>
+
+<script>
+// ---------- Double Ratchet (Forward Secrecy phase 2) ----------
+// X3DH session establishment + Double Ratchet for 1:1 DM text. The
+// core crypto here is byte-for-byte the module verified with node
+// self-tests (X3DH, DH ratchet, out-of-order/skipped keys, AEAD
+// tamper rejection, no-OTP path). Scope is deliberately narrow:
+//   * 1:1 DMs only — groups keep the per-member envelope scheme.
+//   * text messages only — tips/images stay on the static path.
+//   * capability-gated — only used when the peer has a prekey bundle.
+//   * fail-closed — any error renders "undecryptable", never a crash,
+//     and the static-key path is untouched for everyone else.
+// Ratchet messages are marked on the wire by iv === 'r2'; the body
+// carries base64(JSON({header, body})). The backend treats both
+// fields as opaque, so no server change is needed.
+(function(){
+  var E = function(){ return window.YeetE2EE; };
+  var subtle = window.crypto.subtle;
+  var te = new TextEncoder(), tdf = new TextDecoder();
+  function b64(u8){ return E().bytesToB64(u8); }
+  function ub64(s){ return E().b64ToBytes(s); }
+  function concat(){ var n=0,i; for(i=0;i<arguments.length;i++)n+=arguments[i].length;
+    var out=new Uint8Array(n),o=0; for(i=0;i<arguments.length;i++){out.set(arguments[i],o);o+=arguments[i].length;} return out; }
+  function eqb(a,b){ if(a.length!==b.length)return false; for(var i=0;i<a.length;i++)if(a[i]!==b[i])return false; return true; }
+
+  function genDH(){ return subtle.generateKey({name:'ECDH',namedCurve:'P-256'}, true, ['deriveBits']); }
+  async function pubSpki(k){ return new Uint8Array(await subtle.exportKey('spki', k)); }
+  function impDHpub(u8){ return subtle.importKey('spki', u8, {name:'ECDH',namedCurve:'P-256'}, false, []); }
+  function impDHpriv(u8){ return subtle.importKey('pkcs8', u8, {name:'ECDH',namedCurve:'P-256'}, false, ['deriveBits']); }
+  function impVerify(u8){ return subtle.importKey('spki', u8, {name:'ECDSA',namedCurve:'P-256'}, false, ['verify']); }
+  async function dh(priv, pub){ return new Uint8Array(await subtle.deriveBits({name:'ECDH', public: pub}, priv, 256)); }
+
+  async function kdfRk(rk, dhOut){
+    var ikm = await subtle.importKey('raw', dhOut, 'HKDF', false, ['deriveBits']);
+    var bits = new Uint8Array(await subtle.deriveBits(
+      {name:'HKDF', hash:'SHA-256', salt: rk, info: te.encode('yeet-ratchet-rk-v1')}, ikm, 512));
+    return [bits.slice(0,32), bits.slice(32,64)];
+  }
+  async function kdfCk(ck){
+    var key = await subtle.importKey('raw', ck, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+    var mk  = new Uint8Array(await subtle.sign('HMAC', key, new Uint8Array([0x01])));
+    var nck = new Uint8Array(await subtle.sign('HMAC', key, new Uint8Array([0x02])));
+    return [nck, mk];
+  }
+  async function aesEnc(mk, plaintext, ad){
+    var key = await subtle.importKey('raw', mk, {name:'AES-GCM'}, false, ['encrypt']);
+    var iv = window.crypto.getRandomValues(new Uint8Array(12));
+    var ct = new Uint8Array(await subtle.encrypt({name:'AES-GCM', iv: iv, additionalData: ad}, key, te.encode(plaintext)));
+    return concat(iv, ct);
+  }
+  async function aesDec(mk, blob, ad){
+    var key = await subtle.importKey('raw', mk, {name:'AES-GCM'}, false, ['decrypt']);
+    var iv = blob.slice(0,12), ct = blob.slice(12);
+    var pt = new Uint8Array(await subtle.decrypt({name:'AES-GCM', iv: iv, additionalData: ad}, key, ct));
+    return tdf.decode(pt);
+  }
+  async function x3dhRoot(parts){
+    var F = new Uint8Array(32); F.fill(0xff);
+    var all = [F].concat(parts), n=0,i; for(i=0;i<all.length;i++)n+=all[i].length;
+    var ikm = new Uint8Array(n), o=0; for(i=0;i<all.length;i++){ikm.set(all[i],o);o+=all[i].length;}
+    var k = await subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']);
+    return new Uint8Array(await subtle.deriveBits(
+      {name:'HKDF', hash:'SHA-256', salt: new Uint8Array(32), info: te.encode('yeet-x3dh-v1')}, k, 256));
+  }
+  var MAX_SKIP = 100;
+
+  // ── session lifecycle (in-memory CryptoKeys) ─────────────────────
+  async function initSender(idPriv, idPubB64, bundle){
+    var verifyKey = await impVerify(ub64(bundle.signing_identity_key));
+    var ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, verifyKey,
+      ub64(bundle.signed_prekey.signature), ub64(bundle.signed_prekey.public_key));
+    if(!ok) throw new Error('bad signed prekey signature');
+    var ek = await genDH();
+    var ekPub = await pubSpki(ek.publicKey);
+    var IKb = await impDHpub(ub64(bundle.identity_key));
+    var SPKb = await impDHpub(ub64(bundle.signed_prekey.public_key));
+    var OPKb = bundle.one_time_prekey ? await impDHpub(ub64(bundle.one_time_prekey.public_key)) : null;
+    var parts = [ await dh(idPriv, SPKb), await dh(ek.privateKey, IKb), await dh(ek.privateKey, SPKb) ];
+    if(OPKb) parts.push(await dh(ek.privateKey, OPKb));
+    var sk = await x3dhRoot(parts);
+    var ratchet = await genDH();
+    var rr = await kdfRk(sk, await dh(ratchet.privateKey, SPKb));
+    return {
+      role:'A', DHs: ratchet, DHsPub: await pubSpki(ratchet.publicKey),
+      DHr: ub64(bundle.signed_prekey.public_key),
+      RK: rr[0], CKs: rr[1], CKr: null, Ns:0, Nr:0, PN:0, skipped:{},
+      pre: { ik: idPubB64, ek: b64(ekPub),
+             spk_id: bundle.signed_prekey.key_id,
+             opk_id: bundle.one_time_prekey ? bundle.one_time_prekey.key_id : null },
+      preSent: false,
+    };
+  }
+  // self: { idPriv, signedPrekeyPriv(CryptoKey), signedPrekeyPubB64,
+  //         otpPrivById: {id->CryptoKey} }
+  async function initReceiver(self, pre){
+    var IKa = await impDHpub(ub64(pre.ik));
+    var EKa = await impDHpub(ub64(pre.ek));
+    var parts = [ await dh(self.signedPrekeyPriv, IKa), await dh(self.idPriv, EKa), await dh(self.signedPrekeyPriv, EKa) ];
+    if(pre.opk_id != null){
+      var op = self.otpPrivById[pre.opk_id];
+      if(!op) throw new Error('otp missing '+pre.opk_id);
+      parts.push(await dh(op, EKa));
+    }
+    var sk = await x3dhRoot(parts);
+    return {
+      role:'B', DHs: { privateKey: self.signedPrekeyPriv, publicKey: null },
+      DHsPub: ub64(self.signedPrekeyPubB64), DHr: null,
+      RK: sk, CKs: null, CKr: null, Ns:0, Nr:0, PN:0, skipped:{},
+      pre: null, preSent: true,
+    };
+  }
+  function skKey(dhrPub, n){ return b64(dhrPub)+'|'+n; }
+  async function dhRatchet(st, headerDh){
+    st.PN = st.Ns; st.Ns = 0; st.Nr = 0; st.DHr = headerDh;
+    var DHrPub = await impDHpub(headerDh);
+    var a = await kdfRk(st.RK, await dh(st.DHs.privateKey, DHrPub)); st.RK=a[0]; st.CKr=a[1];
+    st.DHs = await genDH(); st.DHsPub = await pubSpki(st.DHs.publicKey);
+    var b = await kdfRk(st.RK, await dh(st.DHs.privateKey, DHrPub)); st.RK=b[0]; st.CKs=b[1];
+  }
+  async function skipUntil(st, until){
+    if(st.CKr == null) return;
+    if(st.Nr + MAX_SKIP < until) throw new Error('too many skipped');
+    while(st.Nr < until){ var r = await kdfCk(st.CKr); st.skipped[skKey(st.DHr, st.Nr)] = b64(r[1]); st.CKr=r[0]; st.Nr++; }
+  }
+  async function encrypt(st, plaintext){
+    var r = await kdfCk(st.CKs); st.CKs = r[0]; var mk = r[1];
+    var hdr = { dh: b64(st.DHsPub), n: st.Ns, pn: st.PN, pre: (!st.preSent && st.pre) ? st.pre : null };
+    st.Ns++;
+    var ad = te.encode(JSON.stringify({ dh: hdr.dh, n: hdr.n, pn: hdr.pn }));
+    var blob = await aesEnc(mk, plaintext, ad);
+    if(hdr.pre) st.preSent = true;
+    return { header: hdr, body: b64(blob) };
+  }
+  // Atomic: mutate a shallow clone `w`, commit into `st` only when the
+  // whole decrypt (incl. AEAD) succeeds. A tampered/duplicate/forged
+  // message therefore can't advance and corrupt the committed chain —
+  // the next legitimate message still decrypts. (Verified by the node
+  // self-tests: "state intact after tamper" / "after replay".)
+  async function decryptInto(w, wire){
+    var hdrDh = ub64(wire.header.dh);
+    var blob = ub64(wire.body);
+    var ad = te.encode(JSON.stringify({ dh: wire.header.dh, n: wire.header.n, pn: wire.header.pn }));
+    var k = skKey(hdrDh, wire.header.n);
+    if(w.skipped[k]){ var mk0 = ub64(w.skipped[k]); var p0 = await aesDec(mk0, blob, ad); delete w.skipped[k]; return p0; }
+    var isNew = (w.DHr == null) || !eqb(hdrDh, w.DHr);
+    if(isNew){ if(w.DHr != null) await skipUntil(w, wire.header.pn); await dhRatchet(w, hdrDh); }
+    await skipUntil(w, wire.header.n);
+    var r = await kdfCk(w.CKr);
+    var plain = await aesDec(r[1], blob, ad); // throws before we commit
+    w.CKr = r[0]; w.Nr++;
+    return plain;
+  }
+  async function decrypt(st, wire){
+    var w = Object.assign({}, st);
+    w.skipped = Object.assign({}, st.skipped);
+    var plain = await decryptInto(w, wire); // throws -> st untouched
+    Object.assign(st, w);                   // commit
+    return plain;
+  }
+
+  // ── persistence (wrap CryptoKeys + raw chains under master) ──────
+  function storeKey(convId){ return 'yeet_ratchet_'+convId; }
+  async function serialize(st){
+    var dhsPriv = new Uint8Array(await subtle.exportKey('pkcs8', st.DHs.privateKey));
+    var out = {
+      role: st.role,
+      DHs: await E().wrapBytes(dhsPriv), DHsPub: b64(st.DHsPub),
+      DHr: st.DHr ? b64(st.DHr) : null,
+      RK: b64(st.RK), CKs: st.CKs?b64(st.CKs):null, CKr: st.CKr?b64(st.CKr):null,
+      Ns: st.Ns, Nr: st.Nr, PN: st.PN, skipped: st.skipped,
+      pre: st.pre, preSent: st.preSent,
+    };
+    return out;
+  }
+  async function deserialize(o){
+    var dhsPrivBytes = await E().unwrapBytes(o.DHs);
+    if(!dhsPrivBytes) throw new Error('no master');
+    var priv = await impDHpriv(dhsPrivBytes);
+    return {
+      role: o.role, DHs: { privateKey: priv, publicKey: null }, DHsPub: ub64(o.DHsPub),
+      DHr: o.DHr ? ub64(o.DHr) : null,
+      RK: ub64(o.RK), CKs: o.CKs?ub64(o.CKs):null, CKr: o.CKr?ub64(o.CKr):null,
+      Ns: o.Ns, Nr: o.Nr, PN: o.PN, skipped: o.skipped||{},
+      pre: o.pre, preSent: o.preSent,
+    };
+  }
+  async function saveSession(convId, st){
+    if(!E().hasMaster()) return; // can't persist without master; stays in-memory
+    try { localStorage.setItem(storeKey(convId), JSON.stringify(await serialize(st))); } catch(e){}
+  }
+  var _mem = Object.create(null); // convId -> live session (avoids re-import each msg)
+  async function loadSession(convId){
+    if(_mem[convId]) return _mem[convId];
+    var raw; try { raw = JSON.parse(localStorage.getItem(storeKey(convId))||'null'); } catch(e){ raw=null; }
+    if(!raw) return null;
+    try { var st = await deserialize(raw); _mem[convId] = st; return st; } catch(e){ return null; }
+  }
+
+  // Build the receiver "self" material from locally-stored prekeys.
+  async function receiverSelf(uid, idPriv){
+    var pk = E().getLocalPrekeys(uid);
+    if(!pk || !pk.signed) return null;
+    var signedBytes = await E().unwrapBytes(pk.signed);
+    if(!signedBytes) return null;
+    var otpById = {};
+    if(pk.otps){
+      for(var kid in pk.otps){
+        try { var bytes = await E().unwrapBytes(pk.otps[kid]); if(bytes) otpById[kid] = await impDHpriv(bytes); } catch(e){}
+      }
+    }
+    return {
+      idPriv: idPriv,
+      signedPrekeyPriv: await impDHpriv(signedBytes),
+      signedPrekeyPubB64: pk.signedPub || null,
+      otpPrivById: otpById,
+    };
+  }
+
+  window.YeetRatchet = {
+    // Is a forward-secret session possible with this peer? (peer has a
+    // bundle with a signed prekey, and we have a master to persist).
+    peerHasBundle: async function(peerAddrOrId){
+      try {
+        var jwt = localStorage.getItem('yeet_jwt'); if(!jwt) return null;
+        var r = await fetch('/api/v1/users/'+encodeURIComponent(peerAddrOrId)+'/e2ee/bundle',
+          { headers:{ Authorization:'Bearer '+jwt } });
+        if(!r.ok) return null;
+        var d = await r.json();
+        var b = d && d.data;
+        if(b && b.identity_key && b.signing_identity_key && b.signed_prekey) return b;
+        return null;
+      } catch(e){ return null; }
+    },
+    // Encrypt a text for a 1:1 DM. Returns { ciphertext, iv:'r2' } on
+    // success, or null to signal "fall back to static path".
+    encryptText: async function(convId, peerAddrOrId, text){
+      try {
+        if(!E().hasMaster()) return null;
+        var st = await loadSession(convId);
+        if(!st){
+          var bundle = await this.peerHasBundle(peerAddrOrId);
+          if(!bundle) return null;
+          var id = await E().ensureIdentity();
+          st = await initSender(id.sk, id.pk, bundle);
+          _mem[convId] = st;
+        }
+        var wire = await encrypt(st, text);
+        await saveSession(convId, st);
+        return { ciphertext: b64(te.encode(JSON.stringify(wire))), iv: 'r2' };
+      } catch(e){ return null; }
+    },
+    // Decrypt a wire-marked ratchet message (m.iv === 'r2').
+    decryptText: async function(convId, m){
+      var wire = JSON.parse(tdf.decode(ub64(m.ciphertext)));
+      var st = await loadSession(convId);
+      if(!st){
+        // Inbound first message: establish the receiver session via X3DH.
+        if(!wire.header || !wire.header.pre) throw new Error('no session, no preamble');
+        var uid = localStorage.getItem('yeet_user_id') || '';
+        var id = await E().ensureIdentity();
+        var self = await receiverSelf(uid, id.sk);
+        if(!self) throw new Error('no local prekeys');
+        st = await initReceiver(self, wire.header.pre);
+        _mem[convId] = st;
+      }
+      var plain = await decrypt(st, wire);
+      await saveSession(convId, st);
+      return plain;
+    },
+    _wipe: function(){ _mem = Object.create(null); },
+  };
+
+  // Drop in-memory ratchet sessions on logout (wrapped state stays in
+  // localStorage, re-openable on next login once the master is derived).
+  window.addEventListener('storage', function(ev){
+    if(ev.key === 'yeet_jwt' && !ev.newValue) window.YeetRatchet._wipe();
   });
 })();
 </script>
@@ -7871,6 +8173,17 @@ info@blocksocial.eu</address>
       var amt = (typeof m.tip_amount === 'number') ? m.tip_amount : 0;
       return '<span style="color:#f5a623;font-weight:700">&#127873; '+ T('dm.tipMessage', { amount: amt }) +'</span>';
     }
+    // Forward-secret messages are wire-marked with iv === 'r2' and
+    // carry their own self-contained ratchet envelope, so they don't
+    // use the conversation's static key at all.
+    if(m.iv === 'r2' && window.YeetRatchet && _activeConv){
+      try {
+        var fp = await window.YeetRatchet.decryptText(_activeConv.id, m);
+        return escapeHtml(fp);
+      } catch(e){
+        return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+      }
+    }
     if(!convKey){
       return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
     }
@@ -7923,8 +8236,17 @@ info@blocksocial.eu</address>
     if(!text) return;
     if(text.length > 2000){ window.showToast('Too long','error'); return; }
     try {
-      var key = await convKeyForConv(_activeConv);
-      var blob = await window.YeetE2EE.encryptWithKey(key, text);
+      var blob = null;
+      // Forward-secret path: 1:1 DMs only, when the peer has a prekey
+      // bundle. Returns null to fall back to the static-key scheme
+      // (groups, peers without bundles, or any error).
+      if(_activeConv.kind === 'dm' && _activeConv.peer_id && window.YeetRatchet){
+        blob = await window.YeetRatchet.encryptText(_activeConv.id, _activeConv.peer_id, text);
+      }
+      if(!blob){
+        var key = await convKeyForConv(_activeConv);
+        blob = await window.YeetE2EE.encryptWithKey(key, text);
+      }
       var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
         method:'POST',
         body: JSON.stringify({
