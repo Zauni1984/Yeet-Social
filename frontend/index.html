@@ -793,6 +793,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.pushDisable':'Disable on this device',
       'settings.pushDenied':'Notifications were blocked. Allow them in your browser settings to turn this on.',
       'settings.pushUnsupported':'This browser does not support push notifications.',
+      'settings.pushIosInstall':'On iPhone/iPad, push needs the app added to your Home Screen: tap the Share button, then "Add to Home Screen", and open Yeet from there.',
       'settings.pushNotConfigured':'Push notifications are not configured on the server yet.',
       'settings.pushRegistered':'Notifications enabled on this device',
       'settings.pushUnregistered':'Notifications disabled on this device',
@@ -1051,6 +1052,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.pushDisable':'Auf diesem Gerät deaktivieren',
       'settings.pushDenied':'Benachrichtigungen wurden blockiert. Erlaube sie in den Browser-Einstellungen.',
       'settings.pushUnsupported':'Dieser Browser unterstützt keine Push-Benachrichtigungen.',
+      'settings.pushIosInstall':'Auf iPhone/iPad muss die App zum Home-Bildschirm hinzugefügt werden: Teilen-Button antippen, dann „Zum Home-Bildschirm“, und Yeet von dort öffnen.',
       'settings.pushNotConfigured':'Push-Benachrichtigungen sind serverseitig noch nicht eingerichtet.',
       'settings.pushRegistered':'Benachrichtigungen auf diesem Gerät aktiviert',
       'settings.pushUnregistered':'Benachrichtigungen auf diesem Gerät deaktiviert',
@@ -7478,6 +7480,10 @@ info@blocksocial.eu</address>
     await createDmConversation();
   };
 
+  // user_id → online bool. Seeded by _refreshPresence() on list load
+  // and kept current by the "presence" WS event.
+  var _presence = {};
+
   async function refreshConversations(){
     var list = document.getElementById('dmConvList');
     list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px;text-align:center">'+ T('common.loading') +'</div>';
@@ -7493,6 +7499,49 @@ info@blocksocial.eu</address>
     // Always render the list — even on error — so the "+ New" button
     // stays reachable. The error is shown below the button.
     renderConvList(failMsg);
+    _refreshPresence();
+  }
+
+  // Fetch initial online state for the DM peers in the current list,
+  // then repaint the dots. Group conversations have no single peer so
+  // they're skipped.
+  async function _refreshPresence(){
+    var ids = [];
+    _conversations.forEach(function(c){
+      if(c.kind !== 'group' && c.peer_id) ids.push(c.peer_id);
+    });
+    if(!ids.length) return;
+    try {
+      var r = await api('/api/v1/presence', {
+        method:'POST', body: JSON.stringify({ user_ids: ids })
+      });
+      if(!r.ok) return;
+      var d = await r.json();
+      var online = (d && d.data) || [];
+      // Reset known peers to offline, then mark the returned ones up.
+      ids.forEach(function(id){ _presence[id] = false; });
+      online.forEach(function(id){ _presence[id] = true; });
+      _repaintPresenceDots();
+    } catch(e){}
+  }
+
+  function _presenceDot(online){
+    var c = online ? '#3ad07a' : '#555';
+    return '<span class="dm-presence" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ c +';flex-shrink:0"></span>';
+  }
+
+  // Update dots in place without re-rendering the whole list (avoids
+  // clobbering scroll position / active highlight on every event).
+  function _repaintPresenceDots(){
+    var list = document.getElementById('dmConvList');
+    if(!list) return;
+    _conversations.forEach(function(c){
+      if(c.kind === 'group' || !c.peer_id) return;
+      var row = list.querySelector('[data-conv="'+ c.id +'"] .dm-presence');
+      if(!row) return;
+      var online = !!_presence[c.peer_id];
+      row.style.background = online ? '#3ad07a' : '#555';
+    });
   }
   function renderConvList(failMsg){
     var list = document.getElementById('dmConvList');
@@ -7512,9 +7561,13 @@ info@blocksocial.eu</address>
       var act = (_activeConv && _activeConv.id === c.id) ? 'background:#1a1a1a' : '';
       var when = c.last_message_at ? new Date(c.last_message_at).toLocaleDateString() : '';
       var icon = c.kind === 'group' ? '&#128101; ' : '';
-      return '<div onclick="openConversation(\''+ c.id +'\')" style="padding:8px 10px;border-radius:8px;cursor:pointer;'+ act +'">'
+      // Presence dot only for DMs (groups have no single peer).
+      var dot = (c.kind !== 'group' && c.peer_id)
+        ? _presenceDot(!!_presence[c.peer_id]) + ' '
+        : '';
+      return '<div data-conv="'+ c.id +'" onclick="openConversation(\''+ c.id +'\')" style="padding:8px 10px;border-radius:8px;cursor:pointer;'+ act +'">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">'
-        +   '<b style="font-size:13px">'+ icon + escapeHtml(name) +'</b>'
+        +   '<b style="font-size:13px;display:inline-flex;align-items:center;gap:6px">'+ dot + icon + escapeHtml(name) +'</b>'
         +   '<span style="font-size:11px;color:var(--muted)">'+ when +'</span>'
         + '</div>'
         + '</div>';
@@ -8860,6 +8913,11 @@ info@blocksocial.eu</address>
       }
     } else if(env.event === 'typing.start' || env.event === 'typing.stop'){
       _wsOnTyping(env.event === 'typing.start', d);
+    } else if(env.event === 'presence'){
+      if(d && d.user_id){
+        _presence[d.user_id] = !!d.online;
+        _repaintPresenceDots();
+      }
     }
   }
 
@@ -9024,6 +9082,22 @@ info@blocksocial.eu</address>
       && ('Notification' in window);
   }
 
+  function _isIos(){
+    // iPadOS 13+ reports as Mac, so also treat touch-capable Mac as iOS.
+    return /iphone|ipad|ipod/i.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function _isStandalone(){
+    return (window.navigator.standalone === true)
+      || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+  }
+  // iOS only exposes the Push API to PWAs added to the home screen
+  // (16.4+). In a normal Safari tab PushManager is absent, so without
+  // this hint the user just sees "not supported" with no way forward.
+  function _iosNeedsInstall(){
+    return _isIos() && !_isStandalone() && !_pushSupported();
+  }
+
   function _urlBase64ToUint8Array(b64){
     // VAPID public key arrives as base64url-no-pad. The browser's
     // applicationServerKey wants a Uint8Array of the raw 65-byte
@@ -9053,7 +9127,10 @@ info@blocksocial.eu</address>
     if(!line || !btn) return;
 
     if(!_pushSupported()){
-      line.textContent = T('settings.pushUnsupported');
+      // Distinguish "iOS, just needs install" from "genuinely no support".
+      line.textContent = _iosNeedsInstall()
+        ? T('settings.pushIosInstall')
+        : T('settings.pushUnsupported');
       btn.style.display = 'none';
       return;
     }

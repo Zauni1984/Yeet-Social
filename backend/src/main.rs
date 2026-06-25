@@ -187,6 +187,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/messaging-prefs",       get(api::messaging_prefs::get_prefs))
         .route("/api/v1/me/messaging-prefs",       patch(api::messaging_prefs::update_prefs))
         .route("/api/v1/ws",                       get(api::ws::ws_upgrade))
+        .route("/api/v1/presence",                 post(api::ws::presence_query))
         .route("/api/v1/push/config",              get(api::push::config_status))
         .route("/api/v1/me/push/subscribe",        post(api::push::subscribe))
         .route("/api/v1/me/push/subscribe",        delete(api::push::unsubscribe))

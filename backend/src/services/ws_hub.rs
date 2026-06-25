@@ -70,23 +70,41 @@ impl Hub {
     }
 
     /// Register a connection. Caller keeps the returned `ConnId` to
-    /// pass back to `unregister` on close.
-    pub async fn register(&self, user_id: Uuid, tx: UnboundedSender<WsEnvelope>) -> ConnId {
+    /// pass back to `unregister` on close. Returns `(conn_id,
+    /// became_online)` where `became_online` is true only when this is
+    /// the user's FIRST live connection — callers use that edge to
+    /// broadcast a presence "online" event exactly once instead of on
+    /// every tab/device.
+    pub async fn register(&self, user_id: Uuid, tx: UnboundedSender<WsEnvelope>) -> (ConnId, bool) {
         let mut g = self.inner.write().await;
         let id = g.next_id;
         g.next_id = g.next_id.wrapping_add(1);
-        g.by_user.entry(user_id).or_default().push((id, tx));
-        id
+        let entry = g.by_user.entry(user_id).or_default();
+        let became_online = entry.is_empty();
+        entry.push((id, tx));
+        (id, became_online)
     }
 
-    pub async fn unregister(&self, user_id: Uuid, conn_id: ConnId) {
+    /// Returns true when this removed the user's LAST connection — the
+    /// edge on which callers broadcast a presence "offline" event.
+    pub async fn unregister(&self, user_id: Uuid, conn_id: ConnId) -> bool {
         let mut g = self.inner.write().await;
         if let Some(v) = g.by_user.get_mut(&user_id) {
             v.retain(|(id, _)| *id != conn_id);
             if v.is_empty() {
                 g.by_user.remove(&user_id);
+                return true;
             }
         }
+        false
+    }
+
+    /// Filter a candidate set down to the users currently online.
+    pub async fn online_among(&self, candidates: &[Uuid]) -> Vec<Uuid> {
+        let g = self.inner.read().await;
+        candidates.iter().copied()
+            .filter(|u| g.by_user.get(u).map(|v| !v.is_empty()).unwrap_or(false))
+            .collect()
     }
 
     /// True if any device for this user has an open socket.

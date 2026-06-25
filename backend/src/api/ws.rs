@@ -44,11 +44,54 @@ use uuid::Uuid;
 
 use crate::services::auth::verify_access_token;
 use crate::services::ws_hub::WsEnvelope;
-use crate::AppState;
+use crate::{AppError, AppResult, AppState, models::ApiResponse};
+use crate::api::conversations::caller_user_id;
+use crate::api::middleware::AuthUser;
+use axum::Json;
 
 const AUTH_TIMEOUT_SECS: u64 = 5;
 const PING_INTERVAL_SECS: u64 = 30;
 const PONG_DEADLINE_SECS: u64 = 90;
+
+#[derive(Debug, Deserialize)]
+pub struct PresenceQuery {
+    /// User ids the caller wants live status for. Capped at 500 so a
+    /// huge body can't turn into an expensive online_among scan.
+    pub user_ids: Vec<Uuid>,
+}
+
+/// POST /api/v1/presence — returns, of the requested ids, the subset
+/// currently online. The caller must share at least one conversation
+/// with each id they ask about; ids they have no relationship with are
+/// silently dropped so this can't be used as a global presence oracle.
+pub async fn presence_query(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Json(req): Json<PresenceQuery>,
+) -> AppResult<Json<ApiResponse<Vec<Uuid>>>> {
+    let me = caller_user_id(&state, &auth).await?;
+    if req.user_ids.is_empty() {
+        return Ok(Json(ApiResponse::ok(Vec::new())));
+    }
+    if req.user_ids.len() > 500 {
+        return Err(AppError::Validation("too many user_ids".into()));
+    }
+    // Restrict to ids that actually share a conversation with the caller.
+    let allowed: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT DISTINCT cm2.user_id
+           FROM conversation_members cm1
+           JOIN conversation_members cm2
+             ON cm2.conversation_id = cm1.conversation_id
+          WHERE cm1.user_id = $1
+            AND cm2.user_id <> $1
+            AND cm2.user_id = ANY($2)"
+    )
+    .bind(me).bind(&req.user_ids)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let online = state.ws_hub.online_among(&allowed).await;
+    Ok(Json(ApiResponse::ok(online)))
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -92,7 +135,14 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
     // Keep a clone so the heartbeat path can ping only THIS connection
     // instead of fanning out to every device the user has open.
     let ping_tx = tx.clone();
-    let conn_id = state.ws_hub.register(user_id, tx).await;
+    let (conn_id, became_online) = state.ws_hub.register(user_id, tx).await;
+
+    // On the online edge, tell everyone who shares a conversation with
+    // this user that they're now online. Initial state for the rest of
+    // the roster is fetched by the client via POST /api/v1/presence.
+    if became_online {
+        broadcast_presence(&state, user_id, true).await;
+    }
 
     // Split the socket so we can read + write in parallel tasks.
     let (mut ws_tx, mut ws_rx) = socket.split();
@@ -162,7 +212,33 @@ async fn handle_socket(mut socket: WebSocket, state: AppState) {
 
     // ─── Cleanup ─────────────────────────────────────────────────────
     outbound.abort();
-    state.ws_hub.unregister(user_id, conn_id).await;
+    let went_offline = state.ws_hub.unregister(user_id, conn_id).await;
+    if went_offline {
+        broadcast_presence(&state, user_id, false).await;
+    }
+}
+
+/// Tell every distinct user who shares a conversation with `user_id`
+/// that their online status changed. We compute the peer set from
+/// conversation_members; the fan-out itself only reaches peers who
+/// have a live socket (offline peers don't need the event — they'll
+/// fetch fresh presence when they reconnect).
+async fn broadcast_presence(state: &AppState, user_id: Uuid, online: bool) {
+    let peers: Vec<Uuid> = sqlx::query_scalar(
+        "SELECT DISTINCT cm2.user_id
+           FROM conversation_members cm1
+           JOIN conversation_members cm2
+             ON cm2.conversation_id = cm1.conversation_id
+          WHERE cm1.user_id = $1 AND cm2.user_id <> $1"
+    )
+    .bind(user_id)
+    .fetch_all(state.db.pool()).await.unwrap_or_default();
+    if peers.is_empty() { return; }
+    let env = WsEnvelope {
+        event: "presence".into(),
+        data: json!({ "user_id": user_id, "online": online }),
+    };
+    state.ws_hub.publish_to_users(&peers, &env).await;
 }
 
 /// Read up to one auth frame within the timeout; resolve subject to a
