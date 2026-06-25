@@ -7114,6 +7114,119 @@ info@blocksocial.eu</address>
     return await importPriv(plain);
   }
 
+  // ─── Prekey provisioning (Forward Secrecy phase 1) ─────────────────
+  // A WebCrypto ECDH key can't sign, so the signed prekey is signed by
+  // a dedicated ECDSA P-256 "signing identity key". All prekey private
+  // halves are wrapped under the same master key as the identity key
+  // and stored locally; only the public halves leave the device. The
+  // ratchet that consumes these bundles is a later phase — provisioning
+  // them now is the safe, non-throwaway foundation.
+  async function genSigningKeypair(){
+    return await subtle.generateKey(
+      { name:'ECDSA', namedCurve:'P-256' }, true, ['sign','verify']);
+  }
+  async function wrapRawPrivBytes(master, privBytes){
+    // Same IV||ct layout as wrapPrivateKey, but for arbitrary pkcs8
+    // bytes (used for both ECDH and ECDSA private keys).
+    var iv = randIv();
+    var ct = new Uint8Array(await subtle.encrypt(
+      { name:'AES-GCM', iv: iv }, master, privBytes));
+    var out = new Uint8Array(iv.length + ct.length);
+    out.set(iv, 0); out.set(ct, iv.length);
+    return bytesToB64(out);
+  }
+  function prekeyStoreKey(uid){ return 'yeet_prekeys_' + uid; }
+
+  // Provision (or replenish) prekeys using an already-derived master.
+  // Idempotent enough for replenish: it always tops up one-time
+  // prekeys to the target and (re)uploads the signing + signed prekey
+  // only on first provision. Failures are swallowed by the caller —
+  // prekeys are an additive capability, never a hard dependency.
+  async function provisionPrekeysWithMaster(master, jwt, uid, opts){
+    opts = opts || {};
+    var OTP_TARGET = 30;
+    var store = {};
+    try { store = JSON.parse(localStorage.getItem(prekeyStoreKey(uid)) || '{}'); } catch(e){ store = {}; }
+    if(!store.otps) store.otps = {};
+
+    var body = {};
+
+    // First-time: signing identity key + a signed prekey.
+    if(!store.signing){
+      var sign = await genSigningKeypair();
+      var signPubSpki = await exportPubSpki(sign.publicKey);
+      var signPrivBytes = new Uint8Array(await subtle.exportKey('pkcs8', sign.privateKey));
+      store.signing = await wrapRawPrivBytes(master, signPrivBytes);
+      store.signingPub = signPubSpki;
+      body.signing_public_key = signPubSpki;
+
+      // Signed prekey: an ECDH keypair, its public SPKI signed by the
+      // ECDSA signing key so a peer can attribute it to this identity.
+      var spKeyId = 1;
+      var sp = await genIdentityKeypair();
+      var spPubSpki = await exportPubSpki(sp.publicKey);
+      var spPrivBytes = await exportPriv(sp.privateKey);
+      var sig = new Uint8Array(await subtle.sign(
+        { name:'ECDSA', hash:'SHA-256' }, sign.privateKey, b64ToBytes(spPubSpki)));
+      store.signedKeyId = spKeyId;
+      store.signed = await wrapRawPrivBytes(master, spPrivBytes);
+      body.signed_prekey = { key_id: spKeyId, public_key: spPubSpki, signature: bytesToB64(sig) };
+    }
+
+    // Top up one-time prekeys to the target.
+    var have = Object.keys(store.otps).length;
+    var need = Math.max(0, OTP_TARGET - have);
+    if(opts.forceOtp && need === 0) need = OTP_TARGET; // explicit replenish
+    if(need > 0){
+      var nextId = (store.nextOtpId || 100);
+      var batch = [];
+      for(var i = 0; i < need; i++){
+        var kp = await genIdentityKeypair();
+        var pub = await exportPubSpki(kp.publicKey);
+        var priv = await exportPriv(kp.privateKey);
+        var kid = nextId++;
+        store.otps[kid] = await wrapRawPrivBytes(master, priv);
+        batch.push({ key_id: kid, public_key: pub });
+      }
+      store.nextOtpId = nextId;
+      body.one_time_prekeys = batch;
+    }
+
+    // Nothing to do (already provisioned + pool full).
+    if(!body.signing_public_key && !body.signed_prekey && !(body.one_time_prekeys && body.one_time_prekeys.length)){
+      return;
+    }
+
+    var r = await fetch('/api/v1/me/e2ee/prekeys', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+      body: JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error('prekey_upload_failed');
+    // Persist the wrapped privates only after a successful upload so a
+    // failed upload doesn't leave us referencing keys the server lacks.
+    localStorage.setItem(prekeyStoreKey(uid), JSON.stringify(store));
+  }
+
+  // Best-effort replenish: checks the server's remaining count and
+  // tops up if low. Re-derives the master only when there's work to do
+  // (which may prompt) — callers invoke this opportunistically.
+  async function checkAndReplenishPrekeys(){
+    var jwt = localStorage.getItem('yeet_jwt');
+    if(!jwt) return;
+    try {
+      var cr = await fetch('/api/v1/me/e2ee/prekeys/count', { headers:{ Authorization:'Bearer '+jwt } });
+      if(!cr.ok) return;
+      var cd = await cr.json();
+      var data = (cd && cd.data) || {};
+      // Healthy: signed prekey present and pool above the low-water mark.
+      if(data.has_signed_prekey && data.one_time_prekeys_available > 10) return;
+      if(!_lastMaster) return; // no master cached this session; skip silently
+      var uid = await fetchOwnUserId();
+      await provisionPrekeysWithMaster(_lastMaster, jwt, uid, { forceOtp: !data.has_signed_prekey ? false : true });
+    } catch(e){ /* additive capability — never surface */ }
+  }
+
   // HKDF-derived 256-bit AES-GCM key. The info is bound to the sorted
   // pubkey pair to defeat unknown-key-share attacks (so swapping pks
   // server-side changes the derived key and decryption fails).
@@ -7166,6 +7279,9 @@ info@blocksocial.eu</address>
   // on a soft reload, but we never persist the plaintext.
   var _identitySk = null;
   var _identityPk = null;
+  // Master key cached for this session so prekey provisioning /
+  // replenishment doesn't have to re-prompt. Wiped on logout.
+  var _lastMaster = null;
 
   async function ensureIdentity(promptMessage){
     if(_identitySk) return { sk: _identitySk, pk: _identityPk };
@@ -7180,10 +7296,12 @@ info@blocksocial.eu</address>
       // the password-derived master. AES-GCM authenticates, so a wrong
       // master fails loudly — we can safely race the two.
       var unwrapped = null;
+      var usedMaster = null;
       if(hasInjectedWallet()){
         try {
           var mw = await deriveMasterKeyFromWallet();
           unwrapped = await unwrapPrivateKey(mw, d.data.encrypted_private_key);
+          usedMaster = mw;
         } catch(e) { /* fall through to password */ }
       }
       if(!unwrapped){
@@ -7193,10 +7311,17 @@ info@blocksocial.eu</address>
         try {
           var mp = await deriveMasterKeyFromPassword(pwd1, uid1);
           unwrapped = await unwrapPrivateKey(mp, d.data.encrypted_private_key);
+          usedMaster = mp;
         } catch(e) { throw new Error('unwrap_failed'); }
       }
       _identitySk = unwrapped;
       _identityPk = d.data.public_key;
+      _lastMaster = usedMaster;
+      // Provision prekeys if this device hasn't yet (best-effort).
+      try {
+        var ruid = await fetchOwnUserId();
+        await provisionPrekeysWithMaster(usedMaster, jwt, ruid, {});
+      } catch(e){ /* prekeys are additive; never block messaging */ }
       return { sk: _identitySk, pk: _identityPk };
     }
     // 2. First-time setup — choose master method. If the user has an
@@ -7225,10 +7350,17 @@ info@blocksocial.eu</address>
     if(!ur.ok || !ud.success) throw new Error('upload_failed');
     _identitySk = kp.privateKey;
     _identityPk = spki;
+    _lastMaster = master2;
+    // Provision the prekey bundle right after identity setup so the
+    // user is immediately reachable for forward-secret sessions.
+    try {
+      var suid = await fetchOwnUserId();
+      await provisionPrekeysWithMaster(master2, jwt, suid, {});
+    } catch(e){ /* additive; never block setup */ }
     return { sk: _identitySk, pk: _identityPk };
   }
 
-  function clearIdentityCache(){ _identitySk = null; _identityPk = null; }
+  function clearIdentityCache(){ _identitySk = null; _identityPk = null; _lastMaster = null; }
 
   // Expose a deliberately small surface.
   window.YeetE2EE = {
@@ -7242,6 +7374,7 @@ info@blocksocial.eu</address>
     randIv: function(){ return bytesToB64(randIv()); },
     bytesToB64: bytesToB64,
     b64ToBytes: b64ToBytes,
+    checkAndReplenishPrekeys: checkAndReplenishPrekeys,
     SIGN_MESSAGE: SIGN_MESSAGE
   };
 
@@ -7500,6 +7633,11 @@ info@blocksocial.eu</address>
     // stays reachable. The error is shown below the button.
     renderConvList(failMsg);
     _refreshPresence();
+    // Opportunistic prekey top-up when the user is in messaging.
+    // Best-effort + guarded; no-op if the master isn't cached.
+    if(window.YeetE2EE && window.YeetE2EE.checkAndReplenishPrekeys){
+      window.YeetE2EE.checkAndReplenishPrekeys();
+    }
   }
 
   // Fetch initial online state for the DM peers in the current list,
