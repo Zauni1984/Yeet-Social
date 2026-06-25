@@ -604,7 +604,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#">&#128100; Following</a>
     <a class="nav-link" href="#" onclick="showTrendingFeed();return false;">&#11088; Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
-    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.loadPermanentPosts()">&#128204; Permanent Posts</a>
+    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));loadPermanentPosts();if(typeof toggleNav==='function'&&window.innerWidth<=700)toggleNav();return false;">&#128204; Permanent Posts</a>
     <a class="nav-link" href="#">&#9889; Token Tips</a>
     <a class="nav-link" href="#" onclick="openWebboardsModal()">&#128250; Webboards</a>
     <a class="nav-link" href="#" onclick="check18Plus();return false;">&#128286; 18+ Content</a>
@@ -709,6 +709,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'common.cancel':'Cancel','common.confirm':'Confirm','common.close':'Close','common.save':'Save',
       'common.loading':'Loading...','common.error':'Error','common.networkError':'Network error',
       'common.notLoggedIn':'Not logged in','common.pleaseLogin':'Please log in','common.unknown':'unknown',
+      'permanent.title':'Permanent Posts','permanent.backToFeed':'Back to feed',
+      'permanent.empty':'You have no permanent posts yet. Mark a post permanent with the 📌 button in the composer.',
       'common.aborted':'Cancelled','common.report':'Report','common.open':'Open','common.followers':'Followers',
       'common.following':'Following',
       // nav
@@ -971,6 +973,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.close':'Schließen','common.save':'Speichern',
       'common.loading':'Lädt...','common.error':'Fehler','common.networkError':'Netzwerkfehler',
       'common.notLoggedIn':'Nicht eingeloggt','common.pleaseLogin':'Bitte einloggen','common.unknown':'unbekannt',
+      'permanent.title':'Permanente Posts','permanent.backToFeed':'Zurück zum Feed',
+      'permanent.empty':'Du hast noch keine permanenten Posts. Markiere einen Post mit dem 📌-Button im Composer als permanent.',
       'common.aborted':'Abgebrochen','common.report':'Melden','common.open':'Öffnen','common.followers':'Follower',
       'common.following':'Folgt',
       'nav.menu':'Menü','nav.search':'Posts, User, Tags suchen...','nav.login':'Login','nav.register':'Registrieren',
@@ -1436,8 +1440,12 @@ async function loadProfile(){
     if(!d.success)return;
     const u=d.data;
     // Cache the user's id so client-side checks (e.g. "am I the host
-    // of this live?") don't need an extra round trip.
+    // of this live?") don't need an extra round trip. Name + username
+    // are cached so the Permanent Posts view can label the author row
+    // (that endpoint doesn't echo author info).
     if(u && u.id) localStorage.setItem('yeet_user_id', u.id);
+    if(u && u.display_name) localStorage.setItem('yeet_display_name', u.display_name);
+    if(u && u.username) localStorage.setItem('yeet_username', u.username);
     const addr=u.wallet_address||connectedAddress||'';
     const short=addr?addr.slice(0,6)+'...'+addr.slice(-4):'';
     const pw=document.getElementById('profileWidget');
@@ -1460,6 +1468,51 @@ function showLoginGate(){
       +'</div>';
   }
 }
+// Build a single feed-post DOM element (markup + wired listeners).
+// Extracted so loadFeed() and loadPermanentPosts() render identically.
+function _buildFeedPostEl(p){
+  const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
+  const short=(p.author&&(p.author.display_name||p.author.username))||(authorAddr?authorAddr.slice(0,6)+'...'+authorAddr.slice(-4):'@user');
+  const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
+  const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+  // Permanent posts have a ~100y expiry; the "Xh left" badge only makes
+  // sense for ephemeral posts, so suppress it when permanent.
+  const hrsRaw=Math.floor((new Date(p.expires_at)-Date.now())/3600000);
+  const hrs=Math.max(0,hrsRaw);
+  const showHrs=!p.is_permanent && isFinite(hrsRaw);
+  const metaTime=ago+' ago'+(showHrs?' &bull; '+hrs+'h':'');
+  const rawContent=String(p.content||'');
+  const foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
+  let txt=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  txt=txt.replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
+         .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
+  txt=txt.replace(/(https?:\/\/[^\s<"]+)/g,function(u){
+    var disp=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
+    if(disp.length>45)disp=disp.slice(0,45)+'\u2026';
+    return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+disp+'</a>';
+  });
+  const el=document.createElement('div');
+  el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
+  el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+metaTime+'</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+_liveCtaCard(p)+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="Reshare">&#8634; <span>'+(p.repost_count||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+  if(foundUrls.length>0){
+    var previewEl=document.createElement('div');
+    previewEl.style.cssText='margin:8px 0 4px';
+    el.appendChild(previewEl);
+    loadLinkPreview(foundUrls[0], previewEl);
+  }
+  el.querySelector('.like-btn').addEventListener('click',function(){toggleLike(this,p.id);});
+  el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
+  el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
+  el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
+  var _mb = el.querySelector('.more-btn');
+  if (_mb) {
+    _mb.dataset.authorid = (p.author && p.author.id) || '';
+    _mb.dataset.authorwallet = (p.author && (p.author.wallet_address || p.author.id)) || '';
+  }
+  el.querySelector('.more-btn').addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openPostMenu(this);});
+  return el;
+}
+
 async function loadFeed(){
   try{
     const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
@@ -1479,48 +1532,83 @@ async function loadFeed(){
       const wrap=document.createElement('div');
       wrap.id='feed-posts';
       for(const p of d.data){
-        const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
-        const short=(p.author&&(p.author.display_name||p.author.username))||(authorAddr?authorAddr.slice(0,6)+'...'+authorAddr.slice(-4):'@user');
-        const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
-        const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
-        const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
-        const rawContent=String(p.content||'');
-        const foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
-        let txt=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        txt=txt.replace(/#(\w+)/g,'<span style="color:#c6f135">#$1</span>')
-               .replace(/@(\w+)/g,'<span style="color:#c6f135">@$1</span>');
-        txt=txt.replace(/(https?:\/\/[^\s<"]+)/g,function(u){
-          var disp=u.replace(/^https?:\/\//,'').replace(/\/$/,'');
-          if(disp.length>45)disp=disp.slice(0,45)+'\u2026';
-          return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:#c6f135;text-decoration:underline;word-break:break-all">'+disp+'</a>';
-        });
-        const el=document.createElement('div');
-        el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-        el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:#1a1a1a;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+ago+' ago &bull; '+hrs+'h</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+_liveCtaCard(p)+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#c6f135;border:1px solid #c6f135;border-radius:12px;padding:2px 8px;margin:4px 0">&#128204; Permanent &bull; '+(p.visibility==='followers'?'&#128100; Follower':'&#127760; Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart">&#10084;</span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'">&#128172; <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'">&#127873; <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="Reshare">&#8634; <span>'+(p.repost_count||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr">&#8942;</button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:#1a1a1a;border:1px solid #333;border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
-        if(foundUrls.length>0){
-          var previewEl=document.createElement('div');
-          previewEl.style.cssText='margin:8px 0 4px';
-          el.appendChild(previewEl);
-          loadLinkPreview(foundUrls[0], previewEl);
-        }
-        el.querySelector('.like-btn').addEventListener('click',function(){toggleLike(this,p.id);});
-        el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
-        el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
-        el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
-        var _mb = el.querySelector('.more-btn');
-        if (_mb) {
-          _mb.dataset.authorid = (p.author && p.author.id) || '';
-          _mb.dataset.authorwallet = (p.author && (p.author.wallet_address || p.author.id)) || '';
-        }
-        el.querySelector('.more-btn').addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openPostMenu(this);});
-        // author data stored in more-btn data attributes
-        wrap.appendChild(el);
+        wrap.appendChild(_buildFeedPostEl(p));
       }
       const c=document.querySelector('.composer');
       if(c)c.after(wrap);
     }else{if(empty)empty.style.display='';}
   }catch(e){console.error('Feed:',e);}
 }
+
+// Permanent Posts view (sidebar nav link). Shows the current user's
+// own permanent posts (the ones excluded from the 24h-expiry feed).
+// The backend route is per-user; we resolve the caller's id from the
+// cached yeet_user_id (populated by loadProfile) and fall back to a
+// /users/me fetch if it isn't there yet.
+async function loadPermanentPosts(){
+  const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  if(!jwt){ showLoginGate(); return; }
+  // Leaving any open profile view so the feed column is the target.
+  if(typeof _exitProfileView==='function'){ try{ _exitProfileView(); }catch(e){} }
+  const empty=document.querySelector('.empty');
+  const old=document.getElementById('feed-posts');
+  if(old)old.remove();
+  if(empty)empty.style.display='none';
+  if(typeof showFeedSpinner==='function') showFeedSpinner();
+
+  let uid=localStorage.getItem('yeet_user_id')||'';
+  if(!uid){
+    try{
+      const me=await fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}});
+      const md=await me.json();
+      if(md&&md.data&&md.data.id){ uid=md.data.id; localStorage.setItem('yeet_user_id',uid); }
+    }catch(e){}
+  }
+  if(typeof hideFeedSpinner==='function') hideFeedSpinner();
+  if(!uid){ window.showToast&&window.showToast(window.t('common.error'),'error'); return; }
+
+  try{
+    const r=await fetch('/api/v1/profile/'+encodeURIComponent(uid)+'/permanent',{headers:{'Authorization':'Bearer '+jwt}});
+    const d=await r.json();
+    const wrap=document.createElement('div');
+    wrap.id='feed-posts';
+    // Header so the user knows they switched views (and can get back).
+    const head=document.createElement('div');
+    head.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)';
+    head.innerHTML='<b style="font-size:15px">&#128204; '+window.t('permanent.title')+'</b>'
+      +'<button onclick="loadFeed()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer">'+window.t('permanent.backToFeed')+'</button>';
+    wrap.appendChild(head);
+    const posts=(d&&d.data)||[];
+    if(!posts.length){
+      const none=document.createElement('div');
+      none.style.cssText='padding:40px 20px;text-align:center;color:var(--muted);font-size:14px';
+      none.textContent=window.t('permanent.empty');
+      wrap.appendChild(none);
+    }else{
+      for(const p of posts){
+        // Normalise: the permanent endpoint returns a flatter shape
+        // than the feed (no nested author / expires_at). Synthesize the
+        // fields _buildFeedPostEl expects so rendering stays identical.
+        p.is_permanent=true;
+        if(!p.author){
+          p.author={ id: uid,
+            wallet_address: localStorage.getItem('yeet_address')||null,
+            display_name: localStorage.getItem('yeet_display_name')||null,
+            username: localStorage.getItem('yeet_username')||null };
+        }
+        if(!p.expires_at) p.expires_at=new Date(Date.now()+3650*24*3600*1000).toISOString();
+        wrap.appendChild(_buildFeedPostEl(p));
+      }
+    }
+    const c=document.querySelector('.composer');
+    if(c)c.after(wrap); else { const m=document.querySelector('main') || document.body; m.appendChild(wrap); }
+  }catch(e){
+    console.error('Permanent:',e);
+    window.showToast&&window.showToast(window.t('common.networkError'),'error');
+  }
+}
+document.loadPermanentPosts = loadPermanentPosts;
+window.loadPermanentPosts = loadPermanentPosts;
 async function likePost(id){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){openWalletModal();return;}
