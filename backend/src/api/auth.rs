@@ -5,6 +5,7 @@ use std::time::Duration;
 use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, services::auth, models::ApiResponse};
 use crate::api::sessions::{self, RefreshOutcome};
+use crate::api::middleware::AuthUser;
 
 #[derive(Debug, Deserialize)]
 pub struct NonceRequest { pub address: String }
@@ -112,6 +113,60 @@ pub async fn verify_signature(
         access_token, refresh_token, token_type: "Bearer".into(),
         needs_email: Some(needs_email),
     })))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LogoutRequest {
+    /// Optional refresh token so we can blacklist it too. The access
+    /// token's JTI comes from the AuthUser extractor.
+    #[serde(default)]
+    pub refresh_token: Option<String>,
+}
+
+/// POST /api/v1/auth/logout
+///
+/// Properly ends the session server-side: blacklists the current
+/// access token's JTI (so it can't be reused for its remaining TTL),
+/// blacklists the supplied refresh token if any, and revokes ALL of
+/// the user's refresh-token sessions in user_sessions. The client is
+/// responsible for clearing its local token copies; this makes a
+/// stolen/leaked token useless even if it wasn't cleared everywhere.
+pub async fn logout(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Json(req): Json<LogoutRequest>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    // Blacklist this access token for the rest of its lifetime.
+    let _ = state.cache.blacklist_token(
+        &auth.jti, Duration::from_secs(state.jwt.access_ttl_secs)
+    ).await;
+
+    // Blacklist the refresh token (if the client sent it) immediately.
+    if let Some(rt) = &req.refresh_token {
+        if let Ok(claims) = auth::verify_refresh_token(rt, &state.jwt) {
+            let _ = state.cache.blacklist_token(
+                &claims.jti, Duration::from_secs(state.jwt.refresh_ttl_secs)
+            ).await;
+        }
+    }
+
+    // Revoke every refresh session this user has (mirrors the
+    // "sign out everywhere" path). Best-effort: resolve the user id
+    // from the access subject.
+    let user_id: Option<Uuid> = if let Some(rest) = auth.address.strip_prefix("email:") {
+        Uuid::parse_str(rest).ok()
+    } else {
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.ok().flatten()
+    };
+    if let Some(uid) = user_id {
+        let _ = sessions::revoke_all_for_user(
+            state.db.pool(), &state.cache, uid, state.jwt.refresh_ttl_secs,
+        ).await;
+    }
+
+    Ok(Json(ApiResponse::ok("logged_out")))
 }
 
 pub async fn refresh_token(

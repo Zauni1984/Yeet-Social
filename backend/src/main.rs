@@ -79,6 +79,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/link-wallet/nonce",  post(api::email_auth::link_wallet_nonce))
         .route("/api/v1/auth/link-wallet/verify", post(api::email_auth::link_wallet_verify))
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
+        .route("/api/v1/auth/logout",      post(api::auth::logout))
         // Feed
         .route("/api/v1/feed",             get(api::feed::get_feed))
         .route("/api/v1/feed/adult",      get(api::feed::get_adult_feed))

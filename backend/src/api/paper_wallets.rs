@@ -163,6 +163,23 @@ pub async fn create(
 
     let issuer_id = caller_user_id(&state, &auth).await?;
 
+    // Paper wallets are bearer instruments: whoever scans the code
+    // redeems the YEET. That's a higher abuse surface than a normal
+    // tip (which goes to a known user), so issuance is gated on a
+    // verified account — the issuer must have a confirmed email.
+    // Login-less callers are already rejected by the AuthUser
+    // extractor; this adds the verification requirement on top,
+    // authoritatively on the server.
+    let email_verified: bool = sqlx::query_scalar(
+        "SELECT email_verified_at IS NOT NULL FROM users WHERE id = $1"
+    )
+    .bind(issuer_id)
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+    .unwrap_or(false);
+    if !email_verified {
+        return Err(AppError::Forbidden("ACCOUNT_NOT_VERIFIED".into()));
+    }
+
     // Atomic debit + insert in a single transaction.
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, models::{FeedPost, FeedPostAuthor, PagedResponse}};
-use crate::api::middleware::{AuthUser, OptionalAuth};
+use crate::api::middleware::AuthUser;
 
 #[derive(Debug, Deserialize)]
 pub struct FeedQuery {
@@ -206,8 +206,12 @@ pub async fn get_user_posts(
     State(state): State<AppState>,
     Path(address): Path<String>,
     Query(q): Query<FeedQuery>,
-    OptionalAuth(viewer): OptionalAuth,
+    auth: AuthUser,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
+    // Login required: profile timelines (incl. permanent posts) are
+    // gated like the main feed — anonymous callers get a 401 rather
+    // than seeing any content.
+    let viewer = Some(auth);
     let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset = (page - 1) * per_page;

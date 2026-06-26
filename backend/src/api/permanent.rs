@@ -144,18 +144,26 @@ pub async fn repost_post(
 }
 
 /// GET /api/v1/profile/:user_id/permanent
+///
+/// Login required: permanent posts are gated like the rest of the
+/// feed, so anonymous visitors get a 401 instead of seeing content.
 pub async fn get_permanent_posts(
     State(state): State<AppState>,
     Path(user_id): Path<Uuid>,
-    auth: Option<AuthUser>,
+    auth: AuthUser,
 ) -> AppResult<Json<serde_json::Value>> {
-    let viewer_id: Option<Uuid> = auth.and_then(|a| {
-        if let Some(uuid_str) = a.address.strip_prefix("email:") {
-            uuid_str.parse::<Uuid>().ok()
-        } else {
-            a.address.parse::<Uuid>().ok()
-        }
-    });
+    // Resolve the viewer's UUID from either an email-auth subject
+    // ("email:<uuid>") or a wallet address (looked up in users). The
+    // previous code parsed a wallet address as a UUID, which always
+    // failed — so a wallet user was never recognised as the owner of
+    // their own permanent posts.
+    let viewer_id: Option<Uuid> = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>().ok()
+    } else {
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+    };
 
     let is_owner = viewer_id == Some(user_id);
 

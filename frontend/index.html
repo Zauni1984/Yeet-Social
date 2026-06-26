@@ -942,6 +942,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'paper.confirmVoid':'Void this paper wallet and refund {amount} YEET?',
       'paper.voided':'Paper wallet voided, balance refunded',
       'paper.created_ok':'Paper wallet created — download the PDF and keep it safe',
+      'paper.needVerify':'Verify your account (confirm your email) before creating paper wallets.',
       'paper.copySecret':'Copy claim code',
       'paper.codeCopied':'Claim code copied',
       'paper.warning':'⚠️ Save the PDF now — the claim code is shown only once.',
@@ -1215,6 +1216,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'paper.confirmVoid':'Diese Paper Wallet stornieren und {amount} YEET zurückbuchen?',
       'paper.voided':'Paper Wallet storniert, Guthaben rückgebucht',
       'paper.created_ok':'Paper Wallet erstellt — PDF herunterladen und sicher aufbewahren',
+      'paper.needVerify':'Verifiziere dein Konto (E-Mail bestätigen), bevor du Paper Wallets erstellst.',
       'paper.copySecret':'Code kopieren',
       'paper.codeCopied':'Code kopiert',
       'paper.warning':'⚠️ PDF jetzt speichern — der Code wird nur einmal angezeigt.',
@@ -2529,11 +2531,55 @@ function updateAdultUiVisibility(enabled){
   var atl=document.getElementById('adultToggleLabel');
   if(atl) atl.style.display = show ? 'flex' : 'none';
 }
-function disconnectWallet(){
-  localStorage.removeItem('yeet_jwt');
-  localStorage.removeItem('yeet_address');
-  localStorage.removeItem('yeet_adult');
-  localStorage.removeItem('yeet_18plus_verified');
+// Clear all access/refresh token copies + cached user. Used on hard
+// 401s (session expired). Intentionally narrower than disconnectWallet
+// — it does NOT wipe E2EE device state, since a transient 401 isn't a
+// deliberate logout.
+function _yeetClearTokens(){
+  ['yeet_jwt','yeetToken','yt','yeet_refresh','yeetUser'].forEach(function(k){
+    try{ localStorage.removeItem(k); }catch(e){}
+  });
+}
+window._yeetClearTokens = _yeetClearTokens;
+
+async function disconnectWallet(){
+  // 1) Tell the server to end the session: blacklist this access
+  //    token + refresh token and revoke every refresh session for the
+  //    user. Best-effort — we still clear locally even if it fails.
+  var tok = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || localStorage.getItem('yt');
+  var rtok = localStorage.getItem('yeet_refresh');
+  if(tok){
+    try {
+      await fetch('/api/v1/auth/logout', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+tok },
+        body: JSON.stringify({ refresh_token: rtok || null })
+      });
+    } catch(e){ /* offline logout still proceeds */ }
+  }
+
+  // 2) Clear EVERY local auth + identity artifact. The app reads the
+  //    access token under three keys (yeet_jwt || yeetToken || yt) —
+  //    leaving any one of them logged you back in. Also drop the
+  //    refresh token, cached user, and the E2EE device/ratchet state
+  //    so a new login provisions cleanly.
+  ['yeet_jwt','yeetToken','yt','yeet_refresh','yeetUser','yeet_address',
+   'yeet_adult','yeet_18plus_verified','yeet_user_id','yeet_display_name',
+   'yeet_username','yeet_device_id','yeet_admin_secret','yeet_settings'
+  ].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  // Sweep namespaced E2EE keys (prekeys, ratchet sessions, sent cache).
+  try {
+    var drop = [];
+    for(var i=0;i<localStorage.length;i++){
+      var k = localStorage.key(i);
+      if(k && (k.indexOf('yeet_prekeys_')===0 || k.indexOf('yeet_ratchet_')===0 || k.indexOf('yeet_sent_')===0)) drop.push(k);
+    }
+    drop.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  } catch(e){}
+  // Wipe in-memory crypto caches.
+  try { if(window.YeetE2EE && window.YeetE2EE.clearCache) window.YeetE2EE.clearCache(); } catch(e){}
+  try { if(window.YeetRatchet && window.YeetRatchet._wipe) window.YeetRatchet._wipe(); } catch(e){}
+
   connectedAddress=null;connectedWallet=null;
   const btn=document.getElementById('walletBtn');
   if(btn){btn.textContent='CONNECT WALLET';btn.classList.remove('connected');}
@@ -2542,7 +2588,8 @@ function disconnectWallet(){
   if(pw)pw.style.display='none';
   closeSettingsModal();
   showToast(window.t('toast.walletDisconnected'));
-  loadFeed();
+  // Hard reload to a clean state so no in-memory view keeps stale auth.
+  setTimeout(function(){ location.reload(); }, 300);
 }
 function updateCharCount(){
   var ta=document.getElementById('postTxt');
@@ -3524,7 +3571,7 @@ function toggleFollow(btn, postId, author) {
   btn.disabled = true;
   fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + jwt } })
     .then(function(r) {
-      if (r.status === 401) { localStorage.removeItem('yeet_jwt'); openAuthModal('login'); return; }
+      if (r.status === 401) { _yeetClearTokens(); openAuthModal('login'); return; }
       if (!r.ok) { r.json().then(function(e){ showToast(e.error&&e.error.message||window.t('common.error'), 'error'); }); return; }
       isFollowing = !isFollowing;
       btn.dataset.following = isFollowing ? '1' : '0';
@@ -3607,7 +3654,7 @@ async function submitReport(postId){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
       body:JSON.stringify({reason:reason,details:details})});
     var d=await r.json();
-    if(r.status===401){localStorage.removeItem('yeet_jwt');openAuthModal('login');return;}
+    if(r.status===401){_yeetClearTokens();openAuthModal('login');return;}
     showToast(d.success?window.t('toast.reported'):window.t('toast.reportFailed'),d.success?'success':'error');
   }catch(e){showToast(window.t('common.networkError'),'error');}
 }
@@ -5980,7 +6027,15 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
       });
       var j = await r.json();
       if(!r.ok){
-        window.showToast((j && j.error && j.error.message) || T('common.error'),'error');
+        var em = (j && j.error && j.error.message) || '';
+        // Backend gates issuance on a verified (email-confirmed)
+        // account; surface a clear call to action instead of the raw
+        // error code.
+        if(r.status === 403 && em.indexOf('ACCOUNT_NOT_VERIFIED') !== -1){
+          window.showToast(T('paper.needVerify'),'error');
+        } else {
+          window.showToast(em || T('common.error'),'error');
+        }
         return;
       }
       var bill = j.data;

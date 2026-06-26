@@ -251,3 +251,26 @@ pub async fn revoke_family(
 pub async fn blacklist_session_jti(cache: &Cache, jti: &str, ttl_secs: u64) {
     let _ = cache.blacklist_token(jti, Duration::from_secs(ttl_secs)).await;
 }
+
+/// Revoke every active refresh session for a user and blacklist each
+/// JTI. Used by the logout endpoint ("sign out properly"). Single
+/// UPDATE … RETURNING so a concurrent insert can't slip past.
+pub async fn revoke_all_for_user(
+    pool: &PgPool,
+    cache: &Cache,
+    user_id: Uuid,
+    refresh_ttl: u64,
+) -> Result<(), sqlx::Error> {
+    let jtis: Vec<String> = sqlx::query_scalar(
+        "UPDATE user_sessions
+            SET revoked_at = NOW(), revoked_reason = 'logout'
+          WHERE user_id = $1 AND revoked_at IS NULL
+         RETURNING jti"
+    )
+    .bind(user_id)
+    .fetch_all(pool).await?;
+    for jti in jtis {
+        blacklist_session_jti(cache, &jti, refresh_ttl).await;
+    }
+    Ok(())
+}
