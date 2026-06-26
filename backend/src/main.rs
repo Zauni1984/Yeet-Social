@@ -153,7 +153,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/:address/e2ee/pubkey", get(api::e2ee::get_peer_pubkey))
         .route("/api/v1/me/e2ee/prekeys",         post(api::e2ee::upload_prekeys))
         .route("/api/v1/me/e2ee/prekeys/count",   get(api::e2ee::prekey_count))
-        .route("/api/v1/users/:address/e2ee/bundle", get(api::e2ee::get_prekey_bundle))
+        .route("/api/v1/users/:address/e2ee/bundles", get(api::e2ee::get_prekey_bundles))
         .route("/api/v1/conversations",              get(api::conversations::list_mine))
         .route("/api/v1/conversations/dm",           post(api::conversations::create_dm))
         .route("/api/v1/conversations/:id/hide",     post(api::conversations::hide))

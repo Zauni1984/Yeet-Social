@@ -834,6 +834,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.tipSent':'Sent {amount} YEET',
       'dm.deleted':'[message deleted]','dm.deletedToast':'Message deleted',
       'dm.deletedForAll':'[deleted for everyone]',
+      'dm.sentOtherDevice':'[sent from another device]',
       'dm.deleteConfirm':'Delete this message? It will be removed for both of you.',
       'dm.deleteForAllConfirm':'Unsend this message for everyone in the conversation? Cannot be undone.',
       'dm.edit':'Edit','dm.editPrompt':'Edit your message:','dm.edited':'edited',
@@ -1091,6 +1092,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.tipSent':'{amount} YEET gesendet',
       'dm.deleted':'[Nachricht gelöscht]','dm.deletedToast':'Nachricht gelöscht',
       'dm.deletedForAll':'[für alle gelöscht]',
+      'dm.sentOtherDevice':'[von anderem Gerät gesendet]',
       'dm.deleteConfirm':'Diese Nachricht löschen? Sie wird für beide Seiten entfernt.',
       'dm.deleteForAllConfirm':'Diese Nachricht für alle in der Konversation zurückziehen? Das kann nicht rückgängig gemacht werden.',
       'dm.edit':'Bearbeiten','dm.editPrompt':'Nachricht bearbeiten:','dm.edited':'bearbeitet',
@@ -7137,6 +7139,20 @@ info@blocksocial.eu</address>
   }
   function prekeyStoreKey(uid){ return 'yeet_prekeys_' + uid; }
 
+  // Stable per-browser/device id. Multi-device keys prekeys + ratchet
+  // sessions by this so one device's provisioning never clobbers
+  // another's. Persisted once per browser profile.
+  function deviceId(){
+    var d = localStorage.getItem('yeet_device_id');
+    if(!d){
+      d = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : 'dev-' + bytesToB64(window.crypto.getRandomValues(new Uint8Array(12))).replace(/[^a-zA-Z0-9]/g,'').slice(0,16);
+      localStorage.setItem('yeet_device_id', d);
+    }
+    return d;
+  }
+
   // Provision (or replenish) prekeys using an already-derived master.
   // Idempotent enough for replenish: it always tops up one-time
   // prekeys to the target and (re)uploads the signing + signed prekey
@@ -7149,7 +7165,7 @@ info@blocksocial.eu</address>
     try { store = JSON.parse(localStorage.getItem(prekeyStoreKey(uid)) || '{}'); } catch(e){ store = {}; }
     if(!store.otps) store.otps = {};
 
-    var body = {};
+    var body = { device_id: deviceId() };
 
     // First-time: signing identity key + a signed prekey.
     if(!store.signing){
@@ -7195,7 +7211,8 @@ info@blocksocial.eu</address>
       body.one_time_prekeys = batch;
     }
 
-    // Nothing to do (already provisioned + pool full).
+    // Nothing to do (already provisioned + pool full). device_id alone
+    // doesn't count as work.
     if(!body.signing_public_key && !body.signed_prekey && !(body.one_time_prekeys && body.one_time_prekeys.length)){
       return;
     }
@@ -7218,7 +7235,7 @@ info@blocksocial.eu</address>
     var jwt = localStorage.getItem('yeet_jwt');
     if(!jwt) return;
     try {
-      var cr = await fetch('/api/v1/me/e2ee/prekeys/count', { headers:{ Authorization:'Bearer '+jwt } });
+      var cr = await fetch('/api/v1/me/e2ee/prekeys/count?device_id='+encodeURIComponent(deviceId()), { headers:{ Authorization:'Bearer '+jwt } });
       if(!cr.ok) return;
       var cd = await cr.json();
       var data = (cd && cd.data) || {};
@@ -7397,6 +7414,7 @@ info@blocksocial.eu</address>
     getLocalPrekeys: function(uid){
       try { return JSON.parse(localStorage.getItem(prekeyStoreKey(uid)) || 'null'); } catch(e){ return null; }
     },
+    deviceId: deviceId,
     exportPubSpki: exportPubSpki,
     SIGN_MESSAGE: SIGN_MESSAGE
   };
@@ -7569,7 +7587,9 @@ info@blocksocial.eu</address>
   }
 
   // ── persistence (wrap CryptoKeys + raw chains under master) ──────
-  function storeKey(convId){ return 'yeet_ratchet_'+convId; }
+  // Sessions are pairwise per remote DEVICE, namespaced by conversation.
+  function storeKey(convId, rdev){ return 'yeet_ratchet_'+convId+'_'+rdev; }
+  function memKey(convId, rdev){ return convId+'|'+rdev; }
   async function serialize(st){
     var dhsPriv = new Uint8Array(await subtle.exportKey('pkcs8', st.DHs.privateKey));
     var out = {
@@ -7594,16 +7614,17 @@ info@blocksocial.eu</address>
       pre: o.pre, preSent: o.preSent,
     };
   }
-  async function saveSession(convId, st){
+  async function saveSession(convId, rdev, st){
     if(!E().hasMaster()) return; // can't persist without master; stays in-memory
-    try { localStorage.setItem(storeKey(convId), JSON.stringify(await serialize(st))); } catch(e){}
+    try { localStorage.setItem(storeKey(convId, rdev), JSON.stringify(await serialize(st))); } catch(e){}
   }
-  var _mem = Object.create(null); // convId -> live session (avoids re-import each msg)
-  async function loadSession(convId){
-    if(_mem[convId]) return _mem[convId];
-    var raw; try { raw = JSON.parse(localStorage.getItem(storeKey(convId))||'null'); } catch(e){ raw=null; }
+  var _mem = Object.create(null); // convId|rdev -> live session
+  async function loadSession(convId, rdev){
+    var mk = memKey(convId, rdev);
+    if(_mem[mk]) return _mem[mk];
+    var raw; try { raw = JSON.parse(localStorage.getItem(storeKey(convId, rdev))||'null'); } catch(e){ raw=null; }
     if(!raw) return null;
-    try { var st = await deserialize(raw); _mem[convId] = st; return st; } catch(e){ return null; }
+    try { var st = await deserialize(raw); _mem[mk] = st; return st; } catch(e){ return null; }
   }
 
   // Build the receiver "self" material from locally-stored prekeys.
@@ -7626,56 +7647,104 @@ info@blocksocial.eu</address>
     };
   }
 
+  // Fetch all of a user's per-device bundles. Returns
+  // { identity_key, devices:[{device_id, signing_identity_key,
+  //   signed_prekey, one_time_prekey}] } or null.
+  async function fetchBundles(addrOrId){
+    try {
+      var jwt = localStorage.getItem('yeet_jwt'); if(!jwt) return null;
+      var r = await fetch('/api/v1/users/'+encodeURIComponent(addrOrId)+'/e2ee/bundles',
+        { headers:{ Authorization:'Bearer '+jwt } });
+      if(!r.ok) return null;
+      var d = await r.json();
+      return (d && d.data) || null;
+    } catch(e){ return null; }
+  }
+  // Flatten a device bundle into the shape initSender expects.
+  function toSenderBundle(identityKey, dev){
+    if(!dev.signed_prekey) return null;
+    return {
+      identity_key: identityKey,
+      signing_identity_key: dev.signing_identity_key,
+      signed_prekey: dev.signed_prekey,
+      one_time_prekey: dev.one_time_prekey || null,
+    };
+  }
+
   window.YeetRatchet = {
-    // Is a forward-secret session possible with this peer? (peer has a
-    // bundle with a signed prekey, and we have a master to persist).
-    peerHasBundle: async function(peerAddrOrId){
-      try {
-        var jwt = localStorage.getItem('yeet_jwt'); if(!jwt) return null;
-        var r = await fetch('/api/v1/users/'+encodeURIComponent(peerAddrOrId)+'/e2ee/bundle',
-          { headers:{ Authorization:'Bearer '+jwt } });
-        if(!r.ok) return null;
-        var d = await r.json();
-        var b = d && d.data;
-        if(b && b.identity_key && b.signing_identity_key && b.signed_prekey) return b;
-        return null;
-      } catch(e){ return null; }
-    },
-    // Encrypt a text for a 1:1 DM. Returns { ciphertext, iv:'r2' } on
-    // success, or null to signal "fall back to static path".
+    // Encrypt a text for a 1:1 DM, fanning out to every recipient
+    // device + the sender's own other devices. Returns { ciphertext,
+    // iv:'r2' } on success, or null to fall back to the static path
+    // (peer has no provisioned device, or any error).
     encryptText: async function(convId, peerAddrOrId, text){
       try {
         if(!E().hasMaster()) return null;
-        var st = await loadSession(convId);
-        if(!st){
-          var bundle = await this.peerHasBundle(peerAddrOrId);
-          if(!bundle) return null;
-          var id = await E().ensureIdentity();
-          st = await initSender(id.sk, id.pk, bundle);
-          _mem[convId] = st;
+        var myDev = E().deviceId();
+        var myUid = localStorage.getItem('yeet_user_id') || '';
+        var id = await E().ensureIdentity();
+
+        var peerB = await fetchBundles(peerAddrOrId);
+        if(!peerB || !peerB.identity_key || !peerB.devices) return null;
+
+        var targets = [];
+        peerB.devices.forEach(function(dev){
+          var b = toSenderBundle(peerB.identity_key, dev);
+          if(b) targets.push({ deviceId: dev.device_id, bundle: b });
+        });
+        // No recipient device can receive a ratchet message -> fall back
+        // to static so the message is still deliverable.
+        if(!targets.length) return null;
+
+        // Add the sender's OWN other devices for cross-device self-sync.
+        if(myUid){
+          var selfB = await fetchBundles(myUid);
+          if(selfB && selfB.identity_key && selfB.devices){
+            selfB.devices.forEach(function(dev){
+              if(dev.device_id === myDev) return; // not myself
+              var b = toSenderBundle(selfB.identity_key, dev);
+              if(b) targets.push({ deviceId: dev.device_id, bundle: b });
+            });
+          }
         }
-        var wire = await encrypt(st, text);
-        await saveSession(convId, st);
-        return { ciphertext: b64(te.encode(JSON.stringify(wire))), iv: 'r2' };
+
+        var msgs = {};
+        for(var i=0;i<targets.length;i++){
+          var t = targets[i];
+          var st = await loadSession(convId, t.deviceId);
+          if(!st){ st = await initSender(id.sk, id.pk, t.bundle); _mem[memKey(convId, t.deviceId)] = st; }
+          var wire = await encrypt(st, text);
+          msgs[t.deviceId] = wire;
+          await saveSession(convId, t.deviceId, st);
+        }
+        var env = { v:3, from: myDev, msgs: msgs };
+        return { ciphertext: b64(te.encode(JSON.stringify(env))), iv: 'r2' };
       } catch(e){ return null; }
     },
-    // Decrypt a wire-marked ratchet message (m.iv === 'r2').
+    // Decrypt a wire-marked ratchet message (m.iv === 'r2'). Returns
+    // { text } on success, or { notForMe:true } when this device isn't
+    // a target (e.g. it's the user's own sent message on the sending
+    // device, or addressed only to other devices). Throws on a genuine
+    // decryption failure (rendered fail-closed by the caller).
     decryptText: async function(convId, m){
-      var wire = JSON.parse(tdf.decode(ub64(m.ciphertext)));
-      var st = await loadSession(convId);
+      var env = JSON.parse(tdf.decode(ub64(m.ciphertext)));
+      if(!env || env.v !== 3 || !env.msgs) throw new Error('unsupported ratchet envelope');
+      var myDev = E().deviceId();
+      var entry = env.msgs[myDev];
+      if(!entry) return { notForMe: true };
+      var rdev = env.from;
+      var st = await loadSession(convId, rdev);
       if(!st){
-        // Inbound first message: establish the receiver session via X3DH.
-        if(!wire.header || !wire.header.pre) throw new Error('no session, no preamble');
+        if(!entry.header || !entry.header.pre) throw new Error('no session, no preamble');
         var uid = localStorage.getItem('yeet_user_id') || '';
         var id = await E().ensureIdentity();
         var self = await receiverSelf(uid, id.sk);
         if(!self) throw new Error('no local prekeys');
-        st = await initReceiver(self, wire.header.pre);
-        _mem[convId] = st;
+        st = await initReceiver(self, entry.header.pre);
+        _mem[memKey(convId, rdev)] = st;
       }
-      var plain = await decrypt(st, wire);
-      await saveSession(convId, st);
-      return plain;
+      var plain = await decrypt(st, entry);
+      await saveSession(convId, rdev, st);
+      return { text: plain };
     },
     _wipe: function(){ _mem = Object.create(null); },
   };
@@ -8129,6 +8198,18 @@ info@blocksocial.eu</address>
 
   function _myUserId(){ return localStorage.getItem('yeet_user_id') || ''; }
 
+  // Local plaintext cache for our OWN ratchet-sent messages. The
+  // sending device isn't part of its own multi-device fan-out, so it
+  // can't ratchet-decrypt its own bubble; we keep the plaintext here
+  // keyed by server message id. Device-local, consistent with the
+  // ratchet private keys also living only on this device.
+  function _sentPlainSet(mid, text){
+    try { localStorage.setItem('yeet_sent_'+mid, text); } catch(e){}
+  }
+  function _sentPlainGet(mid){
+    try { var v = localStorage.getItem('yeet_sent_'+mid); return v == null ? null : v; } catch(e){ return null; }
+  }
+
   // Cache of conversation_id → array of { user_id, display_name }.
   // Populated lazily on openConversation; the per-recipient receipt
   // renderer and the typing indicator both pull names from here.
@@ -8174,12 +8255,25 @@ info@blocksocial.eu</address>
       return '<span style="color:#f5a623;font-weight:700">&#127873; '+ T('dm.tipMessage', { amount: amt }) +'</span>';
     }
     // Forward-secret messages are wire-marked with iv === 'r2' and
-    // carry their own self-contained ratchet envelope, so they don't
-    // use the conversation's static key at all.
+    // carry their own self-contained multi-device ratchet envelope, so
+    // they don't use the conversation's static key at all.
     if(m.iv === 'r2' && window.YeetRatchet && _activeConv){
       try {
-        var fp = await window.YeetRatchet.decryptText(_activeConv.id, m);
-        return escapeHtml(fp);
+        var res = await window.YeetRatchet.decryptText(_activeConv.id, m);
+        if(res && typeof res.text === 'string') return escapeHtml(res.text);
+        // notForMe: this device wasn't a fan-out target. If it's our
+        // own sent message, show the locally-cached plaintext (the
+        // sending device isn't in its own fan-out); otherwise it was
+        // addressed to other devices only.
+        if(res && res.notForMe){
+          var mine = (m.sender_id && m.sender_id === _myUserId());
+          if(mine){
+            var cached = _sentPlainGet(m.id);
+            if(cached != null) return escapeHtml(cached);
+            return '<span style="color:var(--muted);font-style:italic">'+ T('dm.sentOtherDevice') +'</span>';
+          }
+        }
+        return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
       } catch(e){
         return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
       }
@@ -8247,6 +8341,7 @@ info@blocksocial.eu</address>
         var key = await convKeyForConv(_activeConv);
         blob = await window.YeetE2EE.encryptWithKey(key, text);
       }
+      var wasRatchet = (blob.iv === 'r2');
       var r = await api('/api/v1/conversations/'+ _activeConv.id +'/messages', {
         method:'POST',
         body: JSON.stringify({
@@ -8258,6 +8353,16 @@ info@blocksocial.eu</address>
         var d = await r.json().catch(function(){return {};});
         window.showToast((d.error && d.error.message) || T('common.error'),'error');
         return;
+      }
+      // For ratchet messages the sending device isn't in its own
+      // fan-out, so cache the plaintext locally keyed by the created
+      // message id to render our own sent bubble (now + after reload).
+      if(wasRatchet){
+        try {
+          var sd = await r.clone().json();
+          var mid = sd && sd.data && sd.data.id;
+          if(mid) _sentPlainSet(mid, text);
+        } catch(e){}
       }
       input.value = '';
       await loadMessages(_activeConv.id);

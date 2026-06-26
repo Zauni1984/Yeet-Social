@@ -91,15 +91,46 @@ no-one-time-prekey path, and (critically) "state intact after tamper"
 and "state intact after replay". The module inlined into `index.html`
 is the byte-for-byte algorithm those tests cover.
 
+## Phase 3 — SHIPPED (multi-device)
+
+Prekeys, signing keys and ratchet sessions are now **per device**,
+while the ECDH identity key stays shared across a user's devices
+(it remains recoverable via the wallet/password master — the app's
+existing identity model). Model: one identity, many devices.
+
+- **Server (migration 0034):** `user_devices` table; `signed_prekeys`
+  and `one_time_prekeys` gain `device_id`; uniqueness/indexes are now
+  per `(user_id, device_id)`. `GET /users/:id/e2ee/bundles` returns
+  one bundle per device, each atomically consuming that device's
+  one-time prekey. `prekeys/count` and the upload are device-scoped.
+- **Client:** a stable per-browser `device_id` is generated and sent
+  with every prekey upload, so a second device never clobbers the
+  first. Sending fans the message out to **every recipient device**
+  plus the sender's **own other devices** (for cross-device sync);
+  the wire is `{v:3, from:<senderDeviceId>, msgs:{<deviceId>:{header,
+  body}}}` (still `iv:"r2"`). Each device decrypts its own entry,
+  keying sessions by the remote device id.
+- **Own sent messages:** the sending device isn't in its own fan-out,
+  so it caches the plaintext locally (keyed by message id) to render
+  its own bubble; other devices of the sender decrypt the self-sync
+  copy.
+
+Verified with node test vectors (19/19): adds B1+B2 fan-out, sender
+self-sync to its other device, and cross-device entry rejection on top
+of the phase-2 single-device suite. The inlined core was diffed
+against the reference (identical KDF labels/constants, X3DH constant,
+HKDF sizes, DH ordering).
+
 ### Remaining hardening (future)
 
 - Ratchet for tips/images (text-only today).
-- Multi-device: each device currently keeps its own session; a message
-  encrypted to one device's ratchet won't decrypt on another. Needs
-  per-device session fan-out (sender encrypts to each device's bundle).
 - Glare (both peers initiate at once): resolved today by fail-closed +
   re-establish on next inbound preamble; a deterministic tiebreak would
   avoid the transient undecryptable message.
+- A device-management UI (list/revoke devices) — `user_devices` has a
+  `label` column reserved for it.
+- Stale-device pruning: a device that never comes back keeps a (dead)
+  bundle; senders waste one fan-out slot on it until its OTPs run out.
 - Cross-check the KDF labels/constants against libsignal test vectors.
 
 ## What phase 2 did (the ratchet) — reference

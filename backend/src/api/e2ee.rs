@@ -165,11 +165,21 @@ pub struct OneTimePrekeyInput {
     pub public_key: String,
 }
 
+/// Stable per-device id; opaque to the server but plausibility-bounded.
+const DEVICE_ID_MAX_LEN: usize = 64;
+fn is_device_id(s: &str) -> bool {
+    !s.is_empty() && s.len() <= DEVICE_ID_MAX_LEN
+        && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
 #[derive(Debug, Deserialize)]
 pub struct UploadPrekeysRequest {
-    /// The ECDSA P-256 signing identity public key (base64 SPKI). Sent
-    /// the first time a client provisions prekeys so peers can verify
-    /// the signed-prekey signature. Optional on subsequent replenishes.
+    /// Stable id of the device doing the provisioning. Required — the
+    /// whole point of multi-device is that prekeys are scoped per device.
+    pub device_id: String,
+    /// This device's ECDSA P-256 signing public key (base64 SPKI). Sent
+    /// on first provision so peers can verify this device's signed
+    /// prekey. Optional on subsequent replenishes.
     pub signing_public_key: Option<String>,
     /// Optional: only present when (re)rotating the signed prekey.
     pub signed_prekey: Option<SignedPrekeyInput>,
@@ -179,14 +189,16 @@ pub struct UploadPrekeysRequest {
 }
 
 /// POST /api/v1/me/e2ee/prekeys
-/// Idempotent-ish: rotating the signed prekey deactivates the previous
-/// active one; one-time prekeys with a duplicate (user, key_id) are
-/// skipped via ON CONFLICT so a retried replenish doesn't error.
+/// Per-device. Registers/updates the device row and stores this
+/// device's signed prekey + one-time prekeys. Idempotent on retry.
 pub async fn upload_prekeys(
     State(state): State<AppState>,
     auth: AuthUser,
     Json(req): Json<UploadPrekeysRequest>,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
+    if !is_device_id(&req.device_id) {
+        return Err(AppError::Validation("invalid device_id".into()));
+    }
     if req.one_time_prekeys.len() > MAX_OTP_BATCH {
         return Err(AppError::Validation("too many one-time prekeys in one batch".into()));
     }
@@ -205,7 +217,6 @@ pub async fn upload_prekeys(
             return Err(AppError::Validation("one_time_prekey.public_key must be base64".into()));
         }
     }
-
     if let Some(spk) = &req.signing_public_key {
         if !is_b64(spk) {
             return Err(AppError::Validation("signing_public_key must be base64".into()));
@@ -215,43 +226,61 @@ pub async fn upload_prekeys(
     let me = caller_user_id(&state, &auth).await?;
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 
+    // Register/update the device. The signing key is required on first
+    // sight; a replenish without it leaves the existing one intact.
     if let Some(spk) = &req.signing_public_key {
-        sqlx::query("UPDATE users SET e2ee_signing_public_key = $1 WHERE id = $2")
-            .bind(spk).bind(me)
+        sqlx::query(
+            "INSERT INTO user_devices (user_id, device_id, signing_public_key)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (user_id, device_id) DO UPDATE
+               SET signing_public_key = EXCLUDED.signing_public_key,
+                   last_seen_at = NOW()"
+        )
+        .bind(me).bind(&req.device_id).bind(spk)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    } else {
+        // touch last_seen if the device already exists
+        sqlx::query("UPDATE user_devices SET last_seen_at = NOW() WHERE user_id = $1 AND device_id = $2")
+            .bind(me).bind(&req.device_id)
             .execute(&mut *tx).await.map_err(AppError::Database)?;
     }
 
     if let Some(sp) = &req.signed_prekey {
-        // Deactivate the current active signed prekey, then insert the
-        // new one as active. The partial unique index guarantees there
-        // is never more than one active row per user.
-        sqlx::query("UPDATE signed_prekeys SET active = FALSE WHERE user_id = $1 AND active = TRUE")
-            .bind(me)
-            .execute(&mut *tx).await.map_err(AppError::Database)?;
         sqlx::query(
-            "INSERT INTO signed_prekeys (user_id, key_id, public_key, signature, active)
-             VALUES ($1, $2, $3, $4, TRUE)
-             ON CONFLICT (user_id, key_id) DO UPDATE
+            "UPDATE signed_prekeys SET active = FALSE
+              WHERE user_id = $1 AND device_id = $2 AND active = TRUE"
+        )
+        .bind(me).bind(&req.device_id)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+        sqlx::query(
+            "INSERT INTO signed_prekeys (user_id, device_id, key_id, public_key, signature, active)
+             VALUES ($1, $2, $3, $4, $5, TRUE)
+             ON CONFLICT (user_id, device_id, key_id) DO UPDATE
                SET public_key = EXCLUDED.public_key,
                    signature  = EXCLUDED.signature,
                    active     = TRUE"
         )
-        .bind(me).bind(sp.key_id).bind(&sp.public_key).bind(&sp.signature)
+        .bind(me).bind(&req.device_id).bind(sp.key_id).bind(&sp.public_key).bind(&sp.signature)
         .execute(&mut *tx).await.map_err(AppError::Database)?;
     }
 
     for otp in &req.one_time_prekeys {
         sqlx::query(
-            "INSERT INTO one_time_prekeys (user_id, key_id, public_key)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (user_id, key_id) DO NOTHING"
+            "INSERT INTO one_time_prekeys (user_id, device_id, key_id, public_key)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (user_id, device_id, key_id) DO NOTHING"
         )
-        .bind(me).bind(otp.key_id).bind(&otp.public_key)
+        .bind(me).bind(&req.device_id).bind(otp.key_id).bind(&otp.public_key)
         .execute(&mut *tx).await.map_err(AppError::Database)?;
     }
 
     tx.commit().await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok("ok")))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PrekeyCountQuery {
+    pub device_id: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -260,22 +289,28 @@ pub struct PrekeyCountResponse {
     pub has_signed_prekey: bool,
 }
 
-/// GET /api/v1/me/e2ee/prekeys/count — lets the client decide when to
-/// replenish (e.g. top up when available drops below ~20).
+/// GET /api/v1/me/e2ee/prekeys/count?device_id=... — per-device count
+/// so each device replenishes its own pool independently.
 pub async fn prekey_count(
     State(state): State<AppState>,
     auth: AuthUser,
+    axum::extract::Query(q): axum::extract::Query<PrekeyCountQuery>,
 ) -> AppResult<Json<ApiResponse<PrekeyCountResponse>>> {
+    if !is_device_id(&q.device_id) {
+        return Err(AppError::Validation("invalid device_id".into()));
+    }
     let me = caller_user_id(&state, &auth).await?;
     let available: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM one_time_prekeys WHERE user_id = $1 AND used_at IS NULL"
+        "SELECT COUNT(*) FROM one_time_prekeys
+          WHERE user_id = $1 AND device_id = $2 AND used_at IS NULL"
     )
-    .bind(me)
+    .bind(me).bind(&q.device_id)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
     let has_signed: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM signed_prekeys WHERE user_id = $1 AND active = TRUE)"
+        "SELECT EXISTS(SELECT 1 FROM signed_prekeys
+                        WHERE user_id = $1 AND device_id = $2 AND active = TRUE)"
     )
-    .bind(me)
+    .bind(me).bind(&q.device_id)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(PrekeyCountResponse {
         one_time_prekeys_available: available,
@@ -296,74 +331,93 @@ pub struct BundleOneTimePrekey {
     pub public_key: String,
 }
 
+/// One device's bundle within a user's multi-device bundle set.
 #[derive(Debug, Serialize)]
-pub struct PrekeyBundleResponse {
-    pub user_id: Uuid,
+pub struct DeviceBundle {
+    pub device_id: String,
+    /// The user's shared ECDH identity key (same across all devices).
     pub identity_key: Option<String>,
-    /// ECDSA P-256 public key used to verify `signed_prekey.signature`.
-    pub signing_identity_key: Option<String>,
+    /// This device's ECDSA signing key (verifies its signed prekey).
+    pub signing_identity_key: String,
     pub signed_prekey: Option<BundleSignedPrekey>,
-    /// One claimed one-time prekey, or null if the recipient's pool is
-    /// exhausted. X3DH degrades safely without an OTP (one less DH),
-    /// so a null here is usable, just slightly weaker.
     pub one_time_prekey: Option<BundleOneTimePrekey>,
 }
 
-/// GET /api/v1/users/:address/e2ee/bundle
-/// Returns a recipient's key bundle for establishing a forward-secret
-/// session, atomically consuming one one-time prekey. The OTP claim
-/// uses FOR UPDATE SKIP LOCKED so two concurrent senders never get the
-/// same key.
-pub async fn get_prekey_bundle(
+#[derive(Debug, Serialize)]
+pub struct BundlesResponse {
+    pub user_id: Uuid,
+    pub identity_key: Option<String>,
+    pub devices: Vec<DeviceBundle>,
+}
+
+/// GET /api/v1/users/:address/e2ee/bundles
+/// Returns ONE bundle per device the user has, each atomically
+/// consuming one of that device's one-time prekeys. The sender uses
+/// this to fan a message out to every recipient device. Devices with
+/// no active signed prekey are still listed (with null signed_prekey)
+/// so the caller can see them, but they can't be the target of a new
+/// session until they provision.
+pub async fn get_prekey_bundles(
     State(state): State<AppState>,
     _auth: AuthUser,
     Path(address): Path<String>,
-) -> AppResult<Json<ApiResponse<PrekeyBundleResponse>>> {
+) -> AppResult<Json<ApiResponse<BundlesResponse>>> {
     let id = resolve_user(&state, &address).await?;
 
-    let id_keys: Option<(Option<String>, Option<String>)> = sqlx::query_as(
-        "SELECT e2ee_public_key, e2ee_signing_public_key FROM users WHERE id = $1"
+    let identity_key: Option<String> = sqlx::query_scalar(
+        "SELECT e2ee_public_key FROM users WHERE id = $1"
     )
     .bind(id)
-    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let (identity_key, signing_identity_key) = id_keys.unwrap_or((None, None));
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+    .flatten();
 
-    let signed: Option<(i32, String, String)> = sqlx::query_as(
-        "SELECT key_id, public_key, signature FROM signed_prekeys
-          WHERE user_id = $1 AND active = TRUE
-          LIMIT 1"
+    let devices: Vec<(String, String)> = sqlx::query_as(
+        "SELECT device_id, signing_public_key FROM user_devices
+          WHERE user_id = $1 ORDER BY created_at ASC"
     )
     .bind(id)
-    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
-    // Atomically claim one unused OTP. SKIP LOCKED so concurrent
-    // bundle fetches for the same user don't collide on the same row.
-    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
-    let otp: Option<(Uuid, i32, String)> = sqlx::query_as(
-        "SELECT id, key_id, public_key FROM one_time_prekeys
-          WHERE user_id = $1 AND used_at IS NULL
-          ORDER BY created_at ASC
-          LIMIT 1
-          FOR UPDATE SKIP LOCKED"
-    )
-    .bind(id)
-    .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
-    if let Some((otp_id, _, _)) = &otp {
-        sqlx::query("UPDATE one_time_prekeys SET used_at = NOW() WHERE id = $1")
-            .bind(otp_id)
-            .execute(&mut *tx).await.map_err(AppError::Database)?;
+    let mut out = Vec::with_capacity(devices.len());
+    for (device_id, signing_key) in devices {
+        let signed: Option<(i32, String, String)> = sqlx::query_as(
+            "SELECT key_id, public_key, signature FROM signed_prekeys
+              WHERE user_id = $1 AND device_id = $2 AND active = TRUE
+              LIMIT 1"
+        )
+        .bind(id).bind(&device_id)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+
+        // Claim one OTP for this device, atomically.
+        let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+        let otp: Option<(Uuid, i32, String)> = sqlx::query_as(
+            "SELECT id, key_id, public_key FROM one_time_prekeys
+              WHERE user_id = $1 AND device_id = $2 AND used_at IS NULL
+              ORDER BY created_at ASC
+              LIMIT 1
+              FOR UPDATE SKIP LOCKED"
+        )
+        .bind(id).bind(&device_id)
+        .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
+        if let Some((otp_id, _, _)) = &otp {
+            sqlx::query("UPDATE one_time_prekeys SET used_at = NOW() WHERE id = $1")
+                .bind(otp_id)
+                .execute(&mut *tx).await.map_err(AppError::Database)?;
+        }
+        tx.commit().await.map_err(AppError::Database)?;
+
+        out.push(DeviceBundle {
+            device_id,
+            identity_key: identity_key.clone(),
+            signing_identity_key: signing_key,
+            signed_prekey: signed.map(|(key_id, public_key, signature)| BundleSignedPrekey {
+                key_id, public_key, signature,
+            }),
+            one_time_prekey: otp.map(|(_, key_id, public_key)| BundleOneTimePrekey {
+                key_id, public_key,
+            }),
+        });
     }
-    tx.commit().await.map_err(AppError::Database)?;
 
-    Ok(Json(ApiResponse::ok(PrekeyBundleResponse {
-        user_id: id,
-        identity_key,
-        signing_identity_key,
-        signed_prekey: signed.map(|(key_id, public_key, signature)| BundleSignedPrekey {
-            key_id, public_key, signature,
-        }),
-        one_time_prekey: otp.map(|(_, key_id, public_key)| BundleOneTimePrekey {
-            key_id, public_key,
-        }),
-    })))
+    Ok(Json(ApiResponse::ok(BundlesResponse { user_id: id, identity_key, devices: out })))
 }
