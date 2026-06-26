@@ -2543,31 +2543,19 @@ function _yeetClearTokens(){
 window._yeetClearTokens = _yeetClearTokens;
 
 async function disconnectWallet(){
-  // 1) Tell the server to end the session: blacklist this access
-  //    token + refresh token and revoke every refresh session for the
-  //    user. Best-effort — we still clear locally even if it fails.
+  // Snapshot tokens BEFORE we wipe localStorage, so the logout call
+  // still goes out with a valid Authorization header even after the
+  // local state is gone.
   var tok = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || localStorage.getItem('yt');
   var rtok = localStorage.getItem('yeet_refresh');
-  if(tok){
-    try {
-      await fetch('/api/v1/auth/logout', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+tok },
-        body: JSON.stringify({ refresh_token: rtok || null })
-      });
-    } catch(e){ /* offline logout still proceeds */ }
-  }
 
-  // 2) Clear EVERY local auth + identity artifact. The app reads the
-  //    access token under three keys (yeet_jwt || yeetToken || yt) —
-  //    leaving any one of them logged you back in. Also drop the
-  //    refresh token, cached user, and the E2EE device/ratchet state
-  //    so a new login provisions cleanly.
+  // 1) Clear local state FIRST. If anything else on the page tries to
+  //    POST in the window between this and the server call, it'll see
+  //    no token and bail at the new submitPost gate.
   ['yeet_jwt','yeetToken','yt','yeet_refresh','yeetUser','yeet_address',
    'yeet_adult','yeet_18plus_verified','yeet_user_id','yeet_display_name',
    'yeet_username','yeet_device_id','yeet_admin_secret','yeet_settings'
   ].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
-  // Sweep namespaced E2EE keys (prekeys, ratchet sessions, sent cache).
   try {
     var drop = [];
     for(var i=0;i<localStorage.length;i++){
@@ -2576,20 +2564,41 @@ async function disconnectWallet(){
     }
     drop.forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
   } catch(e){}
-  // Wipe in-memory crypto caches.
+  try { sessionStorage.clear(); } catch(e){}
   try { if(window.YeetE2EE && window.YeetE2EE.clearCache) window.YeetE2EE.clearCache(); } catch(e){}
   try { if(window.YeetRatchet && window.YeetRatchet._wipe) window.YeetRatchet._wipe(); } catch(e){}
-
   connectedAddress=null;connectedWallet=null;
-  const btn=document.getElementById('walletBtn');
-  if(btn){btn.textContent='CONNECT WALLET';btn.classList.remove('connected');}
-  updateAdultUiVisibility(false);
-  const pw=document.getElementById('profileWidget');
-  if(pw)pw.style.display='none';
-  closeSettingsModal();
-  showToast(window.t('toast.walletDisconnected'));
-  // Hard reload to a clean state so no in-memory view keeps stale auth.
-  setTimeout(function(){ location.reload(); }, 300);
+
+  // 2) Tell the server to blacklist these tokens. We MUST bypass the
+  //    HTTP cache (`cache: 'no-store'`) so a proxy/SW can never short-
+  //    circuit this with a stale 200.
+  if(tok){
+    try {
+      await fetch('/api/v1/auth/logout', {
+        method:'POST', cache:'no-store',
+        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+tok, 'Pragma':'no-cache' },
+        body: JSON.stringify({ refresh_token: rtok || null })
+      });
+    } catch(e){ /* offline logout still proceeds */ }
+  }
+
+  // 3) Best-effort: unregister every service worker + nuke every
+  //    Cache-API store so a previously-installed worker can't keep
+  //    serving stale auth-bearing UI on the next visit.
+  try {
+    if('serviceWorker' in navigator){
+      var regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(function(r){ return r.unregister(); }));
+    }
+    if('caches' in window){
+      var keys = await caches.keys();
+      await Promise.all(keys.map(function(k){ return caches.delete(k); }));
+    }
+  } catch(e){}
+
+  // 4) Hard navigation to a clean state. Use `location.replace`+nocache
+  //    query to force a fresh GET past any cached HTML.
+  location.replace('/?_=' + Date.now());
 }
 function updateCharCount(){
   var ta=document.getElementById('postTxt');
@@ -2848,8 +2857,16 @@ function loadFeedFiltered(filter){
 }
 // check18Plus: see face scan implementation below
 function submitPost(){
-  var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
-  if(!jwt&&!connectedAddress){openWalletModal();return;}
+  // Token must come from localStorage AND must not be empty. The
+  // `connectedAddress` in-memory flag is NOT a substitute for a JWT —
+  // requiring a real bearer token here prevents a stale wallet
+  // connection from letting a logged-out user POST with an empty
+  // Authorization header (server would 401 anyway, but we keep the
+  // contract honest client-side too).
+  var jwt = localStorage.getItem('yeet_jwt')
+         || localStorage.getItem('yeetToken')
+         || localStorage.getItem('yt');
+  if(!jwt){ openWalletModal(); return; }
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
   showToast(window.t('toast.posting'));

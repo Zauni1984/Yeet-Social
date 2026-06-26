@@ -1,5 +1,10 @@
 //! Wallet-based auth handlers — web + Android + iOS compatible.
-use axum::{extract::State, Json};
+use axum::{
+    extract::State,
+    http::{header, HeaderMap, HeaderValue, StatusCode},
+    response::{IntoResponse, Response},
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use uuid::Uuid;
@@ -135,7 +140,7 @@ pub async fn logout(
     State(state): State<AppState>,
     auth: AuthUser,
     Json(req): Json<LogoutRequest>,
-) -> AppResult<Json<ApiResponse<&'static str>>> {
+) -> Result<Response, AppError> {
     // Blacklist this access token for the rest of its lifetime.
     let _ = state.cache.blacklist_token(
         &auth.jti, Duration::from_secs(state.jwt.access_ttl_secs)
@@ -166,7 +171,15 @@ pub async fn logout(
         ).await;
     }
 
-    Ok(Json(ApiResponse::ok("logged_out")))
+    // Strict no-store so no proxy or browser HTTP cache holds onto a
+    // "logout succeeded" 200 — every logout must hit the server so
+    // the blacklist + session revocation actually run.
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CACHE_CONTROL,
+        HeaderValue::from_static("no-store, no-cache, must-revalidate, private, max-age=0"));
+    headers.insert(header::PRAGMA, HeaderValue::from_static("no-cache"));
+    let body = Json(ApiResponse::ok("logged_out"));
+    Ok((StatusCode::OK, headers, body).into_response())
 }
 
 pub async fn refresh_token(
