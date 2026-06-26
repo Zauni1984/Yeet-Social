@@ -82,5 +82,5 @@ async fn incr_window(cache: &Cache, scope: &str, principal: &str, window_secs: u
 
 fn current_bucket(window_secs: u64) -> u64 {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-    if window_secs == 0 { 0 } else { now / window_secs }
+    now.checked_div(window_secs).unwrap_or(0)
 }

@@ -1585,12 +1585,12 @@ function _buildFeedPostEl(p){
 
 async function loadFeed(){
   try{
-    const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+    const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt');
     if(!jwt){ showLoginGate(); return; }
     // Show a small spinner so a slow network doesn't make the page
     // look frozen. The class is auto-removed when posts render.
     showFeedSpinner();
-    const r=await fetch('/api/v1/feed',{headers:{'Authorization':'Bearer '+jwt}});
+    const r=await fetch('/api/v1/feed',{cache:'no-store',headers:{'Authorization':'Bearer '+jwt,'Pragma':'no-cache'}});
     if(r.status===401){ hideFeedSpinner(); showLoginGate(); return; }
     const d=await r.json();
     hideFeedSpinner();
@@ -1616,7 +1616,7 @@ async function loadFeed(){
 // cached yeet_user_id (populated by loadProfile) and fall back to a
 // /users/me fetch if it isn't there yet.
 async function loadPermanentPosts(){
-  const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt');
   if(!jwt){ showLoginGate(); return; }
   // Leaving any open profile view so the feed column is the target.
   if(typeof _exitProfileView==='function'){ try{ _exitProfileView(); }catch(e){} }
@@ -1626,20 +1626,18 @@ async function loadPermanentPosts(){
   if(empty)empty.style.display='none';
   if(typeof showFeedSpinner==='function') showFeedSpinner();
 
-  let uid=localStorage.getItem('yeet_user_id')||'';
-  if(!uid){
-    try{
-      const me=await fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}});
-      const md=await me.json();
-      if(md&&md.data&&md.data.id){ uid=md.data.id; localStorage.setItem('yeet_user_id',uid); }
-    }catch(e){}
-  }
-  if(typeof hideFeedSpinner==='function') hideFeedSpinner();
-  if(!uid){ window.showToast&&window.showToast(window.t('common.error'),'error'); return; }
-
   try{
-    const r=await fetch('/api/v1/profile/'+encodeURIComponent(uid)+'/permanent',{headers:{'Authorization':'Bearer '+jwt}});
+    // /me/permanent derives the owner from the auth header, so a stale
+    // or missing yeet_user_id in localStorage can't silently mask the
+    // user's own posts behind a uid that doesn't match author_id.
+    const r=await fetch('/api/v1/me/permanent',{cache:'no-store',headers:{'Authorization':'Bearer '+jwt}});
+    if(typeof hideFeedSpinner==='function') hideFeedSpinner();
+    if(r.status===401){ showLoginGate(); return; }
     const d=await r.json();
+    const uid=(d&&d.owner_id)||localStorage.getItem('yeet_user_id')||'';
+    if(uid && uid!==localStorage.getItem('yeet_user_id')){
+      try{ localStorage.setItem('yeet_user_id', uid); }catch(e){}
+    }
     const wrap=document.createElement('div');
     wrap.id='feed-posts';
     // Header so the user knows they switched views (and can get back).
@@ -1673,6 +1671,7 @@ async function loadPermanentPosts(){
     const c=document.querySelector('.composer');
     if(c)c.after(wrap); else { const m=document.querySelector('main') || document.body; m.appendChild(wrap); }
   }catch(e){
+    if(typeof hideFeedSpinner==='function') hideFeedSpinner();
     console.error('Permanent:',e);
     window.showToast&&window.showToast(window.t('common.networkError'),'error');
   }
@@ -5633,10 +5632,19 @@ function showExternalLinkWarning(e,url){
   window.setCur = function(c){_yState.cur=c;localStorage.setItem('yeetCur',c);_updatePrice()};
   window.toggleCur = function(){window.setCur(_yState.cur==='USD'?'EUR':'USD')};
   window.doLogout = function(){
-    localStorage.removeItem('yeetToken');localStorage.removeItem('yeetUser');localStorage.removeItem('yeetWallet');
-    var aa=document.getElementById('authArea'),wa=document.getElementById('walletArea');
-    if(aa)aa.style.display='flex';if(wa)wa.style.display='none';
-    _toast('Disconnected');
+    // Delegate to the full disconnect path so EVERY token copy (yeet_jwt,
+    // yeetToken, yt, yeet_refresh) gets cleared, the server-side session
+    // is revoked, and the page hard-reloads into the login gate. The
+    // previous stub only removed three keys and left yeet_jwt in place —
+    // which is why the global feed kept loading after "logout".
+    if(typeof window.disconnectWallet === 'function'){
+      try{ window.disconnectWallet(); return; }catch(e){}
+    }
+    // Fallback: at least nuke the primary token + reload.
+    ['yeet_jwt','yeetToken','yt','yeet_refresh','yeetUser','yeetWallet'].forEach(function(k){
+      try{ localStorage.removeItem(k); }catch(e){}
+    });
+    location.replace('/?_=' + Date.now());
   };
   window.copyAuthAddr = function(){navigator.clipboard?.writeText(localStorage.getItem('yeetWallet')||'');_toast('Address copied')};
   window.connectMetaMaskAuth = async function(){
@@ -8269,7 +8277,11 @@ info@blocksocial.eu</address>
 // ---------- Direct messages (E2EE) ----------
 (function(){
   var T = function(k,v){ return (window.t ? window.t(k,v) : k); };
-  function jwt(){ return localStorage.getItem('yeet_jwt'); }
+  function jwt(){
+    return localStorage.getItem('yeet_jwt')
+        || localStorage.getItem('yeetToken')
+        || localStorage.getItem('yt');
+  }
   function api(path, opts){
     opts = opts || {};
     opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers || {});

@@ -207,3 +207,45 @@ pub async fn get_permanent_posts(
 
     Ok(Json(serde_json::json!({ "success": true, "data": result })))
 }
+
+/// GET /api/v1/me/permanent
+///
+/// Owner-only view that bypasses the cached `yeet_user_id` in the
+/// frontend (which was sometimes stale or absent and silently returned
+/// 0 rows). The caller is the author by construction, so visibility +
+/// age-filter gates collapse to "always show".
+pub async fn get_my_permanent_posts(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<serde_json::Value>> {
+    let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
+        uuid_str.parse::<Uuid>()
+            .map_err(|_| AppError::Unauthorised("Invalid user ID".into()))?
+    } else {
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
+    };
+
+    let posts = sqlx::query_as::<_, (Uuid, String, Option<String>, String, chrono::DateTime<chrono::Utc>, i64, Option<i32>)>(
+        "SELECT id, content, media_url, COALESCE(visibility, 'public'), created_at, like_count, repost_count
+         FROM posts
+         WHERE author_id = $1 AND is_permanent = TRUE
+           AND is_removed = FALSE AND deleted_at IS NULL
+         ORDER BY created_at DESC"
+    )
+    .bind(user_id)
+    .fetch_all(state.db.pool())
+    .await
+    .map_err(AppError::Database)?;
+
+    let result: Vec<serde_json::Value> = posts.iter().map(|p| serde_json::json!({
+        "id": p.0, "content": p.1, "media_url": p.2,
+        "visibility": p.3, "created_at": p.4,
+        "like_count": p.5, "repost_count": p.6, "is_permanent": true,
+        "author": { "id": user_id },
+    })).collect();
+
+    Ok(Json(serde_json::json!({ "success": true, "data": result, "owner_id": user_id })))
+}
