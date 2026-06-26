@@ -789,8 +789,15 @@ pub async fn upload_image(
         }
     }
 
-    // Multipart: iv + file + optional client_message_id.
+    // Multipart fields:
+    //   static path  : iv (image's own AES-GCM IV) + file (blob under conv key)
+    //   ratchet path : envelope (ratchet ciphertext of the file key) + file
+    //                  (blob under a random file key) — iv is set to the
+    //                  "r2" marker so the client routes it through the
+    //                  Double Ratchet. The blob's own IV travels inside
+    //                  the encrypted envelope, never in the clear.
     let mut iv_b64: Option<String> = None;
+    let mut envelope: Option<String> = None;
     let mut blob_bytes: Option<Vec<u8>> = None;
     let mut client_message_id: Option<Uuid> = None;
     while let Some(field) = mp.next_field().await
@@ -801,6 +808,10 @@ pub async fn upload_image(
             "iv" => {
                 iv_b64 = Some(field.text().await
                     .map_err(|e| AppError::Validation(format!("iv read: {e}")))?);
+            }
+            "envelope" => {
+                envelope = Some(field.text().await
+                    .map_err(|e| AppError::Validation(format!("envelope read: {e}")))?);
             }
             "client_message_id" => {
                 let txt = field.text().await
@@ -821,15 +832,23 @@ pub async fn upload_image(
             _ => {}
         }
     }
-    let iv = iv_b64.ok_or_else(|| AppError::Validation("iv field required".into()))?;
     let blob = blob_bytes.ok_or_else(|| AppError::Validation("file field required".into()))?;
-    if iv.is_empty() || iv.len() > IV_LEN {
-        return Err(AppError::Validation("invalid iv length".into()));
-    }
     let is_b64 = |c: char| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=' || c == '-' || c == '_';
-    if !iv.chars().all(is_b64) {
-        return Err(AppError::Validation("iv must be base64".into()));
-    }
+
+    // Resolve (ciphertext, iv) for the message row from whichever path
+    // the client used.
+    let (ciphertext, iv): (String, String) = if let Some(env) = envelope {
+        if env.is_empty() || env.len() > CIPHERTEXT_MAX_LEN || !env.chars().all(is_b64) {
+            return Err(AppError::Validation("invalid envelope".into()));
+        }
+        (env, "r2".to_string())
+    } else {
+        let iv = iv_b64.ok_or_else(|| AppError::Validation("iv or envelope required".into()))?;
+        if iv.is_empty() || iv.len() > IV_LEN || !iv.chars().all(is_b64) {
+            return Err(AppError::Validation("invalid iv".into()));
+        }
+        (String::new(), iv)
+    };
 
     // Idempotency check for image uploads too.
     if let Some(cmid) = client_message_id {
@@ -847,12 +866,12 @@ pub async fn upload_image(
         "INSERT INTO messages
             (conversation_id, sender_id, kind, ciphertext, iv,
              blob_size_bytes, client_message_id, expires_at)
-         VALUES ($1, $2, 'image', '', $3, $4, $5, $6)
+         VALUES ($1, $2, 'image', $3, $4, $5, $6, $7)
          RETURNING id, sender_id, kind, ciphertext, iv, tip_id,
                    blob_path, deleted_at, deleted_for_all_at, edited_at,
                    created_at, expires_at, client_message_id"
     )
-    .bind(conv_id).bind(me).bind(&iv).bind(blob.len() as i64)
+    .bind(conv_id).bind(me).bind(&ciphertext).bind(&iv).bind(blob.len() as i64)
     .bind(client_message_id).bind(expires_at)
     .fetch_one(&mut *tx).await.map_err(AppError::Database)?;
 

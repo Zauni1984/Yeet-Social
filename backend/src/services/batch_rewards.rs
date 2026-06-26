@@ -284,6 +284,29 @@ pub async fn start_message_cleanup_job(state: AppState) {
         ).execute(&state.db.pool).await {
             warn!("Session GC error: {e}");
         }
+
+        // 6. Prune stale E2EE devices. A device's last_seen_at is
+        //    bumped on every prekey provision/replenish (i.e. whenever
+        //    the user opens messaging on it). A device untouched for
+        //    90 days is treated as gone: drop its prekeys and the
+        //    device row so senders stop wasting a multi-device fan-out
+        //    slot encrypting to a browser that will never read it.
+        //    The prekeys are keyed by (user_id, device_id) (no FK to
+        //    user_devices), so delete both explicitly.
+        let stale: Vec<(uuid::Uuid, String)> = sqlx::query_as(
+            "SELECT user_id, device_id FROM user_devices
+              WHERE last_seen_at < NOW() - INTERVAL '90 days'"
+        ).fetch_all(&state.db.pool).await.unwrap_or_default();
+        for (uid, dev) in stale {
+            let _ = sqlx::query("DELETE FROM one_time_prekeys WHERE user_id = $1 AND device_id = $2")
+                .bind(uid).bind(&dev).execute(&state.db.pool).await;
+            let _ = sqlx::query("DELETE FROM signed_prekeys WHERE user_id = $1 AND device_id = $2")
+                .bind(uid).bind(&dev).execute(&state.db.pool).await;
+            if let Err(e) = sqlx::query("DELETE FROM user_devices WHERE user_id = $1 AND device_id = $2")
+                .bind(uid).bind(&dev).execute(&state.db.pool).await {
+                warn!("Stale-device prune error: {e}");
+            }
+        }
     }
 }
 

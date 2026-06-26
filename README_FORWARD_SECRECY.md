@@ -121,17 +121,44 @@ of the phase-2 single-device suite. The inlined core was diffed
 against the reference (identical KDF labels/constants, X3DH constant,
 HKDF sizes, DH ordering).
 
+## Phase 5 — SHIPPED (hardening pass)
+
+The four remaining items are now done:
+
+- **Images are forward-secret.** The image is encrypted once under a
+  random per-message file key; only that small file key is fanned out
+  to each device through the ratchet (the big blob is shared). The
+  upload endpoint accepts an `envelope` multipart field (the ratchet
+  ciphertext of the file key) and marks the row `iv="r2"`; the blob's
+  own IV travels inside the encrypted envelope. The sending device
+  caches the file key locally to render its own bubble. *Tips stay on
+  the static path by design — the tip marker carries nothing sensitive
+  and the amount is intentionally server-visible for the ledger.*
+- **Glare tiebreak.** When both peers initiate at the same instant, the
+  device with the lexicographically smaller id is the canonical winner;
+  the loser adopts the winner's session, and both converge on it.
+  Sessions carry an `init` field ('me'/'peer') persisted in their
+  serialized state. Verified by the node suite ("glare converged"
+  cases).
+- **Stale-device pruning.** The message-cleanup job deletes devices
+  (and their prekeys) whose `last_seen_at` is older than 90 days, so
+  senders stop wasting a fan-out slot on a browser that will never
+  read again. `last_seen_at` is bumped on every prekey provision/
+  replenish.
+- **Device-management UI** shipped earlier (phase 4): list / rename /
+  revoke under Settings → Encryption devices.
+- **KDF known-answer tests.** `frontend/test/ratchet.test.mjs` pins our
+  construction with fixed-input vectors for kdfRk / kdfCk / x3dhRoot
+  (we use P-256 + HKDF/HMAC, not libsignal's Curve25519, so libsignal's
+  own vectors don't apply — the KATs lock down OUR labels/constants).
+  Run: `node frontend/test/ratchet.test.mjs` → 28/28.
+
 ### Remaining hardening (future)
 
-- Ratchet for tips/images (text-only today).
-- Glare (both peers initiate at once): resolved today by fail-closed +
-  re-establish on next inbound preamble; a deterministic tiebreak would
-  avoid the transient undecryptable message.
-- A device-management UI (list/revoke devices) — `user_devices` has a
-  `label` column reserved for it.
-- Stale-device pruning: a device that never comes back keeps a (dead)
-  bundle; senders waste one fan-out slot on it until its OTPs run out.
-- Cross-check the KDF labels/constants against libsignal test vectors.
+- Multi-recipient/group ratchet (groups still use the per-member
+  envelope scheme, not a ratchet).
+- A loser-side resend after glare convergence (today the loser's very
+  first pre-message is dropped by the winner; rare, fail-closed).
 
 ## What phase 2 did (the ratchet) — reference
 

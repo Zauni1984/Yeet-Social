@@ -7649,6 +7649,9 @@ info@blocksocial.eu</address>
       RK: b64(st.RK), CKs: st.CKs?b64(st.CKs):null, CKr: st.CKr?b64(st.CKr):null,
       Ns: st.Ns, Nr: st.Nr, PN: st.PN, skipped: st.skipped,
       pre: st.pre, preSent: st.preSent,
+      // 'me' = we ran initSender; 'peer' = we ran initReceiver. Used by
+      // the glare tiebreak on the receive path.
+      init: st.init || 'me',
     };
     return out;
   }
@@ -7662,6 +7665,7 @@ info@blocksocial.eu</address>
       RK: ub64(o.RK), CKs: o.CKs?ub64(o.CKs):null, CKr: o.CKr?ub64(o.CKr):null,
       Ns: o.Ns, Nr: o.Nr, PN: o.PN, skipped: o.skipped||{},
       pre: o.pre, preSent: o.preSent,
+      init: o.init || 'me',
     };
   }
   async function saveSession(convId, rdev, st){
@@ -7761,7 +7765,7 @@ info@blocksocial.eu</address>
         for(var i=0;i<targets.length;i++){
           var t = targets[i];
           var st = await loadSession(convId, t.deviceId);
-          if(!st){ st = await initSender(id.sk, id.pk, t.bundle); _mem[memKey(convId, t.deviceId)] = st; }
+          if(!st){ st = await initSender(id.sk, id.pk, t.bundle); st.init = 'me'; _mem[memKey(convId, t.deviceId)] = st; }
           var wire = await encrypt(st, text);
           msgs[t.deviceId] = wire;
           await saveSession(convId, t.deviceId, st);
@@ -7782,14 +7786,34 @@ info@blocksocial.eu</address>
       var entry = env.msgs[myDev];
       if(!entry) return { notForMe: true };
       var rdev = env.from;
+      var hasPre = !!(entry.header && entry.header.pre);
       var st = await loadSession(convId, rdev);
+
+      // Glare: both peers initiated a session at the same instant. The
+      // message carries an X3DH preamble AND we already hold a session
+      // we initiated. Deterministic tiebreak: the device with the
+      // lexicographically smaller id is the canonical winner, and both
+      // sides end up on the winner's session.
+      if(hasPre && st && st.init === 'me'){
+        if(myDev < rdev){
+          // We're the winner: keep our session, reject the peer's
+          // competing init (fail-closed for this one message; the peer
+          // converges onto our session once it sees our preamble).
+          throw new Error('glare: winner keeps own session');
+        }
+        // We're the loser: adopt the winner's (peer-initiated) session,
+        // discarding our own. Fall through to the init-receiver path.
+        st = null;
+      }
+
       if(!st){
-        if(!entry.header || !entry.header.pre) throw new Error('no session, no preamble');
+        if(!hasPre) throw new Error('no session, no preamble');
         var uid = localStorage.getItem('yeet_user_id') || '';
         var id = await E().ensureIdentity();
         var self = await receiverSelf(uid, id.sk);
         if(!self) throw new Error('no local prekeys');
         st = await initReceiver(self, entry.header.pre);
+        st.init = 'peer';
         _mem[memKey(convId, rdev)] = st;
       }
       var plain = await decrypt(st, entry);
@@ -8528,17 +8552,39 @@ info@blocksocial.eu</address>
     if(!file) return;
     if(file.size > 8 * 1024 * 1024){ window.showToast(T('dm.imageTooLarge'),'error'); return; }
     try {
-      var key = await convKeyForConv(_activeConv);
       var buf = new Uint8Array(await file.arrayBuffer());
-      var iv  = window.crypto.getRandomValues(new Uint8Array(12));
-      var ct  = new Uint8Array(await window.crypto.subtle.encrypt(
-        { name:'AES-GCM', iv: iv }, key, buf));
-      var ivB64 = window.YeetE2EE.bytesToB64(iv);
-      // Multipart: iv + file + client_message_id for idempotency.
       var form = new FormData();
-      form.append('iv', ivB64);
       form.append('client_message_id', _genCmid());
-      form.append('file', new Blob([ct], { type:'application/octet-stream' }), 'enc.bin');
+      var fileKeyJson = null; // set on the ratchet path, cached after send
+
+      // Forward-secret path: encrypt the image ONCE under a random file
+      // key, then fan only the small file key out to every device via
+      // the ratchet (the blob is shared, the key is per-device). 1:1
+      // DMs only; falls back to the static conv-key scheme otherwise.
+      if(_activeConv.kind === 'dm' && _activeConv.peer_id && window.YeetRatchet && window.YeetE2EE.hasMaster()){
+        var fk = window.crypto.getRandomValues(new Uint8Array(32));
+        var fiv = window.crypto.getRandomValues(new Uint8Array(12));
+        var fkKey = await window.crypto.subtle.importKey('raw', fk, {name:'AES-GCM'}, false, ['encrypt']);
+        var fct = new Uint8Array(await window.crypto.subtle.encrypt({name:'AES-GCM', iv: fiv}, fkKey, buf));
+        fileKeyJson = JSON.stringify({ k: window.YeetE2EE.bytesToB64(fk), iv: window.YeetE2EE.bytesToB64(fiv) });
+        var env = await window.YeetRatchet.encryptText(_activeConv.id, _activeConv.peer_id, fileKeyJson);
+        if(env && env.iv === 'r2'){
+          form.append('envelope', env.ciphertext);
+          form.append('file', new Blob([fct], { type:'application/octet-stream' }), 'enc.bin');
+        } else {
+          fileKeyJson = null; // ratchet unavailable -> fall through to static
+        }
+      }
+
+      if(!fileKeyJson){
+        // Static path: encrypt under the conversation key.
+        var key = await convKeyForConv(_activeConv);
+        var iv  = window.crypto.getRandomValues(new Uint8Array(12));
+        var ct  = new Uint8Array(await window.crypto.subtle.encrypt({ name:'AES-GCM', iv: iv }, key, buf));
+        form.append('iv', window.YeetE2EE.bytesToB64(iv));
+        form.append('file', new Blob([ct], { type:'application/octet-stream' }), 'enc.bin');
+      }
+
       var r = await fetch('/api/v1/conversations/'+ _activeConv.id +'/messages/image', {
         method:'POST',
         headers:{ 'Authorization':'Bearer '+ jwt() },
@@ -8548,6 +8594,11 @@ info@blocksocial.eu</address>
         var d = await r.json().catch(function(){return {};});
         window.showToast((d.error && d.error.message) || T('common.error'),'error');
         return;
+      }
+      // Cache the file key locally so the sending device (not in its own
+      // fan-out) can still display the image it just sent.
+      if(fileKeyJson){
+        try { var sd = await r.clone().json(); var mid = sd && sd.data && sd.data.id; if(mid) _sentPlainSet(mid, fileKeyJson); } catch(e){}
       }
       await loadMessages(_activeConv.id);
     } catch(e){
@@ -8561,9 +8612,38 @@ info@blocksocial.eu</address>
   // local to this IIFE.
   var _origRender = renderMessageBody;
   renderMessageBody = async function(m, convKey){
-    if(m.kind === 'image' && !m.deleted_at){
-      if(!convKey) return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+    if(m.kind === 'image' && !m.deleted_at && !m.deleted_for_all_at){
       try {
+        // Forward-secret images (iv === 'r2'): the message ciphertext
+        // is a ratchet envelope of the file key; decrypt it, then
+        // decrypt the blob with that file key. The blob's own IV is
+        // inside the envelope plaintext.
+        if(m.iv === 'r2'){
+          var fkObj = null;
+          try {
+            var res = await window.YeetRatchet.decryptText(_activeConv.id, m);
+            if(res && res.text) fkObj = JSON.parse(res.text);
+            else if(res && res.notForMe && m.sender_id === _myUserId()){
+              var cached = _sentPlainGet(m.id);
+              if(cached != null) fkObj = JSON.parse(cached);
+            }
+          } catch(e){ fkObj = null; }
+          if(!fkObj) return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
+          var rr = await fetch('/api/v1/messages/'+ encodeURIComponent(m.id) +'/blob', {
+            headers:{ 'Authorization':'Bearer '+ jwt() }
+          });
+          if(!rr.ok) throw new Error('blob fetch');
+          var fct = new Uint8Array(await rr.arrayBuffer());
+          var fkRaw = window.YeetE2EE.b64ToBytes(fkObj.k);
+          var fivRaw = window.YeetE2EE.b64ToBytes(fkObj.iv);
+          var fkey = await window.crypto.subtle.importKey('raw', fkRaw, {name:'AES-GCM'}, false, ['decrypt']);
+          var fplain = new Uint8Array(await window.crypto.subtle.decrypt({name:'AES-GCM', iv: fivRaw}, fkey, fct));
+          var furl = URL.createObjectURL(new Blob([fplain]));
+          setTimeout(function(){ URL.revokeObjectURL(furl); }, 60000);
+          return '<img src="'+ furl +'" style="max-width:240px;max-height:240px;border-radius:8px;display:block" alt="">';
+        }
+        // Static path.
+        if(!convKey) return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
         var r = await fetch('/api/v1/messages/'+ encodeURIComponent(m.id) +'/blob', {
           headers:{ 'Authorization':'Bearer '+ jwt() }
         });
@@ -8573,7 +8653,6 @@ info@blocksocial.eu</address>
         var plain = new Uint8Array(await window.crypto.subtle.decrypt(
           { name:'AES-GCM', iv: iv }, convKey, ct));
         var url = URL.createObjectURL(new Blob([plain]));
-        // Revoke after a short delay to free memory; img already cached
         setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
         return '<img src="'+ url +'" style="max-width:240px;max-height:240px;border-radius:8px;display:block" alt="">';
       } catch(e){
