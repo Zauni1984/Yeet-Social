@@ -540,6 +540,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <button onclick="window.revokeAllSessions && window.revokeAllSessions()" style="margin-top:10px;width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:8px;cursor:pointer;font-size:13px" data-i18n="settings.sessionsRevokeAll">Sign out everywhere else</button>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128272; <span data-i18n="devices.title">Encryption devices</span></div>
+        <div id="encDevicesList" style="display:flex;flex-direction:column;gap:8px;font-size:13px"><div style="color:var(--muted)" data-i18n="settings.sessionsLoad">Loading…</div></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px" data-i18n="devices.help">Each browser that has unlocked your encrypted DMs is listed here. Revoke a device to stop sending new messages to it; messages already delivered remain readable on that device until you sign out there.</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#128274; <span data-i18n="dm.privacy">Messaging privacy</span></div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
           <span style="font-size:14px" data-i18n="dm.readReceipts">Read receipts</span>
@@ -786,6 +791,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.sessionsRevokeAll':'Sign out everywhere else',
       'settings.sessionsRevokeAllConfirm':'Sign out every device except this one?',
       'settings.sessionsRevoked':'Session revoked',
+      'devices.title':'Encryption devices',
+      'devices.empty':'No encryption devices yet — open a DM to provision this browser.',
+      'devices.current':'This device',
+      'devices.added':'Added','devices.lastSeen':'Last active',
+      'devices.rename':'Rename','devices.renamePrompt':'Device name:',
+      'devices.renamed':'Device renamed',
+      'devices.revoke':'Revoke','devices.revokeConfirm':'Revoke this device? New messages will no longer be encrypted to it, and any local ratchet state on the device becomes unusable.',
+      'devices.revokeSelfConfirm':'Revoke THIS device? You will lose access to any sent-message plaintext cached here and will be re-provisioned as a new device next time you open messaging on this browser.',
+      'devices.revoked':'Device revoked',
+      'devices.help':'Each browser that has unlocked your encrypted DMs is listed here. Revoke a device to stop sending new messages to it; messages already delivered remain readable on that device until you sign out there.',
       'settings.push':'Push notifications',
       'settings.pushOn':'Notifications enabled',
       'settings.pushOff':'Notifications off',
@@ -1046,6 +1061,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.sessionsRevokeAll':'Überall sonst abmelden',
       'settings.sessionsRevokeAllConfirm':'Wirklich von allen anderen Geräten abmelden?',
       'settings.sessionsRevoked':'Sitzung beendet',
+      'devices.title':'Verschlüsselungs-Geräte',
+      'devices.empty':'Noch keine Verschlüsselungs-Geräte — öffne einen DM, um diesen Browser zu provisionieren.',
+      'devices.current':'Dieses Gerät',
+      'devices.added':'Hinzugefügt','devices.lastSeen':'Zuletzt aktiv',
+      'devices.rename':'Umbenennen','devices.renamePrompt':'Gerätename:',
+      'devices.renamed':'Gerät umbenannt',
+      'devices.revoke':'Widerrufen','devices.revokeConfirm':'Dieses Gerät widerrufen? Neue Nachrichten werden nicht mehr dafür verschlüsselt, und lokaler Ratchet-Zustand auf dem Gerät wird unbrauchbar.',
+      'devices.revokeSelfConfirm':'DIESES Gerät widerrufen? Du verlierst Zugriff auf hier zwischengespeicherten Klartext eigener Nachrichten und wirst beim nächsten Öffnen der Nachrichten als neues Gerät provisioniert.',
+      'devices.revoked':'Gerät widerrufen',
+      'devices.help':'Jeder Browser, der deine verschlüsselten DMs entsperrt hat, ist hier aufgelistet. Widerrufe ein Gerät, um keine neuen Nachrichten mehr für es zu verschlüsseln; bereits zugestellte Nachrichten bleiben dort lesbar, bis du dich dort ausloggst.',
       'settings.push':'Push-Benachrichtigungen',
       'settings.pushOn':'Benachrichtigungen aktiv',
       'settings.pushOff':'Benachrichtigungen aus',
@@ -2337,6 +2362,7 @@ function openSettingsModal(){
       .catch(function(){});
   }
   if(typeof window.loadSessions === 'function') window.loadSessions();
+  if(typeof window.loadEncryptionDevices === 'function') window.loadEncryptionDevices();
   if(typeof window.loadMessagingPrefs === 'function') window.loadMessagingPrefs();
   if(typeof window.refreshPushStatus === 'function') window.refreshPushStatus();
   document.getElementById('settingsModal').classList.add('on');
@@ -7139,6 +7165,26 @@ info@blocksocial.eu</address>
   }
   function prekeyStoreKey(uid){ return 'yeet_prekeys_' + uid; }
 
+  // Best-effort default label like "Chrome on macOS" derived from the
+  // user agent. The user can rename later via Settings → Devices.
+  function defaultDeviceLabel(){
+    var ua = (navigator.userAgent || '').toLowerCase();
+    var browser = 'Browser';
+    if(/edg\b/.test(ua))        browser = 'Edge';
+    else if(/opr\b|opera/.test(ua)) browser = 'Opera';
+    else if(/firefox/.test(ua)) browser = 'Firefox';
+    else if(/chrome|crios/.test(ua)) browser = 'Chrome';
+    else if(/safari/.test(ua))  browser = 'Safari';
+    var os = 'unknown';
+    if(/ipad/.test(ua))      os = 'iPad';
+    else if(/iphone/.test(ua))os = 'iPhone';
+    else if(/android/.test(ua))os = 'Android';
+    else if(/windows/.test(ua))os = 'Windows';
+    else if(/mac os x/.test(ua))os = 'macOS';
+    else if(/linux/.test(ua)) os = 'Linux';
+    return browser + ' on ' + os;
+  }
+
   // Stable per-browser/device id. Multi-device keys prekeys + ratchet
   // sessions by this so one device's provisioning never clobbers
   // another's. Persisted once per browser profile.
@@ -7175,6 +7221,10 @@ info@blocksocial.eu</address>
       store.signing = await wrapRawPrivBytes(master, signPrivBytes);
       store.signingPub = signPubSpki;
       body.signing_public_key = signPubSpki;
+      // Default label is only honoured on first sight (the server
+      // never overwrites a user-set label on conflict). Safe to ship
+      // on every first-provision burst.
+      body.label = defaultDeviceLabel();
 
       // Signed prekey: an ECDH keypair, its public SPKI signed by the
       // ECDSA signing key so a peer can attribute it to this identity.
@@ -9166,6 +9216,119 @@ info@blocksocial.eu</address>
       if(!r.ok){ window.showToast(T('common.error'),'error'); return; }
       window.showToast(T('settings.sessionsRevoked'),'success');
       window.loadSessions();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
+
+  // ─── Encryption device management (FS phase 4) ─────────────────────
+  // Lists this user's per-browser encryption devices (rows in
+  // user_devices), with rename + revoke. Distinct from JWT sessions:
+  // these are the device pairs the ratchet fans out to.
+  function _fmtAgo(iso){
+    if(!iso) return '';
+    var t = new Date(iso).getTime();
+    if(!isFinite(t)) return '';
+    var s = Math.floor((Date.now() - t)/1000);
+    if(s < 60) return s+'s';
+    if(s < 3600) return Math.floor(s/60)+'m';
+    if(s < 86400) return Math.floor(s/3600)+'h';
+    return Math.floor(s/86400)+'d';
+  }
+
+  window.loadEncryptionDevices = async function(){
+    var box = document.getElementById('encDevicesList');
+    if(!box) return;
+    box.innerHTML = '<div style="color:var(--muted)">'+ T('settings.sessionsLoad') +'</div>';
+    try {
+      var r = await api('/api/v1/me/devices');
+      if(!r.ok){ box.innerHTML = '<div style="color:#ff6666">'+ T('common.error') +'</div>'; return; }
+      var d = await r.json();
+      var rows = (d && d.data) || [];
+      if(!rows.length){
+        box.innerHTML = '<div style="color:var(--muted)">'+ T('devices.empty') +'</div>';
+        return;
+      }
+      var current = (window.YeetE2EE && window.YeetE2EE.deviceId) ? window.YeetE2EE.deviceId() : '';
+      box.innerHTML = rows.map(function(d){
+        var isCurrent = (d.device_id === current);
+        var label = escapeHtml(d.label || d.device_id);
+        var addedISO = escapeHtml(d.created_at || '');
+        var addedHuman = escapeHtml(d.created_at ? new Date(d.created_at).toLocaleDateString() : '');
+        var lastAgo = escapeHtml(_fmtAgo(d.last_seen_at));
+        var safeDev = encodeURIComponent(d.device_id);
+        var currentBadge = isCurrent
+          ? ' <span style="font-size:10px;color:#000;background:#c6f135;border-radius:8px;padding:1px 6px;margin-left:4px">'+ T('devices.current') +'</span>'
+          : '';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:8px 10px">'
+          + '<div style="min-width:0;flex:1">'
+          +   '<div style="font-size:13px;color:#eee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ label + currentBadge +'</div>'
+          +   '<div style="font-size:11px;color:var(--muted)">'
+          +     T('devices.added') +': <span title="'+ addedISO +'">'+ addedHuman +'</span>'
+          +     ' &middot; '+ T('devices.lastSeen') +' '+ lastAgo
+          +   '</div>'
+          + '</div>'
+          + '<div style="display:flex;gap:4px">'
+          +   '<button onclick="window.renameEncryptionDevice(\''+ safeDev +'\')" title="'+ T('devices.rename') +'" '
+          +     'style="background:transparent;border:1px solid #444;color:#ccc;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">&#9998;</button>'
+          +   '<button onclick="window.revokeEncryptionDevice(\''+ safeDev +'\')" title="'+ T('devices.revoke') +'" '
+          +     'style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">&#10005;</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    } catch(e){
+      box.innerHTML = '<div style="color:#ff6666">'+ T('common.networkError') +'</div>';
+    }
+  };
+
+  window.renameEncryptionDevice = async function(deviceIdEnc){
+    var deviceId = decodeURIComponent(deviceIdEnc);
+    var label = window.prompt(T('devices.renamePrompt'), '');
+    if(label == null) return;
+    label = label.trim();
+    if(!label) return;
+    try {
+      var r = await api('/api/v1/me/devices/'+ encodeURIComponent(deviceId), {
+        method:'PATCH', body: JSON.stringify({ label: label })
+      });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error'); return;
+      }
+      window.showToast(T('devices.renamed'),'success');
+      window.loadEncryptionDevices();
+    } catch(e){ window.showToast(T('common.networkError'),'error'); }
+  };
+
+  window.revokeEncryptionDevice = async function(deviceIdEnc){
+    var deviceId = decodeURIComponent(deviceIdEnc);
+    var myDev = (window.YeetE2EE && window.YeetE2EE.deviceId) ? window.YeetE2EE.deviceId() : '';
+    var self = (deviceId === myDev);
+    if(!confirm(T(self ? 'devices.revokeSelfConfirm' : 'devices.revokeConfirm'))) return;
+    try {
+      var r = await api('/api/v1/me/devices/'+ encodeURIComponent(deviceId), { method:'DELETE' });
+      if(!r.ok){
+        var d = await r.json().catch(function(){return {};});
+        window.showToast((d.error && d.error.message) || T('common.error'),'error'); return;
+      }
+      window.showToast(T('devices.revoked'),'success');
+      if(self){
+        // Wipe local crypto so we re-provision with a brand-new
+        // device_id next time. Ratchet sessions and sent-plaintext
+        // cache are no longer reachable from any decryption flow.
+        try {
+          var uid = localStorage.getItem('yeet_user_id') || '';
+          localStorage.removeItem('yeet_device_id');
+          if(uid) localStorage.removeItem('yeet_prekeys_' + uid);
+          // Sweep ratchet + sent-cache keys.
+          var toDrop = [];
+          for(var i = 0; i < localStorage.length; i++){
+            var k = localStorage.key(i);
+            if(k && (k.indexOf('yeet_ratchet_') === 0 || k.indexOf('yeet_sent_') === 0)) toDrop.push(k);
+          }
+          toDrop.forEach(function(k){ localStorage.removeItem(k); });
+        } catch(e){}
+        if(window.YeetRatchet && window.YeetRatchet._wipe) window.YeetRatchet._wipe();
+      }
+      window.loadEncryptionDevices();
     } catch(e){ window.showToast(T('common.networkError'),'error'); }
   };
 

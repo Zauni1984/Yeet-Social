@@ -12,6 +12,7 @@
 //! The handlers below are *pure I/O*; all crypto lives in the browser.
 
 use axum::{extract::{Path, State}, Json};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -172,6 +173,16 @@ fn is_device_id(s: &str) -> bool {
         && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
+/// Plausibility bound on the human-readable device label. The client
+/// derives a default like "Chrome on macOS" from the user agent at
+/// first provision; the user can rename it via PATCH /me/devices/:id.
+const DEVICE_LABEL_MAX_LEN: usize = 80;
+fn is_clean_label(s: &str) -> bool {
+    !s.is_empty()
+        && s.len() <= DEVICE_LABEL_MAX_LEN
+        && !s.chars().any(|c| c.is_control())
+}
+
 #[derive(Debug, Deserialize)]
 pub struct UploadPrekeysRequest {
     /// Stable id of the device doing the provisioning. Required — the
@@ -181,6 +192,10 @@ pub struct UploadPrekeysRequest {
     /// on first provision so peers can verify this device's signed
     /// prekey. Optional on subsequent replenishes.
     pub signing_public_key: Option<String>,
+    /// Optional default label set ONLY on first registration. Renames
+    /// go through PATCH /me/devices/:device_id so a replenish from
+    /// another browser session can't overwrite the user's chosen name.
+    pub label: Option<String>,
     /// Optional: only present when (re)rotating the signed prekey.
     pub signed_prekey: Option<SignedPrekeyInput>,
     /// Optional: a batch of fresh one-time prekeys to top up the pool.
@@ -226,17 +241,26 @@ pub async fn upload_prekeys(
     let me = caller_user_id(&state, &auth).await?;
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 
+    // Reject obviously bad labels up front.
+    let default_label: Option<&str> = match req.label.as_deref() {
+        Some(l) if is_clean_label(l) => Some(l),
+        Some(_) => return Err(AppError::Validation("label invalid".into())),
+        None => None,
+    };
+
     // Register/update the device. The signing key is required on first
-    // sight; a replenish without it leaves the existing one intact.
+    // sight; a replenish without it leaves the existing one intact. We
+    // intentionally do NOT touch `label` on conflict — that's the
+    // user's choice via the rename endpoint.
     if let Some(spk) = &req.signing_public_key {
         sqlx::query(
-            "INSERT INTO user_devices (user_id, device_id, signing_public_key)
-             VALUES ($1, $2, $3)
+            "INSERT INTO user_devices (user_id, device_id, signing_public_key, label)
+             VALUES ($1, $2, $3, $4)
              ON CONFLICT (user_id, device_id) DO UPDATE
                SET signing_public_key = EXCLUDED.signing_public_key,
                    last_seen_at = NOW()"
         )
-        .bind(me).bind(&req.device_id).bind(spk)
+        .bind(me).bind(&req.device_id).bind(spk).bind(default_label)
         .execute(&mut *tx).await.map_err(AppError::Database)?;
     } else {
         // touch last_seen if the device already exists
@@ -420,4 +444,109 @@ pub async fn get_prekey_bundles(
     }
 
     Ok(Json(ApiResponse::ok(BundlesResponse { user_id: id, identity_key, devices: out })))
+}
+
+// ─── Device management (FS phase 4) ──────────────────────────────────
+//
+// List, rename, and revoke this user's encryption devices. Listed
+// alongside JWT sessions in Settings; conceptually related (same
+// browser/install) but technically distinct (this is the per-device
+// E2EE keying, not the per-login session).
+
+#[derive(Debug, Serialize, sqlx::FromRow)]
+pub struct OwnDeviceRow {
+    pub device_id: String,
+    pub label: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub last_seen_at: DateTime<Utc>,
+}
+
+/// GET /api/v1/me/devices — list this user's encryption devices.
+pub async fn list_my_devices(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<ApiResponse<Vec<OwnDeviceRow>>>> {
+    let me = caller_user_id(&state, &auth).await?;
+    let rows: Vec<OwnDeviceRow> = sqlx::query_as(
+        "SELECT device_id, label, created_at, last_seen_at
+           FROM user_devices
+          WHERE user_id = $1
+          ORDER BY last_seen_at DESC"
+    )
+    .bind(me)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(rows)))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RenameDeviceRequest {
+    pub label: String,
+}
+
+/// PATCH /api/v1/me/devices/:device_id — set the friendly label.
+pub async fn rename_my_device(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(device_id): Path<String>,
+    Json(req): Json<RenameDeviceRequest>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    if !is_device_id(&device_id) {
+        return Err(AppError::Validation("invalid device_id".into()));
+    }
+    let label = req.label.trim();
+    if !is_clean_label(label) {
+        return Err(AppError::Validation("label must be 1-80 printable chars".into()));
+    }
+    let me = caller_user_id(&state, &auth).await?;
+    let r = sqlx::query(
+        "UPDATE user_devices SET label = $3
+          WHERE user_id = $1 AND device_id = $2"
+    )
+    .bind(me).bind(&device_id).bind(label)
+    .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    if r.rows_affected() == 0 {
+        return Err(AppError::NotFound("device not found".into()));
+    }
+    Ok(Json(ApiResponse::ok("ok")))
+}
+
+/// DELETE /api/v1/me/devices/:device_id
+///
+/// Revokes an encryption device: removes the user_devices row and all
+/// of that device's signed + one-time prekeys, so the device drops out
+/// of subsequent /bundles fan-outs. Existing ratchet sessions held by
+/// peers remain decryptable (forward secrecy applies per message
+/// anyway); the revoked device just isn't a target for NEW sessions.
+///
+/// Allows revoking the calling device — that's the legitimate "remove
+/// this browser from my account" flow. The client wipes its local
+/// crypto state so a fresh device_id is generated next time.
+pub async fn revoke_my_device(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(device_id): Path<String>,
+) -> AppResult<Json<ApiResponse<&'static str>>> {
+    if !is_device_id(&device_id) {
+        return Err(AppError::Validation("invalid device_id".into()));
+    }
+    let me = caller_user_id(&state, &auth).await?;
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+    // Wipe this device's prekeys first; the device row is the link the
+    // bundle endpoint scans, so removing it last is the safe order if
+    // a concurrent /bundles call is in flight.
+    sqlx::query("DELETE FROM one_time_prekeys WHERE user_id = $1 AND device_id = $2")
+        .bind(me).bind(&device_id)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    sqlx::query("DELETE FROM signed_prekeys WHERE user_id = $1 AND device_id = $2")
+        .bind(me).bind(&device_id)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    let r = sqlx::query("DELETE FROM user_devices WHERE user_id = $1 AND device_id = $2")
+        .bind(me).bind(&device_id)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    if r.rows_affected() == 0 {
+        tx.rollback().await.ok();
+        return Err(AppError::NotFound("device not found".into()));
+    }
+    tx.commit().await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok("revoked")))
 }
