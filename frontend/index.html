@@ -101,6 +101,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
 .modal-close:hover{color:var(--text)}
 .modal-wrap{position:relative}
+/* SETTINGS as a full scrollable page (was a centered modal that got
+   clipped top+bottom once its content grew taller than the viewport). */
+.settings-page{display:none;position:fixed;inset:0;z-index:200;background:#080808;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.settings-page.on{display:block}
+.settings-page-inner{max-width:560px;margin:0 auto;padding:18px 16px 110px}
+.settings-page-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;background:#080808;padding:14px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--border)}
+.settings-page-bar h3{margin:0;font-size:18px}
+.settings-back{display:inline-flex;align-items:center;gap:6px;color:var(--yeet);background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;flex-shrink:0}
+.settings-back:hover{border-color:var(--yeet)}
 /* PWA MODAL */
 .pwa-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;align-items:center;justify-content:center}
 .pwa-modal.on{display:flex}
@@ -488,10 +497,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   </div>
 </div>
 
-<div class="modal-bg" id="settingsModal" onclick="closeSettingsModal(event)">
-  <div class="modal modal-wrap" style="max-width:420px">
-    <button class="modal-close" onclick="closeSettingsModal()">&#10005;</button>
-    <h3>&#9881;&#65039; <span data-i18n="settings.title">Settings</span></h3>
+<div class="settings-page" id="settingsModal">
+  <div class="settings-page-inner">
+    <div class="settings-page-bar">
+      <button class="settings-back" onclick="closeSettingsModal()">&larr; <span data-i18n="settings.back">Back</span></button>
+      <h3>&#9881;&#65039; <span data-i18n="settings.title">Settings</span></h3>
+    </div>
     <div style="display:flex;flex-direction:column;gap:16px">
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.content">Content</div>
@@ -793,6 +804,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.languageChanged':'Language changed',
       // settings
       'settings.title':'Settings','settings.content':'Content','settings.adult':'18+ content',
+      'settings.back':'Back','settings.admin':'Admin secret',
       'settings.autoload':'Auto-load feed','settings.network':'Network','settings.account':'Account',
       'settings.linkWallet':'Link Wallet','settings.disconnect':'Disconnect Wallet',
       'settings.sessions':'Devices & sessions','settings.sessionsLoad':'Loading…',
@@ -1072,6 +1084,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.search2chars':'Mind. 2 Zeichen eingeben','toast.settingsSaved':'Einstellungen gespeichert',
       'toast.languageChanged':'Sprache geändert',
       'settings.title':'Einstellungen','settings.content':'Inhalt','settings.adult':'18+ Inhalt',
+      'settings.back':'Zurück','settings.admin':'Admin-Secret',
       'settings.autoload':'Feed automatisch laden','settings.network':'Netzwerk','settings.account':'Konto',
       'settings.linkWallet':'Wallet verknüpfen','settings.disconnect':'Wallet trennen',
       'settings.sessions':'Geräte & Sitzungen','settings.sessionsLoad':'Wird geladen…',
@@ -2083,6 +2096,8 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape'){
     var p = document.getElementById('notifPanel');
     if(p && p.classList.contains('on')) p.classList.remove('on');
+    var sp = document.getElementById('settingsModal');
+    if(sp && sp.classList.contains('on') && typeof closeSettingsModal === 'function') closeSettingsModal();
   }
 });
 
@@ -2408,7 +2423,10 @@ function openSettingsModal(){
   if(typeof window.loadMessagingPrefs === 'function') window.loadMessagingPrefs();
   if(typeof window.refreshPushStatus === 'function') window.refreshPushStatus();
   if(typeof window.refreshAgeVerificationStatus === 'function') window.refreshAgeVerificationStatus();
-  document.getElementById('settingsModal').classList.add('on');
+  var _settingsEl = document.getElementById('settingsModal');
+  _settingsEl.classList.add('on');
+  // Always open at the top — it's a full scrollable page now.
+  try { _settingsEl.scrollTop = 0; } catch(e){}
   // Show "Link Wallet" only for email-only users (no wallet yet)
   const lw=document.getElementById('linkWalletBtn');
   if(lw){
