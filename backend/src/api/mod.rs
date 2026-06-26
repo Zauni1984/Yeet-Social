@@ -35,3 +35,4 @@ pub mod sessions;
 pub mod messaging_prefs;
 pub mod ws;
 pub mod push;
+pub mod age_verification;

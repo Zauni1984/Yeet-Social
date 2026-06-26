@@ -9,3 +9,4 @@ pub mod livekit;
 pub mod rate_limit;
 pub mod ws_hub;
 pub mod push;
+pub mod pii_vault;

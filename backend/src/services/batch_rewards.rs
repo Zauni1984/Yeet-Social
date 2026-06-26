@@ -285,7 +285,38 @@ pub async fn start_message_cleanup_job(state: AppState) {
             warn!("Session GC error: {e}");
         }
 
-        // 6. Prune stale E2EE devices. A device's last_seen_at is
+        // 7. Purge age-verification PII blobs past their grace window.
+        //    Decided cases keep their metadata (for the audit trail)
+        //    but their on-disk biometric + ID blobs are scrubbed:
+        //      * approved → 7-day grace (decision is settled fast)
+        //      * rejected → 30-day grace (user appeal window)
+        //      * withdrawn → already purged at withdraw time
+        //    Once the blob files are gone, blobs_purged_at is set and
+        //    the paths are nulled so a re-run is a no-op.
+        let due: Vec<(uuid::Uuid, Option<String>, Option<String>, String)> = sqlx::query_as(
+            "SELECT id, face_scan_path, id_document_path, status
+               FROM age_verification_cases
+              WHERE blobs_purged_at IS NULL
+                AND reviewed_at IS NOT NULL
+                AND ((status = 'approved' AND reviewed_at < NOW() - INTERVAL '7 days')
+                  OR (status = 'rejected' AND reviewed_at < NOW() - INTERVAL '30 days'))
+              LIMIT 200"
+        ).fetch_all(&state.db.pool).await.unwrap_or_default();
+        for (cid, fp, ip, _st) in due {
+            if let Some(p) = &fp { let _ = crate::services::pii_vault::purge_blob(p).await; }
+            if let Some(p) = &ip { let _ = crate::services::pii_vault::purge_blob(p).await; }
+            if let Err(e) = sqlx::query(
+                "UPDATE age_verification_cases
+                    SET face_scan_path = NULL,
+                        id_document_path = NULL,
+                        blobs_purged_at = NOW()
+                  WHERE id = $1"
+            ).bind(cid).execute(&state.db.pool).await {
+                warn!("Age-verify blob purge update error: {e}");
+            }
+        }
+
+        // 8. Prune stale E2EE devices. A device's last_seen_at is
         //    bumped on every prekey provision/replenish (i.e. whenever
         //    the user opens messaging on it). A device untouched for
         //    90 days is treated as gone: drop its prekeys and the

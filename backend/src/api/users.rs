@@ -12,6 +12,7 @@ struct ProfileRow {
     bio: Option<String>, avatar_url: Option<String>, cover_url: Option<String>, created_at: DateTime<Utc>,
     follower_count: Option<i64>, following_count: Option<i64>, post_count: Option<i64>,
     age_verified_at: Option<DateTime<Utc>>,
+    age_badge_hidden: Option<bool>,
     e2ee_public_key: Option<String>,
 }
 
@@ -49,14 +50,14 @@ pub async fn get_profile(
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
-                u.age_verified_at, u.e2ee_public_key
+                u.age_verified_at, u.age_badge_hidden, u.e2ee_public_key
          FROM users u WHERE u.id = $1::uuid"
     } else {
         "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
-                u.age_verified_at, u.e2ee_public_key
+                u.age_verified_at, u.age_badge_hidden, u.e2ee_public_key
          FROM users u WHERE u.wallet_address = $1"
     };
     let bind_val = if address.parse::<Uuid>().is_ok() { address.clone() } else { address.to_lowercase() };
@@ -96,7 +97,11 @@ pub async fn get_profile(
         follower_count: r.follower_count.unwrap_or(0),
         following_count: r.following_count.unwrap_or(0),
         post_count: r.post_count.unwrap_or(0),
-        age_verified: r.age_verified_at.is_some(),
+        // Public-facing semantics: the badge is shown when the user
+        // is age-verified AND hasn't toggled the badge off. The user's
+        // own /me/age-verification/status endpoint reveals the
+        // underlying state separately.
+        age_verified: r.age_verified_at.is_some() && !r.age_badge_hidden.unwrap_or(false),
         created_at: r.created_at,
         is_blocked_by_me,
         has_blocked_me,

@@ -104,6 +104,10 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         delete(api::users::delete_my_account))
         .route("/api/v1/users/me/export",  get(api::users::export_my_data))
         .route("/api/v1/users/me/verify-age", post(api::users::verify_age))
+        .route("/api/v1/me/age-verification/status",   get(api::age_verification::get_status))
+        .route("/api/v1/me/age-verification/submit",   post(api::age_verification::submit))
+        .route("/api/v1/me/age-verification/withdraw", post(api::age_verification::withdraw))
+        .route("/api/v1/me/age-badge",                 patch(api::age_verification::set_badge_visibility))
         .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar))
         .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover))
         .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media))
@@ -211,6 +215,15 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/admin/users/:address/ban-post",   post(api::admin_mod::ban_post))
         .route("/api/v1/admin/users/:address/unban-post", post(api::admin_mod::unban_post))
         .route("/api/v1/admin/users/:address/delete",     post(api::admin_mod::delete_user))
+        .route("/api/v1/admin/age-verification",          get(api::age_verification::admin_list))
+        .route("/api/v1/admin/age-verification/:case_id/blob",
+               get(api::age_verification::admin_get_blob))
+        .route("/api/v1/admin/age-verification/:case_id/approve",
+               post(api::age_verification::admin_approve))
+        .route("/api/v1/admin/age-verification/:case_id/reject",
+               post(api::age_verification::admin_reject))
+        .route("/api/v1/admin/users/:address/age-verify/revoke",
+               post(api::age_verification::admin_revoke_verification))
         .route("/api/v1/admin/actions",                   get(api::admin_mod::list_actions))
         .route("/api/v1/admin/stats",                     get(api::admin_mod::stats))
         .route("/api/v1/admin/ping",                      get(api::admin_mod::ping))

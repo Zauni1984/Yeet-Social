@@ -505,6 +505,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         </div>
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">&#10004;&#65039; <span data-i18n="verify.title">Age verification</span></div>
+        <div id="ageVerifyStatusLine" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
+        <button id="ageVerifyActionBtn" onclick="window.check18Plus && window.check18Plus()" style="display:none;width:100%;background:#7c3aed;border:none;color:#fff;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:10px">&#10004; <span data-i18n="verify.openSettings">Open verification</span></button>
+        <div id="ageBadgeToggleRow" style="display:none;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #2a2a2a">
+          <span style="font-size:14px" data-i18n="verify.toggleBadge">Show 18+ badge on my profile</span>
+          <input type="checkbox" id="settingAgeBadgeShow" onchange="window.toggleAgeBadge && window.toggleAgeBadge(this.checked)" style="width:18px;height:18px;cursor:pointer">
+        </div>
+        <div id="ageBadgeToggleNote" style="display:none;font-size:11px;color:var(--muted);margin-top:6px" data-i18n="verify.toggleBadgeNote">Turn off to hide the purple badge without losing your verification.</div>
+      </div>
+      <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.network">Network</div>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:14px" data-i18n="settings.network">Network</span>
@@ -955,16 +965,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'report.title':'Report post','report.detailsPlaceholder':'Details (optional)','report.submit':'Report',
       'report.reasons':['Inappropriate','Spam','Hate speech','Violence','Nudity','Misinformation','Other'],
       // 18+ verify
-      'verify.title':'Age verification','verify.subtitle':'18+ area. One-time face scan to verify your age.',
-      'verify.cameraStarting':'Camera starting...','verify.center':'Center your face, then start scan',
-      'verify.start':'Start scan','verify.analyzing':'AI analyzing...','verify.success':'Verification successful!',
+      'verify.title':'Age verification','verify.subtitle':'18+ area. Face scan + optional ID — reviewed by our team.',
+      'verify.cameraStarting':'Camera starting...','verify.center':'Center your face, then take photo',
+      'verify.start':'Take photo','verify.analyzing':'Uploading...','verify.success':'Submitted! Review usually within 24 h.',
       'verify.cameraDenied':'Camera access denied. Allow camera or upload a photo below.',
       'verify.cameraNone':'No camera found. Upload a photo below.',
       'verify.cameraBusy':'Camera is busy. Close other apps using the camera, or upload a photo.',
       'verify.cameraUnsupported':'Your browser does not support live camera here. Upload a photo below.',
       'verify.usePhoto':'Upload a photo instead',
       'verify.noFace':'No face detected','verify.retry':'Retry',
-      'verify.imageNotStored':'Image is not stored. Local AI analysis.',
+      'verify.imageNotStored':'Photos are stored encrypted, reviewed by a human, and deleted shortly after a decision.',
+      'verify.addId':'Add ID document (optional, speeds up review)',
+      'verify.idType':'Document type','verify.idPassport':'Passport','verify.idDriver':'Driver’s license','verify.idNational':'National ID','verify.idOther':'Other',
+      'verify.submitNow':'Submit for review','verify.faceMissing':'Take or upload a face photo first',
+      'verify.pending':'Your submission is being reviewed.','verify.pendingSince':'Submitted','verify.withdraw':'Withdraw submission',
+      'verify.approved':'You are verified 18+.','verify.rejected':'Submission rejected:','verify.serverDown':'Age verification is not available right now.',
+      'verify.startOver':'Submit again','verify.toggleBadge':'Show 18+ badge on my profile','verify.toggleBadgeNote':'Turn off to hide the purple badge without losing your verification.',
+      'verify.withdrawn':'Submission withdrawn.','verify.badgeUpdated':'Badge setting updated.',
+      'verify.openSettings':'Open verification',
       // NFT modal
       'nft.title':'Sell as NFT','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
       'nft.priceLabel':'Price in YEET:','nft.customPrice':'Custom amount...','nft.priceSet':'NFT price: {price} YEET',
@@ -1216,16 +1234,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'delete.keyword':'LÖSCHEN',
       'report.title':'Post melden','report.detailsPlaceholder':'Details (optional)','report.submit':'Melden',
       'report.reasons':['Unangemessen','Spam','Hassrede','Gewalt','Nacktheit','Fehlinformationen','Anderes'],
-      'verify.title':'Altersverifikation','verify.subtitle':'18+ Bereich. Einmaliger Face-Scan zur Altersprüfung.',
-      'verify.cameraStarting':'Kamera startet...','verify.center':'Gesicht zentrieren, dann Scan starten',
-      'verify.start':'Scan starten','verify.analyzing':'KI analysiert...','verify.success':'Verifikation erfolgreich!',
+      'verify.title':'Altersverifikation','verify.subtitle':'18+ Bereich. Face-Scan + optionaler Ausweis — wird von unserem Team geprüft.',
+      'verify.addId':'Ausweis hinzufügen (optional, beschleunigt die Prüfung)',
+      'verify.idType':'Dokumenttyp','verify.idPassport':'Reisepass','verify.idDriver':'Führerschein','verify.idNational':'Personalausweis','verify.idOther':'Sonstiges',
+      'verify.submitNow':'Zur Prüfung absenden','verify.faceMissing':'Mach oder lade zuerst ein Gesichtsfoto hoch',
+      'verify.pending':'Deine Einreichung wird geprüft.','verify.pendingSince':'Eingereicht','verify.withdraw':'Einreichung zurückziehen',
+      'verify.approved':'Du bist 18+ verifiziert.','verify.rejected':'Einreichung abgelehnt:','verify.serverDown':'Altersverifikation aktuell nicht verfügbar.',
+      'verify.startOver':'Erneut einreichen','verify.toggleBadge':'18+ Badge auf meinem Profil anzeigen','verify.toggleBadgeNote':'Ausschalten, um das Lila-Badge zu verbergen, ohne die Verifikation zu verlieren.',
+      'verify.withdrawn':'Einreichung zurückgezogen.','verify.badgeUpdated':'Badge-Einstellung aktualisiert.',
+      'verify.openSettings':'Verifikation öffnen',
+      'verify.cameraStarting':'Kamera startet...','verify.center':'Gesicht zentrieren, dann Foto aufnehmen',
+      'verify.start':'Foto aufnehmen','verify.analyzing':'Wird hochgeladen...','verify.success':'Eingereicht! Prüfung üblicherweise innerhalb von 24 h.',
       'verify.cameraDenied':'Kamerazugriff verweigert. Kamera erlauben oder Foto unten hochladen.',
       'verify.cameraNone':'Keine Kamera gefunden. Foto unten hochladen.',
       'verify.cameraBusy':'Kamera ist belegt. Andere Apps schließen oder Foto hochladen.',
       'verify.cameraUnsupported':'Dein Browser unterstützt hier keine Live-Kamera. Foto unten hochladen.',
       'verify.usePhoto':'Foto stattdessen hochladen',
       'verify.noFace':'Kein Gesicht erkannt','verify.retry':'Erneut',
-      'verify.imageNotStored':'Bild wird nicht gespeichert. Lokale KI-Analyse.',
+      'verify.imageNotStored':'Fotos werden verschlüsselt gespeichert, von einer Person geprüft und kurz nach der Entscheidung gelöscht.',
       'nft.title':'Als NFT verkaufen','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
       'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'NFT-Preis: {price} YEET',
       'ppv.title':'Pay-per-View',
@@ -1672,7 +1698,21 @@ let connectedWallet=null,connectedAddress=null;
     fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}})
       .then(function(r){return r.json();}).then(function(d){
         if(!d||!d.success||!d.data)return;
-        if(d.data.age_verified) localStorage.setItem('yeet_18plus_verified','1');
+        // /users/me's age_verified == false either because the user
+        // hasn't completed verification OR because they're hiding the
+        // badge. Use the dedicated status endpoint to set the local
+        // unlock flag — the unlock follows actual verification, not
+        // badge visibility.
+        if(d.data.age_verified){
+          localStorage.setItem('yeet_18plus_verified','1');
+        } else {
+          fetch('/api/v1/me/age-verification/status', { headers:{ 'Authorization':'Bearer '+jwt } })
+            .then(function(rr){ return rr.json(); }).then(function(dd){
+              var st = dd && dd.data; if(!st) return;
+              if(st.age_verified) localStorage.setItem('yeet_18plus_verified','1');
+              else localStorage.removeItem('yeet_18plus_verified');
+            }).catch(function(){});
+        }
       }).catch(function(){});
   }
 })();
@@ -2365,6 +2405,7 @@ function openSettingsModal(){
   if(typeof window.loadEncryptionDevices === 'function') window.loadEncryptionDevices();
   if(typeof window.loadMessagingPrefs === 'function') window.loadMessagingPrefs();
   if(typeof window.refreshPushStatus === 'function') window.refreshPushStatus();
+  if(typeof window.refreshAgeVerificationStatus === 'function') window.refreshAgeVerificationStatus();
   document.getElementById('settingsModal').classList.add('on');
   // Show "Link Wallet" only for email-only users (no wallet yet)
   const lw=document.getElementById('linkWalletBtn');
@@ -3058,12 +3099,17 @@ function renderProfileHeader(u, own){
   }else{ btn = ''; }
 
   document.getElementById('profileHeaderName').textContent = u.display_name || short || 'Profile';
+  // Purple 18+ badge: shown when the backend reports age_verified=true
+  // (which is gated by users.age_verified_at AND NOT age_badge_hidden).
+  var badge18 = u.age_verified
+    ? ' <span title="18+ verified" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#fff;background:#7c3aed;border-radius:10px;padding:2px 7px;vertical-align:middle">&#10004; 18+</span>'
+    : '';
   document.getElementById('profileHeader').innerHTML =
       coverBlock
     + '<div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px">'
       + avatarBlock
       + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:20px;font-weight:800;margin-bottom:2px">'+name+'</div>'
+        + '<div style="font-size:20px;font-weight:800;margin-bottom:2px">'+name+badge18+'</div>'
         + (short ? '<div style="font-size:13px;color:var(--muted);word-break:break-all">'+_esc(short)+'</div>' : '')
       + '</div>'
       + '<div style="flex-shrink:0">'+btn+'</div>'
@@ -3575,14 +3621,78 @@ var faceStream=null;
 //      blocked by a webview or earlier permission denial.
 //   3. The scan analyzer reads from either the live <video> or the
 //      uploaded image, so the downstream success path is identical.
-function check18Plus(){
+async function check18Plus(){
   if(typeof _exitProfileView==='function') _exitProfileView();
   var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
   if(!jwt){ showLoginGate(); return; }
   var s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   var adultEnabled=s.adult===true||localStorage.getItem('yeet_adult')==='1';
   if(!adultEnabled){showToast(window.t('toast.adultEnable'));return;}
-  if(localStorage.getItem('yeet_18plus_verified')==='1'){loadFeedFiltered('adult');return;}
+
+  // Source of truth is the server. localStorage flag is only an UX hint.
+  try {
+    var sr = await fetch('/api/v1/me/age-verification/status', { headers:{ Authorization:'Bearer '+jwt } });
+    if(sr.ok){
+      var sd = await sr.json();
+      var st = (sd && sd.data) || {};
+      if(st.age_verified){
+        localStorage.setItem('yeet_18plus_verified','1');
+        loadFeedFiltered('adult'); return;
+      }
+      if(st.status === 'pending'){
+        openAgeVerificationStatus(st); return;
+      }
+      if(st.status === 'rejected'){
+        openAgeVerificationStatus(st); return;
+      }
+      // status 'none' | 'withdrawn' | 'approved-but-flag-not-yet-set':
+      // fall through to the submit flow.
+    }
+  } catch(e){}
+
+  openAgeVerificationSubmit();
+}
+window.check18Plus = check18Plus;
+
+function openAgeVerificationStatus(st){
+  var existing = document.getElementById('faceScanModal'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'faceScanModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  var body, action;
+  if(st.status === 'pending'){
+    body = '<div style="font-size:40px;margin-bottom:10px">&#9201;</div>'
+      + '<h3 style="margin:0 0 8px;font-size:18px">'+ window.t('verify.title') +'</h3>'
+      + '<p style="color:#aaa;font-size:13px;margin:0 0 12px">'+ window.t('verify.pending') +'</p>'
+      + (st.submitted_at ? '<p style="color:#666;font-size:11px;margin:0 0 14px">'+ window.t('verify.pendingSince') +': '+ new Date(st.submitted_at).toLocaleString() +'</p>' : '')
+      + '<button onclick="withdrawAgeVerification()" style="width:100%;padding:11px;background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:10px;cursor:pointer;margin-bottom:8px">'+ window.t('verify.withdraw') +'</button>'
+      + '<button onclick="closeFaceScan()" style="width:100%;padding:11px;background:transparent;border:1px solid #444;color:#fff;border-radius:10px;cursor:pointer">'+ window.t('common.cancel') +'</button>';
+  } else if(st.status === 'rejected'){
+    body = '<div style="font-size:40px;margin-bottom:10px">&#9888;&#65039;</div>'
+      + '<h3 style="margin:0 0 8px;font-size:18px">'+ window.t('verify.title') +'</h3>'
+      + '<p style="color:#ff7f7f;font-size:13px;margin:0 0 8px">'+ window.t('verify.rejected') +'</p>'
+      + (st.decision_note ? '<p style="color:#ccc;font-size:13px;margin:0 0 14px;white-space:pre-wrap">'+ escapeHtml(st.decision_note) +'</p>' : '')
+      + '<button onclick="closeFaceScan();openAgeVerificationSubmit()" style="width:100%;padding:11px;background:#c6f135;border:none;color:#000;font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:8px">'+ window.t('verify.startOver') +'</button>'
+      + '<button onclick="closeFaceScan()" style="width:100%;padding:11px;background:transparent;border:1px solid #444;color:#fff;border-radius:10px;cursor:pointer">'+ window.t('common.cancel') +'</button>';
+  }
+  modal.innerHTML = '<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:28px;max-width:380px;width:100%;text-align:center">'+ body +'</div>';
+  document.body.appendChild(modal);
+  void action;
+}
+window.openAgeVerificationStatus = openAgeVerificationStatus;
+
+async function withdrawAgeVerification(){
+  var jwt = localStorage.getItem('yeet_jwt'); if(!jwt) return;
+  try {
+    var r = await fetch('/api/v1/me/age-verification/withdraw', { method:'POST', headers:{ Authorization:'Bearer '+jwt } });
+    if(!r.ok){ showToast(window.t('common.error'),'error'); return; }
+    showToast(window.t('verify.withdrawn'),'success');
+    closeFaceScan();
+  } catch(e){ showToast(window.t('common.networkError'),'error'); }
+}
+window.withdrawAgeVerification = withdrawAgeVerification;
+
+function openAgeVerificationSubmit(){
   var modal=document.createElement('div');
   modal.id='faceScanModal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
@@ -3601,11 +3711,26 @@ function check18Plus(){
     +'<div id="faceFallback" style="display:none;margin-bottom:10px">'
       +'<button onclick="document.getElementById(\'faceFileInput\').click()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--yeet);border-radius:10px;color:var(--yeet);cursor:pointer;font-weight:700">&#128247; '+window.t('verify.usePhoto')+'</button>'
     +'</div>'
-    +'<div style="display:flex;gap:8px">'
+    +'<div style="display:flex;gap:8px;margin-bottom:14px">'
     +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
     +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer" disabled>'+window.t('verify.start')+'</button>'
     +'</div>'
-    +'<p style="color:#333;font-size:11px;margin-top:10px">'+window.t('verify.imageNotStored')+'</p>'
+    // Optional ID document section. Hidden until a face frame is captured
+    // so the user isn't asked to upload PII before the face step works.
+    +'<div id="idDocSection" style="display:none;text-align:left;border-top:1px solid #333;padding-top:14px;margin-bottom:12px">'
+    +'<label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px">'+window.t('verify.addId')+'</label>'
+    +'<select id="idDocType" style="width:100%;background:#0e0e0e;border:1px solid #333;border-radius:8px;color:#fff;padding:8px;margin-bottom:8px;font-size:13px">'
+      +'<option value="passport">'+window.t('verify.idPassport')+'</option>'
+      +'<option value="driver_license">'+window.t('verify.idDriver')+'</option>'
+      +'<option value="national_id">'+window.t('verify.idNational')+'</option>'
+      +'<option value="other">'+window.t('verify.idOther')+'</option>'
+    +'</select>'
+    +'<input type="file" id="idDocFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="onIdDocPicked(this)">'
+    +'<button onclick="document.getElementById(\'idDocFile\').click()" style="width:100%;padding:9px;background:transparent;border:1px solid #444;color:#ccc;border-radius:8px;cursor:pointer;font-size:12px">&#128194; '+window.t('verify.usePhoto')+'</button>'
+    +'<div id="idDocFileName" style="font-size:11px;color:#888;margin-top:4px;text-align:center"></div>'
+    +'</div>'
+    +'<button id="submitVerifyBtn" onclick="submitAgeVerification()" style="display:none;width:100%;padding:12px;background:#7c3aed;border:none;color:#fff;font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:10px">'+window.t('verify.submitNow')+'</button>'
+    +'<p style="color:#555;font-size:11px;margin-top:6px">'+window.t('verify.imageNotStored')+'</p>'
     +'</div>';
   document.body.appendChild(modal);
   initCamera();
@@ -3688,10 +3813,13 @@ function onFacePhotoPicked(input){
   input.value = '';
 }
 
+// Step 1: capture a face frame. Either from the live video stream or
+// from a photo the user uploaded as a fallback. The result is a Blob
+// stashed in window._faceBlob; the optional ID upload and the submit
+// button then become visible.
 async function doFaceScan(){
   var btn=document.getElementById('scanBtn');
-  btn.disabled=true;btn.textContent=window.t('verify.analyzing');
-  document.getElementById('faceSt').textContent=window.t('verify.analyzing');
+  btn.disabled=true; btn.textContent=window.t('verify.analyzing');
   document.getElementById('faceOvl').style.outline='2px solid #c6f135';
 
   var c=document.getElementById('faceCvs');
@@ -3703,31 +3831,152 @@ async function doFaceScan(){
     c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
   } else {
     var v=document.getElementById('faceVid');
-    c.width=v.videoWidth||320;c.height=v.videoHeight||240;
+    c.width=v.videoWidth||320; c.height=v.videoHeight||240;
     c.getContext('2d').drawImage(v,0,0);
   }
-  await new Promise(function(r){setTimeout(r,1500);});
-  // TODO: replace with real age-detection API call. For now we just
-  // confirm an image is present (non-black pixel ratio).
+  // Sanity check the frame isn't black.
   var pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
   var nonBlack=0;
-  for(var i=0;i<pixels.length;i+=4){if(pixels[i]>20||pixels[i+1]>20||pixels[i+2]>20)nonBlack++;}
-  var hasImage=nonBlack>(c.width*c.height*0.1);
-  if(!hasImage){document.getElementById('faceSt').textContent=window.t('verify.noFace');btn.disabled=false;btn.textContent=window.t('verify.retry');return;}
-  document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; '+window.t('verify.success')+'</span>';
-  localStorage.setItem('yeet_18plus_verified','1');
-  var jwt=localStorage.getItem('yeet_jwt');
-  if(jwt){
-    fetch('/api/v1/users/me/verify-age',{method:'POST',headers:{'Authorization':'Bearer '+jwt}}).catch(function(){});
+  for(var i=0;i<pixels.length;i+=4){ if(pixels[i]>20||pixels[i+1]>20||pixels[i+2]>20) nonBlack++; }
+  if(nonBlack <= c.width*c.height*0.1){
+    document.getElementById('faceSt').textContent=window.t('verify.noFace');
+    btn.disabled=false; btn.textContent=window.t('verify.retry');
+    return;
   }
-  setTimeout(function(){closeFaceScan();loadFeedFiltered('adult');},1400);
+  window._faceBlob = await new Promise(function(res){ c.toBlob(function(b){ res(b); }, 'image/jpeg', 0.85); });
+  document.getElementById('faceSt').innerHTML='<span style="color:#22c55e">&#10003; OK</span>';
+  // Stop the live stream — we have the frame; no need to keep the camera on.
+  if(faceStream){ faceStream.getTracks().forEach(function(t){ t.stop(); }); faceStream=null; }
+  var v2=document.getElementById('faceVid'); if(v2){ v2.srcObject=null; v2.style.display='none'; }
+  var im2=document.getElementById('faceImg');
+  if(!useImg && im2){ im2.src = c.toDataURL('image/jpeg', 0.85); im2.style.display='block'; }
+  document.getElementById('idDocSection').style.display='block';
+  document.getElementById('submitVerifyBtn').style.display='block';
+  btn.style.display='none';
 }
+
+// Optional ID document picker.
+function onIdDocPicked(input){
+  var f = input.files && input.files[0];
+  var nameEl = document.getElementById('idDocFileName');
+  if(!f){ window._idDocBlob = null; if(nameEl) nameEl.textContent=''; return; }
+  if(f.size > 8 * 1024 * 1024){
+    showToast(window.t('toast.imageTooLarge'),'error');
+    input.value=''; window._idDocBlob = null; if(nameEl) nameEl.textContent=''; return;
+  }
+  if(['image/jpeg','image/jpg','image/png','image/webp'].indexOf(f.type) === -1){
+    showToast(window.t('toast.invalidFormat'),'error');
+    input.value=''; window._idDocBlob = null; if(nameEl) nameEl.textContent=''; return;
+  }
+  window._idDocBlob = f;
+  if(nameEl) nameEl.textContent = f.name + ' · ' + Math.round(f.size/1024) + ' KB';
+}
+window.onIdDocPicked = onIdDocPicked;
+
+// Step 2: submit face + optional ID to the backend.
+async function submitAgeVerification(){
+  if(!window._faceBlob){
+    document.getElementById('faceSt').textContent = window.t('verify.faceMissing'); return;
+  }
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ showLoginGate(); return; }
+  var btn = document.getElementById('submitVerifyBtn');
+  btn.disabled = true; var origText = btn.textContent; btn.textContent = window.t('verify.analyzing');
+
+  var fd = new FormData();
+  fd.append('face_scan', window._faceBlob, 'face.jpg');
+  if(window._idDocBlob){
+    fd.append('id_document', window._idDocBlob, window._idDocBlob.name || 'id.bin');
+    fd.append('id_type', document.getElementById('idDocType').value || 'other');
+  }
+  try {
+    var r = await fetch('/api/v1/me/age-verification/submit', {
+      method:'POST', headers:{ Authorization:'Bearer '+jwt }, body: fd,
+    });
+    if(!r.ok){
+      var d = await r.json().catch(function(){return {};});
+      var msg = (d.error && d.error.message) || window.t('verify.serverDown');
+      document.getElementById('faceSt').innerHTML = '<span style="color:#ff7f7f">'+ escapeHtml(msg) +'</span>';
+      btn.disabled = false; btn.textContent = origText;
+      return;
+    }
+    document.getElementById('faceSt').innerHTML = '<span style="color:#22c55e">&#10003; '+ window.t('verify.success') +'</span>';
+    setTimeout(function(){ closeFaceScan(); }, 1600);
+  } catch(e){
+    document.getElementById('faceSt').textContent = window.t('common.networkError');
+    btn.disabled = false; btn.textContent = origText;
+  }
+}
+window.submitAgeVerification = submitAgeVerification;
 
 function closeFaceScan(){
   if(faceStream){faceStream.getTracks().forEach(function(t){t.stop();});faceStream=null;}
   window._faceSourceIsImg = false;
+  window._faceBlob = null; window._idDocBlob = null;
   document.getElementById('faceScanModal')?.remove();
+  if(typeof window.refreshAgeVerificationStatus === 'function') window.refreshAgeVerificationStatus();
 }
+
+// Settings-modal row: status + badge toggle.
+window.refreshAgeVerificationStatus = async function(){
+  var line = document.getElementById('ageVerifyStatusLine');
+  var btn  = document.getElementById('ageVerifyActionBtn');
+  var row  = document.getElementById('ageBadgeToggleRow');
+  var note = document.getElementById('ageBadgeToggleNote');
+  var chk  = document.getElementById('settingAgeBadgeShow');
+  if(!line || !btn) return;
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ line.textContent = window.t('common.pleaseLogin'); btn.style.display='none'; return; }
+  try {
+    var r = await fetch('/api/v1/me/age-verification/status', { headers:{ Authorization:'Bearer '+jwt } });
+    if(!r.ok) throw new Error('http '+r.status);
+    var d = await r.json();
+    var st = (d && d.data) || {};
+    if(!st.server_configured){
+      line.textContent = window.t('verify.serverDown');
+      btn.style.display='none'; row.style.display='none'; note.style.display='none';
+      return;
+    }
+    if(st.age_verified){
+      // Verified — show toggle, hide submit button.
+      line.innerHTML = '<span style="color:#a78bfa">&#10004; '+ window.t('verify.approved') +'</span>';
+      btn.style.display='none';
+      row.style.display='flex'; note.style.display='block';
+      if(chk) chk.checked = !st.badge_hidden;
+    } else if(st.status === 'pending'){
+      line.innerHTML = '&#9201; '+ window.t('verify.pending');
+      btn.textContent = window.t('verify.openSettings');
+      btn.style.display='block';
+      row.style.display='none'; note.style.display='none';
+    } else if(st.status === 'rejected'){
+      line.innerHTML = '<span style="color:#ff7f7f">&#9888;&#65039; '+ window.t('verify.rejected') +'</span>';
+      btn.textContent = window.t('verify.startOver');
+      btn.style.display='block';
+      row.style.display='none'; note.style.display='none';
+    } else {
+      line.textContent = window.t('verify.subtitle');
+      btn.textContent = window.t('verify.openSettings');
+      btn.style.display='block';
+      row.style.display='none'; note.style.display='none';
+    }
+  } catch(e){
+    line.textContent = window.t('verify.serverDown');
+    btn.style.display='none'; row.style.display='none'; note.style.display='none';
+  }
+};
+
+window.toggleAgeBadge = async function(showBadge){
+  var jwt = localStorage.getItem('yeet_jwt'); if(!jwt) return;
+  try {
+    var r = await fetch('/api/v1/me/age-badge', {
+      method:'PATCH',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+      body: JSON.stringify({ hidden: !showBadge })
+    });
+    if(!r.ok){ showToast(window.t('common.error'),'error'); return; }
+    showToast(window.t('verify.badgeUpdated'),'success');
+  } catch(e){ showToast(window.t('common.networkError'),'error'); }
+};
 
 // ââ IMAGE UPLOAD ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function handleImageSelect(input) {
@@ -6127,6 +6376,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
       <button class="adm-tab" data-tab="overview">Overview</button>
       <button class="adm-tab" data-tab="posts">Posts</button>
       <button class="adm-tab" data-tab="users">Users</button>
+      <button class="adm-tab" data-tab="age">18+ Queue</button>
       <button class="adm-tab" data-tab="audit">Audit log</button>
     </div>
     <div id="adminContent" style="min-height:200px"></div>
@@ -6595,6 +6845,7 @@ info@blocksocial.eu</address>
     if(name === 'overview') renderOverview();
     else if(name === 'posts') renderPosts();
     else if(name === 'users') renderUsers();
+    else if(name === 'age') renderAgeQueue();
     else if(name === 'audit') renderAudit();
   }
   document.addEventListener('click', function(ev){
@@ -6912,6 +7163,99 @@ info@blocksocial.eu</address>
       { confirmation: conf, reason: 'admin dashboard delete' });
     if(r.ok){ window.showToast('User deleted','success'); loadUsers(); }
     else { var d = await r.json().catch(function(){return{};}); window.showToast('Delete failed: '+ ((d.error&&d.error.message)||r.status),'error'); }
+  };
+
+  // --- 18+ verification queue ---
+  async function renderAgeQueue(status){
+    status = status || 'pending';
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    try {
+      var r = await fetch('/api/v1/admin/age-verification?status='+ encodeURIComponent(status)
+        + '&secret=' + encodeURIComponent(secret()));
+      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret.</div>'; return; }
+      var d = await r.json();
+      var rows = (d && d.data) || [];
+      var filterBar = '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">'
+        + ['pending','approved','rejected','withdrawn','all'].map(function(s){
+            var on = (s === status);
+            return '<button onclick="window._adminAgeFilter(\''+ s +'\')" '
+              +'style="background:'+ (on?'var(--yeet)':'transparent') +';color:'+ (on?'#000':'#ccc')
+              +';border:1px solid '+ (on?'var(--yeet)':'#444') +';border-radius:18px;padding:5px 12px;cursor:pointer;font-size:12px;text-transform:uppercase">'
+              + s +'</button>';
+          }).join('')
+        + '</div>';
+      if(!rows.length){
+        _adminContent.innerHTML = filterBar
+          + '<div style="color:var(--muted);padding:30px;text-align:center">No cases ('+ esc(status) +').</div>';
+        return;
+      }
+      var body = rows.map(function(c){
+        var when = c.submitted_at ? new Date(c.submitted_at).toLocaleString() : '';
+        var rwhen = c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : '';
+        var idType = c.id_document_type ? ' &middot; ID: '+ esc(c.id_document_type) : ' &middot; <i>no ID</i>';
+        var hasFace = c.has_face_blob;
+        var hasId = c.has_id_blob;
+        var faceBtn = hasFace
+          ? '<button onclick="window._adminViewBlob(\''+ c.id +'\',\'face\')" style="background:transparent;border:1px solid #444;color:#ccc;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">View face</button>'
+          : '<span style="color:#666;font-size:11px">no face blob</span>';
+        var idBtn = hasId
+          ? ' <button onclick="window._adminViewBlob(\''+ c.id +'\',\'id\')" style="background:transparent;border:1px solid #444;color:#ccc;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;margin-left:4px">View ID</button>'
+          : '';
+        var actions = (c.status === 'pending')
+          ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="window._adminAgeDecide(\''+ c.id +'\',\'approve\')" style="background:#22c55e;color:#000;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Approve</button>'
+            +'<button onclick="window._adminAgeDecide(\''+ c.id +'\',\'reject\')" style="background:#e63946;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Reject</button></div>'
+          : '';
+        return '<div style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:12px;margin-bottom:10px">'
+          + '<div style="font-size:13px;color:#eee">'+ esc(c.username || c.user_id) +' &middot; <span style="color:#888">'+ esc(c.status) +'</span>'+ idType +'</div>'
+          + '<div style="font-size:11px;color:var(--muted);margin-top:2px">Submitted '+ esc(when) + (rwhen?' &middot; Reviewed '+ esc(rwhen):'') + (c.blobs_purged_at?' &middot; PII purged':'') +'</div>'
+          + (c.decision_note ? '<div style="font-size:12px;color:#bbb;margin-top:6px;white-space:pre-wrap">'+ esc(c.decision_note) +'</div>' : '')
+          + '<div style="margin-top:8px">'+ faceBtn + idBtn +'</div>'
+          + actions
+          + '</div>';
+      }).join('');
+      _adminContent.innerHTML = filterBar + body;
+    } catch(e){
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+    }
+  }
+  window._adminAgeFilter = function(s){ renderAgeQueue(s); };
+  window._adminAgeDecide = async function(caseId, decision){
+    var note = prompt('Decision note (optional, shown to the user):', '') || '';
+    var url = '/api/v1/admin/age-verification/'+ encodeURIComponent(caseId) +'/'+ decision;
+    var jwt = localStorage.getItem('yeet_jwt');
+    try {
+      var r = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+ (jwt||'') },
+        body: JSON.stringify({ secret: secret(), note: note || null })
+      });
+      if(!r.ok){ alert('Failed: '+ r.status); return; }
+      renderAgeQueue('pending');
+    } catch(e){ alert('Network error'); }
+  };
+  window._adminViewBlob = async function(caseId, slot){
+    var url = '/api/v1/admin/age-verification/'+ encodeURIComponent(caseId) +'/blob?slot='+ slot +'&secret='+ encodeURIComponent(secret());
+    try {
+      var r = await fetch(url);
+      if(!r.ok){ alert('Failed: '+ r.status); return; }
+      var blob = await r.blob();
+      var u = URL.createObjectURL(blob);
+      // Open as a sandboxed image in a new tab so the bytes never
+      // touch the main app DOM and the URL is revoked when closed.
+      var w = window.open();
+      if(w){
+        w.document.title = slot.toUpperCase() + ' · ' + caseId;
+        w.document.body.style.cssText = 'margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh';
+        var img = w.document.createElement('img');
+        img.src = u;
+        img.style.cssText = 'max-width:100%;max-height:100vh;object-fit:contain';
+        w.document.body.appendChild(img);
+        w.addEventListener('beforeunload', function(){ URL.revokeObjectURL(u); });
+      } else {
+        alert('Popup blocked.');
+        URL.revokeObjectURL(u);
+      }
+    } catch(e){ alert('Network error'); }
   };
 
   // --- Audit log ---

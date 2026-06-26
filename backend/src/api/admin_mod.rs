@@ -127,7 +127,7 @@ async fn resolve_target(state: &AppState, address_or_id: &str)
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn record_action(
+pub async fn record_action(
     pool: &sqlx::PgPool,
     target_id: Option<Uuid>,
     target_username: Option<&str>,

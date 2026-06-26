@@ -29,6 +29,9 @@ redis            = { version = "0.25", features = ["tokio-comp", "connection-man
 
 # Auth
 sha2            = "0.10"
+# At-rest AEAD for the age-verification PII blobs (face scan + ID).
+aes-gcm         = "0.10"
+hkdf            = "0.12"
 jsonwebtoken     = "9"
 rand             = "0.8"
 hex              = "0.4"
