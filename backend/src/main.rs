@@ -94,6 +94,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/posts/:id/unlike",  post(api::posts::unlike_post))
         .route("/api/v1/posts/:id/report",  post(api::report::report_post))
         .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
+        .route("/api/v1/me/permanent",     get(api::permanent::get_my_permanent_posts))
         // Users
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))
