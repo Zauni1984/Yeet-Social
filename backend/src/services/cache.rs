@@ -61,7 +61,11 @@ impl Cache {
     pub async fn incr(&self, key: &str, ttl: Duration) -> Result<i64> {
         let mut c = self.conn.clone();
         let n: i64 = c.incr(key, 1).await.context("Failed to incr")?;
-        if n == 1 { c.expire::<_, ()>(key, ttl.as_secs() as i64).await.context("Failed to set TTL")?; }
+        // Refresh the TTL on every hit, not just the first. If the process
+        // died between INCR and EXPIRE on the n==1 path, the key could
+        // otherwise live forever with no TTL — a permanent rate-limit
+        // lockout for that key. Re-arming each call is idempotent and cheap.
+        c.expire::<_, ()>(key, ttl.as_secs() as i64).await.context("Failed to set TTL")?;
         Ok(n)
     }
 }

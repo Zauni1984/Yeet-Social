@@ -61,6 +61,11 @@ pub async fn verify_signature(
     Json(req): Json<VerifyRequest>,
 ) -> AppResult<Json<ApiResponse<TokenResponse>>> {
     let address = req.address.to_lowercase();
+    // Guard the 0x/42-char shape up front so the later `&address[2..10]`
+    // byte-slice (placeholder username) can never panic on a short address.
+    if !is_valid_address(&address) {
+        return Err(AppError::Unauthorised("Invalid wallet address".into()));
+    }
     let stored_nonce = state.cache.consume_nonce(&address).await
         .map_err(|e| AppError::Cache(e.to_string()))?
         .ok_or_else(|| AppError::Unauthorised("Nonce not found or expired".into()))?;

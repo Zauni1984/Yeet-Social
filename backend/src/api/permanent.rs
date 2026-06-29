@@ -18,13 +18,19 @@ pub struct SimpleOk {
     pub success: bool,
 }
 
-fn parse_user_id(auth: &AuthUser) -> Result<Uuid, AppError> {
+/// Resolve the caller's user id from either an email-auth subject
+/// ("email:<uuid>") or a wallet address (looked up in `users`). The old
+/// version parsed a wallet `0x...` address as a UUID, which always failed —
+/// so wallet users got a 401 from update_post_visibility / repost_post.
+async fn resolve_caller_id(state: &AppState, auth: &AuthUser) -> Result<Uuid, AppError> {
     if let Some(uuid_str) = auth.address.strip_prefix("email:") {
         uuid_str.parse::<Uuid>()
             .map_err(|_| AppError::Unauthorised("Invalid user ID".into()))
     } else {
-        auth.address.parse::<Uuid>()
-            .map_err(|_| AppError::Unauthorised("Invalid address".into()))
+        sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::Unauthorised("User not found".into()))
     }
 }
 
@@ -39,7 +45,7 @@ pub async fn update_post_visibility(
         return Err(AppError::Validation("visibility must be 'public' or 'followers'".into()));
     }
 
-    let user_id = parse_user_id(&auth)?;
+    let user_id = resolve_caller_id(&state, &auth).await?;
 
     let result = sqlx::query(
         "UPDATE posts SET visibility = $1
@@ -65,7 +71,7 @@ pub async fn repost_post(
     Path(post_id): Path<Uuid>,
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<SimpleOk>>> {
-    let user_id = parse_user_id(&auth)?;
+    let user_id = resolve_caller_id(&state, &auth).await?;
 
     // Block reposting a repost — only original posts can be reposted
     let is_repost: Option<Uuid> = sqlx::query_scalar(
@@ -187,7 +193,7 @@ pub async fn get_permanent_posts(
 
     let posts = sqlx::query_as::<_, (Uuid, String, Option<String>, String, chrono::DateTime<chrono::Utc>, i64, Option<i32>)>(
         "SELECT id, content, media_url, COALESCE(visibility, 'public'), created_at, like_count, repost_count
-         FROM posts WHERE author_id = $1 AND is_permanent = TRUE AND is_removed = FALSE
+         FROM posts WHERE author_id = $1 AND is_permanent = TRUE AND is_removed = FALSE AND deleted_at IS NULL
          AND ($2 = TRUE OR COALESCE(visibility, 'public') = 'public')
          AND ($3 = TRUE OR is_adult = FALSE)
          ORDER BY created_at DESC"
