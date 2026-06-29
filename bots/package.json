@@ -1,0 +1,13 @@
+{
+  "name": "yeet-bots",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Test bots for Yeet Social — daily posts + cross-interaction.",
+  "scripts": {
+    "start": "node yeet-bots.mjs"
+  },
+  "dependencies": {
+    "ethers": "^6.13.0"
+  }
+}
