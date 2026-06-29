@@ -1542,7 +1542,11 @@ function showLoginGate(){
 // Extracted so loadFeed() and loadPermanentPosts() render identically.
 function _buildFeedPostEl(p){
   const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
-  const short=(p.author&&(p.author.display_name||p.author.username))||(authorAddr?authorAddr.slice(0,6)+'...'+authorAddr.slice(-4):'@user');
+  // Escape: display_name/username are user-controlled and this value is
+  // interpolated raw into innerHTML below — without escaping a crafted
+  // display name like "<img src=x onerror=...>" is stored XSS for everyone
+  // who views the feed.
+  const short=_esc((p.author&&(p.author.display_name||p.author.username))||(authorAddr?authorAddr.slice(0,6)+'...'+authorAddr.slice(-4):'@user'));
   const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
   const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
   // Permanent posts have a ~100y expiry; the "Xh left" badge only makes
@@ -2859,7 +2863,8 @@ function loadFeedFiltered(filter){
         const wrap=document.createElement('div');wrap.id='feed-posts';
         for(const p of d.data){
           const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
-          const short=(p.author&&(p.author.display_name||p.author.username||p.author.wallet_address))||'@user';
+          // Escape user-controlled display name/username to prevent stored XSS.
+          const short=_esc((p.author&&(p.author.display_name||p.author.username||p.author.wallet_address))||'@user');
           const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
           const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
           const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
@@ -2917,12 +2922,14 @@ function submitPost(){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
       body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,
         is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,
-        is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null,
+        is_permanent:(window._postIsPermanent||window._postIsNFT)||false,ppv_price_yeet:window._postPPVPrice||null,
         publish_at:when.toISOString()})
     }).then(r=>r.json()).then(d=>{
       if(d && d.success){
         document.getElementById('postTxt').value='';
-        window._postImageB64=null;window._postMediaUrl=null;window._postIsNFT=false;window._postNFTPrice=null;
+        window._postImageB64=null;window._postMediaUrl=null;window._postIsNFT=false;window._postNFTPrice=null;window._postIsPermanent=false;
+        var pmb=document.getElementById('permToggleBtn');if(pmb)pmb.style.color='';
+        var pnd=document.getElementById('nftPriceDisplay');if(pnd)pnd.style.display='none';
         var pw=document.getElementById('imgPreviewWrap');if(pw)pw.style.display='none';
         var vw=document.getElementById('videoPreviewWrap');if(vw)vw.style.display='none';
         if(schedInput){ schedInput.value=''; schedInput.style.display='none'; }
@@ -2933,7 +2940,7 @@ function submitPost(){
     }).catch(e=>showToast(window.t('toast.postFailed')+': '+(e.message||''),'error'));
     return;
   }
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:window._postIsNFT||false,ppv_price_yeet:window._postPPVPrice||null})})
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:(window._postIsPermanent||window._postIsNFT)||false,ppv_price_yeet:window._postPPVPrice||null})})
     .then(async function(r){
       if(r.status===413){throw new Error(window.t('toast.imageTooLargeServer'));}
       var ct=r.headers.get('content-type')||'';
@@ -2943,12 +2950,12 @@ function submitPost(){
       if(d.success===false)showToast(window.t('common.error')+': '+(d.error&&d.error.message||window.t('toast.postFailed')));
       else{
         document.getElementById('postTxt').value='';
-        window._postImageB64=null;window._postMediaUrl=null;window._postIsNFT=false;window._postNFTPrice=null;
+        window._postImageB64=null;window._postMediaUrl=null;window._postIsNFT=false;window._postNFTPrice=null;window._postIsPermanent=false;
         var pw=document.getElementById('imgPreviewWrap');if(pw)pw.style.display='none';
         var vw=document.getElementById('videoPreviewWrap');if(vw)vw.style.display='none';
         var vi=document.getElementById('videoInput');if(vi)vi.value='';
         var nd=document.getElementById('nftPriceDisplay');if(nd)nd.style.display='none';
-        var nb=document.getElementById('nftToggleBtn');if(nb)nb.style.color='';
+        var nb=document.getElementById('permToggleBtn');if(nb)nb.style.color='';
         window._postIsPPV=false;window._postPPVPrice=null;
         var pd=document.getElementById('ppvPriceDisplay');if(pd)pd.style.display='none';
         var pb=document.getElementById('ppvToggleBtn');if(pb)pb.style.color='';
@@ -4305,16 +4312,23 @@ window.handleVideoSelect = handleVideoSelect;
 window.removeVideo = removeVideo;
 
 // ââ NFT TOGGLE + PRICE POPUP ââââââââââââââââââââââââââââââââââââââââââââââ
+// The 📌 button is a *permanent post* toggle — nothing to do with NFTs.
+// Previously it opened an NFT price modal and only set is_permanent as a
+// side effect of "is this an NFT", so a post the user marked permanent
+// often went out as a normal 24h post (is_permanent=false) and never
+// appeared on the Permanent Posts page. Now it toggles a dedicated flag and
+// gives clear on/off feedback on the actual button (permToggleBtn).
 function togglePermanent() {
-  if (window._postIsNFT) {
-    window._postIsNFT = false; window._postNFTPrice = null;
-    var btn = document.getElementById('nftToggleBtn');
-    if (btn) btn.style.color = '';
-    var nd = document.getElementById('nftPriceDisplay');
-    if (nd) nd.style.display = 'none';
-    return;
+  window._postIsPermanent = !window._postIsPermanent;
+  var btn = document.getElementById('permToggleBtn');
+  if (btn) btn.style.color = window._postIsPermanent ? '#c6f135' : '';
+  var nd = document.getElementById('nftPriceDisplay'); // "Permanent post set" badge
+  if (nd) nd.style.display = window._postIsPermanent ? 'block' : 'none';
+  if (typeof showToast === 'function') {
+    showToast(window._postIsPermanent
+      ? window.t('composer.markPermanent')
+      : window.t('composer.permanentSet'), 'success');
   }
-  openNFTPriceModal();
 }
 function openNFTPriceModal() {
   var modal = document.createElement('div');
@@ -4361,9 +4375,9 @@ function confirmNFTPrice() {
   if (!price||price<=0){showToast(window.t('toast.priceRequired'),'error');return;}
   document.getElementById('nftModal')?.remove();
   window._postIsNFT=true; window._postNFTPrice=price;
-  var btn=document.getElementById('nftToggleBtn');if(btn)btn.style.color='#c6f135';
+  var btn=document.getElementById('permToggleBtn');if(btn)btn.style.color='#c6f135';
   var nd=document.getElementById('nftPriceDisplay');
-  if(nd){nd.style.display='block';document.getElementById('nftPriceVal').textContent=price;}
+  if(nd){nd.style.display='block';var pv=document.getElementById('nftPriceVal');if(pv)pv.textContent=price;}
   showToast(window.t('nft.priceSet',{price:price}),'success');
 }
 
@@ -5755,8 +5769,9 @@ function showExternalLinkWarning(e,url){
     _updatePrice();
     _fetchEur();
     setInterval(_fetchEur,60000);
-    // Check saved session
-    var tok=localStorage.getItem('yeetToken');
+    // Check saved session. Wallet/web3 logins only write yeet_jwt, so
+    // reading yeetToken alone left those users looking logged-out on reload.
+    var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt')||localStorage.getItem('yt');
     var user=JSON.parse(localStorage.getItem('yeetUser')||'null');
     var wallet=localStorage.getItem('yeetWallet');
     if(tok&&user){

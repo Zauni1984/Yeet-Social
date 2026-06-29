@@ -71,7 +71,7 @@ pub async fn create_post(
     auth: AuthUser,
     Json(req): Json<CreatePostRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
-    if req.content.trim().is_empty() || req.content.len() > 280 {
+    if req.content.trim().is_empty() || req.content.trim().chars().count() > 280 {
         return Err(AppError::Validation("Post content must be 1-280 chars".into()));
     }
     // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
@@ -122,7 +122,12 @@ pub async fn create_post(
     .bind(req.is_adult.unwrap_or(false))
     .bind(req.is_nft.unwrap_or(false))
     .bind(req.nft_price_yeet)
-    .bind(req.is_permanent.unwrap_or(false))
+    // Store the *computed* permanence (is_permanent OR is_nft). Previously
+    // this bound the raw request flag while expires_at was derived from the
+    // OR — so an NFT post got a 100-year expiry (forever visible in the
+    // global feed) yet is_permanent=FALSE, making it invisible to the
+    // per-user permanent list. Bind the same value used for expires_at.
+    .bind(is_permanent)
     .bind(req.ppv_price_yeet)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
@@ -223,7 +228,13 @@ pub async fn unlike_post(
     let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {
         uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()))?
     } else {
-        auth.address.parse::<Uuid>().unwrap_or(Uuid::nil())
+        // Wallet users must be resolved via the DB; parsing a 0x address as a
+        // UUID always failed and fell back to Uuid::nil(), so the DELETE
+        // matched nothing and wallet users could never unlike (200 OK, no-op).
+        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+            .bind(&auth.address)
+            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
     sqlx::query(
@@ -377,7 +388,7 @@ pub async fn add_comment(
     Path(id): Path<Uuid>,
     Json(req): Json<AddCommentRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
-    if req.content.trim().is_empty() || req.content.len() > 280 {
+    if req.content.trim().is_empty() || req.content.trim().chars().count() > 280 {
         return Err(AppError::Validation("Comment must be 1-280 chars".into()));
     }
     // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
