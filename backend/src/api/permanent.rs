@@ -48,7 +48,9 @@ pub async fn update_post_visibility(
     let user_id = resolve_caller_id(&state, &auth).await?;
 
     let result = sqlx::query(
-        "UPDATE posts SET visibility = $1
+        // Cast the bound text to the post_visibility ENUM — a plain text
+        // parameter can't be assigned to an enum column without the cast.
+        "UPDATE posts SET visibility = $1::post_visibility
          WHERE id = $2 AND author_id = $3 AND is_permanent = TRUE"
     )
     .bind(&req.visibility)
@@ -192,9 +194,12 @@ pub async fn get_permanent_posts(
     } else { false };
 
     let posts = sqlx::query_as::<_, (Uuid, String, Option<String>, String, chrono::DateTime<chrono::Utc>, i64, Option<i32>)>(
-        "SELECT id, content, media_url, COALESCE(visibility, 'public'), created_at, like_count, repost_count
+        // visibility is the post_visibility ENUM — cast to text or sqlx
+        // can't decode it into a Rust String (was a 500 whenever the list
+        // was non-empty).
+        "SELECT id, content, media_url, COALESCE(visibility::text, 'public'), created_at, like_count, repost_count
          FROM posts WHERE author_id = $1 AND is_permanent = TRUE AND is_removed = FALSE AND deleted_at IS NULL
-         AND ($2 = TRUE OR COALESCE(visibility, 'public') = 'public')
+         AND ($2 = TRUE OR COALESCE(visibility::text, 'public') = 'public')
          AND ($3 = TRUE OR is_adult = FALSE)
          ORDER BY created_at DESC"
     )
@@ -235,7 +240,8 @@ pub async fn get_my_permanent_posts(
     };
 
     let posts = sqlx::query_as::<_, (Uuid, String, Option<String>, String, chrono::DateTime<chrono::Utc>, i64, Option<i32>)>(
-        "SELECT id, content, media_url, COALESCE(visibility, 'public'), created_at, like_count, repost_count
+        // visibility is the post_visibility ENUM — cast to text (see above).
+        "SELECT id, content, media_url, COALESCE(visibility::text, 'public'), created_at, like_count, repost_count
          FROM posts
          WHERE author_id = $1 AND is_permanent = TRUE
            AND is_removed = FALSE AND deleted_at IS NULL
