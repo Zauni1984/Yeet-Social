@@ -87,6 +87,7 @@ pub async fn get_feed(
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
           WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
+            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours')
             AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                              WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
                                 OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"

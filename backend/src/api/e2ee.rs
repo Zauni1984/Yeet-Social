@@ -412,23 +412,31 @@ pub async fn get_prekey_bundles(
         .bind(id).bind(&device_id)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
 
-        // Claim one OTP for this device, atomically.
-        let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
-        let otp: Option<(Uuid, i32, String)> = sqlx::query_as(
-            "SELECT id, key_id, public_key FROM one_time_prekeys
-              WHERE user_id = $1 AND device_id = $2 AND used_at IS NULL
-              ORDER BY created_at ASC
-              LIMIT 1
-              FOR UPDATE SKIP LOCKED"
-        )
-        .bind(id).bind(&device_id)
-        .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
-        if let Some((otp_id, _, _)) = &otp {
-            sqlx::query("UPDATE one_time_prekeys SET used_at = NOW() WHERE id = $1")
-                .bind(otp_id)
-                .execute(&mut *tx).await.map_err(AppError::Database)?;
-        }
-        tx.commit().await.map_err(AppError::Database)?;
+        // Only burn a one-time prekey for devices that actually have an
+        // active signed prekey — otherwise the sender can't start a session
+        // with this device anyway and we'd just be draining its OTP pool on
+        // every fetch (the bundle would carry an OTP but no signed prekey).
+        let otp: Option<(Uuid, i32, String)> = if signed.is_some() {
+            let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+            let claimed: Option<(Uuid, i32, String)> = sqlx::query_as(
+                "SELECT id, key_id, public_key FROM one_time_prekeys
+                  WHERE user_id = $1 AND device_id = $2 AND used_at IS NULL
+                  ORDER BY created_at ASC
+                  LIMIT 1
+                  FOR UPDATE SKIP LOCKED"
+            )
+            .bind(id).bind(&device_id)
+            .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
+            if let Some((otp_id, _, _)) = &claimed {
+                sqlx::query("UPDATE one_time_prekeys SET used_at = NOW() WHERE id = $1")
+                    .bind(otp_id)
+                    .execute(&mut *tx).await.map_err(AppError::Database)?;
+            }
+            tx.commit().await.map_err(AppError::Database)?;
+            claimed
+        } else {
+            None
+        };
 
         out.push(DeviceBundle {
             device_id,

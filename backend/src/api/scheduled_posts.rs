@@ -56,7 +56,7 @@ pub async fn create(
     Json(req): Json<ScheduleRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
     let content = req.content.trim();
-    if content.is_empty() || content.len() > 280 {
+    if content.is_empty() || content.chars().count() > 280 {
         return Err(AppError::Validation("Post content must be 1-280 chars".into()));
     }
     // Minimum 60s in the future to avoid an instant-publish trick that
@@ -79,7 +79,9 @@ pub async fn create(
     .bind(req.is_adult.unwrap_or(false))
     .bind(req.is_nft.unwrap_or(false))
     .bind(req.nft_price_yeet)
-    .bind(req.is_permanent.unwrap_or(false))
+    // Mirror create_post: an NFT scheduled post is permanent too, so the
+    // published row lands in the permanent list (not just the 24h feed).
+    .bind(req.is_permanent.unwrap_or(false) || req.is_nft.unwrap_or(false))
     .bind(req.ppv_price_yeet)
     .bind(req.publish_at)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;

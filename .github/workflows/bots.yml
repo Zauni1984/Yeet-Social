@@ -1,0 +1,42 @@
+name: Test Bots — daily activity
+
+on:
+  schedule:
+    # Daily at 09:13 UTC (off the :00 mark to avoid the cron stampede).
+    - cron: '13 9 * * *'
+  workflow_dispatch:
+    inputs:
+      bot_count:
+        description: 'Number of bots to run'
+        required: false
+        default: '5'
+
+concurrency:
+  group: yeet-bots
+  cancel-in-progress: false
+
+jobs:
+  run-bots:
+    name: Run Yeet test bots
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        working-directory: bots
+        run: npm install --no-audit --no-fund
+
+      - name: Run bots
+        working-directory: bots
+        env:
+          BASE_URL: ${{ vars.BOT_BASE_URL || 'https://justyeet.it' }}
+          # Set a repo secret BOT_SEED (a BIP-39 mnemonic) to keep the bot
+          # identities private + stable. Without it the script falls back to a
+          # built-in default seed (fine for a quick test, public addresses).
+          BOT_SEED: ${{ secrets.BOT_SEED }}
+          BOT_COUNT: ${{ github.event.inputs.bot_count || '5' }}
+        run: npm start

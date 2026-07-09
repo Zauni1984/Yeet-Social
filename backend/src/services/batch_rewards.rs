@@ -74,23 +74,39 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 
     info!("Minting {} reward records on BSC...", rows.len());
 
-    // Build arrays for batchMintRewards(address[], uint256[], string[])
-    let recipients: Vec<Address> = rows.iter()
-        .filter_map(|r| r.wallet_address.as_ref())
-        .map(|w| w.parse::<Address>())
-        .collect::<Result<Vec<ethers::types::Address>, _>>().map_err(|e| anyhow::anyhow!(e))?;
+    // Build arrays for batchMintRewards(address[], uint256[], string[]) in a
+    // SINGLE pass so recipients/amounts/actions can never desync, and track
+    // exactly which reward ids made it into the transaction so we only mark
+    // those minted. Previously `recipients` used filter_map while
+    // amounts/actions iterated every row — a future SQL edit dropping the
+    // `wallet_address IS NOT NULL` guard would have minted the wrong amount
+    // to the wrong address, and all ids were marked minted regardless.
+    let mut recipients: Vec<Address> = Vec::with_capacity(rows.len());
+    let mut amounts: Vec<U256> = Vec::with_capacity(rows.len());
+    let mut actions: Vec<String> = Vec::with_capacity(rows.len());
+    let mut included_ids: Vec<uuid::Uuid> = Vec::with_capacity(rows.len());
+    for r in &rows {
+        let Some(wallet) = r.wallet_address.as_ref() else { continue; };
+        let addr = match wallet.parse::<Address>() {
+            Ok(a) => a,
+            Err(e) => { warn!("batch-rewards: skip reward {} — bad wallet {wallet}: {e}", r.id); continue; }
+        };
+        let yeet: f64 = r.amount.unwrap_or(0.0);
+        if !yeet.is_finite() || yeet < 0.0 {
+            warn!("batch-rewards: skip reward {} — invalid amount {yeet}", r.id);
+            continue;
+        }
+        let wei = (yeet * 1e18) as u128; // non-negative + finite, checked above
+        recipients.push(addr);
+        amounts.push(U256::from(wei));
+        actions.push(r.action.clone().unwrap_or_default());
+        included_ids.push(r.id);
+    }
 
-    let amounts: Vec<U256> = rows.iter()
-        .map(|r| {
-            let yeet: f64 = r.amount.unwrap_or(0.0);
-            let wei = (yeet * 1e18) as u128;
-            U256::from(wei)
-        })
-        .collect::<Vec<_>>();
-
-    let actions: Vec<String> = rows.iter()
-        .map(|r| r.action.clone().unwrap_or_default())
-        .collect::<Vec<String>>();
+    if recipients.is_empty() {
+        info!("No mintable rewards after validation.");
+        return Ok(());
+    }
 
     // Set up signer
     let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
@@ -122,17 +138,16 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let tx_hash = format!("{:?}", tx.transaction_hash);
     info!("Batch mint tx: {}", tx_hash);
 
-    // Mark all rewarded rows with the tx hash
-    let ids: Vec<uuid::Uuid> = rows.iter().map(|r| r.id).collect::<Vec<_>>();
+    // Mark ONLY the rows actually included in the transaction.
     sqlx::query!(
         "UPDATE token_rewards SET tx_hash = $1 WHERE id = ANY($2)",
         tx_hash,
-        &ids,
+        &included_ids,
     )
     .execute(&state.db.pool)
     .await?;
 
-    info!("Marked {} rewards as minted.", ids.len());
+    info!("Marked {} rewards as minted.", included_ids.len());
     Ok(())
 }
 
@@ -397,7 +412,10 @@ pub async fn start_scheduled_publish_job(state: AppState) {
             .bind(row.media_url.as_deref())
             .bind(expires_at)
             .bind(row.is_adult).bind(row.is_nft).bind(row.nft_price_yeet)
-            .bind(row.is_permanent).bind(row.ppv_price_yeet)
+            // Store computed permanence (matches expires_at above) so an NFT
+            // scheduled post materialises into the permanent list, not just
+            // the 24h feed.
+            .bind(row.is_permanent || row.is_nft).bind(row.ppv_price_yeet)
             .bind(row.publish_at)
             .execute(&mut *tx).await;
             if let Err(e) = insert {
