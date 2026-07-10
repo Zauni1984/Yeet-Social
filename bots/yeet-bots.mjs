@@ -155,16 +155,36 @@ async function ensureProfile(token, persona) {
   }).catch(() => {});
 }
 
-async function postSomething(token) {
+async function postSomething(token, forcePermanent = false) {
   const content = pick(TOPICS);
-  // ~15% of posts are permanent so the Permanent Posts page gets exercised.
-  const is_permanent = Math.random() < 0.15;
+  // ~15% of posts are permanent so the Permanent Posts page gets exercised
+  // (bot #0 always posts permanent, for the end-to-end verification below).
+  const is_permanent = forcePermanent || Math.random() < 0.15;
   const res = await api('/api/v1/posts', {
     method: 'POST',
     token,
     body: { content, is_adult: false, media_url: null, is_nft: false, is_permanent },
   });
   return { ok: res.ok, status: res.status, content, is_permanent, id: res.data?.data || null };
+}
+
+// End-to-end check: does a freshly-created permanent post actually show up in
+// the owner's /me/permanent list? Logs a clear PASS/FAIL line.
+async function verifyPermanent(token, expectedId) {
+  const res = await api('/api/v1/me/permanent', { token });
+  if (!res.ok) {
+    console.log(`[verify] /me/permanent FAILED status=${res.status}`);
+    return false;
+  }
+  const list = res.data?.data || [];
+  const ids = list.map((p) => String(p.id));
+  const present = expectedId != null && ids.includes(String(expectedId));
+  console.log(
+    `[verify] /me/permanent returned ${list.length} post(s); ` +
+    `just-posted permanent id ${present ? 'FOUND ✅' : 'MISSING ❌'} ` +
+    `(owner_id=${res.data?.owner_id || '?'})`
+  );
+  return present;
 }
 
 async function fetchFeed(token) {
@@ -196,12 +216,18 @@ async function main() {
       bot.token = token;
       bot.address = address;
       await ensureProfile(token, bot.persona);
-      const posted = await postSomething(token);
+      const forcePermanent = bot.i === 0; // bot #0 always posts permanent
+      const posted = await postSomething(token, forcePermanent);
       console.log(
         `[${bot.persona.name}] login ok ${address.slice(0, 8)}… ` +
         `post=${posted.ok ? 'ok' : 'FAIL(' + posted.status + ')'}` +
         `${posted.is_permanent ? ' 📌' : ''} "${posted.content.slice(0, 40)}"`
       );
+      // Verify the permanent-posts pipeline end-to-end on bot #0.
+      if (forcePermanent && posted.ok) {
+        await sleep(500);
+        await verifyPermanent(token, posted.id);
+      }
       active.push(bot);
     } catch (e) {
       console.log(`[${bot.persona.name}] FAILED: ${e.message}`);
