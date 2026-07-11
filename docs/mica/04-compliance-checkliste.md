@@ -34,7 +34,9 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | **F1/F2** — On-Chain-YEET-Zahlungen strikt Wallet↔Wallet; nie interne YEET-Gutschrift; sonst Punkte oder Feature aus | Dev + Anwalt | offen |
 | ☐ | **F3** — Paper Wallets als On-Chain-Escrow (kein Admin-Sweep, nicht upgradeable) + Betrags-/Rate-Limits; Alt-Ledger einfrieren | Dev | offen |
 | ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
-| ☐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | offen |
+| ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | **Design + Contract-Sourcen + Tests erstellt** (`contracts/src`, Doc 07); Compile/Audit offen |
+| ☐ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) — in dieser Umgebung nicht möglich (forge/OZ fehlen) | Dev | offen |
+| ☐ | `Deploy.s.sol` um beide Contracts erweitern; Ownership → Multisig (Ownable2Step) | Dev | offen |
 | ☐ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | offen |
 | ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
 

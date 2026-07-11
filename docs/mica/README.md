@@ -17,6 +17,7 @@
 | [04-compliance-checkliste.md](04-compliance-checkliste.md) | Abarbeitbare Checkliste mit Verantwortlichkeiten | Entwurf |
 | [05-zielarchitektur-non-custodial.md](05-zielarchitektur-non-custodial.md) | Zielarchitektur „Punkte + Direktauszahlung" (non-custodial) inkl. MiCA-Bewertung und Leitplanken | Entwurf |
 | [06-leitplanken-validierung.md](06-leitplanken-validierung.md) | Adversariale Prüfung der Leitplanken L1–L7 (Aufsichts-/Anwaltsperspektive) + Nachbarregime + Funktionsanpassungen F1–F8 | Entwurf |
+| [07-contracts-design.md](07-contracts-design.md) | Design von `YeetPayments` + `PaperWalletEscrow` (Solidity), Guardrail-Mapping, Front-Running-Schutz, Client-/Indexer-Integration | Entwurf |
 
 ## Wie diese Dokumente gepflegt werden
 
