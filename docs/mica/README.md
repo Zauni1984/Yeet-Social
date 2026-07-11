@@ -18,6 +18,7 @@
 | [05-zielarchitektur-non-custodial.md](05-zielarchitektur-non-custodial.md) | Zielarchitektur „Punkte + Direktauszahlung" (non-custodial) inkl. MiCA-Bewertung und Leitplanken | Entwurf |
 | [06-leitplanken-validierung.md](06-leitplanken-validierung.md) | Adversariale Prüfung der Leitplanken L1–L7 (Aufsichts-/Anwaltsperspektive) + Nachbarregime + Funktionsanpassungen F1–F8 | Entwurf |
 | [07-contracts-design.md](07-contracts-design.md) | Design von `YeetPayments` + `PaperWalletEscrow` (Solidity), Guardrail-Mapping, Front-Running-Schutz, Client-/Indexer-Integration | Entwurf |
+| [08-backend-indexer.md](08-backend-indexer.md) | Umbau Off-Chain-Buchung → On-Chain-Event-Indexing (Architektur, Migration 0037, Rust-Skeleton, Endpoint-Umbau) | Entwurf |
 
 ## Wie diese Dokumente gepflegt werden
 

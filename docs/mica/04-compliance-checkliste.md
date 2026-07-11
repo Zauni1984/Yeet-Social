@@ -36,7 +36,10 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
 | ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | **Design + Contract-Sourcen + Tests erstellt** (`contracts/src`, Doc 07); Compile/Audit offen |
 | ☐ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) — in dieser Umgebung nicht möglich (forge/OZ fehlen) | Dev | offen |
-| ☐ | `Deploy.s.sol` um beide Contracts erweitern; Ownership → Multisig (Ownable2Step) | Dev | offen |
+| ☑ | `Deploy.s.sol` um `YeetPayments` + `PaperWalletEscrow` erweitern | Dev | erledigt (dieser PR) |
+| ☐ | Nach Deploy: Ownership → Multisig übertragen (Ownable2Step, transferOwnership + acceptOwnership) | Dev | offen |
+| ☑ | Backend-Indexer geplant + Migration 0037 (idempotente Event-Verarbeitung); Rust-Skeleton in Doc 08 | Dev | Design erledigt; Wiring nach Contract-Deploy |
+| ☐ | Chain-ID-Inkonsistenz behoben (Frontend `window.YEET_CHAIN` + Backend `YEET_CHAIN_ID`, Default Mainnet) | Dev | erledigt (dieser PR) |
 | ☐ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | offen |
 | ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
 
