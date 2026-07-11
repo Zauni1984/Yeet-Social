@@ -31,7 +31,10 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 
 | ☐ | Aufgabe | Owner | Status |
 | --- | --- | --- | --- |
-| ☐ | **F1/F2** — On-Chain-YEET-Zahlungen strikt Wallet↔Wallet; nie interne YEET-Gutschrift; sonst Punkte oder Feature aus | Dev + Anwalt | offen |
+| ☑ | **Punkte-Modell** — `yeet_token_balance` = Punkte; Rewards gutgeschrieben statt auto-gemintet; Auto-Mint der Engagement-Rewards gestoppt (Migration 0038) | Dev | erledigt (dieser PR) |
+| ☑ | **One-way Conversion** — `POST /api/v1/points/convert` (Punkte→YEET an verifizierte externe Wallet, kein Rückweg) | Dev | erledigt (dieser PR) |
+| ☑ | **Eigene Wallets raus** — Frontend generiert keine Wallet/Seed mehr bei Registrierung; Backend ignoriert `wallet_address` beim Register; Wallet nur noch via Link-Flow | Dev | erledigt (dieser PR) |
+| ☐ | **F1/F2** — On-Chain-YEET-Zahlungen strikt Wallet↔Wallet (nach Contract-Deploy) | Dev + Anwalt | offen |
 | ☐ | **F3** — Paper Wallets als On-Chain-Escrow (kein Admin-Sweep, nicht upgradeable) + Betrags-/Rate-Limits; Alt-Ledger einfrieren | Dev | offen |
 | ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
 | ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | **Design + Contract-Sourcen + Tests erstellt** (`contracts/src`, Doc 07); Compile/Audit offen |

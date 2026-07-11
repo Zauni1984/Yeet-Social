@@ -11,6 +11,7 @@ pub mod middleware;
 pub mod posts;
 pub mod tips;
 pub mod tokens;
+pub mod points;
 pub mod users;
 pub mod boards;
 pub mod notifications;

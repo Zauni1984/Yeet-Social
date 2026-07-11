@@ -57,11 +57,15 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         action: Option<String>,
         amount: Option<f64>,
     }
+    // Only user-initiated POINT→YEET conversions are minted on-chain
+    // (docs/mica/05, one-way). Engagement rewards are points and never
+    // auto-mint. The payout target is the user's verified EXTERNAL wallet.
     let rows: Vec<RewardRow> = sqlx::query_as!(
         RewardRow,
         r#"SELECT r.id as "id: uuid::Uuid", u.wallet_address, r.action::text as action, r.amount::float8 as amount
         FROM token_rewards r JOIN users u ON u.id = r.user_id
-        WHERE r.tx_hash IS NULL AND u.wallet_address IS NOT NULL
+        WHERE r.tx_hash IS NULL AND r.kind = 'conversion' AND r.status = 'pending'
+          AND u.wallet_address IS NOT NULL
         ORDER BY r.created_at ASC LIMIT 500"#
     )
     .fetch_all(&state.db.pool)
@@ -144,7 +148,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 
     // Mark ONLY the rows actually included in the transaction.
     sqlx::query!(
-        "UPDATE token_rewards SET tx_hash = $1 WHERE id = ANY($2)",
+        "UPDATE token_rewards SET tx_hash = $1, status = 'minted' WHERE id = ANY($2)",
         tx_hash,
         &included_ids,
     )
