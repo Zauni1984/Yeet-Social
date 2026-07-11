@@ -108,9 +108,13 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         return Ok(());
     }
 
-    // Set up signer
+    // Set up signer. Chain id comes from env so the backend and the
+    // frontend (window.YEET_CHAIN) can be kept in lock-step; default 56
+    // (BSC Mainnet) matches the default RPC below.
+    let chain_id: u64 = std::env::var("YEET_CHAIN_ID")
+        .ok().and_then(|s| s.parse().ok()).unwrap_or(56);
     let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
-        .with_chain_id(56u64); // BSC mainnet chain ID
+        .with_chain_id(chain_id);
 
     let provider = Provider::<Http>::try_from(
         std::env::var("BSC_RPC_URL")

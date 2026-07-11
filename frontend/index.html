@@ -520,8 +520,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <div style="display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:14px" data-i18n="settings.network">Network</span>
           <select id="settingNetwork" onchange="applySettings()" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:13px">
-            <option value="97">BSC Testnet</option>
             <option value="56">BSC Mainnet</option>
+            <option value="97">BSC Testnet</option>
           </select>
         </div>
       </div>
@@ -1692,6 +1692,46 @@ async function likePost(id){
   }
 }
 let connectedWallet=null,connectedAddress=null;
+
+// ── Single source of truth for the target chain ──────────────────────────
+// The whole app must target ONE chain. Previously the on-chain tip/login
+// paths hardcoded BSC Testnet (0x61) while the backend reward minter used
+// BSC Mainnet (chain 56) — tokens moved on different networks. This config
+// is the ONE switch. Default = BSC Mainnet, matching the backend
+// (batch_rewards uses chain 56, .env uses the mainnet RPC).
+//
+// To move everything to testnet, flip this single object to the 0x61 values
+// and set `token` to the testnet YEET address. Keep it in sync with the
+// backend YEET_CHAIN_ID / YEET_TOKEN_ADDRESS env vars.
+window.YEET_CHAIN = window.YEET_CHAIN || {
+  idHex: '0x38',            // 56 = BSC Mainnet
+  name: 'BNB Smart Chain',
+  rpc: 'https://bsc-dataseed.binance.org/',
+  explorer: 'https://bscscan.com',
+  nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+  // TODO(dev): set the deployed mainnet YEET token address (must match the
+  // backend YEET_TOKEN_ADDRESS). Empty → on-chain token transfers disabled.
+  token: ''
+};
+
+// Ensure the connected wallet is on YEET_CHAIN; adds it if unknown.
+async function ensureYeetChain(provider){
+  provider = provider || window.ethereum;
+  if(!provider) throw new Error('No wallet provider');
+  var c = window.YEET_CHAIN;
+  var current = await provider.request({ method:'eth_chainId' });
+  if(current === c.idHex) return;
+  try{
+    await provider.request({ method:'wallet_switchEthereumChain', params:[{ chainId:c.idHex }] });
+  }catch(e){
+    if(e && e.code === 4902){
+      await provider.request({ method:'wallet_addEthereumChain', params:[{
+        chainId:c.idHex, chainName:c.name, nativeCurrency:c.nativeCurrency,
+        rpcUrls:[c.rpc], blockExplorerUrls:[c.explorer]
+      }]});
+    } else { throw e; }
+  }
+}
 // Apply adult visibility from cached settings immediately, then refine from server
 (function(){
   try{
@@ -2134,8 +2174,8 @@ async function connectMetaMask(){
     const provider=eth.providers?.find(p=>p.isMetaMask)||eth;
     try{
       const accs=await provider.request({method:'eth_requestAccounts'});
-      // Add BSC Testnet (chainId 97 = 0x61)
-      try{await provider.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
+      // Ensure the wallet is on the single configured chain (YEET_CHAIN).
+      try{await ensureYeetChain(provider);}catch(e){}
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
@@ -2230,17 +2270,10 @@ async function sendTip(){
   // Try on-chain first if MetaMask available
   if(window.ethereum&&connectedAddress){
     try{
-      const chainId=await window.ethereum.request({method:'eth_chainId'});
-      if(chainId!=='0x61'){
-        // Switch to BSC Testnet
-        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
-          if(e2.code===4902){
-            await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
-          }
-        });
-      }
+      await ensureYeetChain(window.ethereum);
       // ERC-20 transfer: transfer(address,uint256)
-      const YEET_ADDR='0x0f1963829c6cc7A925E2F46949C3b248D69297c7';
+      const YEET_ADDR=window.YEET_CHAIN.token;
+      if(!YEET_ADDR){ throw new Error('YEET token address not configured for '+window.YEET_CHAIN.name); }
       const amtWei='0x'+BigInt(Math.floor(amount*1e18)).toString(16);
       // transfer(address to, uint256 amount) selector = 0xa9059cbb
       const toHex=toAddr.replace('0x','').toLowerCase().padStart(64,'0');
@@ -2484,7 +2517,7 @@ function applySettings(){
   const adult=document.getElementById('setting18')&&document.getElementById('setting18').checked;
   const autoload=document.getElementById('settingAutoload')&&document.getElementById('settingAutoload').checked;
   const network=document.getElementById('settingNetwork')&&document.getElementById('settingNetwork').value;
-  const s={adult,autoload,network:network||'97'};
+  const s={adult,autoload,network:network||'56'};
   localStorage.setItem('yeet_settings',JSON.stringify(s));
   if(adult)localStorage.setItem('yeet_adult','1');
   else localStorage.removeItem('yeet_adult');
@@ -5627,8 +5660,9 @@ function showExternalLinkWarning(e,url){
     try{
       var acc=await window.ethereum.request({method:'eth_requestAccounts'});
       var addr=(acc[0]||'').toLowerCase();
-      try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]})}
-      catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18}}]})}
+      // Login only needs a signature (no tx), but keep the wallet on the
+      // single configured chain so any follow-up on-chain action is correct.
+      try{await ensureYeetChain(window.ethereum);}catch(e){}
       var nr=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
       var nd=await nr.json();
       if(!nr.ok)throw new Error((nd.error&&nd.error.message)||'Nonce failed');
