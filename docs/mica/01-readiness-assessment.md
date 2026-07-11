@@ -103,6 +103,11 @@ Verwahrkonzept, Beschwerdemanagement etc. Das ist erheblich aufwendiger als ein 
    auszahlbaren Plattform-Punkten (kein Kryptowert); On-Chain-YEET strikt getrennt.
 3. **CASP-Zulassung anstreben** (bzw. Kooperation mit einem zugelassenen CASP/White-Label).
 
+**→ Präferierte Richtung (Gründer-Skizze): Kombination aus 1 + 2 — E-Mail-Nutzer verdienen
+Punkte, Umwandlung Punkte→YEET mit Direktauszahlung auf die Self-Custody-Wallet,
+On-Chain-Tips aus der Nutzer-Wallet, Paper Wallets als On-Chain-Escrow.
+Ausarbeitung + Bewertung + Leitplanken: [05-zielarchitektur-non-custodial.md](05-zielarchitektur-non-custodial.md).**
+
 ## 5. Emittenten-/Anbieterpflichten bei künftigem Angebot
 
 Falls die Tokenisierungsstrategie einen Verkauf oder ein Listing vorsieht, gilt zusätzlich:

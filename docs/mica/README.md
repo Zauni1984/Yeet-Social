@@ -15,6 +15,7 @@
 | [02-whitepaper-entwurf-yeet.md](02-whitepaper-entwurf-yeet.md) | Krypto-Whitepaper-Gerüst nach MiCA Titel II (Art. 6 + Anhang I) mit Platzhaltern | Entwurf |
 | [03-chain-assessment.md](03-chain-assessment.md) | BNB Chain unter MiCA + Alternativen-Matrix + Nachhaltigkeitsangaben | Entwurf |
 | [04-compliance-checkliste.md](04-compliance-checkliste.md) | Abarbeitbare Checkliste mit Verantwortlichkeiten | Entwurf |
+| [05-zielarchitektur-non-custodial.md](05-zielarchitektur-non-custodial.md) | Zielarchitektur „Punkte + Direktauszahlung" (non-custodial) inkl. MiCA-Bewertung und Leitplanken | Entwurf |
 
 ## Wie diese Dokumente gepflegt werden
 
