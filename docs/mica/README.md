@@ -16,6 +16,7 @@
 | [03-chain-assessment.md](03-chain-assessment.md) | BNB Chain unter MiCA + Alternativen-Matrix + Nachhaltigkeitsangaben | Entwurf |
 | [04-compliance-checkliste.md](04-compliance-checkliste.md) | Abarbeitbare Checkliste mit Verantwortlichkeiten | Entwurf |
 | [05-zielarchitektur-non-custodial.md](05-zielarchitektur-non-custodial.md) | Zielarchitektur „Punkte + Direktauszahlung" (non-custodial) inkl. MiCA-Bewertung und Leitplanken | Entwurf |
+| [06-leitplanken-validierung.md](06-leitplanken-validierung.md) | Adversariale Prüfung der Leitplanken L1–L7 (Aufsichts-/Anwaltsperspektive) + Nachbarregime + Funktionsanpassungen F1–F8 | Entwurf |
 
 ## Wie diese Dokumente gepflegt werden
 

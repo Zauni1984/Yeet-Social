@@ -238,14 +238,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
     YEET
   </a>
+  <!-- MiCA/UWG (Doc 06, F4): No fiat market price is shown for YEET because
+       there is no market for it. A fictitious price + fake 24h change would
+       be misleading. Reinstate a price only with a real, sourced market
+       price (exchange/pool) and a timestamp. -->
   <div id="yeetPriceWidget" style="display:flex;align-items:center;gap:6px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:20px;padding:4px 12px;margin-left:8px;cursor:default">
     <div style="line-height:1.2">
-      <div id="yPriceVal" style="font-size:12px;font-weight:700;color:#c8f026">$0.00100</div>
-      <div id="yPriceChg" style="font-size:10px;color:#888">+2.4% 24h</div>
-    </div>
-    <div style="display:flex;gap:2px;margin-left:2px" onclick="event.stopPropagation()">
-      <button id="btnUSD" onclick="window.setCur && setCur('USD')" class="cur-btn active">USD</button>
-      <button id="btnEUR" onclick="window.setCur && setCur('EUR')" class="cur-btn">EUR</button>
+      <div style="font-size:12px;font-weight:700;color:#c8f026">&#127774; YEET</div>
+      <div style="font-size:10px;color:#888" data-i18n="token.noMarketPrice">Utility token &middot; no market price</div>
     </div>
   </div>
   <div class="search">
@@ -367,26 +367,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <div class="modal-bg" id="nftModal" onclick="closeNFTModal(event)">
   <div class="modal modal-wrap" style="max-width:480px">
     <button class="modal-close" onclick="closeNFTModal()">&#10005;</button>
-    <h3>&#127987;&#65039; Mint NFT Post</h3>
-    <p>Turn your Yeet into an NFT on BNB Smart Chain</p>
+    <h3>&#127987;&#65039; <span data-i18n="nft.modalTitle">NFT posts</span></h3>
+    <p data-i18n="nft.comingSoon">On-chain NFT minting is not available yet. This feature is in preparation.</p>
     <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
       <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Post Content</div>
       <div id="nftPostPreview" style="font-size:14px;line-height:1.5;color:var(--text)">No post selected</div>
     </div>
-    <div style="margin-bottom:16px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">NFT Name</label>
-      <input id="nftName" type="text" placeholder="My YEET NFT #1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
-    </div>
-    <div style="margin-bottom:20px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Description</label>
-      <input id="nftDesc" type="text" placeholder="A unique moment on YEET Social" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
-    </div>
-    <div style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--muted)">
-      Contract: <span style="color:var(--yeet)">0x8F518F1B...060F51</span> (BSC Testnet)<br>
-      Mint fee: ~0.001 tBNB gas
-    </div>
-    <button onclick="mintNFT()" id="mintBtn" style="width:100%;background:linear-gradient(135deg,#c8f026,#8bc200);color:#000;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer">
-      &#127987;&#65039; Mint NFT
+    <input id="nftName" type="hidden" value="">
+    <input id="nftDesc" type="hidden" value="">
+    <button onclick="mintNFT()" id="mintBtn" disabled style="width:100%;background:#2a2a2a;color:#888;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:not-allowed">
+      &#128336; <span data-i18n="nft.comingSoonShort">Coming soon</span>
     </button>
     <div id="nftStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:20px"></div>
   </div>
@@ -997,8 +987,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.withdrawn':'Submission withdrawn.','verify.badgeUpdated':'Badge setting updated.',
       'verify.openSettings':'Open verification',
       // NFT modal
-      'nft.title':'Sell as NFT','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
-      'nft.priceLabel':'Price in YEET:','nft.customPrice':'Custom amount...','nft.priceSet':'NFT price: {price} YEET',
+      'nft.title':'Mark as permanent','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
+      'nft.priceLabel':'Price in YEET:','nft.customPrice':'Custom amount...','nft.priceSet':'Price: {price} YEET',
+      'nft.modalTitle':'NFT posts','nft.comingSoon':'On-chain NFT minting is not available yet. This feature is in preparation.','nft.comingSoonShort':'Coming soon',
+      'token.noMarketPrice':'Utility token · no market price',
       // PPV modal
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Image is only visible after payment. Earnings go directly to you.',
@@ -1267,8 +1259,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.usePhoto':'Foto stattdessen hochladen',
       'verify.noFace':'Kein Gesicht erkannt','verify.retry':'Erneut',
       'verify.imageNotStored':'Fotos werden verschlüsselt gespeichert, von einer Person geprüft und kurz nach der Entscheidung gelöscht.',
-      'nft.title':'Als NFT verkaufen','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
-      'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'NFT-Preis: {price} YEET',
+      'nft.title':'Als permanent markieren','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
+      'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'Preis: {price} YEET',
+      'nft.modalTitle':'NFT-Posts','nft.comingSoon':'On-Chain-NFT-Minting ist noch nicht verfügbar. Diese Funktion ist in Vorbereitung.','nft.comingSoonShort':'Demnächst',
+      'token.noMarketPrice':'Utility-Token · kein Marktpreis',
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Bild wird erst nach Bezahlung sichtbar. Einnahmen gehen direkt an dich.',
       'ppv.unlock':'Entsperren','ppv.unlockPrompt':'{price} YEET zum Entsperren','ppv.priceSet':'PPV-Preis: {price} YEET',
@@ -2368,44 +2362,18 @@ function openNFTModal(postId,content){
   document.getElementById('nftModal').classList.add('on');
 }
 function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal'))document.getElementById('nftModal').classList.remove('on');}
+// MiCA/UWG (Doc 06, F5): Real on-chain NFT minting does not exist yet
+// (backend mint_nft is a stub). The previous implementation sent a junk
+// transaction (calldata 0x12345678) to a hardcoded contract and then
+// unconditionally reported "NFT Minted successfully!" — fabricating a
+// result that never happened. That is disabled until a real, audited
+// mint pipeline (contract + tokenURI) is in place. Do NOT send any
+// transaction or claim a mint here.
 async function mintNFT(){
-  const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt||!_nftPostId){showToast('Connect wallet first');return;}
-  if(!window.ethereum){showToast('MetaMask not found');return;}
-  const btn=document.getElementById('mintBtn');
-  const status=document.getElementById('nftStatus');
-  btn.disabled=true;btn.textContent='Minting...';status.textContent='Preparing transaction...';
-  try{
-    await window.ethereum.request({method:'eth_requestAccounts'});
-    const chainId=await window.ethereum.request({method:'eth_chainId'});
-    if(chainId!=='0x61'){
-      status.textContent='Switching to BSC Testnet...';
-      await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
-        if(e2.code===4902){
-          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
-        }
-      });
-    }
-    const name=document.getElementById('nftName').value||'YEET NFT';
-    const desc=document.getElementById('nftDesc').value||'YEET Social Post';
-    const tokenURI='data:application/json;base64,'+btoa(JSON.stringify({name:name,description:desc,content:_nftPostContent,platform:'YEET Social',chainId:97}));
-    const from=(await window.ethereum.request({method:'eth_accounts'}))[0];
-    const data='0x'+[
-      'mintPost(address,string,string)',
-    ].map(function(){
-      var sel='0x'+[...new TextEncoder().encode('mintPost(address,string,string)')].reduce(function(a,b){return a+b.toString(16).padStart(2,'0');},'');
-      return sel.slice(2,10);
-    })[0];
-    status.textContent='Please confirm in MetaMask...';
-    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:from,to:NFT_CONTRACT_ADDR,data:'0x12345678',gas:'0x30000'}]});
-    status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'...</span>';
-    showToast('NFT Minted successfully!');
-    setTimeout(function(){closeNFTModal();},3000);
-  }catch(err){
-    status.innerHTML='<span style="color:var(--red)">'+err.message.slice(0,60)+'</span>';
-  }finally{
-    btn.disabled=false;btn.textContent='Mint NFT';
-  }
+  var status=document.getElementById('nftStatus');
+  var msg=(window.t?window.t('nft.comingSoon'):'NFT minting is not available yet.');
+  if(status){ status.innerHTML='<span style="color:var(--muted)">'+msg+'</span>'; }
+  if(typeof showToast==='function') showToast(msg,'error');
 }
 function openSettingsModal(){
   // Prefill from localStorage first (instant)
@@ -5517,19 +5485,12 @@ function showExternalLinkWarning(e,url){
   function _showOk(m){var e=document.getElementById('mOk');if(e){e.textContent=m;e.classList.add('show')}var er=document.getElementById('mErr');if(er)er.classList.remove('show')}
   function _clearMsg(){var e=document.getElementById('mErr'),o=document.getElementById('mOk');if(e)e.classList.remove('show');if(o)o.classList.remove('show')}
 
-  function _updatePrice(){
-    var s=_yState.cur==='USD'?'$':'&#8364;';
-    var p=_yState.cur==='USD'?_yState.usd:_yState.eur;
-    var fmt=p<.01?p.toFixed(6):p.toFixed(4);
-    var el=document.getElementById('yPriceVal');if(el)el.innerHTML=s+fmt;
-    var cel=document.getElementById('yPriceChg');
-    if(cel){cel.textContent=(_yState.chg>=0?'+':'')+_yState.chg.toFixed(2)+'% 24h';cel.style.color=_yState.chg>=0?'var(--green)':'var(--red)'}
-    var u=document.getElementById('btnUSD'),v=document.getElementById('btnEUR');
-    if(u)u.classList.toggle('active',_yState.cur==='USD');
-    if(v)v.classList.toggle('active',_yState.cur==='EUR');
-  }
+  // MiCA/UWG (Doc 06, F4): YEET has no market, so we deliberately show no
+  // fiat price. These stay as guarded no-ops so any legacy callers don't
+  // throw; reinstate real values only with a sourced market price.
+  function _updatePrice(){ /* no fiat price shown for YEET (see F4) */ }
 
-  async function _fetchEur(){try{var r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');if(r.ok){var d=await r.json();_yState.eurRate=d.rates.EUR||.92;_yState.eur=+(_yState.usd*_yState.eurRate).toFixed(8);_updatePrice()}}catch(e){}}
+  async function _fetchEur(){ /* disabled: no fiat conversion for a token without a market (F4) */ }
 
   function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
 

@@ -14,14 +14,29 @@ Legende: ☐ offen · ◐ in Arbeit · ☑ erledigt
 
 ## B. Sofort umsetzbar (unabhängig von A)
 
+Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplanken-validierung.md) §8 begründet.
+
 | ☐ | Aufgabe | Owner | Status |
 | --- | --- | --- | --- |
 | ☐ | Status quo einfrieren: kein Token-Verkauf, keine projektseitigen Liquidity-Pools, kein Listing bis Freigabe | Alle | offen |
 | ☐ | Token-Marketing-Regeln: fair, klar, nicht irreführend; keine Rendite-Versprechen; Kennzeichnung als Werbung | Marketing | offen |
-| ☐ | Chain-ID-Inkonsistenz klären (Login 0x61 Testnet vs. Minting Chain 56) | Dev | offen |
-| ☐ | Smart-Contract-Audit für YEET-Token beauftragen | Dev | offen |
-| ☐ | Mint-Berechtigung absichern (Multisig statt Einzel-Key für `batchMintRewards`) | Dev | offen |
+| ☑ | **F4** — fiktiven YEET-Kurs (hartcodiert) aus dem Header entfernt; „Utility-Token · kein Marktpreis" statt Fake-Preis | Dev | erledigt (dieser PR) |
+| ☑ | **F5** — irreführenden Fake-NFT-Mint (Junk-Tx + „NFT Minted!") deaktiviert; „NFT/verkaufen"-Wording entschärft | Dev | erledigt (dieser PR) |
+| ☐ | Chain-ID-Inkonsistenz klären (Login/Mint 0x61 Testnet vs. Reward-Minting Chain 56) | Dev | offen |
+| ☐ | **F8** — Token-Contract-Härtung: Supply-Cap, Mint nur Multisig, Owner-Funktionen minimiert; Audit | Dev | offen |
+| ☐ | **F6** — Sanktions-Screening der Zieladressen vor jedem Batch-Mint | Dev | offen |
 | ☐ | Dokumentation Off-Chain-Ledger ↔ On-Chain-Token (Anspruch, Umtausch, Auszahlung) | Dev + Anwalt | offen |
+
+## B2. Umsetzung Non-Custodial-Modell (nach Strategie-/Rechtsfreigabe — F1–F3, F7)
+
+| ☐ | Aufgabe | Owner | Status |
+| --- | --- | --- | --- |
+| ☐ | **F1/F2** — On-Chain-YEET-Zahlungen strikt Wallet↔Wallet; nie interne YEET-Gutschrift; sonst Punkte oder Feature aus | Dev + Anwalt | offen |
+| ☐ | **F3** — Paper Wallets als On-Chain-Escrow (kein Admin-Sweep, nicht upgradeable) + Betrags-/Rate-Limits; Alt-Ledger einfrieren | Dev | offen |
+| ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
+| ☐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | offen |
+| ☐ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | offen |
+| ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
 
 ## C. Bei Angebot/Listing (auslösende Ereignisse: Sale, CEX/DEX-Listing, Pool)
 
