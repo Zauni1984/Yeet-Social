@@ -53,6 +53,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     #[allow(dead_code)]
     struct RewardRow {
         id: uuid::Uuid,
+        user_id: uuid::Uuid,
         wallet_address: Option<String>,
         action: Option<String>,
         amount: Option<f64>,
@@ -62,7 +63,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // auto-mint. The payout target is the user's verified EXTERNAL wallet.
     let rows: Vec<RewardRow> = sqlx::query_as!(
         RewardRow,
-        r#"SELECT r.id as "id: uuid::Uuid", u.wallet_address, r.action::text as action, r.amount::float8 as amount
+        r#"SELECT r.id as "id: uuid::Uuid", r.user_id as "user_id: uuid::Uuid", u.wallet_address, r.action::text as action, r.amount::float8 as amount
         FROM token_rewards r JOIN users u ON u.id = r.user_id
         WHERE r.tx_hash IS NULL AND r.kind = 'conversion' AND r.status = 'pending'
           AND u.wallet_address IS NOT NULL
@@ -89,6 +90,8 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let mut amounts: Vec<U256> = Vec::with_capacity(rows.len());
     let mut actions: Vec<String> = Vec::with_capacity(rows.len());
     let mut included_ids: Vec<uuid::Uuid> = Vec::with_capacity(rows.len());
+    // (payout_id, user_id, wallet, yeet_amount) for ledger entries after mint.
+    let mut ledger_rows: Vec<(uuid::Uuid, uuid::Uuid, String, f64)> = Vec::with_capacity(rows.len());
     for r in &rows {
         let Some(wallet) = r.wallet_address.as_ref() else { continue; };
         let addr = match wallet.parse::<Address>() {
@@ -105,6 +108,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         amounts.push(U256::from(wei));
         actions.push(r.action.clone().unwrap_or_default());
         included_ids.push(r.id);
+        ledger_rows.push((r.id, r.user_id, wallet.clone(), yeet));
     }
 
     if recipients.is_empty() {
@@ -156,6 +160,24 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     .await?;
 
     info!("Marked {} rewards as minted.", included_ids.len());
+
+    // Ledger: one ONCHAIN_PAYOUT entry per included conversion, with the tx
+    // hash as evidence. Best-effort — a ledger hiccup must not undo a mint
+    // that already settled on-chain.
+    for (payout_id, user_id, wallet, yeet) in ledger_rows {
+        let _ = crate::services::ledger::record(&state.db.pool, crate::services::ledger::NewEntry {
+            tx_type: crate::services::ledger::tx_type::ONCHAIN_PAYOUT.into(),
+            asset: crate::services::ledger::asset::YEET.into(),
+            amount: yeet,
+            user_id: Some(user_id),
+            user_wallet: Some(wallet),
+            reference_type: Some("payout".into()),
+            reference_id: Some(payout_id.to_string()),
+            onchain_tx_hash: Some(tx_hash.clone()),
+            description: Some("points→YEET conversion paid on-chain".into()),
+            ..Default::default()
+        }).await;
+    }
     Ok(())
 }
 

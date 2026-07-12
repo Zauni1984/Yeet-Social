@@ -240,6 +240,17 @@ pub async fn create(
         .await
         .map_err(AppError::Database)?;
 
+    {
+        use crate::services::ledger::{self, NewEntry, tx_type, asset};
+        ledger::record_in_tx(&mut tx, NewEntry {
+            tx_type: tx_type::PAPER_WALLET_ISSUE.into(), asset: asset::POINTS.into(),
+            amount: -req.amount, user_id: Some(issuer_id),
+            reference_type: Some("paper_wallet".into()), reference_id: Some(serial.clone()),
+            description: Some(format!("paper wallet {serial} issued")),
+            ..Default::default()
+        }).await?;
+    }
+
     tx.commit().await.map_err(AppError::Database)?;
 
     Ok(Json(ApiResponse::ok(CreatePaperWalletResponse {
@@ -328,6 +339,17 @@ pub async fn redeem(
         .await
         .map_err(AppError::Database)?;
 
+    {
+        use crate::services::ledger::{self, NewEntry, tx_type, asset};
+        ledger::record_in_tx(&mut tx, NewEntry {
+            tx_type: tx_type::PAPER_WALLET_CLAIM.into(), asset: asset::POINTS.into(),
+            amount, user_id: Some(claimer_id), counterparty_id: Some(issuer_id),
+            reference_type: Some("paper_wallet".into()), reference_id: Some(serial.clone()),
+            description: Some(format!("paper wallet {serial} redeemed")),
+            ..Default::default()
+        }).await?;
+    }
+
     tx.commit().await.map_err(AppError::Database)?;
 
     // Tell the issuer their bill was just cashed in. Best-effort.
@@ -374,6 +396,17 @@ pub async fn void(
         .execute(&mut *tx)
         .await
         .map_err(AppError::Database)?;
+
+    {
+        use crate::services::ledger::{self, NewEntry, tx_type, asset};
+        ledger::record_in_tx(&mut tx, NewEntry {
+            tx_type: tx_type::PAPER_WALLET_REFUND.into(), asset: asset::POINTS.into(),
+            amount: r.2, user_id: Some(issuer_id),
+            reference_type: Some("paper_wallet".into()), reference_id: Some(r.1.clone()),
+            description: Some(format!("paper wallet {} voided (refund)", r.1)),
+            ..Default::default()
+        }).await?;
+    }
 
     tx.commit().await.map_err(AppError::Database)?;
 
