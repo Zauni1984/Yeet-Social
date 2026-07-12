@@ -204,6 +204,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/push/subscribe",        post(api::push::subscribe))
         .route("/api/v1/me/push/subscribe",        delete(api::push::unsubscribe))
         .route("/sw.js",                           get(api::push::service_worker_js))
+        .route("/api/v1/whitepaper.pdf",           get(api::push::whitepaper_pdf))
         .route("/api/v1/admin/message-reports",    get(api::message_reports::admin_list_reports))
         .route("/api/v1/admin/message-reports/:id/resolve",
                post(api::message_reports::admin_resolve_report))
