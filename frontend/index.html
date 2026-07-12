@@ -238,14 +238,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#c8f026"/><text x="16" y="22" text-anchor="middle" font-size="18" font-weight="900" fill="#000">Y</text></svg>
     YEET
   </a>
+  <!-- MiCA/UWG (Doc 06, F4): No fiat market price is shown for YEET because
+       there is no market for it. A fictitious price + fake 24h change would
+       be misleading. Reinstate a price only with a real, sourced market
+       price (exchange/pool) and a timestamp. -->
   <div id="yeetPriceWidget" style="display:flex;align-items:center;gap:6px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:20px;padding:4px 12px;margin-left:8px;cursor:default">
     <div style="line-height:1.2">
-      <div id="yPriceVal" style="font-size:12px;font-weight:700;color:#c8f026">$0.00100</div>
-      <div id="yPriceChg" style="font-size:10px;color:#888">+2.4% 24h</div>
-    </div>
-    <div style="display:flex;gap:2px;margin-left:2px" onclick="event.stopPropagation()">
-      <button id="btnUSD" onclick="window.setCur && setCur('USD')" class="cur-btn active">USD</button>
-      <button id="btnEUR" onclick="window.setCur && setCur('EUR')" class="cur-btn">EUR</button>
+      <div style="font-size:12px;font-weight:700;color:#c8f026">&#127774; YEET</div>
+      <div style="font-size:10px;color:#888" data-i18n="token.noMarketPrice">Utility token &middot; no market price</div>
     </div>
   </div>
   <div class="search">
@@ -260,7 +260,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:#000;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center">&#128100;</button>
     </div>
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px;position:relative">
-      <span class="balance-pill" id="balancePill" onclick="openWalletModal()" title="" data-i18n-title="balance.title">&#9889; <span id="balanceAmt">—</span> YEET</span>
+      <span class="balance-pill" id="balancePill" onclick="openWalletModal()" title="" data-i18n-title="balance.title">&#9889; <span id="balanceAmt">—</span> <span data-i18n="balance.unit">Points</span></span>
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
       <span class="nav-bell" id="navBell" onclick="window.toggleNotifPanel && window.toggleNotifPanel()" title="" data-i18n-title="notif.title" role="button" tabindex="0">&#128276;<span class="nav-bell-badge" id="navBellBadge" style="display:none">0</span></span>
       <span class="nav-avatar" id="navAvatar" onclick="window.showMyProfile && window.showMyProfile()" title="" data-i18n-title="profile.title">&#128100;</span>
@@ -367,26 +367,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <div class="modal-bg" id="nftModal" onclick="closeNFTModal(event)">
   <div class="modal modal-wrap" style="max-width:480px">
     <button class="modal-close" onclick="closeNFTModal()">&#10005;</button>
-    <h3>&#127987;&#65039; Mint NFT Post</h3>
-    <p>Turn your Yeet into an NFT on BNB Smart Chain</p>
+    <h3>&#127987;&#65039; <span data-i18n="nft.modalTitle">NFT posts</span></h3>
+    <p data-i18n="nft.comingSoon">On-chain NFT minting is not available yet. This feature is in preparation.</p>
     <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
       <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Post Content</div>
       <div id="nftPostPreview" style="font-size:14px;line-height:1.5;color:var(--text)">No post selected</div>
     </div>
-    <div style="margin-bottom:16px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">NFT Name</label>
-      <input id="nftName" type="text" placeholder="My YEET NFT #1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
-    </div>
-    <div style="margin-bottom:20px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Description</label>
-      <input id="nftDesc" type="text" placeholder="A unique moment on YEET Social" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;outline:none">
-    </div>
-    <div style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--muted)">
-      Contract: <span style="color:var(--yeet)">0x8F518F1B...060F51</span> (BSC Testnet)<br>
-      Mint fee: ~0.001 tBNB gas
-    </div>
-    <button onclick="mintNFT()" id="mintBtn" style="width:100%;background:linear-gradient(135deg,#c8f026,#8bc200);color:#000;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer">
-      &#127987;&#65039; Mint NFT
+    <input id="nftName" type="hidden" value="">
+    <input id="nftDesc" type="hidden" value="">
+    <button onclick="mintNFT()" id="mintBtn" disabled style="width:100%;background:#2a2a2a;color:#888;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:not-allowed">
+      &#128336; <span data-i18n="nft.comingSoonShort">Coming soon</span>
     </button>
     <div id="nftStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:20px"></div>
   </div>
@@ -530,8 +520,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <div style="display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:14px" data-i18n="settings.network">Network</span>
           <select id="settingNetwork" onchange="applySettings()" style="background:#111;border:1px solid var(--border);border-radius:8px;padding:4px 8px;color:var(--text);font-size:13px">
-            <option value="97">BSC Testnet</option>
             <option value="56">BSC Mainnet</option>
+            <option value="97">BSC Testnet</option>
           </select>
         </div>
       </div>
@@ -544,8 +534,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       </div>
       <div style="background:#1a1a1a;border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.account">Account</div>
-        <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; <span data-i18n="settings.linkWallet">Link Wallet</span></button>
-        <button onclick="verifyRecoveryPhrase()" style="width:100%;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.verifySeed">&#128279; Verify recovery phrase</button>
+        <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:#c6f13522;color:#c6f135;border:1px solid #c6f13544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none">&#128273; <span data-i18n="settings.linkWallet">Connect payout wallet</span></button>
+        <button onclick="openConvertPoints()" style="width:100%;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.convertPoints">&#128176; Convert points to YEET</button>
         <button onclick="adminSecretPrompt()" id="adminSecretBtn" style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.admin">&#128737; Admin secret</button>
         <a href="/admin" data-admin-link style="display:block;width:100%;box-sizing:border-box;text-align:center;background:transparent;color:#ff6666;border:1px solid #5a2a2a;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;text-decoration:none">&#128737; Open admin dashboard</a>
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
@@ -806,7 +796,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.title':'Settings','settings.content':'Content','settings.adult':'18+ content',
       'settings.back':'Back','settings.admin':'Admin secret',
       'settings.autoload':'Auto-load feed','settings.network':'Network','settings.account':'Account',
-      'settings.linkWallet':'Link Wallet','settings.disconnect':'Disconnect Wallet',
+      'settings.linkWallet':'Connect payout wallet','settings.disconnect':'Disconnect Wallet',
       'settings.sessions':'Devices & sessions','settings.sessionsLoad':'Loading…',
       'settings.sessionsEmpty':'No active sessions',
       'settings.sessionCurrent':'This device','settings.sessionRevoke':'Sign out',
@@ -923,7 +913,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.noFollowsHit':'No matches.','dm.skipped':'skipped',
       'dm.setupFailed':'Could not set up encrypted messages on this device.',
       'common.search':'Search...',
-      'balance.title':'Your YEET balance — click for wallet options',
+      'balance.title':'Your points balance — earn by posting, convert to YEET',
+      'balance.unit':'Points',
+      'settings.convertPoints':'Convert points to YEET',
+      'settings.verifyRetired':'Recovery phrases are managed by your own wallet app.',
+      'convert.needWallet':'Connect a payout wallet first (Settings → Connect payout wallet).',
+      'convert.prompt':'How many points do you want to convert to YEET? (1 point = 1 YEET)',
+      'convert.oneway':'One-way: points become on-chain YEET and cannot be converted back.',
+      'convert.min':'Minimum 100 points.',
+      'convert.queued':'Queued: {points} points → YEET to {wallet}. Paid on the next batch.',
       'notif.title':'Notifications','notif.empty':'No notifications yet.','notif.markAll':'Mark all read',
       'search.users':'People','search.posts':'Posts','search.empty':'No matches.',
       'admin.title':'Admin dashboard',
@@ -997,8 +995,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.withdrawn':'Submission withdrawn.','verify.badgeUpdated':'Badge setting updated.',
       'verify.openSettings':'Open verification',
       // NFT modal
-      'nft.title':'Sell as NFT','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
-      'nft.priceLabel':'Price in YEET:','nft.customPrice':'Custom amount...','nft.priceSet':'NFT price: {price} YEET',
+      'nft.title':'Mark as permanent','nft.subtitle':'Post will be stored permanently (no 24h expiry).',
+      'nft.priceLabel':'Price in YEET:','nft.customPrice':'Custom amount...','nft.priceSet':'Price: {price} YEET',
+      'nft.modalTitle':'NFT posts','nft.comingSoon':'On-chain NFT minting is not available yet. This feature is in preparation.','nft.comingSoonShort':'Coming soon',
+      'token.noMarketPrice':'Utility token · no market price',
       // PPV modal
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Image is only visible after payment. Earnings go directly to you.',
@@ -1086,7 +1086,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.title':'Einstellungen','settings.content':'Inhalt','settings.adult':'18+ Inhalt',
       'settings.back':'Zurück','settings.admin':'Admin-Secret',
       'settings.autoload':'Feed automatisch laden','settings.network':'Netzwerk','settings.account':'Konto',
-      'settings.linkWallet':'Wallet verknüpfen','settings.disconnect':'Wallet trennen',
+      'settings.linkWallet':'Auszahl-Wallet verbinden','settings.disconnect':'Wallet trennen',
       'settings.sessions':'Geräte & Sitzungen','settings.sessionsLoad':'Wird geladen…',
       'settings.sessionsEmpty':'Keine aktiven Sitzungen',
       'settings.sessionCurrent':'Dieses Gerät','settings.sessionRevoke':'Abmelden',
@@ -1201,7 +1201,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.noFollowsHit':'Keine Treffer.','dm.skipped':'übersprungen',
       'dm.setupFailed':'Verschlüsselte Nachrichten konnten auf diesem Gerät nicht eingerichtet werden.',
       'common.search':'Suchen...',
-      'balance.title':'Dein YEET-Guthaben — Klick für Wallet-Optionen',
+      'balance.title':'Dein Punkte-Guthaben — verdiene durch Posten, wandle in YEET um',
+      'balance.unit':'Punkte',
+      'settings.convertPoints':'Punkte in YEET umwandeln',
+      'settings.verifyRetired':'Wiederherstellungsphrasen verwaltet deine eigene Wallet-App.',
+      'convert.needWallet':'Verbinde zuerst eine Auszahl-Wallet (Einstellungen → Auszahl-Wallet verbinden).',
+      'convert.prompt':'Wie viele Punkte möchtest du in YEET umwandeln? (1 Punkt = 1 YEET)',
+      'convert.oneway':'Einbahnstraße: Punkte werden zu On-Chain-YEET und können nicht zurückgewandelt werden.',
+      'convert.min':'Mindestens 100 Punkte.',
+      'convert.queued':'Eingereiht: {points} Punkte → YEET an {wallet}. Auszahlung im nächsten Batch.',
       'notif.title':'Benachrichtigungen','notif.empty':'Noch keine Benachrichtigungen.','notif.markAll':'Alle gelesen',
       'search.users':'Personen','search.posts':'Posts','search.empty':'Keine Treffer.',
       'admin.title':'Admin-Dashboard',
@@ -1267,8 +1275,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.usePhoto':'Foto stattdessen hochladen',
       'verify.noFace':'Kein Gesicht erkannt','verify.retry':'Erneut',
       'verify.imageNotStored':'Fotos werden verschlüsselt gespeichert, von einer Person geprüft und kurz nach der Entscheidung gelöscht.',
-      'nft.title':'Als NFT verkaufen','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
-      'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'NFT-Preis: {price} YEET',
+      'nft.title':'Als permanent markieren','nft.subtitle':'Post wird dauerhaft gespeichert (keine 24h Ablaufzeit).',
+      'nft.priceLabel':'Preis in YEET:','nft.customPrice':'Freie Eingabe...','nft.priceSet':'Preis: {price} YEET',
+      'nft.modalTitle':'NFT-Posts','nft.comingSoon':'On-Chain-NFT-Minting ist noch nicht verfügbar. Diese Funktion ist in Vorbereitung.','nft.comingSoonShort':'Demnächst',
+      'token.noMarketPrice':'Utility-Token · kein Marktpreis',
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Bild wird erst nach Bezahlung sichtbar. Einnahmen gehen direkt an dich.',
       'ppv.unlock':'Entsperren','ppv.unlockPrompt':'{price} YEET zum Entsperren','ppv.priceSet':'PPV-Preis: {price} YEET',
@@ -1698,6 +1708,46 @@ async function likePost(id){
   }
 }
 let connectedWallet=null,connectedAddress=null;
+
+// ── Single source of truth for the target chain ──────────────────────────
+// The whole app must target ONE chain. Previously the on-chain tip/login
+// paths hardcoded BSC Testnet (0x61) while the backend reward minter used
+// BSC Mainnet (chain 56) — tokens moved on different networks. This config
+// is the ONE switch. Default = BSC Mainnet, matching the backend
+// (batch_rewards uses chain 56, .env uses the mainnet RPC).
+//
+// To move everything to testnet, flip this single object to the 0x61 values
+// and set `token` to the testnet YEET address. Keep it in sync with the
+// backend YEET_CHAIN_ID / YEET_TOKEN_ADDRESS env vars.
+window.YEET_CHAIN = window.YEET_CHAIN || {
+  idHex: '0x38',            // 56 = BSC Mainnet
+  name: 'BNB Smart Chain',
+  rpc: 'https://bsc-dataseed.binance.org/',
+  explorer: 'https://bscscan.com',
+  nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+  // TODO(dev): set the deployed mainnet YEET token address (must match the
+  // backend YEET_TOKEN_ADDRESS). Empty → on-chain token transfers disabled.
+  token: ''
+};
+
+// Ensure the connected wallet is on YEET_CHAIN; adds it if unknown.
+async function ensureYeetChain(provider){
+  provider = provider || window.ethereum;
+  if(!provider) throw new Error('No wallet provider');
+  var c = window.YEET_CHAIN;
+  var current = await provider.request({ method:'eth_chainId' });
+  if(current === c.idHex) return;
+  try{
+    await provider.request({ method:'wallet_switchEthereumChain', params:[{ chainId:c.idHex }] });
+  }catch(e){
+    if(e && e.code === 4902){
+      await provider.request({ method:'wallet_addEthereumChain', params:[{
+        chainId:c.idHex, chainName:c.name, nativeCurrency:c.nativeCurrency,
+        rpcUrls:[c.rpc], blockExplorerUrls:[c.explorer]
+      }]});
+    } else { throw e; }
+  }
+}
 // Apply adult visibility from cached settings immediately, then refine from server
 (function(){
   try{
@@ -1923,9 +1973,9 @@ async function refreshTokenBalance(){
     pill.title = res.status === 401 ? 'Session expired' : ('Balance API error '+res.status);
     return;
   }
-  // Server always returns yeet_balance even when zero; treat any non-
-  // number as zero to keep the formatter safe.
-  var raw = (res.data && res.data.yeet_balance);
+  // Points ledger (server field `points`, back-compat `yeet_balance`).
+  // Treat any non-number as zero to keep the formatter safe.
+  var raw = (res.data && (res.data.points != null ? res.data.points : res.data.yeet_balance));
   var n = typeof raw === 'number' && isFinite(raw) ? raw : 0;
   var pretty;
   if(n >= 1e6)      pretty = (n/1e6).toFixed(2).replace(/\.?0+$/, '') + 'm';
@@ -1937,7 +1987,7 @@ async function refreshTokenBalance(){
   // ("you have 0 YEET, top up to tip"), not broken.
   pill.style.borderColor = 'var(--yeet)';
   pill.style.color       = n > 0 ? 'var(--yeet)' : 'rgba(200,255,0,.55)';
-  pill.title = (window.t ? window.t('balance.title') : 'Your YEET balance');
+  pill.title = (window.t ? window.t('balance.title') : 'Your points balance');
   window._yeetBalance = n;
 }
 window.refreshTokenBalance = refreshTokenBalance;
@@ -2140,8 +2190,8 @@ async function connectMetaMask(){
     const provider=eth.providers?.find(p=>p.isMetaMask)||eth;
     try{
       const accs=await provider.request({method:'eth_requestAccounts'});
-      // Add BSC Testnet (chainId 97 = 0x61)
-      try{await provider.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://bsc-testnet-dataseed.bnbchain.org'],blockExplorerUrls:['https://testnet.bscscan.com']}]});}catch(e){}
+      // Ensure the wallet is on the single configured chain (YEET_CHAIN).
+      try{await ensureYeetChain(provider);}catch(e){}
       onConnected(accs[0],'MetaMask',provider);
     }catch(e){showToast('MetaMask: '+e.message);}
   }else if(eth){
@@ -2236,17 +2286,10 @@ async function sendTip(){
   // Try on-chain first if MetaMask available
   if(window.ethereum&&connectedAddress){
     try{
-      const chainId=await window.ethereum.request({method:'eth_chainId'});
-      if(chainId!=='0x61'){
-        // Switch to BSC Testnet
-        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
-          if(e2.code===4902){
-            await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
-          }
-        });
-      }
+      await ensureYeetChain(window.ethereum);
       // ERC-20 transfer: transfer(address,uint256)
-      const YEET_ADDR='0x0f1963829c6cc7A925E2F46949C3b248D69297c7';
+      const YEET_ADDR=window.YEET_CHAIN.token;
+      if(!YEET_ADDR){ throw new Error('YEET token address not configured for '+window.YEET_CHAIN.name); }
       const amtWei='0x'+BigInt(Math.floor(amount*1e18)).toString(16);
       // transfer(address to, uint256 amount) selector = 0xa9059cbb
       const toHex=toAddr.replace('0x','').toLowerCase().padStart(64,'0');
@@ -2368,44 +2411,18 @@ function openNFTModal(postId,content){
   document.getElementById('nftModal').classList.add('on');
 }
 function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal'))document.getElementById('nftModal').classList.remove('on');}
+// MiCA/UWG (Doc 06, F5): Real on-chain NFT minting does not exist yet
+// (backend mint_nft is a stub). The previous implementation sent a junk
+// transaction (calldata 0x12345678) to a hardcoded contract and then
+// unconditionally reported "NFT Minted successfully!" — fabricating a
+// result that never happened. That is disabled until a real, audited
+// mint pipeline (contract + tokenURI) is in place. Do NOT send any
+// transaction or claim a mint here.
 async function mintNFT(){
-  const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt||!_nftPostId){showToast('Connect wallet first');return;}
-  if(!window.ethereum){showToast('MetaMask not found');return;}
-  const btn=document.getElementById('mintBtn');
-  const status=document.getElementById('nftStatus');
-  btn.disabled=true;btn.textContent='Minting...';status.textContent='Preparing transaction...';
-  try{
-    await window.ethereum.request({method:'eth_requestAccounts'});
-    const chainId=await window.ethereum.request({method:'eth_chainId'});
-    if(chainId!=='0x61'){
-      status.textContent='Switching to BSC Testnet...';
-      await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]}).catch(async function(e2){
-        if(e2.code===4902){
-          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',nativeCurrency:{name:'tBNB',symbol:'tBNB',decimals:18},rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],blockExplorerUrls:['https://testnet.bscscan.com']}]});
-        }
-      });
-    }
-    const name=document.getElementById('nftName').value||'YEET NFT';
-    const desc=document.getElementById('nftDesc').value||'YEET Social Post';
-    const tokenURI='data:application/json;base64,'+btoa(JSON.stringify({name:name,description:desc,content:_nftPostContent,platform:'YEET Social',chainId:97}));
-    const from=(await window.ethereum.request({method:'eth_accounts'}))[0];
-    const data='0x'+[
-      'mintPost(address,string,string)',
-    ].map(function(){
-      var sel='0x'+[...new TextEncoder().encode('mintPost(address,string,string)')].reduce(function(a,b){return a+b.toString(16).padStart(2,'0');},'');
-      return sel.slice(2,10);
-    })[0];
-    status.textContent='Please confirm in MetaMask...';
-    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:from,to:NFT_CONTRACT_ADDR,data:'0x12345678',gas:'0x30000'}]});
-    status.innerHTML='<span style="color:var(--yeet)">NFT Minted! TX: '+txHash.slice(0,16)+'...</span>';
-    showToast('NFT Minted successfully!');
-    setTimeout(function(){closeNFTModal();},3000);
-  }catch(err){
-    status.innerHTML='<span style="color:var(--red)">'+err.message.slice(0,60)+'</span>';
-  }finally{
-    btn.disabled=false;btn.textContent='Mint NFT';
-  }
+  var status=document.getElementById('nftStatus');
+  var msg=(window.t?window.t('nft.comingSoon'):'NFT minting is not available yet.');
+  if(status){ status.innerHTML='<span style="color:var(--muted)">'+msg+'</span>'; }
+  if(typeof showToast==='function') showToast(msg,'error');
 }
 function openSettingsModal(){
   // Prefill from localStorage first (instant)
@@ -2482,6 +2499,40 @@ async function linkWalletToEmailUser(){
   }catch(e){showToast(window.t('toast.walletLinkAborted'));}
 }
 
+// One-way conversion: points → on-chain YEET paid to the user's linked
+// external wallet (docs/mica/05). Requires a connected payout wallet.
+async function openConvertPoints(){
+  const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt');
+  if(!jwt){ showToast(window.t('common.notLoggedIn'),'error'); return; }
+  // Confirm a payout wallet is linked first.
+  let me=null;
+  try{ me=(await (await fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt}})).json()).data; }catch(e){}
+  if(!me || !me.wallet_address){
+    showToast(window.t('convert.needWallet'),'error');
+    const b=document.getElementById('linkWalletBtn'); if(b){ b.style.display='block'; }
+    return;
+  }
+  const input=window.prompt(window.t('convert.prompt')+'\n('+window.t('convert.oneway')+')', '100');
+  if(input==null) return;
+  const pts=Math.floor(Number(input));
+  if(!isFinite(pts) || pts<100){ showToast(window.t('convert.min'),'error'); return; }
+  try{
+    const r=await fetch('/api/v1/points/convert',{method:'POST',cache:'no-store',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({points:pts})});
+    const d=await r.json();
+    if(!r.ok){
+      const code=(d.error&&d.error.message)||'';
+      if(code.indexOf('NO_WALLET_LINKED')>=0){ showToast(window.t('convert.needWallet'),'error'); return; }
+      showToast((code||window.t('common.error')),'error'); return;
+    }
+    const w=(d.data&&d.data.wallet_address)||me.wallet_address;
+    showToast(window.t('convert.queued',{points:pts,wallet:w.slice(0,6)+'…'+w.slice(-4)}),'success');
+    if(typeof refreshTokenBalance==="function") refreshTokenBalance();
+  }catch(e){ showToast(window.t('common.networkError'),'error'); }
+}
+window.openConvertPoints = openConvertPoints;
+
 async function exportMyData(){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
@@ -2516,7 +2567,7 @@ function applySettings(){
   const adult=document.getElementById('setting18')&&document.getElementById('setting18').checked;
   const autoload=document.getElementById('settingAutoload')&&document.getElementById('settingAutoload').checked;
   const network=document.getElementById('settingNetwork')&&document.getElementById('settingNetwork').value;
-  const s={adult,autoload,network:network||'97'};
+  const s={adult,autoload,network:network||'56'};
   localStorage.setItem('yeet_settings',JSON.stringify(s));
   if(adult)localStorage.setItem('yeet_adult','1');
   else localStorage.removeItem('yeet_adult');
@@ -5350,63 +5401,19 @@ function showExternalLinkWarning(e,url){
   // the legacy hash+LCG scheme that produced non-recoverable addresses.
   // Returns { words:[...], address:'0x...' }. Throws if ethers fails to
   // load (network) — caller surfaces a user-facing error.
+  // Non-custodial model (docs/mica/05): the platform no longer generates or
+  // derives wallets for users. These helpers are retired. Users bring their
+  // OWN external wallet (MetaMask/WalletConnect) for payouts; their recovery
+  // phrase is their wallet's concern, never the platform's.
   async function _generateWallet(){
-    var ethers = await _waitForEthers();
-    // 128 bits of crypto-strong entropy → 12-word BIP39 mnemonic with a
-    // valid checksum, identical to MetaMask / Trezor / Ledger.
-    var entropy = window.crypto.getRandomValues(new Uint8Array(16));
-    var hex = '0x';
-    for(var i=0;i<entropy.length;i++) hex += entropy[i].toString(16).padStart(2,'0');
-    var mnemonic = ethers.Mnemonic.fromEntropy(hex);
-    // HDNodeWallet.fromPhrase derives at the default Ethereum/BSC path
-    // m/44'/60'/0'/0/0 (BIP44), giving an address compatible with every
-    // EVM wallet on both testnet and mainnet.
-    var w = ethers.HDNodeWallet.fromPhrase(mnemonic.phrase);
-    return {
-      words: mnemonic.phrase.split(/\s+/),
-      address: w.address.toLowerCase()
-    };
+    throw new Error('Wallet generation removed — connect your own external wallet.');
   }
-
-  // Re-derive a wallet address from a seed phrase and compare to the
-  // expected address. Used by the verify-recovery-phrase flow so a user
-  // can confirm the words they wrote down really unlock the wallet on
-  // file. Tolerant of casing + extra whitespace.
-  async function _verifySeedMatches(words, expectedAddress){
-    try {
-      var ethers = await _waitForEthers();
-      var phrase = (Array.isArray(words) ? words.join(' ') : String(words)).trim().toLowerCase().replace(/\s+/g, ' ');
-      var w = ethers.HDNodeWallet.fromPhrase(phrase);
-      return w.address.toLowerCase() === String(expectedAddress || '').toLowerCase();
-    } catch(e){ return false; }
-  }
+  async function _verifySeedMatches(){ return false; }
   window._verifySeedMatches = _verifySeedMatches;
-
-  // User-facing self-check: enter the 12 words, compare against the
-  // wallet address the server has on file for this account. Catches
-  // mistyped / wrongly-written-down phrases before they matter.
-  window.verifyRecoveryPhrase = async function(){
-    var jwt = localStorage.getItem('yeet_jwt');
-    if(!jwt){ window.showToast(window.t('common.pleaseLogin'),'error'); return; }
-    var input = prompt(window.t('settings.verifySeedPrompt') ||
-      'Enter your 12-word recovery phrase to verify it unlocks your wallet:');
-    if(!input) return;
-    try {
-      var meR = await fetch('/api/v1/users/me', { headers:{ 'Authorization':'Bearer '+jwt } });
-      var me = (await meR.json()).data;
-      if(!me || !me.wallet_address){
-        window.showToast(window.t('settings.verifyNoWallet') ||
-          'No wallet address on file for this account.','error');
-        return;
-      }
-      var ok = await _verifySeedMatches(input, me.wallet_address);
-      window.showToast(ok
-        ? (window.t('settings.verifyOk') || '✓ Phrase matches your wallet')
-        : (window.t('settings.verifyFail') || '✗ Phrase does NOT match your wallet'),
-        ok ? 'success' : 'error');
-    } catch(e){
-      window.showToast(window.t('common.networkError'),'error');
-    }
+  window.verifyRecoveryPhrase = function(){
+    if(window.showToast) window.showToast(
+      window.t ? window.t('settings.verifyRetired') : 'Recovery phrases are managed by your own wallet app.',
+      'error');
   };
 
   // ---------- Admin moderation ----------
@@ -5517,19 +5524,12 @@ function showExternalLinkWarning(e,url){
   function _showOk(m){var e=document.getElementById('mOk');if(e){e.textContent=m;e.classList.add('show')}var er=document.getElementById('mErr');if(er)er.classList.remove('show')}
   function _clearMsg(){var e=document.getElementById('mErr'),o=document.getElementById('mOk');if(e)e.classList.remove('show');if(o)o.classList.remove('show')}
 
-  function _updatePrice(){
-    var s=_yState.cur==='USD'?'$':'&#8364;';
-    var p=_yState.cur==='USD'?_yState.usd:_yState.eur;
-    var fmt=p<.01?p.toFixed(6):p.toFixed(4);
-    var el=document.getElementById('yPriceVal');if(el)el.innerHTML=s+fmt;
-    var cel=document.getElementById('yPriceChg');
-    if(cel){cel.textContent=(_yState.chg>=0?'+':'')+_yState.chg.toFixed(2)+'% 24h';cel.style.color=_yState.chg>=0?'var(--green)':'var(--red)'}
-    var u=document.getElementById('btnUSD'),v=document.getElementById('btnEUR');
-    if(u)u.classList.toggle('active',_yState.cur==='USD');
-    if(v)v.classList.toggle('active',_yState.cur==='EUR');
-  }
+  // MiCA/UWG (Doc 06, F4): YEET has no market, so we deliberately show no
+  // fiat price. These stay as guarded no-ops so any legacy callers don't
+  // throw; reinstate real values only with a sourced market price.
+  function _updatePrice(){ /* no fiat price shown for YEET (see F4) */ }
 
-  async function _fetchEur(){try{var r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');if(r.ok){var d=await r.json();_yState.eurRate=d.rates.EUR||.92;_yState.eur=+(_yState.usd*_yState.eurRate).toFixed(8);_updatePrice()}}catch(e){}}
+  async function _fetchEur(){ /* disabled: no fiat conversion for a token without a market (F4) */ }
 
   function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
 
@@ -5666,8 +5666,9 @@ function showExternalLinkWarning(e,url){
     try{
       var acc=await window.ethereum.request({method:'eth_requestAccounts'});
       var addr=(acc[0]||'').toLowerCase();
-      try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x61'}]})}
-      catch(e){if(e.code===4902)await window.ethereum.request({method:'wallet_addEthereumChain',params:[{chainId:'0x61',chainName:'BSC Testnet',rpcUrls:['https://data-seed-prebsc-1-s1.binance.org:8545/'],nativeCurrency:{name:'BNB',symbol:'BNB',decimals:18}}]})}
+      // Login only needs a signature (no tx), but keep the wallet on the
+      // single configured chain so any follow-up on-chain action is correct.
+      try{await ensureYeetChain(window.ethereum);}catch(e){}
       var nr=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
       var nd=await nr.json();
       if(!nr.ok)throw new Error((nd.error&&nd.error.message)||'Nonce failed');
@@ -5704,6 +5705,11 @@ function showExternalLinkWarning(e,url){
       if(payload.email_verified===false)_showVerifyBanner(email);
     }catch(e){_showErr(e.message)}
   };
+  // Non-custodial model (docs/mica/05): the platform no longer generates a
+  // wallet for email accounts. Registration is a single step and creates a
+  // wallet-less account. Users earn POINTS; to cash out to YEET they link
+  // their OWN external wallet later (Settings → Connect wallet) and convert
+  // one-way. The old 3-step seed wizard (_generateWallet + confirm) is gone.
   window.regNext1 = async function(){
     var u=document.getElementById('rUser').value.trim();
     var e=document.getElementById('rEmail').value.trim();
@@ -5716,37 +5722,9 @@ function showExternalLinkWarning(e,url){
     if(!c||!c.checked){_showErr('Please accept the privacy policy (GDPR)');return}
     var btn = document.getElementById('regNext1Btn');
     if(btn){ btn.disabled = true; btn.dataset.oldText = btn.textContent; btn.textContent = '...'; }
-    try {
-      var gen = await _generateWallet();
-      _seedWords = gen.words;
-      _regData = {username:u, email:e, password:p, wallet_address: gen.address, display_name:u, consent:true};
-    } catch(err){
-      _showErr('Could not generate wallet (network).');
-      if(btn){ btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Next'; }
-      return;
-    }
-    if(btn){ btn.disabled = false; btn.textContent = btn.dataset.oldText || 'Next'; }
-    var grid=document.getElementById('seedGrid');
-    grid.innerHTML=_seedWords.map(function(w,i){return '<div style="background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:12px;display:flex;gap:5px"><span style="color:var(--muted);font-size:10px;min-width:16px">'+(i+1)+'.</span><span style="color:var(--yeet);font-weight:700">'+w+'</span></div>'}).join('');
-    document.getElementById('regStep1').style.display='none';
-    document.getElementById('regStep2').style.display='block';
-    _clearMsg();
-  };
-  window.regNext2 = function(){
-    var pos=[];while(pos.length<3){var p=Math.floor(Math.random()*12);if(pos.indexOf(p)<0)pos.push(p)}
-    pos.sort(function(a,b){return a-b});_verifyIdx=pos;
-    document.getElementById('verifyInputs').innerHTML=pos.map(function(i){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="font-size:12px;color:var(--muted);min-width:60px">Word #'+(i+1)+'</label><input type="text" id="vi'+i+'" placeholder="word '+(i+1)+'" autocomplete="off" style="flex:1;background:#1a1a1a;border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none"></div>'}).join('');
-    document.getElementById('regStep2').style.display='none';
-    document.getElementById('regStep3').style.display='block';
-    _clearMsg();
-  };
-  window.completeReg = async function(){
-    for(var k=0;k<_verifyIdx.length;k++){
-      var i=_verifyIdx[k];
-      var v=(document.getElementById('vi'+i)||{}).value||'';
-      if(v.trim().toLowerCase()!==_seedWords[i]){_showErr('Word #'+(i+1)+' is incorrect');return}
-    }
-    _showOk('Verified! Creating account...');
+    // No wallet_address is sent — the backend ignores it and creates a
+    // wallet-less account by design.
+    _regData = {username:u, email:e, password:p, display_name:u, consent:true};
     try{
       var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
       var d=await r.json();
@@ -5754,14 +5732,18 @@ function showExternalLinkWarning(e,url){
       var payload=d.data||d;
       var tok=payload.access_token||payload.token||'';
       if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
-      var usr={username:payload.username||_regData.username,email_verified:payload.email_verified===true};
-      _setLoggedIn(tok,usr,_regData.wallet_address);
+      var usr={username:payload.username||u,email_verified:payload.email_verified===true};
+      _setLoggedIn(tok,usr,null);
       window.closeAuthModal();
-      _toast('Welcome to YEET, @'+(payload.username||_regData.username));
-      if(payload.email_verified===false)_showVerifyBanner(_regData.email);
-    }catch(e){_showErr(e.message)}
+      _toast('Welcome to YEET, @'+(payload.username||u));
+      if(payload.email_verified===false)_showVerifyBanner(e);
+    }catch(err){_showErr(err.message)}
+    finally{ if(btn){ btn.disabled=false; btn.textContent=btn.dataset.oldText||'Create account'; } }
   };
-  window.copySeedAuth = function(){navigator.clipboard?.writeText(_seedWords.join(' '));_toast('Seed phrase copied - store offline!')};
+  // Seed-wizard steps retired — kept as no-ops so any stale onclick can't throw.
+  window.regNext2 = function(){};
+  window.completeReg = function(){ return window.regNext1(); };
+  window.copySeedAuth = function(){};
 
   // Init on load
   document.addEventListener('DOMContentLoaded',function(){

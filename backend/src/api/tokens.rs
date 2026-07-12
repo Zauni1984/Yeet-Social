@@ -7,12 +7,18 @@ use crate::api::middleware::AuthUser;
 
 #[derive(Debug, Serialize)]
 pub struct BalanceResponse {
-    /// Spendable off-chain YEET in the users.yeet_token_balance ledger.
-    /// This is what tips, paper-wallets and DM-tips actually debit.
-    pub yeet_balance: f64,
-    /// Reward-pool credits that haven't been minted on-chain yet.
-    pub pending_yeet: i64,
+    /// Spendable off-chain POINTS (users.yeet_token_balance). Earned only;
+    /// spent on in-app tips/PPV; convertible one-way to on-chain YEET.
+    pub points: f64,
+    /// Points queued for on-chain payout (a pending points→YEET conversion).
+    pub pending_payout: i64,
+    /// The user's linked EXTERNAL wallet (payout target), or null.
     pub wallet_address: Option<String>,
+    // ── Back-compat aliases (older clients read these) ──────────────────
+    /// Deprecated alias of `points`.
+    pub yeet_balance: f64,
+    /// Deprecated alias of `pending_payout`.
+    pub pending_yeet: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -49,12 +55,14 @@ pub async fn get_balance(
     .await
     .map_err(AppError::Database)?;
 
-    let pending = tokens::get_pending_balance(&state.db, user_id).await?;
+    let pending = tokens::get_pending_payout(&state.db, user_id).await?;
 
     Ok(Json(ApiResponse::ok(BalanceResponse {
+        points: row.0,
+        pending_payout: pending,
+        wallet_address: row.1.clone(),
         yeet_balance: row.0,
         pending_yeet: pending,
-        wallet_address: row.1,
     })))
 }
 

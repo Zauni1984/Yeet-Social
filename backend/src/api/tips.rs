@@ -57,7 +57,7 @@ pub(crate) async fn send_tip_tx(
     .await
     .map_err(AppError::Database)?;
     if balance < amount_val {
-        return Err(AppError::Validation("Insufficient YEET balance".into()));
+        return Err(AppError::Validation("Insufficient points".into()));
     }
 
     let creator_amount = amount_val * 0.9;

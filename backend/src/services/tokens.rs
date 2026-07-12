@@ -19,10 +19,17 @@ pub enum RewardAction {
     PostCreated, PostLiked, PostReshared, CommentPosted, DailyLogin, NftMinted, TipReceived,
 }
 
+/// Grant engagement POINTS (docs/mica/05). Rewards are now credited to the
+/// off-chain points ledger (`users.yeet_token_balance`) and are NOT auto-minted
+/// on-chain — a user turns points into YEET only via the explicit one-way
+/// conversion (see api::points::convert). An audit row is kept in
+/// token_rewards with kind='reward' and a terminal status so the batch minter
+/// (which now only processes kind='conversion') never pays it out.
 pub async fn grant_reward(db: &Database, user_id: Uuid, action: RewardAction, amount: i64) -> AppResult<i64> {
+    // Daily cap counts today's granted reward points, regardless of status.
     let today_total: i64 = sqlx::query_scalar(
         "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards
-         WHERE user_id = $1 AND created_at >= CURRENT_DATE AND status = 'pending'"
+         WHERE user_id = $1 AND created_at >= CURRENT_DATE AND kind = 'reward'"
     )
     .bind(user_id).fetch_one(db.pool()).await.map_err(AppError::Database)?;
 
@@ -31,17 +38,31 @@ pub async fn grant_reward(db: &Database, user_id: Uuid, action: RewardAction, am
     let actual = amount.min(remaining);
     let action_str = format!("{:?}", action).to_lowercase().replace(" ", "_");
 
+    let mut tx = db.pool().begin().await.map_err(AppError::Database)?;
+    // Audit row (never minted: kind='reward', status='rewarded').
     sqlx::query(
-        "INSERT INTO token_rewards (user_id, action, amount, status) VALUES ($1, $2, $3, 'pending')"
+        "INSERT INTO token_rewards (user_id, action, amount, status, kind)
+         VALUES ($1, $2, $3, 'rewarded', 'reward')"
     )
     .bind(user_id).bind(&action_str).bind(actual)
-    .execute(db.pool()).await.map_err(AppError::Database)?;
+    .execute(&mut *tx).await.map_err(AppError::Database)?;
+    // Credit spendable points.
+    sqlx::query(
+        "UPDATE users SET yeet_token_balance = COALESCE(yeet_token_balance, 0) + $1 WHERE id = $2"
+    )
+    .bind(actual as f64).bind(user_id)
+    .execute(&mut *tx).await.map_err(AppError::Database)?;
+    tx.commit().await.map_err(AppError::Database)?;
     Ok(actual)
 }
 
-pub async fn get_pending_balance(db: &Database, user_id: Uuid) -> AppResult<i64> {
+/// Points currently queued for on-chain payout (kind='conversion', not yet
+/// minted). Renamed conceptually from "pending rewards" — engagement rewards
+/// are no longer pending mints.
+pub async fn get_pending_payout(db: &Database, user_id: Uuid) -> AppResult<i64> {
     let b: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards WHERE user_id = $1 AND status = 'pending'"
+        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards
+         WHERE user_id = $1 AND kind = 'conversion' AND status = 'pending' AND tx_hash IS NULL"
     )
     .bind(user_id).fetch_one(db.pool()).await.map_err(AppError::Database)?;
     Ok(b)

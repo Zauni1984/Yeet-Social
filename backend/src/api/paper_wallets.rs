@@ -193,7 +193,7 @@ pub async fn create(
     .map_err(AppError::Database)?;
 
     if balance < req.amount {
-        return Err(AppError::Validation("Insufficient YEET balance".into()));
+        return Err(AppError::Validation("Insufficient points".into()));
     }
 
     // Generate secret + serial up-front (RNG held only synchronously, so
