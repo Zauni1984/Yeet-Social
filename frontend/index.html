@@ -6458,10 +6458,95 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
       <a href="/legal/terms" data-legal="terms">Terms of Service</a>
       <a href="/legal/cookies" data-legal="cookies">Cookies</a>
       <a href="/legal/disclaimer" data-legal="disclaimer">Disclaimer</a>
+      <a href="/api/v1/whitepaper.pdf" target="_blank" rel="noopener noreferrer">&#128196; Whitepaper</a>
+      <a href="#" onclick="openExplorer();return false;">&#128279; YEET Explorer</a>
     </div>
     <div class="copy">&copy; 2026 BlockSocial UG (haftungsbeschr&auml;nkt) &middot; Beilngries, Germany</div>
   </div>
 </footer>
+
+<!-- Public YEET blockchain explorer (no login required) -->
+<div class="legal-page" id="explorerPage" role="region" aria-label="YEET token explorer" style="display:none;position:fixed;inset:0;z-index:300;background:#080808;overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="max-width:900px;margin:0 auto;padding:18px 16px 90px">
+    <div style="position:sticky;top:0;background:#080808;padding:8px 0 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:2">
+      <button onclick="closeExplorer()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;cursor:pointer">&larr; Back</button>
+      <h2 style="margin:0;font-size:18px">&#128279; YEET Explorer</h2>
+      <a id="explorerContractLink" href="#" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--muted);text-decoration:none">BscScan &#8599;</a>
+    </div>
+    <div id="explorerStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0"></div>
+    <h3 style="font-size:15px;margin:18px 0 8px">&#127942; Richlist</h3>
+    <div id="explorerRichlist" style="font-size:13px;color:var(--muted)">Loading…</div>
+    <h3 style="font-size:15px;margin:22px 0 8px">&#128257; Recent transfers</h3>
+    <div id="explorerTransfers" style="font-size:13px;color:var(--muted)">Loading…</div>
+    <p style="color:#666;font-size:11px;margin-top:24px">Public read-only data from the YEET token indexer. Values in YEET (18 decimals). API: <code>/api/v1/explorer/*</code></p>
+  </div>
+</div>
+<script>
+(function(){
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function shortAddr(a){a=String(a||'');return a.length>12?a.slice(0,6)+'…'+a.slice(-4):a;}
+  // wei (string) → human YEET with thousands sep, trimming decimals.
+  function fmtYeet(wei){
+    try{
+      var s=String(wei||'0').replace(/[^0-9]/g,'')||'0';
+      s=s.padStart(19,'0');
+      var intPart=s.slice(0,s.length-18).replace(/^0+(?=\d)/,'');
+      var frac=s.slice(s.length-18).replace(/0+$/,'').slice(0,4);
+      var withSep=intPart.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+      return withSep+(frac?(','+frac):'');
+    }catch(e){return '0';}
+  }
+  function stat(label,val){
+    return '<div style="background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:12px">'
+      +'<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">'+esc(label)+'</div>'
+      +'<div style="font-size:18px;font-weight:700;color:var(--yeet);margin-top:4px;word-break:break-all">'+val+'</div></div>';
+  }
+  async function get(path){var r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return (await r.json()).data;}
+
+  window.openExplorer = async function(){
+    var pg=document.getElementById('explorerPage'); if(!pg)return;
+    pg.style.display='block'; document.body.style.overflow='hidden';
+    try{
+      var t=await get('/api/v1/explorer/token');
+      var contract=t.contract||null;
+      var link=document.getElementById('explorerContractLink');
+      if(link){ if(contract){ link.href=(t.chain_id===97?'https://testnet.bscscan.com/token/':'https://bscscan.com/token/')+contract; link.style.display=''; } else { link.style.display='none'; } }
+      document.getElementById('explorerStats').innerHTML=
+        stat('Symbol', esc(t.symbol))
+        + stat('Holders', (t.holder_count||0).toLocaleString('de-DE'))
+        + stat('Transfers', (t.transfer_count||0).toLocaleString('de-DE'))
+        + stat('Circulating', fmtYeet(t.circulating_wei)+' YEET')
+        + stat('Contract', contract?('<span style="font-size:12px">'+shortAddr(contract)+'</span>'):'<span style="font-size:12px;color:var(--muted)">not deployed yet</span>');
+    }catch(e){ document.getElementById('explorerStats').innerHTML='<div style="color:#ff6666">Token info unavailable</div>'; }
+
+    try{
+      var rl=await get('/api/v1/explorer/richlist?limit=50');
+      var rich=document.getElementById('explorerRichlist');
+      if(!rl||!rl.length){ rich.innerHTML='<div style="color:var(--muted)">No holders yet (token not deployed / indexed).</div>'; }
+      else{
+        rich.innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+          +'<thead><tr style="color:var(--muted);text-align:left"><th style="padding:6px 8px">#</th><th style="padding:6px 8px">Address</th><th style="padding:6px 8px;text-align:right">Balance</th><th style="padding:6px 8px;text-align:right">Txns</th></tr></thead><tbody>'
+          +rl.map(function(h){return '<tr style="border-top:1px solid #1c1c1c"><td style="padding:6px 8px">'+h.rank+'</td><td style="padding:6px 8px;font-family:monospace">'+esc(shortAddr(h.address))+'</td><td style="padding:6px 8px;text-align:right;color:var(--yeet)">'+fmtYeet(h.balance_wei)+'</td><td style="padding:6px 8px;text-align:right">'+(h.tx_count||0)+'</td></tr>';}).join('')
+          +'</tbody></table></div>';
+      }
+    }catch(e){ document.getElementById('explorerRichlist').innerHTML='<div style="color:#ff6666">Richlist unavailable</div>'; }
+
+    try{
+      var tr=await get('/api/v1/explorer/transfers?limit=25');
+      var tx=document.getElementById('explorerTransfers');
+      if(!tr||!tr.length){ tx.innerHTML='<div style="color:var(--muted)">No transfers yet.</div>'; }
+      else{
+        tx.innerHTML=tr.map(function(x){
+          return '<div style="border-top:1px solid #1c1c1c;padding:8px 4px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+            +'<span style="font-family:monospace">'+esc(shortAddr(x.from_address))+' &rarr; '+esc(shortAddr(x.to_address))+'</span>'
+            +'<span style="color:var(--yeet)">'+fmtYeet(x.value_wei)+' YEET</span></div>';
+        }).join('');
+      }
+    }catch(e){ document.getElementById('explorerTransfers').innerHTML='<div style="color:#ff6666">Transfers unavailable</div>'; }
+  };
+  window.closeExplorer = function(){ var pg=document.getElementById('explorerPage'); if(pg)pg.style.display='none'; document.body.style.overflow=''; };
+})();
+</script>
 
 <div class="legal-page" id="adminPage" role="region" aria-label="Admin dashboard" style="display:none">
   <div class="legal-page-inner" style="max-width:1024px">

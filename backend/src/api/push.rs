@@ -43,6 +43,21 @@ pub async fn service_worker_js() -> axum::response::Response {
     resp
 }
 
+/// GET /api/v1/whitepaper.pdf — public draft whitepaper, baked into the binary
+/// so it ships with each deploy. Served inline (viewable in-browser).
+pub async fn whitepaper_pdf() -> axum::response::Response {
+    use axum::http::{header, HeaderValue, StatusCode};
+    let body: &'static [u8] = include_bytes!("../static_assets/whitepaper.pdf");
+    let mut resp = axum::response::Response::new(axum::body::Body::from(body));
+    *resp.status_mut() = StatusCode::OK;
+    let h = resp.headers_mut();
+    h.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/pdf"));
+    h.insert(header::CONTENT_DISPOSITION,
+        HeaderValue::from_static("inline; filename=\"yeet-whitepaper-draft.pdf\""));
+    h.insert(header::CACHE_CONTROL, HeaderValue::from_static("public, max-age=3600"));
+    resp
+}
+
 pub async fn config_status(
     State(_state): State<AppState>,
 ) -> Json<ApiResponse<PushPublicConfig>> {
