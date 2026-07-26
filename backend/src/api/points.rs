@@ -89,6 +89,19 @@ pub async fn convert(
     .bind(user_id).bind(req.points)
     .fetch_one(&mut *tx).await.map_err(AppError::Database)?;
 
+    // Ledger: points debited for a one-way conversion to on-chain YEET.
+    {
+        use crate::services::ledger::{self, NewEntry, tx_type, asset};
+        ledger::record_in_tx(&mut tx, NewEntry {
+            tx_type: tx_type::POINTS_CONVERSION.into(), asset: asset::POINTS.into(),
+            amount: -(req.points as f64), fee_amount: 0.0,
+            user_id: Some(user_id), user_wallet: Some(wallet.clone()),
+            reference_type: Some("payout".into()), reference_id: Some(payout_id.to_string()),
+            description: Some(format!("convert {} points to YEET (payout to {})", req.points, wallet)),
+            ..Default::default()
+        }).await?;
+    }
+
     tx.commit().await.map_err(AppError::Database)?;
 
     Ok(Json(ApiResponse::ok(ConvertResponse {

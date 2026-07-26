@@ -102,6 +102,34 @@ pub(crate) async fn send_tip_tx(
         .execute(&mut **tx).await.map_err(AppError::Database)?;
     }
 
+    // Append to the transaction ledger (atomic with the balance moves).
+    use crate::services::ledger::{self, NewEntry, tx_type, asset};
+    let rid = post_id.map(|p| p.to_string());
+    ledger::record_in_tx(tx, NewEntry {
+        tx_type: tx_type::TIP_SENT.into(), asset: asset::POINTS.into(),
+        amount: -amount_val, fee_amount: platform_cut,
+        user_id: Some(from_id), counterparty_id: Some(to_id),
+        reference_type: Some("tip".into()), reference_id: Some(tip_id.to_string()),
+        description: rid.as_ref().map(|p| format!("tip on post {p}")),
+        ..Default::default()
+    }).await?;
+    ledger::record_in_tx(tx, NewEntry {
+        tx_type: tx_type::TIP_RECEIVED.into(), asset: asset::POINTS.into(),
+        amount: creator_amount, fee_amount: 0.0,
+        user_id: Some(to_id), counterparty_id: Some(from_id),
+        reference_type: Some("tip".into()), reference_id: Some(tip_id.to_string()),
+        description: rid.as_ref().map(|p| format!("tip on post {p}")),
+        ..Default::default()
+    }).await?;
+    ledger::record_in_tx(tx, NewEntry {
+        tx_type: tx_type::PLATFORM_FEE.into(), asset: asset::POINTS.into(),
+        amount: platform_cut, fee_amount: 0.0,
+        user_id: None, counterparty_id: Some(from_id),
+        reference_type: Some("tip".into()), reference_id: Some(tip_id.to_string()),
+        description: Some("platform fee (10%)".into()),
+        ..Default::default()
+    }).await?;
+
     Ok(tip_id)
 }
 

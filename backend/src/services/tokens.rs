@@ -52,6 +52,19 @@ pub async fn grant_reward(db: &Database, user_id: Uuid, action: RewardAction, am
     )
     .bind(actual as f64).bind(user_id)
     .execute(&mut *tx).await.map_err(AppError::Database)?;
+
+    // Ledger: engagement points earned.
+    crate::services::ledger::record_in_tx(&mut tx, crate::services::ledger::NewEntry {
+        tx_type: crate::services::ledger::tx_type::REWARD_GRANT.into(),
+        asset: crate::services::ledger::asset::POINTS.into(),
+        amount: actual as f64,
+        user_id: Some(user_id),
+        reference_type: Some("reward".into()),
+        reference_id: Some(action_str.clone()),
+        description: Some(format!("reward: {action_str}")),
+        ..Default::default()
+    }).await?;
+
     tx.commit().await.map_err(AppError::Database)?;
     Ok(actual)
 }
