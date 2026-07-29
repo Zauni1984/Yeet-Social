@@ -51,7 +51,10 @@ pub async fn send_verification_email(
     to_email: &str,
     token: &str,
 ) -> anyhow::Result<()> {
-    let verify_url = format!("{}/?verify={}", cfg.public_base_url.trim_end_matches('/'), token);
+    // Server-side GET verification: the link hits the backend directly and
+    // verifies without needing the SPA to load/run JS (the old /?verify=
+    // client-only flow was fragile in some mail clients/in-app browsers).
+    let verify_url = format!("{}/api/v1/auth/email-verify?token={}", cfg.public_base_url.trim_end_matches('/'), token);
     let from: Mailbox = format!("YEET Social <{}>", cfg.from).parse()?;
     let to: Mailbox = to_email.parse()?;
 

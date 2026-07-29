@@ -74,6 +74,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/email-register", post(api::email_auth::register))
         .route("/api/v1/auth/email-login",     post(api::email_auth::login))
         .route("/api/v1/auth/email-verify",    post(api::email_auth::verify_email))
+        .route("/api/v1/auth/email-verify",    get(api::email_auth::verify_email_link))
         .route("/api/v1/auth/email-resend",    post(api::email_auth::resend_verification))
         .route("/api/v1/auth/link-email",      post(api::email_auth::link_email))
         .route("/api/v1/auth/link-wallet/nonce",  post(api::email_auth::link_wallet_nonce))
