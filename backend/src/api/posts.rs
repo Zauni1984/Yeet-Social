@@ -71,8 +71,8 @@ pub async fn create_post(
     auth: AuthUser,
     Json(req): Json<CreatePostRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
-    if req.content.trim().is_empty() || req.content.trim().chars().count() > 280 {
-        return Err(AppError::Validation("Post content must be 1-280 chars".into()));
+    if req.content.trim().is_empty() || req.content.trim().chars().count() > 420 {
+        return Err(AppError::Validation("Post content must be 1-420 chars".into()));
     }
     // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
     let user_id: Uuid = if let Some(uuid_str) = auth.address.strip_prefix("email:") {

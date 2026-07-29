@@ -648,7 +648,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div class="composer">
       <div class="avatar">&#128100;</div>
       <div class="composer-body">
-        <textarea id="postTxt" maxlength="280" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." data-i18n-placeholder="composer.placeholder" rows="2"></textarea>
+        <textarea id="postTxt" maxlength="420" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." data-i18n-placeholder="composer.placeholder" rows="2"></textarea>
         <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:#111"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="videoPreviewWrap" style="display:none;margin:8px 0;position:relative"><video id="videoPreview" controls preload="metadata" style="max-width:100%;max-height:240px;border-radius:10px;background:#111;display:block"></video><div id="videoUploadStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div><button onclick="removeVideo()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1">&#215;</button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128204; <span data-i18n="composer.permanentSet">Permanent post set</span></div>
         <div class="composer-footer">
           <button class="icon-btn" title="Add photo" data-i18n-title="composer.addPhoto" onclick="document.getElementById('imgInput').click()">&#128248;</button>
@@ -660,7 +660,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
           <button class="icon-btn" id="permToggleBtn" title="Mark as permanent post" data-i18n-title="composer.markPermanent" onclick="togglePermanent()">&#128204;</button>
           <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" data-i18n-title="composer.payPerView" onclick="togglePPV()">&#128274;</button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:#c6f135;margin:4px 0">&#128274; PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
           <button class="icon-btn" title="Tip" data-i18n-title="composer.tip">&#9889;</button>
-          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/280</div><label id="adultToggleLabel" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
+          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/420</div><label id="adultToggleLabel" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
         </div>
       </div>
     </div>
@@ -2678,7 +2678,7 @@ function updateCharCount(){
   if(!ta||!cc)return;
   var len=ta.value.length;
   cc.textContent=len;
-  cc.style.color=len>250?'#ff4444':len>200?'#f0a500':'var(--muted)';
+  cc.style.color=len>390?'#ff4444':len>340?'#f0a500':'var(--muted)';
 }
 // Live search dropdown — debounced, calls /api/v1/search, renders user
 // + post hits, click navigates to profile or post.
