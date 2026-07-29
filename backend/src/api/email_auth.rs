@@ -200,18 +200,17 @@ async fn record_session_best_effort(state: &AppState, user_id: Uuid, refresh_tok
     }
 }
 
-pub async fn verify_email(
-    State(state): State<AppState>,
-    Json(req): Json<VerifyEmailRequest>,
-) -> AppResult<Json<ApiResponse<SimpleOk>>> {
-    if req.token.len() < 16 {
+/// Core verification: validate + consume the token, mark the user verified.
+/// Shared by the JSON POST and the GET link handlers.
+async fn consume_verification_token(state: &AppState, token: &str) -> AppResult<()> {
+    if token.len() < 16 {
         return Err(AppError::Validation("Invalid token".into()));
     }
 
     let row: Option<(Uuid, String, chrono::DateTime<Utc>)> = sqlx::query_as(
         "SELECT user_id, email, expires_at FROM email_verification_tokens WHERE token = $1"
     )
-    .bind(&req.token)
+    .bind(token)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
 
     let (user_id, email, expires_at) = row
@@ -219,7 +218,7 @@ pub async fn verify_email(
 
     if expires_at < Utc::now() {
         sqlx::query("DELETE FROM email_verification_tokens WHERE token = $1")
-            .bind(&req.token).execute(state.db.pool()).await.map_err(AppError::Database)?;
+            .bind(token).execute(state.db.pool()).await.map_err(AppError::Database)?;
         return Err(AppError::Validation("Verification link expired. Request a new one.".into()));
     }
 
@@ -233,8 +232,64 @@ pub async fn verify_email(
     sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = $1")
         .bind(user_id).execute(&mut *tx).await.map_err(AppError::Database)?;
     tx.commit().await.map_err(AppError::Database)?;
+    Ok(())
+}
 
+/// POST /api/v1/auth/email-verify — JSON path (used by the in-app SPA flow).
+pub async fn verify_email(
+    State(state): State<AppState>,
+    Json(req): Json<VerifyEmailRequest>,
+) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    consume_verification_token(&state, &req.token).await?;
     Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct VerifyLinkQuery { pub token: Option<String> }
+
+/// GET /api/v1/auth/email-verify?token=... — the link clicked from the email.
+///
+/// Verifies server-side (no dependency on the SPA loading or running JS —
+/// which is why the previous client-only flow appeared broken) and returns a
+/// small self-contained confirmation page with a button back to the app.
+pub async fn verify_email_link(
+    State(state): State<AppState>,
+    axum::extract::Query(q): axum::extract::Query<VerifyLinkQuery>,
+) -> axum::response::Response {
+    use axum::http::{header, HeaderValue, StatusCode};
+    use axum::response::IntoResponse;
+
+    let base = std::env::var("PUBLIC_BASE_URL").unwrap_or_else(|_| "https://justyeet.it".into());
+    let base = base.trim_end_matches('/').to_string();
+    let token = q.token.unwrap_or_default();
+
+    let (status, ok, heading, body): (StatusCode, bool, &str, String) =
+        match consume_verification_token(&state, &token).await {
+        Ok(()) => (StatusCode::OK, true, "E-Mail bestätigt ✓",
+            "Dein Konto ist jetzt verifiziert. Du kannst zu YEET zurückkehren.".to_string()),
+        Err(AppError::Validation(m)) | Err(AppError::NotFound(m)) =>
+            (StatusCode::BAD_REQUEST, false, "Bestätigung fehlgeschlagen", m),
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, false, "Bestätigung fehlgeschlagen",
+            "Es ist ein Fehler aufgetreten. Bitte fordere einen neuen Link an.".to_string()),
+    };
+
+    let color = if ok { "#c6f135" } else { "#ff6b6b" };
+    let html = format!(
+        r#"<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YEET — E-Mail-Bestätigung</title></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px">
+<div style="max-width:460px;width:100%;background:#16181c;border:1px solid #2a2a2a;border-radius:16px;padding:32px;text-align:center">
+<h1 style="color:{color};margin:0 0 12px;font-size:22px">{heading}</h1>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px;margin:0 0 24px">{body}</p>
+<a href="{base}/" style="display:inline-block;background:#c6f135;color:#000;padding:12px 28px;border-radius:24px;text-decoration:none;font-weight:700">Zu YEET Social</a>
+</div></body></html>"#,
+        color = color, heading = heading, body = body, base = base
+    );
+
+    let mut resp = (status, axum::response::Html(html)).into_response();
+    resp.headers_mut().insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    resp
 }
 
 type PendingEmailRow = (Option<String>, Option<String>, Option<chrono::DateTime<Utc>>);

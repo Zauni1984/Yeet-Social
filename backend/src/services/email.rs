@@ -29,8 +29,21 @@ impl EmailConfig {
 
 fn transport(cfg: &EmailConfig) -> Result<AsyncSmtpTransport<Tokio1Executor>, lettre::transport::smtp::Error> {
     let creds = Credentials::new(cfg.username.clone(), cfg.password.clone());
-    AsyncSmtpTransport::<Tokio1Executor>::relay(&cfg.host)
-        .map(|b| b.port(cfg.port).credentials(creds).build())
+    // Pick the right TLS mode for the port. `relay()` is *implicit* TLS
+    // (SMTPS, port 465); `starttls_relay()` upgrades a plaintext 587
+    // connection to TLS. Using relay() on 587 (the most common submission
+    // port) fails the handshake, so no mail is ever sent — which looks like
+    // "email verification is broken". SMTP_STARTTLS can force either mode.
+    let use_starttls = match env::var("SMTP_STARTTLS").ok().as_deref() {
+        Some(v) => matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"),
+        None => cfg.port == 587, // sensible default: 587 → STARTTLS, else implicit TLS
+    };
+    let builder = if use_starttls {
+        AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&cfg.host)?
+    } else {
+        AsyncSmtpTransport::<Tokio1Executor>::relay(&cfg.host)?
+    };
+    Ok(builder.port(cfg.port).credentials(creds).build())
 }
 
 pub async fn send_verification_email(
@@ -38,7 +51,10 @@ pub async fn send_verification_email(
     to_email: &str,
     token: &str,
 ) -> anyhow::Result<()> {
-    let verify_url = format!("{}/?verify={}", cfg.public_base_url.trim_end_matches('/'), token);
+    // Server-side GET verification: the link hits the backend directly and
+    // verifies without needing the SPA to load/run JS (the old /?verify=
+    // client-only flow was fragile in some mail clients/in-app browsers).
+    let verify_url = format!("{}/api/v1/auth/email-verify?token={}", cfg.public_base_url.trim_end_matches('/'), token);
     let from: Mailbox = format!("YEET Social <{}>", cfg.from).parse()?;
     let to: Mailbox = to_email.parse()?;
 
