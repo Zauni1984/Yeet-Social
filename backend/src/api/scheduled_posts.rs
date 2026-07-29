@@ -56,8 +56,8 @@ pub async fn create(
     Json(req): Json<ScheduleRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
     let content = req.content.trim();
-    if content.is_empty() || content.chars().count() > 280 {
-        return Err(AppError::Validation("Post content must be 1-280 chars".into()));
+    if content.is_empty() || content.chars().count() > 420 {
+        return Err(AppError::Validation("Post content must be 1-420 chars".into()));
     }
     // Minimum 60s in the future to avoid an instant-publish trick that
     // bypasses the worker's batching window.
