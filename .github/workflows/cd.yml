@@ -60,6 +60,12 @@ jobs:
             mv $HTML_DIR/index.html.new $HTML_DIR/index.html
             ls -la $HTML_DIR/index.html
 
+            # Admin moderation dashboard is a separate static file served
+            # from the same docroot — keep it in sync on every deploy too.
+            curl -fsSL "$REPO_RAW/frontend/admin.html" -o $HTML_DIR/admin.html.new
+            mv $HTML_DIR/admin.html.new $HTML_DIR/admin.html
+            ls -la $HTML_DIR/admin.html
+
             docker exec yeet-nginx nginx -s reload || \
               docker compose restart nginx
 
