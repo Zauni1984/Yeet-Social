@@ -10,6 +10,7 @@ pub mod feed;
 pub mod middleware;
 pub mod posts;
 pub mod tips;
+pub mod tips_received;
 pub mod tokens;
 pub mod points;
 pub mod users;

@@ -327,7 +327,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:#000;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center"><span class="yi yi-user"></span></button>
     </div>
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px;position:relative">
-      <span class="balance-pill" id="balancePill" onclick="openWalletModal()" title="" data-i18n-title="balance.title"><span class="yi yi-bolt"></span> <span id="balanceAmt">—</span> <span data-i18n="balance.unit">Points</span></span>
+      <span class="balance-pill" id="balancePill" onclick="onBalancePillClick()" title="" data-i18n-title="balance.title"><span class="yi yi-bolt"></span> <span id="balanceAmt">—</span> <span data-i18n="balance.unit">Points</span></span>
       <span class="addr-pill" id="addrPill" onclick="copyAuthAddr()">0x...</span>
       <span class="nav-bell" id="navBell" onclick="window.toggleNotifPanel && window.toggleNotifPanel()" title="" data-i18n-title="notif.title" role="button" tabindex="0"><span class="yi yi-bell"></span><span class="nav-bell-badge" id="navBellBadge" style="display:none">0</span></span>
       <span class="nav-avatar" id="navAvatar" onclick="window.showMyProfile && window.showMyProfile()" title="" data-i18n-title="profile.title"><span class="yi yi-user"></span></span>
@@ -688,7 +688,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#" onclick="showTrendingFeed();return false;"><span class="yi yi-star"></span> Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
     <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));loadPermanentPosts();if(typeof toggleNav==='function'&&window.innerWidth<=700)toggleNav();return false;"><span class="yi yi-pin"></span> Permanent Posts</a>
-    <a class="nav-link" href="#"><span class="yi yi-bolt"></span> Token Tips</a>
+    <a class="nav-link" href="#" onclick="showTipsView();return false;"><span class="yi yi-bolt"></span> <span data-i18n="nav.tokenTips">Token Tips</span></a>
     <a class="nav-link" href="#" onclick="openWebboardsModal()"><span class="yi yi-boards"></span> Webboards</a>
     <a class="nav-link" href="#" onclick="check18Plus();return false;"><span class="yi yi-adult"></span> 18+ Content</a>
     <a class="nav-link" href="#" onclick="openMessagesModal();return false;"><span class="yi yi-chat"></span> Messages <span id="dmInviteBadge" style="display:none;background:#ff4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px"></span></a>
@@ -761,6 +761,34 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div style="padding:12px 16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Posts</div>
       <div id="profilePosts"></div>
       <div id="profileEmpty" class="empty" style="display:none"><div class="icon"><span class="yi yi-fire"></span></div><strong>No posts yet</strong></div>
+    </div>
+
+    <!-- ===== My Tips Received (private per-user overview) ===== -->
+    <div id="tipsView" style="display:none">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <button onclick="closeTipsView()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:6px 10px" title="Back"><span class="yi yi-arrowl"></span></button>
+        <h2 style="margin:0;font-size:17px;flex:1"><span class="yi yi-bolt"></span> <span data-i18n="tips.title">Tips received</span></h2>
+        <button class="btn-sm" onclick="exportTipsCsv()" title="" data-i18n-title="tips.export"><span class="yi yi-save"></span> <span data-i18n="tips.export">Export CSV</span></button>
+      </div>
+      <div style="padding:6px 16px 0;font-size:13px;color:var(--muted)" data-i18n="tips.subtitle">Every tip you've received — who, how much and when. Only you can see this.</div>
+
+      <!-- Podium: top 3 tippers -->
+      <div id="tipsPodium" style="display:none;padding:18px 16px 6px"></div>
+
+      <div id="tipsSummary" style="padding:10px 16px;font-size:13px;color:var(--muted)"></div>
+
+      <div style="overflow-x:auto;padding:0 8px 24px">
+        <table id="tipsTable" style="width:100%;border-collapse:collapse;font-size:14px;min-width:520px">
+          <thead>
+            <tr style="text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px">
+              <th onclick="setTipsSort('name')"   style="padding:10px 8px;cursor:pointer;user-select:none"><span data-i18n="tips.colFrom">From</span> <span class="tips-sort" data-col="name"></span></th>
+              <th onclick="setTipsSort('amount')" style="padding:10px 8px;cursor:pointer;user-select:none;text-align:right"><span data-i18n="tips.colAmount">Amount</span> <span class="tips-sort" data-col="amount"></span></th>
+              <th onclick="setTipsSort('date')"   style="padding:10px 8px;cursor:pointer;user-select:none"><span data-i18n="tips.colDate">Date</span> <span class="tips-sort" data-col="date"></span></th>
+            </tr>
+          </thead>
+          <tbody id="tipsBody"></tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -982,6 +1010,20 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'common.search':'Search...',
       'balance.title':'Your points balance — earn by posting, convert to YEET',
       'balance.unit':'Points',
+      'nav.tokenTips':'Token Tips',
+      'tips.title':'Tips received',
+      'tips.subtitle':"Every tip you've received — who, how much and when. Only you can see this.",
+      'tips.export':'Export CSV',
+      'tips.exportError':'Export failed',
+      'tips.colFrom':'From',
+      'tips.colAmount':'Amount',
+      'tips.colDate':'Date',
+      'tips.empty':"You haven't received any tips yet.",
+      'tips.loadError':'Could not load your tips.',
+      'tips.summary':'{n} tips · {sum} received',
+      'tips.topTitle':'Top tippers',
+      'tips.tipsWord':'tips',
+      'tips.unknown':'Unknown',
       'settings.convertPoints':'Convert points to YEET',
       'settings.verifyRetired':'Recovery phrases are managed by your own wallet app.',
       'convert.needWallet':'Connect a payout wallet first (Settings → Connect payout wallet).',
@@ -1270,6 +1312,20 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'common.search':'Suchen...',
       'balance.title':'Dein Punkte-Guthaben — verdiene durch Posten, wandle in YEET um',
       'balance.unit':'Punkte',
+      'nav.tokenTips':'Token Tips',
+      'tips.title':'Erhaltene Tips',
+      'tips.subtitle':'Alle erhaltenen Tips — von wem, wie viel und wann. Nur du siehst das.',
+      'tips.export':'CSV exportieren',
+      'tips.exportError':'Export fehlgeschlagen',
+      'tips.colFrom':'Von',
+      'tips.colAmount':'Betrag',
+      'tips.colDate':'Datum',
+      'tips.empty':'Du hast noch keine Tips erhalten.',
+      'tips.loadError':'Deine Tips konnten nicht geladen werden.',
+      'tips.summary':'{n} Tips · {sum} erhalten',
+      'tips.topTitle':'Top-Tippgeber',
+      'tips.tipsWord':'Tips',
+      'tips.unknown':'Unbekannt',
       'settings.convertPoints':'Punkte in YEET umwandeln',
       'settings.verifyRetired':'Wiederherstellungsphrasen verwaltet deine eigene Wallet-App.',
       'convert.needWallet':'Verbinde zuerst eine Auszahl-Wallet (Einstellungen → Auszahl-Wallet verbinden).',
@@ -1441,6 +1497,7 @@ function loadPrices(){
 }
 
 function showGlobalFeed(){
+  if(typeof _hideTipsView==='function') _hideTipsView();
   if(typeof _exitProfileView==='function') _exitProfileView();
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-link')[0].classList.add('active');
@@ -1450,6 +1507,7 @@ function showGlobalFeed(){
   loadFeed();
 }
 function showTrendingFeed(){
+  if(typeof _hideTipsView==='function') _hideTipsView();
   if(typeof _exitProfileView==='function') _exitProfileView();
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
   var navLinks=document.querySelectorAll('.nav-link');
@@ -3207,6 +3265,7 @@ async function showMyProfile(){
 
 async function showProfile(address, own){
   if(!address){ showToast('No address'); return; }
+  if(typeof _hideTipsView==='function') _hideTipsView();
   var m = document.querySelector('.main');
   // hide feed UI
   var hide = ['.feed-header', '.tabs', '.composer', '.empty'];
@@ -3434,6 +3493,190 @@ function closeProfile(){
   _exitProfileView();
   if(typeof loadFeed === 'function') loadFeed();
 }
+
+/* ===================== My Tips Received ===================== */
+// Points pill: logged-in users go to their private tips overview;
+// logged-out users get the auth modal (old behaviour).
+function onBalancePillClick(){
+  if(localStorage.getItem('yeet_jwt')) showTipsView();
+  else openWalletModal();
+}
+window.onBalancePillClick = onBalancePillClick;
+
+window._tipsSort = 'date';
+window._tipsOrder = 'desc';
+
+function _hideTipsView(){
+  var tv = document.getElementById('tipsView');
+  if(tv) tv.style.display = 'none';
+  var m = document.querySelector('.main');
+  ['.feed-header','.tabs','.composer'].forEach(function(sel){ var el=m&&m.querySelector(sel); if(el) el.style.display=''; });
+  var fp = document.getElementById('feed-posts'); if(fp) fp.style.display='';
+}
+window._hideTipsView = _hideTipsView;
+
+function closeTipsView(){
+  _hideTipsView();
+  if(typeof showGlobalFeed === 'function') showGlobalFeed();
+}
+window.closeTipsView = closeTipsView;
+
+async function showTipsView(){
+  if(!localStorage.getItem('yeet_jwt')){ openWalletModal(); return; }
+  if(typeof _exitProfileView === 'function'){ try{ _exitProfileView(); }catch(e){} }
+  var m = document.querySelector('.main');
+  ['.feed-header','.tabs','.composer','.empty'].forEach(function(sel){ var el=m&&m.querySelector(sel); if(el) el.style.display='none'; });
+  var fp = document.getElementById('feed-posts'); if(fp) fp.style.display='none';
+  var pv = document.getElementById('profileView'); if(pv) pv.style.display='none';
+  var tv = document.getElementById('tipsView'); if(tv) tv.style.display='';
+  // Mark the Token Tips nav link active.
+  document.querySelectorAll('.nav-link').forEach(function(x){
+    x.classList.remove('active');
+    if(x.getAttribute('onclick') && x.getAttribute('onclick').indexOf('showTipsView')>=0) x.classList.add('active');
+  });
+  if(typeof applyTranslations === 'function') applyTranslations(tv);
+  await loadTipsReceived();
+}
+window.showTipsView = showTipsView;
+
+function setTipsSort(col){
+  if(window._tipsSort === col){
+    window._tipsOrder = (window._tipsOrder === 'asc') ? 'desc' : 'asc';
+  } else {
+    window._tipsSort = col;
+    // Sensible default direction per column.
+    window._tipsOrder = (col === 'name') ? 'asc' : 'desc';
+  }
+  loadTipsReceived();
+}
+window.setTipsSort = setTipsSort;
+
+function _tipSenderName(r){
+  return (r.from_display_name && r.from_display_name.trim())
+      || (r.from_username && ('@' + r.from_username))
+      || (r.from_wallet ? (r.from_wallet.slice(0,6) + '…' + r.from_wallet.slice(-4)) : '')
+      || (window.t ? window.t('tips.unknown') : 'Unknown');
+}
+
+function _fmtTipAmount(n){
+  n = Number(n) || 0;
+  // Trim to a sane number of decimals without trailing zeros.
+  return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
+
+function _esc(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _renderTipsSortIndicators(){
+  document.querySelectorAll('#tipsTable .tips-sort').forEach(function(el){
+    var col = el.getAttribute('data-col');
+    el.textContent = (col === window._tipsSort) ? (window._tipsOrder === 'asc' ? '▲' : '▼') : '';
+  });
+}
+
+function _renderTipsPodium(rows){
+  var box = document.getElementById('tipsPodium');
+  if(!box) return;
+  // Aggregate total received per sender.
+  var agg = {};
+  rows.forEach(function(r){
+    var k = r.from_user_id;
+    if(!agg[k]) agg[k] = { name:_tipSenderName(r), total:0, count:0 };
+    agg[k].total += (Number(r.amount_received)||0);
+    agg[k].count += 1;
+  });
+  var top = Object.keys(agg).map(function(k){ return agg[k]; })
+                  .sort(function(a,b){ return b.total - a.total; })
+                  .slice(0,3);
+  if(top.length === 0){ box.style.display='none'; box.innerHTML=''; return; }
+
+  // Podium: silver(2) - gold(1) - bronze(3), gold tallest/centered.
+  var medals = ['#ffd23f', '#c8ccd4', '#cd7f32']; // gold, silver, bronze (by rank index 1/2/3)
+  var heights = [118, 96, 82];                       // rank 1,2,3
+  var order = [2, 1, 3];                             // display L→R
+  var t = window.t || function(k){ return k; };
+  var title = '<div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px"><span class="yi yi-trophy"></span> ' + _esc(t('tips.topTitle')) + '</div>';
+  var cells = order.map(function(rank){
+    var item = top[rank-1];
+    if(!item) return '<div style="flex:1"></div>';
+    var color = medals[rank-1];
+    var h = heights[rank-1];
+    var glyph = rank === 1 ? '<span class="yi yi-trophy"></span>' : '<span class="yi yi-star"></span>';
+    return ''
+      + '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:8px;min-width:0">'
+      +   '<div style="font-size:22px;line-height:1;color:' + color + ';filter:drop-shadow(0 0 6px ' + color + '55)">' + glyph + '</div>'
+      +   '<div style="font-weight:700;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center" title="' + _esc(item.name) + '">' + _esc(item.name) + '</div>'
+      +   '<div style="font-size:13px;color:var(--yeet);font-weight:800">' + _fmtTipAmount(item.total) + '</div>'
+      +   '<div style="font-size:11px;color:var(--muted)">' + item.count + ' ' + _esc(t('tips.tipsWord')) + '</div>'
+      +   '<div style="width:100%;height:' + h + 'px;border-radius:10px 10px 0 0;background:linear-gradient(180deg,' + color + '33,' + color + '11);border:1px solid ' + color + '55;border-bottom:none;display:flex;align-items:flex-start;justify-content:center;padding-top:8px;color:' + color + ';font-weight:900;font-size:20px">' + rank + '</div>'
+      + '</div>';
+  }).join('');
+  box.innerHTML = title + '<div style="display:flex;align-items:flex-end;gap:10px;max-width:520px">' + cells + '</div>';
+  box.style.display = '';
+}
+
+function _renderTipsRows(rows){
+  var body = document.getElementById('tipsBody');
+  if(!body) return;
+  var t = window.t || function(k){ return k; };
+  if(!rows.length){
+    body.innerHTML = '<tr><td colspan="3" style="padding:24px 8px;color:var(--muted);text-align:center">' + _esc(t('tips.empty')) + '</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(function(r){
+    var when = '';
+    try { when = new Date(r.created_at).toLocaleString(); } catch(e){ when = r.created_at; }
+    var cur = (r.currency || '').toUpperCase();
+    return '<tr style="border-top:1px solid var(--border)">'
+      + '<td style="padding:10px 8px">' + _esc(_tipSenderName(r)) + '</td>'
+      + '<td style="padding:10px 8px;text-align:right;color:var(--yeet);font-weight:700;white-space:nowrap">' + _fmtTipAmount(r.amount_received) + ' <span style="color:var(--muted);font-weight:400;font-size:12px">' + _esc(cur) + '</span></td>'
+      + '<td style="padding:10px 8px;color:var(--muted);white-space:nowrap">' + _esc(when) + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+async function loadTipsReceived(){
+  var body = document.getElementById('tipsBody');
+  var sum  = document.getElementById('tipsSummary');
+  var t = window.t || function(k){ return k; };
+  if(body) body.innerHTML = '<tr><td colspan="3" style="padding:24px 8px;color:var(--muted);text-align:center">' + _esc(t('common.loading')) + '</td></tr>';
+  _renderTipsSortIndicators();
+  var res = await yeetFetch('/api/v1/me/tips-received?sort=' + window._tipsSort + '&order=' + window._tipsOrder);
+  if(!res.ok){
+    if(res.status === 401){ if(body) body.innerHTML=''; return; } // yeetFetch already surfaced the auth modal
+    if(body) body.innerHTML = '<tr><td colspan="3" style="padding:24px 8px;color:var(--muted);text-align:center">' + _esc(t('tips.loadError')) + '</td></tr>';
+    return;
+  }
+  var rows = Array.isArray(res.data) ? res.data : [];
+  window._tipsData = rows;
+  _renderTipsPodium(rows);
+  _renderTipsRows(rows);
+  if(sum){
+    var total = rows.reduce(function(a,r){ return a + (Number(r.amount_received)||0); }, 0);
+    sum.textContent = t('tips.summary').replace('{n}', rows.length).replace('{sum}', _fmtTipAmount(total));
+  }
+}
+window.loadTipsReceived = loadTipsReceived;
+
+async function exportTipsCsv(){
+  var jwt = localStorage.getItem('yeet_jwt');
+  if(!jwt){ openWalletModal(); return; }
+  try{
+    var r = await fetch('/api/v1/me/tips-received/export?sort=' + window._tipsSort + '&order=' + window._tipsOrder,
+                        { headers: { 'Authorization': 'Bearer ' + jwt } });
+    if(!r.ok){ if(window.showToast) showToast((window.t?window.t('tips.exportError'):'Export failed')); return; }
+    var blob = await r.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'my_tips.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }catch(e){
+    if(window.showToast) showToast((window.t?window.t('tips.exportError'):'Export failed'));
+  }
+}
+window.exportTipsCsv = exportTipsCsv;
 
 function updateProfileCounter(input, max){
   if(!input) return;
