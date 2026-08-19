@@ -232,6 +232,10 @@ async fn consume_verification_token(state: &AppState, token: &str) -> AppResult<
     sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = $1")
         .bind(user_id).execute(&mut *tx).await.map_err(AppError::Database)?;
     tx.commit().await.map_err(AppError::Database)?;
+
+    // Double-opt-in just completed — if KYC is also done, pay the signup bonus.
+    // Best-effort: a bonus failure must not fail email verification.
+    let _ = crate::services::tokens::maybe_grant_registration_bonus(&state.db, user_id).await;
     Ok(())
 }
 

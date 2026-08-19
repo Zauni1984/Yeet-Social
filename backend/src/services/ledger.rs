@@ -26,6 +26,7 @@ const LEDGER_LOCK_KEY: i64 = 0x59_45_45_54_4c_44_47; // "YEETLDG"
 /// Canonical transaction types. Add new kinds here so exports stay complete.
 pub mod tx_type {
     pub const REWARD_GRANT: &str        = "reward_grant";        // engagement points earned
+    pub const REGISTRATION_BONUS: &str  = "registration_bonus";  // one-time signup bonus (points)
     pub const TIP_SENT: &str            = "tip_sent";            // points tip debited from sender
     pub const TIP_RECEIVED: &str        = "tip_received";        // points tip credited to creator
     pub const PPV_PURCHASE: &str        = "ppv_purchase";        // points spent to unlock PPV
