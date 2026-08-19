@@ -29,6 +29,9 @@ redis            = { version = "0.25", features = ["tokio-comp", "connection-man
 
 # Auth
 sha2            = "0.10"
+# Password hashing (Argon2id). Replaces the legacy salted-SHA-256 scheme;
+# old hashes are transparently upgraded on the user's next login.
+argon2          = { version = "0.5", features = ["std"] }
 # At-rest AEAD for the age-verification PII blobs (face scan + ID).
 aes-gcm         = "0.10"
 hkdf            = "0.12"
