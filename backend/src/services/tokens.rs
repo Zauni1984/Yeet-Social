@@ -44,6 +44,76 @@ pub fn registration_bonus_points() -> i64 { env_i64("YEET_REGISTRATION_BONUS", r
 /// How many users may receive the signup bonus. Override: `YEET_REGISTRATION_BONUS_MAX`.
 pub fn registration_bonus_max() -> i64 { env_i64("YEET_REGISTRATION_BONUS_MAX", registration::MAX_RECIPIENTS) }
 
+/// Read an f64 from the environment, clamped to [min, max], else `default`.
+fn env_f64_clamped(key: &str, default: f64, min: f64, max: f64) -> f64 {
+    std::env::var(key).ok()
+        .and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|n| n.is_finite())
+        .map(|n| n.clamp(min, max))
+        .unwrap_or(default)
+}
+
+/// Conversion-pool (drain-prevention) parameters.
+pub mod pool {
+    /// Default YEET earmarked for point→YEET conversions — the rewards/community
+    /// share (75 %) of the fixed 21B supply. Override: `YEET_CONVERSION_POOL`.
+    pub const DEFAULT_CONVERSION_POOL: f64 = 15_750_000_000.0;
+}
+
+/// Base conversion pool in YEET. Override: `YEET_CONVERSION_POOL`.
+pub fn conversion_pool_base() -> f64 {
+    std::env::var("YEET_CONVERSION_POOL").ok()
+        .and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|n| n.is_finite() && *n >= 0.0)
+        .unwrap_or(pool::DEFAULT_CONVERSION_POOL)
+}
+/// Remaining-pool percentage (of the base pool) below which engagement-reward
+/// emission is tapered. Override: `YEET_TAPER_THRESHOLD_PCT` (0–100). Default 10.
+pub fn taper_threshold_pct() -> f64 { env_f64_clamped("YEET_TAPER_THRESHOLD_PCT", 10.0, 0.0, 100.0) }
+/// Multiplier applied to engagement rewards once tapering kicks in.
+/// Override: `YEET_TAPER_FACTOR` (0–1). Default 0.5 (rewards halved).
+pub fn taper_factor() -> f64 { env_f64_clamped("YEET_TAPER_FACTOR", 0.5, 0.0, 1.0) }
+
+/// Health of the one-way conversion reserve. The app cannot run out of *points*
+/// (they are minted per reward), but the on-chain YEET pool that backs
+/// point→YEET payouts is finite — this tracks that pool so it can't be drained
+/// past its allocation and so reward emission can taper as it shrinks.
+///
+/// Recovered value flows back in: the 10 % platform fees (captured as points in
+/// `fee_ledger`) are added to the effective pool, so an active economy refills
+/// what conversions draw down instead of draining monotonically.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct PoolStatus {
+    pub base_pool: f64,      // YEET_CONVERSION_POOL
+    pub fees_recycled: f64,  // cumulative platform fees fed back into the pool
+    pub effective_pool: f64, // base + fees
+    pub converted: f64,      // cumulative points committed to on-chain payout
+    pub remaining: f64,      // max(0, effective - converted)
+    pub remaining_pct: f64,  // remaining / base_pool * 100
+    pub tapered: bool,       // is engagement-reward emission currently reduced?
+}
+
+/// Compute the current conversion-pool status from the ledgers (no extra state).
+pub async fn pool_status(db: &Database) -> AppResult<PoolStatus> {
+    // Every conversion that is still live (awaiting approval, approved/pending,
+    // or minted) is a committed draw on the pool; only admin-rejected+refunded
+    // ones are excluded, since their points went back to the user.
+    let converted: f64 = sqlx::query_scalar::<_, f64>(
+        "SELECT COALESCE(SUM(amount), 0)::float8 FROM token_rewards
+           WHERE kind = 'conversion' AND status <> 'rejected'"
+    ).fetch_one(db.pool()).await.map_err(AppError::Database)?;
+    let fees_recycled: f64 = sqlx::query_scalar::<_, f64>(
+        "SELECT COALESCE(SUM(fee_amount), 0)::float8 FROM fee_ledger"
+    ).fetch_one(db.pool()).await.map_err(AppError::Database)?;
+
+    let base = conversion_pool_base();
+    let effective = base + fees_recycled;
+    let remaining = (effective - converted).max(0.0);
+    let remaining_pct = if base > 0.0 { remaining / base * 100.0 } else { 0.0 };
+    let tapered = remaining_pct < taper_threshold_pct();
+    Ok(PoolStatus { base_pool: base, fees_recycled, effective_pool: effective, converted, remaining, remaining_pct, tapered })
+}
+
 #[derive(Debug, Clone, sqlx::Type, serde::Serialize, serde::Deserialize)]
 #[sqlx(type_name = "text", rename_all = "snake_case")]
 pub enum RewardAction {
@@ -57,6 +127,15 @@ pub enum RewardAction {
 /// token_rewards with kind='reward' and a terminal status so the batch minter
 /// (which now only processes kind='conversion') never pays it out.
 pub async fn grant_reward(db: &Database, user_id: Uuid, action: RewardAction, amount: i64) -> AppResult<i64> {
+    // Pool taper: when the on-chain conversion reserve runs low, scale engagement
+    // rewards down so points can't keep being minted faster than they can ever be
+    // paid out. The one-time signup bonus is deliberately exempt (separate path).
+    let amount = match pool_status(db).await {
+        Ok(p) if p.tapered => ((amount as f64) * taper_factor()).floor() as i64,
+        _ => amount,
+    };
+    if amount <= 0 { return Ok(0); }
+
     // Daily cap counts today's granted reward points, regardless of status.
     let today_total: i64 = sqlx::query_scalar(
         "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards
@@ -181,7 +260,8 @@ pub async fn maybe_grant_registration_bonus(db: &Database, user_id: Uuid) -> App
 pub async fn get_pending_payout(db: &Database, user_id: Uuid) -> AppResult<i64> {
     let b: i64 = sqlx::query_scalar(
         "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards
-         WHERE user_id = $1 AND kind = 'conversion' AND status = 'pending' AND tx_hash IS NULL"
+         WHERE user_id = $1 AND kind = 'conversion'
+           AND status IN ('awaiting_approval', 'pending') AND tx_hash IS NULL"
     )
     .bind(user_id).fetch_one(db.pool()).await.map_err(AppError::Database)?;
     Ok(b)

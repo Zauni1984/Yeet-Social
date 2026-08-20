@@ -242,6 +242,10 @@ fn build_router(state: AppState) -> Router {
                post(api::age_verification::admin_reject))
         .route("/api/v1/admin/users/:address/age-verify/revoke",
                post(api::age_verification::admin_revoke_verification))
+        // Manual payout approval (point→YEET conversions) — admin-secret gated
+        .route("/api/v1/admin/payouts",            get(api::payouts::admin_list))
+        .route("/api/v1/admin/payouts/:id/approve", post(api::payouts::admin_approve))
+        .route("/api/v1/admin/payouts/:id/reject",  post(api::payouts::admin_reject))
         .route("/api/v1/admin/actions",                   get(api::admin_mod::list_actions))
         .route("/api/v1/admin/stats",                     get(api::admin_mod::stats))
         .route("/api/v1/admin/ping",                      get(api::admin_mod::ping))
@@ -250,6 +254,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/tips",             post(api::tips::send_tip))
         .route("/api/v1/tokens/balance",   get(api::tokens::get_balance))
         .route("/api/v1/tokens/rewards",   get(api::tokens::get_rewards))
+        .route("/api/v1/tokens/pool",      get(api::tokens::get_pool))
         .route("/api/v1/points/convert",   post(api::points::convert))
         // Paper wallets — printable YEET banknotes
         .route("/api/v1/paper-wallets",          post(api::paper_wallets::create))
