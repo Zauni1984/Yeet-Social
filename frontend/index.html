@@ -1044,7 +1044,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'tip.failed':'Tip failed',
       // link preview / posts / wallet
       'link.loading':'Loading preview...',
-      'post.deleteConfirm':'Delete this Yeet?','post.deleted':'Yeet deleted','post.deleteFailed':'Delete failed: {status}',
+      'post.deleteConfirm':'Delete this Yeet?','post.deleted':'Yeet deleted','post.deleteFailed':'Delete failed: {status}','post.delete':'Delete',
       'wallet.comingSoon':'WalletConnect coming soon',
       // paper wallet
       'paper.nav':'Paper Wallets',
@@ -1344,7 +1344,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'tip.selectAmount':'Bitte wähle einen Betrag','tip.sentAmount':'{amount} YEET gesendet!',
       'tip.failed':'Tip fehlgeschlagen',
       'link.loading':'Vorschau wird geladen...',
-      'post.deleteConfirm':'Diesen Yeet löschen?','post.deleted':'Yeet gelöscht','post.deleteFailed':'Löschen fehlgeschlagen: {status}',
+      'post.deleteConfirm':'Diesen Yeet löschen?','post.deleted':'Yeet gelöscht','post.deleteFailed':'Löschen fehlgeschlagen: {status}','post.delete':'Löschen',
       'wallet.comingSoon':'WalletConnect kommt bald',
       'paper.nav':'Paper Wallets',
       'paper.title':'YEET Paper Wallet drucken',
@@ -2449,9 +2449,20 @@ async function deletePost(id){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt)return;
   const r=await fetch('/api/v1/posts/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
-  if(r.ok){showToast(window.t('post.deleted'));loadFeed();}
+  if(r.ok){
+    showToast(window.t('post.deleted'));
+    // Remove the card in-place so it disappears in whichever view we're in
+    // (feed or profile timeline); the comment-section id anchors the card.
+    var cs=document.getElementById('comments-'+id);
+    var card=cs&&cs.parentElement;
+    if(card&&card.parentElement){card.remove();}
+    else if(typeof loadFeed==='function'){loadFeed();}
+  }
   else showToast(window.t('post.deleteFailed', {status: r.status}));
 }
+// Exposed globally so the post ⋯-menu (openPostMenu, a different script scope)
+// can invoke it on click.
+window.deletePost = deletePost;
 function openWebboardsModal(){document.getElementById('webboardsModal').classList.add('on');}
 function closeWebboardsModal(e){if(!e||e.target===document.getElementById('webboardsModal'))document.getElementById('webboardsModal').classList.remove('on');}
 function _wbBackButton(){
@@ -5466,15 +5477,25 @@ function openPostMenu(btn) {
     return el;
   }
 
+  // Own-post detection: yeet_user_id (set at login/profile load) vs the post's
+  // author id carried on the more-btn. Own posts get Delete instead of
+  // Follow/Report (you can't follow or report yourself).
+  var myId = localStorage.getItem('yeet_user_id') || '';
+  var isOwn = !!(myId && authorId && myId === authorId);
+
   menu.appendChild(menuItem('\u21BA', window.t('menu.repost') + (reposts >= 1 ? ' (max. 1)' : ''), function(){ repostPost(pid, reposts); menu.remove(); }));
   menu.appendChild(menuItem('\uD83D\uDCE4', window.t('menu.share'), function(){ sharePost(pid); menu.remove(); }));
-  menu.appendChild(menuItem('+', window.t('menu.follow'), function(){ toggleFollowById(authorId); menu.remove(); }));
+  if (!isOwn) menu.appendChild(menuItem('+', window.t('menu.follow'), function(){ toggleFollowById(authorId); menu.remove(); }));
 
   var sep = document.createElement('div');
   sep.style.cssText = 'height:1px;background:#2a2a2a;margin:4px 6px';
   menu.appendChild(sep);
 
-  menu.appendChild(menuItem('\uD83D\uDEA9', window.t('menu.report'), function(){ reportPost(pid); menu.remove(); }, true));
+  if (isOwn) {
+    menu.appendChild(menuItem('\uD83D\uDDD1', window.t('post.delete'), function(){ deletePost(pid); menu.remove(); }, true));
+  } else {
+    menu.appendChild(menuItem('\uD83D\uDEA9', window.t('menu.report'), function(){ reportPost(pid); menu.remove(); }, true));
+  }
 
   var actionsDiv = btn.closest('.post-actions');
   actionsDiv.appendChild(menu);
