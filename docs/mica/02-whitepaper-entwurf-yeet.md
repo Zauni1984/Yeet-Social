@@ -180,10 +180,11 @@ Energieintensität je Transaktion, THG-Emissionen.
 
 | Feld | Wert |
 | --- | --- |
-| Kurs | **1 Note-Coin : 100 YEET** |
+| Kurs | **100 Note-Coins : 1 YEET** (100 Note → 1 YEET) |
 | Umsetzung | **eigener Swap-Code auf separater Swap-Seite** (Kandidat: alte Seite `notebc.com`) — **nicht** Teil der Yeet-Plattform / des Yeet-Repos |
 | Team-Coins | Team verzichtet auf zuvor geminte Note-Coins → **kein Swap alter Team-Coins** |
-| Swap-Pool | aus dem Rewards-/Community-Pool, dimensioniert auf die tatsächlich ausstehende Note-Menge ⟦TODO(verify): Menge⟧ |
+| Note-Menge (Schätzung) | bis zu **50.000.000.000 Note** (⟦TODO(verify): exakte swap-berechtigte Menge⟧) |
+| Swap-Pool | max. **500.000.000 YEET** (50 Mrd. Note ÷ 100) — ca. **2,4 % der 21 Mrd.**, aus dem Rewards-/Community-Pool. Reicht selbst bei vollständigem Swap aller Note-Coins. |
 
 ### Offene Punkte (nicht Teil dieses Whitepapers)
 
