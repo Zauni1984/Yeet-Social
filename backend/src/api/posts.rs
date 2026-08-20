@@ -131,7 +131,12 @@ pub async fn create_post(
     .bind(req.ppv_price_yeet)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
-    let _ = tokens::grant_reward(&state.db, user_id, RewardAction::PostCreated, rewards::POST_CREATED).await;
+    // Posting reward: only articles of at least the configured length earn
+    // points (spec: >=120 chars). Shorter posts still publish, just unrewarded.
+    // The per-user daily cap is enforced inside grant_reward.
+    if req.content.trim().chars().count() >= tokens::post_min_chars() {
+        let _ = tokens::grant_reward(&state.db, user_id, RewardAction::PostCreated, tokens::post_reward()).await;
+    }
     Ok(Json(ApiResponse::ok(post_id)))
 }
 

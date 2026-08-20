@@ -438,6 +438,10 @@ pub async fn admin_approve(
     .execute(&mut *tx).await.map_err(AppError::Database)?;
     tx.commit().await.map_err(AppError::Database)?;
 
+    // KYC just completed — if email double-opt-in is also done, pay the signup
+    // bonus. Best-effort: a bonus failure must not fail the approval.
+    let _ = crate::services::tokens::maybe_grant_registration_bonus(&state.db, user_id).await;
+
     let target_username: Option<String> = sqlx::query_scalar(
         "SELECT username FROM users WHERE id = $1"
     ).bind(user_id).fetch_optional(state.db.pool()).await.ok().flatten().flatten();

@@ -48,10 +48,53 @@ pub struct LinkEmailRequest {
 #[derive(Debug, Serialize)]
 pub struct SimpleOk { pub ok: bool }
 
-fn hash_password(password: &str, salt: &str) -> String {
+/// Legacy salted-SHA-256 hash (pre-Argon2 accounts). Kept ONLY to verify — and
+/// then upgrade — old password hashes on the user's next login. Never used to
+/// store a new password.
+fn legacy_sha256(password: &str, salt: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(format!("{}{}", password, salt));
     format!("{:x}", hasher.finalize())
+}
+
+/// Constant-time byte comparison (avoids leaking match progress via timing on
+/// the legacy hex-digest path; Argon2's own verify is already constant-time).
+fn ct_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() { return false; }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) { diff |= x ^ y; }
+    diff == 0
+}
+
+/// Hash a new password with Argon2id. Returns a self-contained PHC string
+/// (algorithm, parameters and a random per-password salt are all embedded), so
+/// the separate `password_salt` column is not needed for new accounts.
+fn hash_password_argon2(password: &str) -> AppResult<String> {
+    use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
+    let salt = SaltString::generate(&mut OsRng);
+    Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .map(|h| h.to_string())
+        .map_err(|e| AppError::Internal(format!("password hashing failed: {e}")))
+}
+
+/// Verify a password against the stored credential, transparently supporting
+/// both new Argon2 PHC strings and legacy salted-SHA-256 hashes.
+///
+/// Returns `(ok, needs_upgrade)`: `ok` is whether the password matched;
+/// `needs_upgrade` is true only when the match came from a legacy hash, i.e. the
+/// caller should re-hash with Argon2 and persist it.
+fn verify_password(password: &str, stored_hash: &str, salt: &str) -> (bool, bool) {
+    if stored_hash.starts_with("$argon2") {
+        use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
+        let ok = PasswordHash::new(stored_hash)
+            .map(|ph| Argon2::default().verify_password(password.as_bytes(), &ph).is_ok())
+            .unwrap_or(false);
+        (ok, false)
+    } else {
+        let ok = ct_eq(legacy_sha256(password, salt).as_bytes(), stored_hash.as_bytes());
+        (ok, ok) // a legacy match must be upgraded to Argon2
+    }
 }
 
 fn gen_token() -> String {
@@ -115,8 +158,10 @@ pub async fn register(
         return Err(AppError::Validation("Email already registered".into()));
     }
 
-    let salt = Uuid::new_v4().to_string();
-    let hash = hash_password(&req.password, &salt);
+    let hash = hash_password_argon2(&req.password)?;
+    // Argon2 PHC strings embed their own salt; the legacy per-row salt column is
+    // stored empty for new accounts (kept only for un-upgraded legacy hashes).
+    let salt = String::new();
     let username_base = email_lower.split('@').next().unwrap_or("user")
         .chars().filter(|c| c.is_alphanumeric() || *c == '_').take(20).collect::<String>();
     let username = unique_username(&state, &username_base).await?;
@@ -168,8 +213,18 @@ pub async fn login(
     let (user_id, stored_hash, salt, username, verified_at) = row
         .ok_or_else(|| AppError::Unauthorised("Invalid email or password".into()))?;
 
-    if hash_password(&req.password, &salt) != stored_hash {
+    let (ok, needs_upgrade) = verify_password(&req.password, &stored_hash, &salt);
+    if !ok {
         return Err(AppError::Unauthorised("Invalid email or password".into()));
+    }
+    // Transparently migrate a legacy salted-SHA-256 hash to Argon2 now that we
+    // hold the plaintext. Best-effort: a failed rehash must not block login.
+    if needs_upgrade {
+        if let Ok(new_hash) = hash_password_argon2(&req.password) {
+            let _ = sqlx::query("UPDATE users SET password_hash = $1, password_salt = '' WHERE id = $2")
+                .bind(&new_hash).bind(user_id)
+                .execute(state.db.pool()).await;
+        }
     }
 
     let subject = format!("email:{}", user_id);
@@ -232,6 +287,10 @@ async fn consume_verification_token(state: &AppState, token: &str) -> AppResult<
     sqlx::query("DELETE FROM email_verification_tokens WHERE user_id = $1")
         .bind(user_id).execute(&mut *tx).await.map_err(AppError::Database)?;
     tx.commit().await.map_err(AppError::Database)?;
+
+    // Double-opt-in just completed — if KYC is also done, pay the signup bonus.
+    // Best-effort: a bonus failure must not fail email verification.
+    let _ = crate::services::tokens::maybe_grant_registration_bonus(&state.db, user_id).await;
     Ok(())
 }
 
@@ -436,4 +495,36 @@ async fn unique_username(state: &AppState, base: &str) -> AppResult<String> {
         if taken.is_none() { return Ok(candidate); }
     }
     Ok(format!("{}-{}", base, Uuid::new_v4().simple().to_string().chars().take(6).collect::<String>()))
+}
+
+#[cfg(test)]
+mod password_tests {
+    use super::*;
+
+    #[test]
+    fn argon2_roundtrip_and_scheme() {
+        let phc = hash_password_argon2("correct horse battery staple").unwrap();
+        assert!(phc.starts_with("$argon2"), "expected PHC string, got {phc}");
+        // Correct password verifies; no upgrade needed for a fresh Argon2 hash.
+        assert_eq!(verify_password("correct horse battery staple", &phc, ""), (true, false));
+        // Wrong password fails.
+        assert_eq!(verify_password("wrong", &phc, ""), (false, false));
+    }
+
+    #[test]
+    fn legacy_sha256_verifies_and_flags_upgrade() {
+        let salt = "some-legacy-salt";
+        let legacy = legacy_sha256("hunter2", salt);
+        // Legacy match → ok AND needs_upgrade.
+        assert_eq!(verify_password("hunter2", &legacy, salt), (true, true));
+        // Legacy mismatch → not ok, no upgrade.
+        assert_eq!(verify_password("nope", &legacy, salt), (false, false));
+    }
+
+    #[test]
+    fn each_hash_uses_a_fresh_salt() {
+        let a = hash_password_argon2("samepw").unwrap();
+        let b = hash_password_argon2("samepw").unwrap();
+        assert_ne!(a, b, "Argon2 must embed a random per-password salt");
+    }
 }
