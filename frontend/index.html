@@ -404,23 +404,39 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   <div class="modal modal-wrap" style="max-width:500px;width:95vw">
     <button class="modal-close" onclick="closeWebboardsModal()"><span class="yi yi-close"></span></button>
     <h3><span class="yi yi-boards"></span> Webboards</h3>
-    <p>RSS feeds from your favorite Web3 communities</p>
+    <p data-i18n="webboard.subtitle">Compose your own board of RSS feeds</p>
+
+    <!-- Add-feed form (shown when logged in) -->
+    <div id="wbAddRow" style="display:none;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <input id="wbAddUrl" type="url" placeholder="" data-i18n-placeholder="webboard.phUrl" style="flex:1;min-width:170px;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none">
+      <input id="wbAddTitle" type="text" maxlength="60" placeholder="" data-i18n-placeholder="webboard.phTitle" style="width:120px;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none">
+      <button onclick="addWebboard()" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px" data-i18n="webboard.add">Add</button>
+    </div>
+    <div id="wbLoginHint" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px" data-i18n="webboard.loginToAdd">Log in to save your own feeds.</div>
+
+    <!-- The user's own saved feeds -->
+    <div id="wbMineWrap" style="display:none">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:4px 0 6px" data-i18n="webboard.myFeeds">Your feeds</div>
+      <div id="wbMine" style="margin-bottom:16px"></div>
+    </div>
+
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:4px 0 6px" data-i18n="webboard.suggestions">Suggestions</div>
     <div id="wbList" style="margin-bottom:16px">
-      <div class="wallet-option" onclick="loadRSS('https://cointelegraph.com/rss','CoinTelegraph')">
-        <div style="width:36px;height:36px;border-radius:8px;background:#f7931a22;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-orb"></span></div>
-        <div><div class="wname">CoinTelegraph</div><div class="wdesc">Crypto news</div></div>
+      <div class="wallet-option" style="display:flex;align-items:center;gap:10px">
+        <div onclick="loadRSS('https://cointelegraph.com/rss','CoinTelegraph')" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer"><div style="width:36px;height:36px;border-radius:8px;background:#f7931a22;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-orb"></span></div><div><div class="wname">CoinTelegraph</div><div class="wdesc">Crypto news</div></div></div>
+        <button title="Add" onclick="addWebboardUrl('https://cointelegraph.com/rss','CoinTelegraph')" style="background:transparent;border:1px solid var(--border);color:var(--yeet);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:15px;font-weight:700">+</button>
       </div>
-      <div class="wallet-option" onclick="loadRSS('https://decrypt.co/feed','Decrypt')">
-        <div style="width:36px;height:36px;border-radius:8px;background:#00d5ff22;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-news"></span></div>
-        <div><div class="wname">Decrypt</div><div class="wdesc">Web3 news &amp; analysis</div></div>
+      <div class="wallet-option" style="display:flex;align-items:center;gap:10px">
+        <div onclick="loadRSS('https://decrypt.co/feed','Decrypt')" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer"><div style="width:36px;height:36px;border-radius:8px;background:#00d5ff22;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-news"></span></div><div><div class="wname">Decrypt</div><div class="wdesc">Web3 news &amp; analysis</div></div></div>
+        <button title="Add" onclick="addWebboardUrl('https://decrypt.co/feed','Decrypt')" style="background:transparent;border:1px solid var(--border);color:var(--yeet);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:15px;font-weight:700">+</button>
       </div>
-      <div class="wallet-option" onclick="loadRSS('https://thedefiant.io/feed','The Defiant')">
-        <div style="width:36px;height:36px;border-radius:8px;background:#c8f02622;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-coins"></span></div>
-        <div><div class="wname">The Defiant</div><div class="wdesc">DeFi news</div></div>
+      <div class="wallet-option" style="display:flex;align-items:center;gap:10px">
+        <div onclick="loadRSS('https://thedefiant.io/feed','The Defiant')" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer"><div style="width:36px;height:36px;border-radius:8px;background:#c8f02622;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-coins"></span></div><div><div class="wname">The Defiant</div><div class="wdesc">DeFi news</div></div></div>
+        <button title="Add" onclick="addWebboardUrl('https://thedefiant.io/feed','The Defiant')" style="background:transparent;border:1px solid var(--border);color:var(--yeet);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:15px;font-weight:700">+</button>
       </div>
-      <div class="wallet-option" onclick="loadRSS('https://nftnow.com/feed','NFT Now')">
-        <div style="width:36px;height:36px;border-radius:8px;background:#8247e522;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-globe"></span></div>
-        <div><div class="wname">NFT Now</div><div class="wdesc">NFT news &amp; drops</div></div>
+      <div class="wallet-option" style="display:flex;align-items:center;gap:10px">
+        <div onclick="loadRSS('https://nftnow.com/feed','NFT Now')" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer"><div style="width:36px;height:36px;border-radius:8px;background:#8247e522;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-globe"></span></div><div><div class="wname">NFT Now</div><div class="wdesc">NFT news &amp; drops</div></div></div>
+        <button title="Add" onclick="addWebboardUrl('https://nftnow.com/feed','NFT Now')" style="background:transparent;border:1px solid var(--border);color:var(--yeet);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:15px;font-weight:700">+</button>
       </div>
     </div>
     <div id="wbFeed" style="max-height:300px;overflow-y:auto;display:none">
@@ -819,6 +835,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       // generic
       'common.cancel':'Cancel','common.confirm':'Confirm','common.close':'Close','common.save':'Save',
       'common.loading':'Loading...','common.error':'Error','common.networkError':'Network error',
+      'webboard.subtitle':'Compose your own board of RSS feeds','webboard.phUrl':'RSS/Atom feed URL','webboard.phTitle':'Name (optional)','webboard.add':'Add','webboard.loginToAdd':'Log in to save your own feeds.','webboard.myFeeds':'Your feeds','webboard.suggestions':'Suggestions','webboard.empty':'No feeds yet — add one above.','webboard.added':'Feed added','webboard.removed':'Feed removed','webboard.remove':'Remove',
       'common.notLoggedIn':'Not logged in','common.pleaseLogin':'Please log in','common.unknown':'unknown',
       'permanent.title':'Permanent Posts','permanent.backToFeed':'Back to feed',
       'permanent.empty':'You have no permanent posts yet. Mark a post permanent with the 📌 button in the composer.',
@@ -1129,6 +1146,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     de: {
       'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.close':'Schließen','common.save':'Speichern',
       'common.loading':'Lädt...','common.error':'Fehler','common.networkError':'Netzwerkfehler',
+      'webboard.subtitle':'Stelle dir dein eigenes Board aus RSS-Feeds zusammen','webboard.phUrl':'RSS/Atom-Feed-URL','webboard.phTitle':'Name (optional)','webboard.add':'Hinzufügen','webboard.loginToAdd':'Melde dich an, um eigene Feeds zu speichern.','webboard.myFeeds':'Deine Feeds','webboard.suggestions':'Vorschläge','webboard.empty':'Noch keine Feeds — füge oben einen hinzu.','webboard.added':'Feed hinzugefügt','webboard.removed':'Feed entfernt','webboard.remove':'Entfernen',
       'common.notLoggedIn':'Nicht eingeloggt','common.pleaseLogin':'Bitte einloggen','common.unknown':'unbekannt',
       'permanent.title':'Permanente Posts','permanent.backToFeed':'Zurück zum Feed',
       'permanent.empty':'Du hast noch keine permanenten Posts. Markiere einen Post mit dem 📌-Button im Composer als permanent.',
@@ -2463,7 +2481,89 @@ async function deletePost(id){
 // Exposed globally so the post ⋯-menu (openPostMenu, a different script scope)
 // can invoke it on click.
 window.deletePost = deletePost;
-function openWebboardsModal(){document.getElementById('webboardsModal').classList.add('on');}
+function openWebboardsModal(){document.getElementById('webboardsModal').classList.add('on');renderMyWebboards();}
+
+// Render the logged-in user's own saved feeds and toggle the add-form vs a
+// login hint. Suggestions (#wbList) are always shown.
+async function renderMyWebboards(){
+  var mine=document.getElementById('wbMine');
+  var mineWrap=document.getElementById('wbMineWrap');
+  var addRow=document.getElementById('wbAddRow');
+  var hint=document.getElementById('wbLoginHint');
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(!mine) return;
+  if(!jwt){
+    if(addRow) addRow.style.display='none';
+    if(hint) hint.style.display='';
+    if(mineWrap) mineWrap.style.display='none';
+    mine.innerHTML='';
+    return;
+  }
+  if(addRow) addRow.style.display='flex';
+  if(hint) hint.style.display='none';
+  if(mineWrap) mineWrap.style.display='';
+  mine.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">'+window.t('common.loading')+'</div>';
+  try{
+    var r=await fetch('/api/v1/webboards/mine',{headers:{'Authorization':'Bearer '+jwt}});
+    var d=await r.json();
+    var feeds=(d&&d.data)||[];
+    if(!feeds.length){ mine.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">'+window.t('webboard.empty')+'</div>'; return; }
+    mine.innerHTML='';
+    feeds.forEach(function(f){
+      var row=document.createElement('div');
+      row.className='wallet-option';
+      row.style.cssText='display:flex;align-items:center;gap:10px';
+      var browse=document.createElement('div');
+      browse.style.cssText='display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer';
+      browse.innerHTML='<div style="width:36px;height:36px;border-radius:8px;background:#c6f13522;display:flex;align-items:center;justify-content:center;font-size:20px"><span class="yi yi-news"></span></div>'
+        +'<div style="min-width:0"><div class="wname">'+_esc(f.title||f.domain)+'</div><div class="wdesc" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_esc(f.domain)+'</div></div>';
+      browse.addEventListener('click',function(){ loadRSS(f.feed_url, f.title||f.domain); });
+      var del=document.createElement('button');
+      del.title=window.t('webboard.remove');
+      del.style.cssText='background:transparent;border:none;color:#ff6666;cursor:pointer;font-size:16px;padding:6px';
+      del.innerHTML='<span class="yi yi-trash"></span>';
+      del.addEventListener('click',function(e){ e.stopPropagation(); deleteWebboard(f.id); });
+      row.appendChild(browse); row.appendChild(del);
+      mine.appendChild(row);
+    });
+  }catch(e){ mine.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">'+window.t('common.networkError')+'</div>'; }
+}
+
+// Add a feed by URL (used by the form and by the suggestion "+" buttons).
+async function addWebboardUrl(url, title){
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt){ if(window.openAuthModal) openAuthModal('login'); else showToast(window.t('common.notLoggedIn'),'error'); return false; }
+  if(!url) return false;
+  try{
+    var r=await fetch('/api/v1/webboards',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({feed_url:url,title:title||null})});
+    var d=await r.json();
+    if(!d.success){ showToast((d.error&&d.error.message)||window.t('common.error'),'error'); return false; }
+    showToast(window.t('webboard.added'),'success');
+    renderMyWebboards();
+    return true;
+  }catch(e){ showToast(window.t('common.networkError'),'error'); return false; }
+}
+
+async function addWebboard(){
+  var urlEl=document.getElementById('wbAddUrl'), titleEl=document.getElementById('wbAddTitle');
+  var url=((urlEl&&urlEl.value)||'').trim(); if(!url) return;
+  var title=((titleEl&&titleEl.value)||'').trim();
+  var ok=await addWebboardUrl(url, title);
+  if(ok){ if(urlEl) urlEl.value=''; if(titleEl) titleEl.value=''; }
+}
+
+async function deleteWebboard(id){
+  var jwt=localStorage.getItem('yeet_jwt'); if(!jwt) return;
+  try{
+    var r=await fetch('/api/v1/webboards/mine/'+encodeURIComponent(id),{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
+    if(r.ok){ showToast(window.t('webboard.removed'),'success'); renderMyWebboards(); }
+    else showToast(window.t('common.error'),'error');
+  }catch(e){ showToast(window.t('common.networkError'),'error'); }
+}
+window.renderMyWebboards=renderMyWebboards;
+window.addWebboardUrl=addWebboardUrl;
+window.addWebboard=addWebboard;
+window.deleteWebboard=deleteWebboard;
 function closeWebboardsModal(e){if(!e||e.target===document.getElementById('webboardsModal'))document.getElementById('webboardsModal').classList.remove('on');}
 function _wbBackButton(){
   // Lightweight 'back to feed list' button injected once per visit.

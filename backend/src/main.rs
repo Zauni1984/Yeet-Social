@@ -147,7 +147,11 @@ fn build_router(state: AppState) -> Router {
         // Boards / Webboards
         .route("/api/v1/boards",                    get(api::boards::get_boards))
         .route("/api/v1/boards/:id",                get(api::boards::get_board))
-        .route("/api/v1/webboards",                 get(api::boards::get_boards))
+        .route("/api/v1/webboards",                 get(api::boards::get_boards).post(api::boards::add_feed))
+        .route("/api/v1/webboards/mine",            get(api::boards::list_mine))
+        // Nested under /mine/:id (not /webboards/:id) so a static segment and a
+        // param segment never sit as siblings — matchit (axum 0.7) panics on that.
+        .route("/api/v1/webboards/mine/:id",        delete(api::boards::remove_feed))
         // Notifications
         .route("/api/v1/search",                        get(api::search::search))
         .route("/api/v1/notifications",                 get(api::notifications::get_notifications))
