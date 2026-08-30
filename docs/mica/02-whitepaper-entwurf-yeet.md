@@ -40,7 +40,7 @@ als Einleitung zu lesen ist; Kaufentscheidung nur auf Basis des gesamten Whitepa
   Einweg-Umtausch von Plattform-Punkten in YEET.
 - Angebotstyp: **keine öffentliche Emission/Sale** — YEET wird ausschließlich als
   Aktivitäts-Reward zugeteilt bzw. gegen Plattform-Punkte ausgezahlt; der Note→YEET-Swap
-  läuft **off-platform** (siehe Eckdaten). Marktpreisbildung nur an externen Handelsplätzen.
+  läuft über eine **eigene Swap-Seite auf justyeet.it** (siehe Eckdaten). Marktpreisbildung nur an externen Handelsplätzen.
 - Vollständige Kennzahlen: siehe **Teil J — Tokenomics-Eckdaten**.
 
 ## Teil A — Angaben zum Anbieter (bzw. zur Person, die die Zulassung beantragt)
@@ -139,7 +139,9 @@ Energieintensität je Transaktion, THG-Emissionen.
 ## Teil J — Tokenomics-Eckdaten
 
 > Stand: Eckdaten festgelegt; Smart Contract wird erst nach Finalisierung geschrieben.
-> Der Note→YEET-Swap wird **separat und off-platform** umgesetzt (nicht im Yeet-Repo).
+> Der Note→YEET-Swap läuft über eine **eigene Seite auf justyeet.it** (`/swap.html`);
+> Swaps sind bis zur Fertigstellung des Smart Contracts gesperrt (Start wird angekündigt).
+> Technisches Design: `docs/swap-note-to-yeet.md`.
 
 ### Token
 
@@ -179,12 +181,12 @@ Energieintensität je Transaktion, THG-Emissionen.
 | Registrierungs-Bonus | **0 % (Ausnahme, gebührenfrei)** |
 | Netzwerk | BNB-Gasgebühren trägt der Nutzer; ~0,01 BNB (Beispiel) für Swap; spätere Fee-Anpassungen möglich |
 
-### Note → YEET Swap (separat, off-platform)
+### Note → YEET Swap (eigene Seite auf justyeet.it)
 
 | Feld | Wert |
 | --- | --- |
 | Kurs | **100 Note-Coins : 1 YEET** (100 Note → 1 YEET) |
-| Umsetzung | **eigener Swap-Code auf separater Swap-Seite** (Kandidat: alte Seite `notebc.com`) — **nicht** Teil der Yeet-Plattform / des Yeet-Repos |
+| Umsetzung | **eigene öffentliche Swap-Seite** auf justyeet.it (`/swap.html`), Einweg-Deposit-Bridge über eigenen Note-Fullnode (Design: `docs/swap-note-to-yeet.md`); Swaps gesperrt bis zum Contract-Start, Start wird überall angekündigt. Netzwerkgebühren (NOTE-Tx, BNB-Gas) trägt der User. |
 | Team-Coins | Team verzichtet auf zuvor geminte Note-Coins → **kein Swap alter Team-Coins** |
 | Note-Menge (Schätzung) | bis zu **50.000.000.000 Note** (⟦TODO(verify): exakte swap-berechtigte Menge⟧) |
 | Swap-Pool | max. **500.000.000 YEET** (50 Mrd. Note ÷ 100) — ca. **2,4 % der 21 Mrd.**, aus dem Rewards-/Community-Pool. Reicht selbst bei vollständigem Swap aller Note-Coins. |
