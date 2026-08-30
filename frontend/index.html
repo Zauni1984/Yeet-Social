@@ -1683,6 +1683,8 @@ function showLoginGate(){
 }
 // Build a single feed-post DOM element (markup + wired listeners).
 // Extracted so loadFeed() and loadPermanentPosts() render identically.
+// Also exported on window (below) — loadFollowingFeed lives in a different
+// script scope and renders the same cards.
 function _buildFeedPostEl(p){
   const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
   // Escape: display_name/username are user-controlled and this value is
@@ -1729,6 +1731,7 @@ function _buildFeedPostEl(p){
   el.querySelector('.more-btn').addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openPostMenu(this);});
   return el;
 }
+window._buildFeedPostEl = _buildFeedPostEl;
 
 async function loadFeed(){
   try{
@@ -3840,7 +3843,11 @@ async function loadFollowingFeed() {
     var wrap = document.createElement('div');
     wrap.id = 'feed-posts';
     for (var p of d.data) {
-      var el = buildPostEl(p);
+      // window._buildFeedPostEl is the shared feed-card renderer (exported —
+      // it lives in another script scope). The old call target buildPostEl
+      // never existed, so a non-empty following feed threw a ReferenceError
+      // into the catch below and rendered NOTHING.
+      var el = window._buildFeedPostEl(p);
       wrap.appendChild(el);
     }
     var c = document.querySelector('.composer');
