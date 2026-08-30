@@ -22,10 +22,6 @@ if('serviceWorker' in navigator){
 :root{--yeet:#c8f026;--bg:#0a0a0a;--card:#111;--border:#222;--text:#e8e8e8;--muted:#666;--green:#26f075;--red:#ff4444}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
-.ticker{background:#0f0f0f;border-bottom:1px solid var(--border);height:36px;overflow:hidden;display:flex;align-items:center}
-.ticker-inner{display:flex;animation:scroll 30s linear infinite;white-space:nowrap}
-.ticker-inner:hover{animation-play-state:paused}
-@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
 .tick .sym{color:var(--muted)}
 .up{color:var(--green)}.dn{color:var(--red)}
@@ -67,14 +63,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .sidebar-right{padding:16px}
 .widget{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
 .widget-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
-.coin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
-.coin-row:last-child{border-bottom:none}
-.coin-left{display:flex;align-items:center;gap:8px}
-.coin-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px}
-.coin-name{font-size:14px;font-weight:700}
-.coin-sym{font-size:11px;color:var(--muted)}
-.coin-price{font-size:14px;font-weight:700;text-align:right}
-.coin-chg{font-size:12px;text-align:right}
 .tag{display:inline-flex;padding:5px 10px;background:#1a1a1a;border-radius:20px;font-size:13px;margin:3px;cursor:pointer;border:1px solid var(--border)}
 .tag:hover{border-color:var(--yeet);color:var(--yeet)}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99}
@@ -225,70 +213,68 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 
 /* ==== YEET custom futuristic icon set (single color) ==== */
 :root{--yi:#c6f135}
-.yi{display:inline-block;width:1em;height:1em;vertical-align:-0.14em;background:var(--yi);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 0 1.5px rgba(198,241,53,.30));flex:none}
-.yi-logo{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M19.1 4.9l-2.1 2.1M7 16.9l-2.1 2.1'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M19.1 4.9l-2.1 2.1M7 16.9l-2.1 2.1'/%3E%3C/svg%3E")}
-.yi-user{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 3.5-6 8-6s8 2 8 6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 3.5-6 8-6s8 2 8 6'/%3E%3C/svg%3E")}
-.yi-bolt{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6z'/%3E%3C/svg%3E")}
-.yi-bell{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6'/%3E%3Cpath d='M10 20a2 2 0 0 0 4 0'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6'/%3E%3Cpath d='M10 20a2 2 0 0 0 4 0'/%3E%3C/svg%3E")}
-.yi-power{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v9'/%3E%3Cpath d='M6.5 7a8 8 0 1 0 11 0'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v9'/%3E%3Cpath d='M6.5 7a8 8 0 1 0 11 0'/%3E%3C/svg%3E")}
-.yi-close{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E")}
-.yi-link{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 14.5 14.5 9.5'/%3E%3Cpath d='M8 12l-2 2a3 3 0 0 0 4 4l2-2'/%3E%3Cpath d='M16 12l2-2a3 3 0 0 0-4-4l-2 2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 14.5 14.5 9.5'/%3E%3Cpath d='M8 12l-2 2a3 3 0 0 0 4 4l2-2'/%3E%3Cpath d='M16 12l2-2a3 3 0 0 0-4-4l-2 2'/%3E%3C/svg%3E")}
-.yi-boards{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='2'/%3E%3Cpath d='M3 9h18M9 9v11'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='2'/%3E%3Cpath d='M3 9h18M9 9v11'/%3E%3C/svg%3E")}
-.yi-orb{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='11' r='7'/%3E%3Cpath d='M6.5 20h11'/%3E%3Cpath d='M9 9a4 4 0 0 1 4-2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='11' r='7'/%3E%3Cpath d='M6.5 20h11'/%3E%3Cpath d='M9 9a4 4 0 0 1 4-2'/%3E%3C/svg%3E")}
-.yi-news{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5h15v14a2 2 0 0 0 2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpath d='M18 8h3v11a2 2 0 0 1-2 2M6 9h6M6 13h6M6 16h4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5h15v14a2 2 0 0 0 2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpath d='M18 8h3v11a2 2 0 0 1-2 2M6 9h6M6 13h6M6 16h4'/%3E%3C/svg%3E")}
-.yi-coins{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='6' rx='7' ry='3'/%3E%3Cpath d='M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6'/%3E%3Cpath d='M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='6' rx='7' ry='3'/%3E%3Cpath d='M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6'/%3E%3Cpath d='M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3'/%3E%3C/svg%3E")}
-.yi-globe{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E")}
-.yi-nft{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z'/%3E%3Cpath d='M12 8l1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z'/%3E%3Cpath d='M12 8l1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z'/%3E%3C/svg%3E")}
-.yi-clock{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
-.yi-chat{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H9l-4 4z'/%3E%3Cpath d='M8 9h8M8 12h5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H9l-4 4z'/%3E%3Cpath d='M8 9h8M8 12h5'/%3E%3C/svg%3E")}
-.yi-mail{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E")}
-.yi-camera{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l2-2h6l2 2h3v11H4z'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l2-2h6l2 2h3v11H4z'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3C/svg%3E")}
-.yi-gift{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='8' width='18' height='4'/%3E%3Cpath d='M5 12v9h14v-9M12 8v13'/%3E%3Cpath d='M12 8C12 8 10 3 7.5 4.5S9 8 12 8zM12 8s2-5 4.5-3.5S15 8 12 8z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='8' width='18' height='4'/%3E%3Cpath d='M5 12v9h14v-9M12 8v13'/%3E%3Cpath d='M12 8C12 8 10 3 7.5 4.5S9 8 12 8zM12 8s2-5 4.5-3.5S15 8 12 8z'/%3E%3C/svg%3E")}
-.yi-users{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='8' r='3.5'/%3E%3Cpath d='M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5'/%3E%3Cpath d='M16 5a3.5 3.5 0 0 1 0 6M17 15c2.5.3 4 2.2 4 5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='8' r='3.5'/%3E%3Cpath d='M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5'/%3E%3Cpath d='M16 5a3.5 3.5 0 0 1 0 6M17 15c2.5.3 4 2.2 4 5'/%3E%3C/svg%3E")}
-.yi-cash{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='6' width='20' height='12' rx='2'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M6 9v6M18 9v6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='6' width='20' height='12' rx='2'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M6 9v6M18 9v6'/%3E%3C/svg%3E")}
-.yi-gear{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1'/%3E%3C/svg%3E")}
-.yi-check{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5 10 18 20 6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5 10 18 20 6'/%3E%3C/svg%3E")}
-.yi-key{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='4'/%3E%3Cpath d='M11 11l9 9M17 17l2-2M15 15l2-2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='4'/%3E%3Cpath d='M11 11l9 9M17 17l2-2M15 15l2-2'/%3E%3C/svg%3E")}
-.yi-shield{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 20 5v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 20 5v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E")}
-.yi-phone{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='2' width='12' height='20' rx='3'/%3E%3Cpath d='M10 5h4M11 18h2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='2' width='12' height='20' rx='3'/%3E%3Cpath d='M10 5h4M11 18h2'/%3E%3C/svg%3E")}
-.yi-lock{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10' width='14' height='10' rx='2'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3'/%3E%3Cpath d='M12 14v3'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10' width='14' height='10' rx='2'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3'/%3E%3Cpath d='M12 14v3'/%3E%3C/svg%3E")}
-.yi-save{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 3h11l3 3v15H5z'/%3E%3Cpath d='M8 3v5h7V3M8 21v-7h8v7'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 3h11l3 3v15H5z'/%3E%3Cpath d='M8 3v5h7V3M8 21v-7h8v7'/%3E%3C/svg%3E")}
-.yi-trash{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14'/%3E%3Cpath d='M10 11v6M14 11v6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14'/%3E%3Cpath d='M10 11v6M14 11v6'/%3E%3C/svg%3E")}
-.yi-rocket{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c4 2 6 6 6 11l-3 3H9l-3-3C6 9 8 5 12 3z'/%3E%3Ccircle cx='12' cy='10' r='2'/%3E%3Cpath d='M9 17l-3 4M15 17l3 4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c4 2 6 6 6 11l-3 3H9l-3-3C6 9 8 5 12 3z'/%3E%3Ccircle cx='12' cy='10' r='2'/%3E%3Cpath d='M9 17l-3 4M15 17l3 4'/%3E%3C/svg%3E")}
-.yi-home{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11 12 4l8 7'/%3E%3Cpath d='M6 10v10h12V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11 12 4l8 7'/%3E%3Cpath d='M6 10v10h12V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E")}
-.yi-star{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 15 9.5 22 10l-5 4.5L18.5 22 12 18 5.5 22 7 14.5 2 10l7-.5z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 15 9.5 22 10l-5 4.5L18.5 22 12 18 5.5 22 7 14.5 2 10l7-.5z'/%3E%3C/svg%3E")}
-.yi-pin{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h6l-1 6 4 3v2H7v-2l4-3z'/%3E%3Cpath d='M12 14v7'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h6l-1 6 4 3v2H7v-2l4-3z'/%3E%3Cpath d='M12 14v7'/%3E%3C/svg%3E")}
-.yi-adult{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3h8l5 5v8l-5 5H8l-5-5V8z'/%3E%3Cpath d='M12 8v5M12 16v.4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3h8l5 5v8l-5 5H8l-5-5V8z'/%3E%3Cpath d='M12 8v5M12 16v.4'/%3E%3C/svg%3E")}
-.yi-refresh{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 11a8 8 0 1 0-1 5'/%3E%3Cpath d='M20 5v6h-6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 11a8 8 0 1 0-1 5'/%3E%3Cpath d='M20 5v6h-6'/%3E%3C/svg%3E")}
-.yi-live{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.2' fill='%23000' stroke='none'/%3E%3Cpath d='M6 6a8 8 0 0 0 0 12M18 6a8 8 0 0 1 0 12'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.2' fill='%23000' stroke='none'/%3E%3Cpath d='M6 6a8 8 0 0 0 0 12M18 6a8 8 0 0 1 0 12'/%3E%3C/svg%3E")}
-.yi-fire{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c0-1 0-1 .5-2 2 2 3 4 3 6a5.5 5.5 0 0 1-11 0c0-4 3-6 5.5-11z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c0-1 0-1 .5-2 2 2 3 4 3 6a5.5 5.5 0 0 1-11 0c0-4 3-6 5.5-11z'/%3E%3C/svg%3E")}
-.yi-video{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='13' height='12' rx='2'/%3E%3Cpath d='M16 10l5-3v10l-5-3z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='13' height='12' rx='2'/%3E%3Cpath d='M16 10l5-3v10l-5-3z'/%3E%3C/svg%3E")}
-.yi-calendar{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 9h18M8 3v4M16 3v4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 9h18M8 3v4M16 3v4'/%3E%3C/svg%3E")}
-.yi-chart{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4v16h16'/%3E%3Cpath d='M8 15l3-4 3 2 4-6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4v16h16'/%3E%3Cpath d='M8 15l3-4 3 2 4-6'/%3E%3C/svg%3E")}
-.yi-heart{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20S4 14.5 4 9a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 5.5-8 11-8 11z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20S4 14.5 4 9a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 5.5-8 11-8 11z'/%3E%3C/svg%3E")}
-.yi-repost{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V7a2 2 0 0 1 2-2h11'/%3E%3Cpath d='M14 2l3 3-3 3'/%3E%3Cpath d='M20 15v2a2 2 0 0 1-2 2H7'/%3E%3Cpath d='M10 22l-3-3 3-3'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V7a2 2 0 0 1 2-2h11'/%3E%3Cpath d='M14 2l3 3-3 3'/%3E%3Cpath d='M20 15v2a2 2 0 0 1-2 2H7'/%3E%3Cpath d='M10 22l-3-3 3-3'/%3E%3C/svg%3E")}
-.yi-more{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='5' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='12' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='19' r='1.4' fill='%23000' stroke='none'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='5' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='12' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='19' r='1.4' fill='%23000' stroke='none'/%3E%3C/svg%3E")}
-.yi-block{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M5.6 5.6l12.8 12.8'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M5.6 5.6l12.8 12.8'/%3E%3C/svg%3E")}
-.yi-flag{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3v18'/%3E%3Cpath d='M6 4h11l-2 3 2 3H6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3v18'/%3E%3Cpath d='M6 4h11l-2 3 2 3H6'/%3E%3C/svg%3E")}
-.yi-timer{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 13V9M9 2h6M18.5 6.5 20 5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 13V9M9 2h6M18.5 6.5 20 5'/%3E%3C/svg%3E")}
-.yi-warning{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 22 20H2z'/%3E%3Cpath d='M12 10v5M12 18v.4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 22 20H2z'/%3E%3Cpath d='M12 10v5M12 18v.4'/%3E%3C/svg%3E")}
-.yi-folder{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h6l2 2h10v11H3z'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h6l2 2h10v11H3z'/%3E%3C/svg%3E")}
-.yi-gem{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12l3 5-9 13L3 8z'/%3E%3Cpath d='M3 8h18M9 3 6 8l6 13 6-13-3-5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12l3 5-9 13L3 8z'/%3E%3Cpath d='M3 8h18M9 3 6 8l6 13 6-13-3-5'/%3E%3C/svg%3E")}
-.yi-eye{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E")}
-.yi-wallet{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='18' height='13' rx='2'/%3E%3Cpath d='M3 10h18M16.5 13.5h.5'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='18' height='13' rx='2'/%3E%3Cpath d='M3 10h18M16.5 13.5h.5'/%3E%3C/svg%3E")}
-.yi-arrowr{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M13 6l6 6-6 6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M13 6l6 6-6 6'/%3E%3C/svg%3E")}
-.yi-arrowl{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12H5M11 6l-6 6 6 6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12H5M11 6l-6 6 6 6'/%3E%3C/svg%3E")}
-.yi-copy{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='8' y='8' width='12' height='12' rx='2'/%3E%3Cpath d='M4 16V4h12'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='8' y='8' width='12' height='12' rx='2'/%3E%3Cpath d='M4 16V4h12'/%3E%3C/svg%3E")}
-.yi-doc{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h8l4 4v14H6z'/%3E%3Cpath d='M14 3v4h4M9 12h6M9 15h6M9 18h4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h8l4 4v14H6z'/%3E%3Cpath d='M14 3v4h4M9 12h6M9 15h6M9 18h4'/%3E%3C/svg%3E")}
-.yi-external{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M20 4l-9 9M18 13v6H5V6h6'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M20 4l-9 9M18 13v6H5V6h6'/%3E%3C/svg%3E")}
-.yi-trophy{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4h10v4a5 5 0 0 1-10 0z'/%3E%3Cpath d='M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M10 13h4M9 20h6M12 13v3'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4h10v4a5 5 0 0 1-10 0z'/%3E%3Cpath d='M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M10 13h4M9 20h6M12 13v3'/%3E%3C/svg%3E")}
-.yi-hourglass{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9'/%3E%3C/svg%3E")}
-.yi-edit{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z'/%3E%3Cpath d='M14 6l4 4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z'/%3E%3Cpath d='M14 6l4 4'/%3E%3C/svg%3E")}
-.yi-mic{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='3' width='6' height='11' rx='3'/%3E%3Cpath d='M6 11a6 6 0 0 0 12 0M12 17v4'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='3' width='6' height='11' rx='3'/%3E%3Cpath d='M6 11a6 6 0 0 0 12 0M12 17v4'/%3E%3C/svg%3E")}
-.yi-micoff{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5a3 3 0 0 1 6 0v4M15 12.5A3 3 0 0 1 9 11v-1M6 11a6 6 0 0 0 9.5 4.9M12 17v4'/%3E%3Cpath d='M4 4l16 16'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5a3 3 0 0 1 6 0v4M15 12.5A3 3 0 0 1 9 11v-1M6 11a6 6 0 0 0 9.5 4.9M12 17v4'/%3E%3Cpath d='M4 4l16 16'/%3E%3C/svg%3E")}
-.yi-camoff{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l1-1M20 8v9M4 8v11h13M13 6h2l2 2h1'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3Cpath d='M4 4l16 16'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l1-1M20 8v9M4 8v11h13M13 6h2l2 2h1'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3Cpath d='M4 4l16 16'/%3E%3C/svg%3E")}
-.yi-party{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20l5-13 8 8z'/%3E%3Cpath d='M9.5 7.5 11 4M14.5 6.5 17 5M17.5 9.5 21 8M15 12.5l2.5 2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20l5-13 8 8z'/%3E%3Cpath d='M9.5 7.5 11 4M14.5 6.5 17 5M17.5 9.5 21 8M15 12.5l2.5 2'/%3E%3C/svg%3E")}
-.yi-skull{-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3a7 7 0 0 0-7 7v3a3 3 0 0 0 2 2.8V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3.2A3 3 0 0 0 19 13v-3a7 7 0 0 0-7-7z'/%3E%3Ccircle cx='9.3' cy='11' r='1.5' fill='%23000' stroke='none'/%3E%3Ccircle cx='14.7' cy='11' r='1.5' fill='%23000' stroke='none'/%3E%3Cpath d='M10 21v-3M14 21v-3M12 16v2'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3a7 7 0 0 0-7 7v3a3 3 0 0 0 2 2.8V19a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3.2A3 3 0 0 0 19 13v-3a7 7 0 0 0-7-7z'/%3E%3Ccircle cx='9.3' cy='11' r='1.5' fill='%23000' stroke='none'/%3E%3Ccircle cx='14.7' cy='11' r='1.5' fill='%23000' stroke='none'/%3E%3Cpath d='M10 21v-3M14 21v-3M12 16v2'/%3E%3C/svg%3E")}
+.yi{display:inline-block;width:1em;height:1em;vertical-align:-0.14em;background:var(--yi);-webkit-mask-image:var(--yi-m);mask-image:var(--yi-m);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center;filter:drop-shadow(0 0 1.5px rgba(198,241,53,.30));flex:none}
+.yi-logo{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M19.1 4.9l-2.1 2.1M7 16.9l-2.1 2.1'/%3E%3C/svg%3E")}
+.yi-user{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 3.5-6 8-6s8 2 8 6'/%3E%3C/svg%3E")}
+.yi-bolt{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6z'/%3E%3C/svg%3E")}
+.yi-bell{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6'/%3E%3Cpath d='M10 20a2 2 0 0 0 4 0'/%3E%3C/svg%3E")}
+.yi-power{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v9'/%3E%3Cpath d='M6.5 7a8 8 0 1 0 11 0'/%3E%3C/svg%3E")}
+.yi-close{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E")}
+.yi-link{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 14.5 14.5 9.5'/%3E%3Cpath d='M8 12l-2 2a3 3 0 0 0 4 4l2-2'/%3E%3Cpath d='M16 12l2-2a3 3 0 0 0-4-4l-2 2'/%3E%3C/svg%3E")}
+.yi-boards{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='16' rx='2'/%3E%3Cpath d='M3 9h18M9 9v11'/%3E%3C/svg%3E")}
+.yi-orb{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='11' r='7'/%3E%3Cpath d='M6.5 20h11'/%3E%3Cpath d='M9 9a4 4 0 0 1 4-2'/%3E%3C/svg%3E")}
+.yi-news{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5h15v14a2 2 0 0 0 2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpath d='M18 8h3v11a2 2 0 0 1-2 2M6 9h6M6 13h6M6 16h4'/%3E%3C/svg%3E")}
+.yi-coins{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='6' rx='7' ry='3'/%3E%3Cpath d='M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6'/%3E%3Cpath d='M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3'/%3E%3C/svg%3E")}
+.yi-globe{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'/%3E%3C/svg%3E")}
+.yi-nft{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 21 7v10l-9 5-9-5V7z'/%3E%3Cpath d='M12 8l1.5 2.5L16 12l-2.5 1.5L12 16l-1.5-2.5L8 12l2.5-1.5z'/%3E%3C/svg%3E")}
+.yi-clock{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E")}
+.yi-chat{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16v11H9l-4 4z'/%3E%3Cpath d='M8 9h8M8 12h5'/%3E%3C/svg%3E")}
+.yi-mail{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 7l9 6 9-6'/%3E%3C/svg%3E")}
+.yi-camera{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l2-2h6l2 2h3v11H4z'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3C/svg%3E")}
+.yi-gift{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='8' width='18' height='4'/%3E%3Cpath d='M5 12v9h14v-9M12 8v13'/%3E%3Cpath d='M12 8C12 8 10 3 7.5 4.5S9 8 12 8zM12 8s2-5 4.5-3.5S15 8 12 8z'/%3E%3C/svg%3E")}
+.yi-users{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='8' r='3.5'/%3E%3Cpath d='M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5'/%3E%3Cpath d='M16 5a3.5 3.5 0 0 1 0 6M17 15c2.5.3 4 2.2 4 5'/%3E%3C/svg%3E")}
+.yi-cash{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='6' width='20' height='12' rx='2'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M6 9v6M18 9v6'/%3E%3C/svg%3E")}
+.yi-gear{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.2'/%3E%3Cpath d='M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1'/%3E%3C/svg%3E")}
+.yi-check{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5 10 18 20 6'/%3E%3C/svg%3E")}
+.yi-key{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='8' cy='8' r='4'/%3E%3Cpath d='M11 11l9 9M17 17l2-2M15 15l2-2'/%3E%3C/svg%3E")}
+.yi-shield{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 20 5v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E")}
+.yi-phone{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='2' width='12' height='20' rx='3'/%3E%3Cpath d='M10 5h4M11 18h2'/%3E%3C/svg%3E")}
+.yi-lock{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10' width='14' height='10' rx='2'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3'/%3E%3Cpath d='M12 14v3'/%3E%3C/svg%3E")}
+.yi-save{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 3h11l3 3v15H5z'/%3E%3Cpath d='M8 3v5h7V3M8 21v-7h8v7'/%3E%3C/svg%3E")}
+.yi-trash{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14'/%3E%3Cpath d='M10 11v6M14 11v6'/%3E%3C/svg%3E")}
+.yi-rocket{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c4 2 6 6 6 11l-3 3H9l-3-3C6 9 8 5 12 3z'/%3E%3Ccircle cx='12' cy='10' r='2'/%3E%3Cpath d='M9 17l-3 4M15 17l3 4'/%3E%3C/svg%3E")}
+.yi-home{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 11 12 4l8 7'/%3E%3Cpath d='M6 10v10h12V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E")}
+.yi-star{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 15 9.5 22 10l-5 4.5L18.5 22 12 18 5.5 22 7 14.5 2 10l7-.5z'/%3E%3C/svg%3E")}
+.yi-pin{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 3h6l-1 6 4 3v2H7v-2l4-3z'/%3E%3Cpath d='M12 14v7'/%3E%3C/svg%3E")}
+.yi-adult{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3h8l5 5v8l-5 5H8l-5-5V8z'/%3E%3Cpath d='M12 8v5M12 16v.4'/%3E%3C/svg%3E")}
+.yi-refresh{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 11a8 8 0 1 0-1 5'/%3E%3Cpath d='M20 5v6h-6'/%3E%3C/svg%3E")}
+.yi-live{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.2' fill='%23000' stroke='none'/%3E%3Cpath d='M6 6a8 8 0 0 0 0 12M18 6a8 8 0 0 1 0 12'/%3E%3C/svg%3E")}
+.yi-fire{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c0-1 0-1 .5-2 2 2 3 4 3 6a5.5 5.5 0 0 1-11 0c0-4 3-6 5.5-11z'/%3E%3C/svg%3E")}
+.yi-video{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='13' height='12' rx='2'/%3E%3Cpath d='M16 10l5-3v10l-5-3z'/%3E%3C/svg%3E")}
+.yi-calendar{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 9h18M8 3v4M16 3v4'/%3E%3C/svg%3E")}
+.yi-chart{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4v16h16'/%3E%3Cpath d='M8 15l3-4 3 2 4-6'/%3E%3C/svg%3E")}
+.yi-heart{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20S4 14.5 4 9a4.5 4.5 0 0 1 8-3 4.5 4.5 0 0 1 8 3c0 5.5-8 11-8 11z'/%3E%3C/svg%3E")}
+.yi-repost{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V7a2 2 0 0 1 2-2h11'/%3E%3Cpath d='M14 2l3 3-3 3'/%3E%3Cpath d='M20 15v2a2 2 0 0 1-2 2H7'/%3E%3Cpath d='M10 22l-3-3 3-3'/%3E%3C/svg%3E")}
+.yi-more{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='5' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='12' r='1.4' fill='%23000' stroke='none'/%3E%3Ccircle cx='12' cy='19' r='1.4' fill='%23000' stroke='none'/%3E%3C/svg%3E")}
+.yi-block{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M5.6 5.6l12.8 12.8'/%3E%3C/svg%3E")}
+.yi-flag{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3v18'/%3E%3Cpath d='M6 4h11l-2 3 2 3H6'/%3E%3C/svg%3E")}
+.yi-timer{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 13V9M9 2h6M18.5 6.5 20 5'/%3E%3C/svg%3E")}
+.yi-warning{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 22 20H2z'/%3E%3Cpath d='M12 10v5M12 18v.4'/%3E%3C/svg%3E")}
+.yi-folder{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h6l2 2h10v11H3z'/%3E%3C/svg%3E")}
+.yi-gem{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12l3 5-9 13L3 8z'/%3E%3Cpath d='M3 8h18M9 3 6 8l6 13 6-13-3-5'/%3E%3C/svg%3E")}
+.yi-eye{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E")}
+.yi-wallet{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='6' width='18' height='13' rx='2'/%3E%3Cpath d='M3 10h18M16.5 13.5h.5'/%3E%3C/svg%3E")}
+.yi-arrowr{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h15M13 6l6 6-6 6'/%3E%3C/svg%3E")}
+.yi-arrowl{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12H5M11 6l-6 6 6 6'/%3E%3C/svg%3E")}
+.yi-copy{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='8' y='8' width='12' height='12' rx='2'/%3E%3Cpath d='M4 16V4h12'/%3E%3C/svg%3E")}
+.yi-doc{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h8l4 4v14H6z'/%3E%3Cpath d='M14 3v4h4M9 12h6M9 15h6M9 18h4'/%3E%3C/svg%3E")}
+.yi-external{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 4h6v6M20 4l-9 9M18 13v6H5V6h6'/%3E%3C/svg%3E")}
+.yi-trophy{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4h10v4a5 5 0 0 1-10 0z'/%3E%3Cpath d='M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3M10 13h4M9 20h6M12 13v3'/%3E%3C/svg%3E")}
+.yi-hourglass{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9'/%3E%3C/svg%3E")}
+.yi-edit{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z'/%3E%3Cpath d='M14 6l4 4'/%3E%3C/svg%3E")}
+.yi-mic{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='3' width='6' height='11' rx='3'/%3E%3Cpath d='M6 11a6 6 0 0 0 12 0M12 17v4'/%3E%3C/svg%3E")}
+.yi-micoff{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 5a3 3 0 0 1 6 0v4M15 12.5A3 3 0 0 1 9 11v-1M6 11a6 6 0 0 0 9.5 4.9M12 17v4'/%3E%3Cpath d='M4 4l16 16'/%3E%3C/svg%3E")}
+.yi-camoff{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l1-1M20 8v9M4 8v11h13M13 6h2l2 2h1'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3Cpath d='M4 4l16 16'/%3E%3C/svg%3E")}
 </style>
 </head>
 <body>
@@ -338,59 +324,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <div class="overlay" id="overlay" onclick="toggleNav()"></div>
 
 <!-- WALLET MODAL -->
-<div class="modal-bg" id="walletModal" onclick="closeWalletModal(event)">
-  <div class="modal modal-wrap">
-    <button class="modal-close" onclick="closeWalletModal()"><span class="yi yi-close"></span></button>
-    <h3><span class="yi yi-link"></span> Connect Wallet</h3>
-    <p>Choose your wallet to sign in to YEET Social</p>
 
-    <div class="wallet-option" onclick="connectMetaMask()">
-      <img data-src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" onerror="this.style.background='#e2761b';this.removeAttribute('src')" alt="MetaMask" style="background:#e2761b">
-      <div>
-        <div class="wname">MetaMask</div>
-        <div class="wdesc">Browser extension &amp; mobile wallet</div>
-      </div>
-    </div>
-
-    <div class="wallet-option" onclick="connectTrustWallet()">
-      <img data-src="https://trustwallet.com/assets/images/media/assets/TWT.png" onerror="this.style.background='#3375BB';this.removeAttribute('src')" alt="Trust Wallet" style="border-radius:50%;background:#3375BB">
-      <div>
-        <div class="wname">Trust Wallet</div>
-        <div class="wdesc">Mobile wallet by Binance</div>
-      </div>
-    </div>
-
-    <div class="wallet-option" onclick="connectWalletConnect()">
-      <img data-src="https://walletconnect.com/static/favicon.png" onerror="this.removeAttribute('src')" alt="WalletConnect" style="background:#3b99fc;border-radius:8px;padding:4px">
-      <div>
-        <div class="wname">WalletConnect</div>
-        <div class="wdesc">Scan QR code with any compatible wallet</div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- TIP MODAL -->
-<div class="modal-bg" id="tipModal" onclick="closeTipModal(event)">
-  <div class="modal modal-wrap">
-    <button class="modal-close" onclick="closeTipModal()"><span class="yi yi-close"></span></button>
-    <h3><span class="yi yi-bolt"></span> Tip YEET Tokens</h3>
-    <p>Send YEET tokens to support this creator</p>
-    <div id="tipTarget" style="background:#1a1a1a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--muted)">Select a post to tip</div>
-    <div style="margin-bottom:16px">
-      <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">Amount (YEET)</label>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button onclick="setTipAmt(1)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">1</button>
-        <button onclick="setTipAmt(5)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">5</button>
-        <button onclick="setTipAmt(10)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">10</button>
-        <button onclick="setTipAmt(100)" style="flex:1;background:#1a1a1a;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:8px;cursor:pointer">100</button>
-      </div>
-      <input id="tipAmount" type="number" value="5" min="0.1" step="0.1" style="width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:16px;outline:none">
-    </div>
-    <button onclick="sendTip()" style="width:100%;background:var(--yeet);color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer"><span class="yi yi-bolt"></span> Send Tip</button>
-  </div>
-</div>
-
 <!-- WEBBOARDS MODAL -->
 <div class="modal-bg" id="webboardsModal" onclick="closeWebboardsModal(event)">
   <div class="modal modal-wrap" style="max-width:500px;width:95vw">
@@ -439,24 +375,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 </div>
 
 <!-- NFT MINT MODAL -->
-<div class="modal-bg" id="nftModal" onclick="closeNFTModal(event)">
-  <div class="modal modal-wrap" style="max-width:480px">
-    <button class="modal-close" onclick="closeNFTModal()"><span class="yi yi-close"></span></button>
-    <h3><span class="yi yi-nft"></span> <span data-i18n="nft.modalTitle">NFT posts</span></h3>
-    <p data-i18n="nft.comingSoon">On-chain NFT minting is not available yet. This feature is in preparation.</p>
-    <div style="background:#1a1a1a;border-radius:12px;padding:16px;margin-bottom:16px">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Post Content</div>
-      <div id="nftPostPreview" style="font-size:14px;line-height:1.5;color:var(--text)">No post selected</div>
-    </div>
-    <input id="nftName" type="hidden" value="">
-    <input id="nftDesc" type="hidden" value="">
-    <button onclick="mintNFT()" id="mintBtn" disabled style="width:100%;background:#2a2a2a;color:#888;border:none;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:not-allowed">
-      <span class="yi yi-clock"></span> <span data-i18n="nft.comingSoonShort">Coming soon</span>
-    </button>
-    <div id="nftStatus" style="margin-top:12px;text-align:center;font-size:13px;min-height:20px"></div>
-  </div>
-</div>
-
 <!-- SETTINGS MODAL -->
 <div class="modal-bg" id="messagesModal" onclick="closeMessagesModal(event)">
   <div class="modal modal-wrap" style="max-width:780px;width:96vw">
@@ -1463,7 +1381,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     document.documentElement.setAttribute('lang', lang);
     applyTranslations();
   }
-  window.YEET_I18N = DICTS;
   window.t = t;
   window.setLang = setLang;
   window.getLang = getLang;
@@ -1489,15 +1406,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 (function() {
 
 // ====== COINGECKO PRICES ======
-const COINS=[
-  {id:'bitcoin',sym:'BTC',col:'#f7931a',icon:'BTC'},
-  {id:'ethereum',sym:'ETH',col:'#627eea',icon:'ETH'},
-  {id:'binancecoin',sym:'BNB',col:'#f3ba2f',icon:'BNB'},
-  {id:'solana',sym:'SOL',col:'#9945ff',icon:'S'},
-  {id:'matic-network',sym:'MATIC',col:'#8247e5',icon:'M'}
-];
-function pf(n){return n>=1000?'$'+n.toLocaleString('en',{maximumFractionDigits:0}):n>=1?'$'+n.toFixed(2):'$'+n.toFixed(4)}
-function pc(c){const u=c>=0;return{cls:u?'up':'dn',txt:(u?'+':'')+c.toFixed(2)+'%'}}
 // Crypto prices disabled  no external calls.
 function loadPrices(){
   var el=document.getElementById('prices');
@@ -1664,7 +1572,7 @@ async function loadProfile(){
     const pw=document.getElementById('profileWidget');
     const pi=document.getElementById('profileInfo');
     if(pw)pw.style.display='';
-    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:var(--yeet);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000">'+(short?short[0].toUpperCase():'Y')+'</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font';
+    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:var(--yeet);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000">'+(short?short[0].toUpperCase():'Y')+'</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">'+(u.username?'@'+String(u.username).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):'')+'</div></div></div>';
   }catch(e){}
 }
 function showLoginGate(){
@@ -1917,47 +1825,24 @@ async function ensureYeetChain(provider){
       }).catch(function(){});
   }
 })();
-loadPrices();loadFeed();loadTrendingTags();// adultToggleLabel always visible nowif(localStorage.getItem('yeet_jwt')){connectedAddress=localStorage.getItem('yeet_address')||null;if(connectedAddress){const b=document.getElementById('walletBtn');b.textContent=connectedAddress.slice(0,6)+'...'+connectedAddress.slice(-4);b.classList.add('connected');}loadProfile();}
+loadPrices();loadFeed();loadTrendingTags();
+// Session restore: a returning logged-in user gets their profile (and the
+// cached yeet_user_id that own-post checks rely on) loaded at startup.
+// NOTE: this block used to be dead — a swallowed newline had folded it into
+// the preceding // comment, so loadProfile() never ran on page load.
+if(localStorage.getItem('yeet_jwt')){
+  connectedAddress=localStorage.getItem('yeet_address')||null;
+  loadProfile();
+}
 
 // ====== WALLET CONNECTION ======
 
 
-function openWalletModal(){document.getElementById('pwaModal').classList.remove('on');var m=document.getElementById('walletModal');m.classList.add('on');m.querySelectorAll('img[data-src]').forEach(function(i){i.src=i.dataset.src;i.removeAttribute('data-src');});}
-function closeWalletModal(e){if(!e||e.target===document.getElementById('walletModal'))document.getElementById('walletModal').classList.remove('on')}
-
-async function onConnected(address,walletName,provider){
-  connectedAddress=address;connectedWallet=walletName;
-  const short=address.slice(0,6)+'...'+address.slice(-4);
-  const btn=document.getElementById('walletBtn');
-  btn.textContent='Signing...';btn.classList.add('connected');
-  document.getElementById('walletModal').classList.remove('on');
-  // EIP-191: get nonce  sign  verify  JWT
-  try{
-    const nonceR=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address})});
-    const nonceD=await nonceR.json();
-    if(!nonceD.success) throw new Error('Nonce error');
-    const {nonce,message}=nonceD.data;
-    const signature=await provider.request({method:'personal_sign',params:[message,address]});
-    const verR=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address,signature,message,nonce})});
-    const verD=await verR.json();
-    if(verD.success && verD.data && (verD.data.token || verD.data.access_token)){
-      localStorage.setItem('yeet_jwt', verD.data.token || verD.data.access_token);
-      if(verD.data.refresh_token) try{ localStorage.setItem('yeet_refresh', verD.data.refresh_token); }catch(e){}
-      localStorage.setItem('yeet_address',address);
-      btn.textContent=short;
-      showToast(' Signed in: '+walletName+' ('+short+')');
-      if(typeof showGlobalFeed === 'function') showGlobalFeed();
-      if(typeof refreshTokenBalance === 'function') refreshTokenBalance();
-      if(typeof refreshNavAvatar === 'function') refreshNavAvatar();
-    }else{
-      btn.textContent=short;
-      showToast('Connected (no JWT): '+short);loadProfile();
-    }
-  }catch(e){
-    btn.textContent=short;
-    if(e.code===4001) showToast('Signature rejected');
-    else showToast('Auth error: '+e.message.slice(0,40));
-  }
+// The legacy #walletModal (and its broken onConnected flow) is gone —
+// every login gate now opens the unified auth modal (email + wallet).
+function openWalletModal(){
+  var pwa=document.getElementById('pwaModal'); if(pwa)pwa.classList.remove('on');
+  if(typeof window.openAuthModal==='function'){ window.openAuthModal('login'); }
 }
 
 function showToast(msg){
@@ -1996,6 +1881,10 @@ async function _doTokenRefresh(){
       var pl = (d && d.data) || d;
       if(pl && pl.access_token){
         localStorage.setItem('yeet_jwt', pl.access_token);
+        // Keep the legacy mirrors in sync — a few old read sites check
+        // yeetToken/yt first and would otherwise keep using the stale token.
+        try { localStorage.setItem('yeetToken', pl.access_token); } catch(e){}
+        try { localStorage.setItem('yt', pl.access_token); } catch(e){}
         if(pl.refresh_token) localStorage.setItem('yeet_refresh', pl.refresh_token);
         return true;
       }
@@ -2041,9 +1930,14 @@ async function yeetFetch(path, opts){
     var now = Date.now();
     if(now - window._sessionExpiredAt > 5000){
       window._sessionExpiredAt = now;
-      try { localStorage.removeItem('yeet_jwt'); } catch(e){}
-      try { localStorage.removeItem('yeet_refresh'); } catch(e){}
-      try { localStorage.removeItem('yeet_address'); } catch(e){}
+      // Clear ALL token keys (incl. the legacy yeetToken/yt mirrors) so a dead
+      // session can't resurrect a phantom logged-in UI on the next reload.
+      if(typeof window._yeetClearTokens === 'function'){ try{ window._yeetClearTokens(); }catch(e){} }
+      else {
+        try { localStorage.removeItem('yeet_jwt'); } catch(e){}
+        try { localStorage.removeItem('yeet_refresh'); } catch(e){}
+        try { localStorage.removeItem('yeet_address'); } catch(e){}
+      }
       if(window.showToast) showToast(window.t ? window.t('toast.sessionExpired') : 'Session expired');
       if(typeof window.openAuthModal === 'function'){
         try { window.openAuthModal('login'); } catch(e){}
@@ -2135,6 +2029,9 @@ async function refreshNavAvatar(){
   // Adapter so the rest of the function reads the user object the
   // same way as before.
   var u = res.data;
+  // Cache the user id: own-post checks (Delete in the ⋯-menu) compare
+  // against it, and this runs on every login/refresh path.
+  if(u.id){ try{ localStorage.setItem('yeet_user_id', u.id); }catch(e){} }
   if(u.avatar_url){
     el.style.backgroundImage = "url('"+ String(u.avatar_url).replace(/['"<>]/g,'') +"')";
     el.textContent = '';
@@ -2181,67 +2078,6 @@ function waitForEthereum(timeoutMs){
 }
 window.waitForEthereum = waitForEthereum;
 
-async function connectMetaMask(){
-  const eth=await waitForEthereum(2500);
-  if(eth&&(eth.isMetaMask||eth.providers?.some(p=>p.isMetaMask))){
-    const provider=eth.providers?.find(p=>p.isMetaMask)||eth;
-    try{
-      const accs=await provider.request({method:'eth_requestAccounts'});
-      // Ensure the wallet is on the single configured chain (YEET_CHAIN).
-      try{await ensureYeetChain(provider);}catch(e){}
-      onConnected(accs[0],'MetaMask',provider);
-    }catch(e){showToast('MetaMask: '+e.message);}
-  }else if(eth){
-    // ethereum exists but not MetaMask  try anyway
-    try{
-      const accs=await eth.request({method:'eth_requestAccounts'});
-      onConnected(accs[0],'Wallet',eth);
-    }catch(e){showToast('Wallet error: '+e.message);}
-  }else{
-    showToast('MetaMask not detected. Please install or unlock MetaMask.');
-    setTimeout(()=>window.open('https://metamask.io/download/','_blank'),1500);
-  }
-}
-
-async function connectTrustWallet(){
-  // Trust Wallet injects window.ethereum on mobile
-  if(window.ethereum&&window.ethereum.isTrust){
-    try{
-      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      onConnected(accs[0],'Trust Wallet',eth);
-    }catch(e){showToast('Trust Wallet: '+e.message);}
-  }else if(window.ethereum){
-    // Fallback: use available provider (could be Trust Wallet on mobile)
-    try{
-      const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-      onConnected(accs[0],'Trust Wallet');
-    }catch(e){showToast('Trust Wallet: '+e.message);}
-  }else{
-    showToast('Open this page in Trust Wallet browser or install Trust Wallet');
-    setTimeout(()=>window.open('https://trustwallet.com/download','_blank'),1000);
-  }
-}
-
-function connectWalletConnect(){
-  // WalletConnect v2 QR modal - show instructions since no relay is set up
-  showToast('WalletConnect: Opening QR flow...');
-  // For production: integrate @walletconnect/web3-provider
-  // For now show instructions modal
-  document.getElementById('walletModal').classList.remove('on');
-  const d=document.createElement('div');
-  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center';
-  d.innerHTML='<div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;max-width:360px;width:90vw;text-align:center"><div style="font-size:48px;margin-bottom:12px"></div><h3 style="margin-bottom:8px">WalletConnect</h3><p style="font-size:13px;color:#666;margin-bottom:20px">Open your mobile wallet (Trust Wallet, Rainbow, Argent...) and scan the QR code to connect.</p><div style="background:#1a1a1a;border-radius:12px;padding:20px;margin-bottom:20px;font-size:13px;color:#888">QR pairing requires WalletConnect v2 relay.<br>Coming in YEET v1.0!</div><button onclick="this.parentElement.parentElement.remove()" style="background:var(--yeet);color:#000;border:none;padding:10px 24px;border-radius:8px;font-weight:800;cursor:pointer;width:100%">Close</button></div>';
-  d.onclick=e=>{if(e.target===d)d.remove()};
-  document.body.appendChild(d);
-}
-
-// ====== PWA INSTALL ======
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();deferredPrompt=e;
-  document.getElementById('pwaBanner').classList.remove('hide');
-  document.getElementById('pwaInstallBtn').style.display='block';
-});
 function openPwaModal(){document.getElementById('pwaModal').classList.add('on')}
 function closePwaModal(e){if(!e||e.target===document.getElementById('pwaModal'))document.getElementById('pwaModal').classList.remove('on')}
 function triggerPwaInstall(){
@@ -2258,63 +2094,6 @@ if(window.matchMedia('(display-mode:standalone)').matches){
 
 // ====== UI ======
 
-  function _tipPick(btn,amount){
-    window._tipSelected=amount;
-    var btns=btn.parentElement.querySelectorAll('button');
-    btns.forEach(function(b){b.style.borderColor='#333';});
-    btn.style.borderColor='var(--yeet)';
-    var inp=document.getElementById('_tipCustom');
-    if(inp)inp.value='';
-  }
-function closeTipModal(e){if(!e||e.target===document.getElementById('tipModal'))document.getElementById('tipModal').classList.remove('on');}
-function setTipAmt(n){document.getElementById('tipAmount').value=n;}
-async function sendTip(){
-  const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt)return;
-  const modal=document.getElementById('tipModal');
-  const postId=modal.dataset.postId;
-  const toAddr=modal.dataset.toAddr;
-  const amount=parseFloat(document.getElementById('tipAmount').value)||0;
-  if(amount<=0){showToast('Enter a valid amount');return;}
-
-  const btn=modal.querySelector('button[onclick="sendTip()"]');
-  if(btn){btn.disabled=true;btn.textContent='Sending...';}
-
-  // Try on-chain first if MetaMask available
-  if(window.ethereum&&connectedAddress){
-    try{
-      await ensureYeetChain(window.ethereum);
-      // ERC-20 transfer: transfer(address,uint256)
-      const YEET_ADDR=window.YEET_CHAIN.token;
-      if(!YEET_ADDR){ throw new Error('YEET token address not configured for '+window.YEET_CHAIN.name); }
-      const amtWei='0x'+BigInt(Math.floor(amount*1e18)).toString(16);
-      // transfer(address to, uint256 amount) selector = 0xa9059cbb
-      const toHex=toAddr.replace('0x','').toLowerCase().padStart(64,'0');
-      const amtHex=amtWei.replace('0x','').padStart(64,'0');
-      const data='0xa9059cbb'+toHex+amtHex;
-      const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from:connectedAddress,to:YEET_ADDR,data:data,gas:'0x15F90'}]});
-      showToast('Tip sent on-chain! TX: '+txHash.slice(0,12)+'...');
-      if(btn){btn.disabled=false;btn.textContent='Send Tip';}
-      closeTipModal();
-      // Also notify backend
-      fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId,tx_hash:txHash})}).catch(function(){});
-      return;
-    }catch(err){
-      if(err.code===4001){showToast('Transaction cancelled');if(btn){btn.disabled=false;btn.textContent='Send Tip';}return;}
-      // Fall through to backend-only tip
-      console.warn('On-chain tip failed, using backend:',err.message);
-    }
-  }
-
-  // Backend-only tip (no MetaMask or chain switch failed)
-  try{
-    const res=await fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,amount:amount.toString(),post_id:postId})});
-    const dd=await res.json();
-    if(res.ok){showToast(amount+' YEET tip sent!');closeTipModal();}
-    else showToast('Tip failed: '+(dd.error||dd.message||res.status));
-  }catch(e){showToast('Tip error: '+e.message.slice(0,40));}
-  if(btn){btn.disabled=false;btn.textContent='Send Tip';}
-}
 
 async function deletePost(id){
   if(!confirm(window.t('post.deleteConfirm')))return;
@@ -2485,35 +2264,6 @@ async function loadRSS(url,name){
 }
 
 // NFT Contract ABI (minimal - only mint function)
-const NFT_ABI=[{"inputs":[{"name":"to","type":"address"},{"name":"postId","type":"string"},{"name":"tokenURI","type":"string"}],"name":"mintPost","outputs":[{"name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"name":"","type":"string"}],"stateMutability":"view","type":"function"}];
-const NFT_CONTRACT_ADDR='0x8F518F1BCdcaAA0cb5b1690ebdC72152b6060F51';
-var _nftPostId=null;
-var _nftPostContent='';
-function openNFTModal(postId,content){
-  const jwt=localStorage.getItem('yeet_jwt');
-  if(!jwt){openWalletModal();return;}
-  _nftPostId=postId;
-  _nftPostContent=content;
-  document.getElementById('nftPostPreview').textContent=content?content.slice(0,100)+'..':'No content';
-  document.getElementById('nftName').value='YEET Post #'+postId.slice(0,6);
-  document.getElementById('nftDesc').value='A unique moment on YEET Social - '+new Date().toLocaleDateString();
-  document.getElementById('nftStatus').textContent='';
-  document.getElementById('nftModal').classList.add('on');
-}
-function closeNFTModal(e){if(!e||e.target===document.getElementById('nftModal'))document.getElementById('nftModal').classList.remove('on');}
-// MiCA/UWG (Doc 06, F5): Real on-chain NFT minting does not exist yet
-// (backend mint_nft is a stub). The previous implementation sent a junk
-// transaction (calldata 0x12345678) to a hardcoded contract and then
-// unconditionally reported "NFT Minted successfully!" — fabricating a
-// result that never happened. That is disabled until a real, audited
-// mint pipeline (contract + tokenURI) is in place. Do NOT send any
-// transaction or claim a mint here.
-async function mintNFT(){
-  var status=document.getElementById('nftStatus');
-  var msg=(window.t?window.t('nft.comingSoon'):'NFT minting is not available yet.');
-  if(status){ status.innerHTML='<span style="color:var(--muted)">'+msg+'</span>'; }
-  if(typeof showToast==='function') showToast(msg,'error');
-}
 function openSettingsModal(){
   // Prefill from localStorage first (instant)
   const s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
@@ -2918,13 +2668,13 @@ function renderSearchResults(data, q){
       var sub   = u.username ? '@'+ _searchEsc(u.username) : (u.wallet_address ? _searchEsc(u.wallet_address.slice(0,10)+'…') : '');
       var av;
       if(u.avatar_url){
-        av = '<span class="nav-avatar" style="flex-shrink:0;width:32px;height:32px;font-size:14px;background-image:url(\''+ _searchEsc(u.avatar_url) +'\')"></span>';
+        av = '<span class="nav-avatar" style="flex-shrink:0;width:32px;height:32px;font-size:14px;background-image:url(\''+ String(u.avatar_url).replace(/['"<>\\]/g,'') +'\')"></span>';
       } else {
         var initial = name.charAt(0).toUpperCase();
         av = '<span class="nav-avatar" style="flex-shrink:0;width:32px;height:32px;font-size:14px">'+ initial +'</span>';
       }
       var ref = u.wallet_address || u.id;
-      return '<div onclick="event.stopPropagation();handleSearchUserClick(\''+ _searchEsc(ref) +'\')" style="display:flex;gap:10px;padding:8px 12px;cursor:pointer;align-items:center;border-top:1px solid var(--border)">'
+      return '<div onclick="event.stopPropagation();handleSearchUserClick(\''+ _jsq(ref) +'\')" style="display:flex;gap:10px;padding:8px 12px;cursor:pointer;align-items:center;border-top:1px solid var(--border)">'
         + av
         + '<div style="flex:1;min-width:0"><div style="font-size:13px;color:#eee">'+ name +'</div>'
         + (sub ? '<div style="font-size:11px;color:var(--muted)">'+ sub +'</div>' : '')
@@ -2997,6 +2747,10 @@ function loadFeedFiltered(filter){
     .then(r=>{ if(r.status===401){ showLoginGate(); return null; } return r.json(); })
     .then(d=>{
       if(!d)return;
+      // The backend feed endpoint ignores ?filter=… (FeedQuery has no such
+      // field), so the NFT tab used to silently show the unfiltered global
+      // feed. Filter client-side on the is_nft flag the API already returns.
+      if(d.success&&d.data&&filter==='nft'){ d.data=d.data.filter(function(p){return !!p.is_nft;}); }
       const old=document.getElementById('feed-posts');if(old)old.remove();
       const empty=document.querySelector('.empty');
       if(d.success&&d.data&&d.data.length>0){
@@ -3137,25 +2891,15 @@ async function uploadProfileImage(input, kind){
   window.likePost = likePost;
             window.openComment = function(id){openComment(id);};
   window.submitPost = submitPost;
-    window.switchTab = setTab;
   window.performSearch = performSearch;
   window.openWalletModal = openWalletModal;
-  window.closeWalletModal = closeWalletModal;
   window.showToast = showToast;
-  window.connectMetaMask = connectMetaMask;
-  window.connectTrustWallet = connectTrustWallet;
-  window.connectWalletConnect = connectWalletConnect;
   window.openPwaModal = openPwaModal;
   window.closePwaModal = closePwaModal;
   window.triggerPwaInstall = triggerPwaInstall;
-  window.closeTipModal = closeTipModal;
-  window.setTipAmt = setTipAmt;
-  window.sendTip = sendTip;
   window.openWebboardsModal = openWebboardsModal;
   window.closeWebboardsModal = closeWebboardsModal;
   window.loadRSS = loadRSS;
-  window.closeNFTModal = closeNFTModal;
-  window.mintNFT = mintNFT;
   window.openSettingsModal = openSettingsModal;
   window.showLoginGate = showLoginGate;
   window.uploadProfileImage = uploadProfileImage;
@@ -3168,7 +2912,6 @@ async function uploadProfileImage(input, kind){
     window.toggleNav = toggleNav;
   window.showGlobalFeed = showGlobalFeed;
   window.loadFollowingFeed = loadFollowingFeed;
-  window.toggleFollow = toggleFollow;
   window.reportPost = reportPost;
   window.submitReport = submitReport;
   window.check18Plus = check18Plus;
@@ -3176,11 +2919,6 @@ async function uploadProfileImage(input, kind){
   window.handleImageSelect = handleImageSelect;
   window.removeImage = removeImage;
   window.togglePermanent = togglePermanent;
-  window.toggleNFT = togglePermanent;
-  window.openNFTPriceModal = openNFTPriceModal;
-  window.selectNFTPrice = selectNFTPrice;
-  window.confirmNFTPrice = confirmNFTPrice;
-  window.clearNFTPresets = clearNFTPresets;
   window.togglePPV = togglePPV;
   window.openPPVPriceModal = openPPVPriceModal;
   window.selectPPVPrice = selectPPVPrice;
@@ -3192,7 +2930,6 @@ async function uploadProfileImage(input, kind){
   window.openPostMenu = openPostMenu;
   window.sharePost = sharePost;
   window.toggleFollowById = toggleFollowById;
-  window.togglePostVisibility = togglePostVisibility;
   window.showTrendingFeed = showTrendingFeed;
   window.loadTrendingFeedPosts = loadTrendingFeedPosts;
   window.setTab = setTab;
@@ -3346,8 +3083,8 @@ function renderProfileHeader(u, own){
     + '</div>'
     + (bio ? '<div style="font-size:14px;line-height:1.6;margin:12px 0;white-space:pre-wrap">'+bio+'</div>' : '')
     + '<div style="display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap">'
-      + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
-      + '<span onclick="openFollowList(\''+_esc(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
+      + '<span onclick="openFollowList(\''+_jsq(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
+      + '<span onclick="openFollowList(\''+_jsq(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
       + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> Posts</span>'
       + (own ? '<span style="color:var(--yeet)"><span class="yi yi-bolt"></span> <b id="profileBalanceVal" style="color:var(--yeet)">—</b> YEET</span>' : '')
     + '</div>'
@@ -3614,7 +3351,6 @@ async function loadTipsReceived(){
     return;
   }
   var rows = Array.isArray(res.data) ? res.data : [];
-  window._tipsData = rows;
   _renderTipsPodium(rows);
   _renderTipsRows(rows);
   if(sum){
@@ -3903,7 +3639,8 @@ function loadLinkPreview(url, container) {
 
       var inner = '';
       if(img) {
-        inner += '<img src="'+img+'" onerror="this.style.display=\'none\'" style="width:100%;max-height:180px;object-fit:cover;display:block">';
+        // og:image is third-party-controlled — escape it like title/desc/site.
+        inner += '<img src="'+escHtml(img)+'" onerror="this.style.display=\'none\'" style="width:100%;max-height:180px;object-fit:cover;display:block">';
       }
       inner += '<div style="padding:10px 12px">';
       inner += '<div style="font-size:11px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">'+escHtml(site)+'</div>';
@@ -3915,40 +3652,18 @@ function loadLinkPreview(url, container) {
       container.appendChild(card);
     })
     .catch(function(){
-      // Fallback: simple link warning
-      container.innerHTML = '<div onclick="event.stopPropagation();showExternalLinkWarning(event,\''+url+'\')" style="border:1px solid #2a2a2a;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#666\" stroke-width=\"2\"><path d=\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/><polyline points=\"15 3 21 3 21 9\"/><line x1=\"10\" y1=\"14\" x2=\"21\" y2=\"3\"/></svg><span style=\"color:#666;font-size:12px\">'+url.replace(/^https?:\/\//,'').replace(/\/$/,'')+'</span></div>';
+      // Fallback: simple link warning. DOM-built — the URL is post-derived and
+      // must not be concatenated into innerHTML/onclick (XSS).
+      var d = document.createElement('div');
+      d.style.cssText = 'border:1px solid #2a2a2a;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;background:#0d0d0d;cursor:pointer';
+      d.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span style="color:#666;font-size:12px"></span>';
+      d.querySelector('span').textContent = url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+      d.addEventListener('click', function(ev){ ev.stopPropagation(); showExternalLinkWarning(ev, url); });
+      container.innerHTML = '';
+      container.appendChild(d);
     });
 }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function toggleFollow(btn, postId, author) {
-  var jwt = localStorage.getItem('yeet_jwt');
-  if (!jwt) { openAuthModal('login'); return; }
-  // Get current logged-in user ID to prevent self-follow
-  var myId = localStorage.getItem('yeet_user_id') || '';
-  var authorId = (author && author.id) || '';
-  if (myId && authorId && myId === authorId) {
-    showToast(window.t('toast.cantFollowSelf'), 'error');
-    return;
-  }
-  var isFollowing = btn.dataset.following === '1';
-  var targetId = authorId;
-  if (!targetId) { showToast(window.t('toast.userNotFound'), 'error'); return; }
-  var url = '/api/v1/users/' + targetId + '/' + (isFollowing ? 'unfollow' : 'follow');
-  btn.disabled = true;
-  fetch(url, { method: 'POST', headers: { 'Authorization': 'Bearer ' + jwt } })
-    .then(function(r) {
-      if (r.status === 401) { _yeetClearTokens(); openAuthModal('login'); return; }
-      if (!r.ok) { r.json().then(function(e){ showToast(e.error&&e.error.message||window.t('common.error'), 'error'); }); return; }
-      isFollowing = !isFollowing;
-      btn.dataset.following = isFollowing ? '1' : '0';
-      btn.querySelector('span').textContent = isFollowing ? 'Unfollow' : 'Follow';
-      btn.style.color = isFollowing ? '#c6f135' : 'var(--muted)';
-      showToast(window.t(isFollowing ? 'toast.followed' : 'toast.unfollowed'), 'success');
-    })
-    .catch(function() { showToast(window.t('common.networkError'), 'error'); })
-    .finally(function() { btn.disabled = false; });
-}
 
 async function loadFollowingFeed() {
   if(typeof _exitProfileView==='function') _exitProfileView();
@@ -4656,59 +4371,6 @@ function togglePermanent() {
       : window.t('composer.permanentSet'), 'success');
   }
 }
-function openNFTPriceModal() {
-  var modal = document.createElement('div');
-  modal.id = 'nftModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
-  var presets = [5,10,50,100];
-  var presetBtns = presets.map(function(v){
-    return '<button onclick="selectNFTPrice('+v+',this)" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;cursor:pointer;font-size:15px;font-weight:700">'+v+' YEET</button>';
-  }).join('');
-  modal.innerHTML = '<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:340px;width:100%">'
-    +'<h3 style="margin:0 0 6px;font-size:16px"><span class="yi yi-gem"></span> '+window.t('nft.title')+'</h3>'
-    +'<p style="color:#666;font-size:12px;margin-bottom:16px">'+window.t('nft.subtitle')+'</p>'
-    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">'+window.t('nft.priceLabel')+'</p>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+presetBtns+'</div>'
-    +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">'
-    +'<input type="number" id="nftCustomPrice" placeholder="'+window.t('nft.customPrice')+'" min="1" style="flex:1;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearNFTPresets()">'
-    +'<span style="color:#c6f135;font-weight:700">YEET</span>'
-    +'</div>'
-    +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'nftModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
-    +'<button onclick="confirmNFTPrice()" style="flex:1;padding:11px;background:#c6f135;border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">'+window.t('common.confirm')+'</button>'
-    +'</div></div>';
-  modal.addEventListener('click', function(e){if(e.target===this)this.remove();});
-  document.body.appendChild(modal);
-}
-var _nftSelectedPreset = null;
-function selectNFTPrice(val, btn) {
-  _nftSelectedPreset = val;
-  document.querySelectorAll('#nftModal button[onclick^="selectNFTPrice"]').forEach(function(b){
-    b.style.borderColor='#333'; b.style.color='#fff';
-  });
-  btn.style.borderColor='#c6f135'; btn.style.color='#c6f135';
-  var ci=document.getElementById('nftCustomPrice');if(ci)ci.value='';
-}
-function clearNFTPresets() {
-  _nftSelectedPreset=null;
-  document.querySelectorAll('#nftModal button[onclick^="selectNFTPrice"]').forEach(function(b){
-    b.style.borderColor='#333'; b.style.color='#fff';
-  });
-}
-function confirmNFTPrice() {
-  var price = _nftSelectedPreset;
-  if (!price) { var ci=document.getElementById('nftCustomPrice'); price=ci?parseFloat(ci.value):null; }
-  if (!price||price<=0){showToast(window.t('toast.priceRequired'),'error');return;}
-  document.getElementById('nftModal')?.remove();
-  window._postIsNFT=true; window._postNFTPrice=price;
-  var btn=document.getElementById('permToggleBtn');if(btn)btn.style.color='#c6f135';
-  var nd=document.getElementById('nftPriceDisplay');
-  if(nd){nd.style.display='block';var pv=document.getElementById('nftPriceVal');if(pv)pv.textContent=price;}
-  showToast(window.t('nft.priceSet',{price:price}),'success');
-}
-
-
-// ââ PAY-PER-VIEW (PPV) ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function togglePPV() {
   if (window._postIsPPV) {
     window._postIsPPV = false; window._postPPVPrice = null;
@@ -5394,23 +5056,6 @@ function repostPost(postId, currentReposts) {
   }).catch(function(){ showToast(window.t('common.networkError'), 'error'); });
 }
 
-function togglePostVisibility(postId, currentVis) {
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
-  if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
-  var newVis = currentVis === 'public' ? 'followers' : 'public';
-  fetch('/api/v1/posts/' + postId + '/visibility', {
-    method: 'PATCH',
-    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt},
-    body: JSON.stringify({visibility: newVis})
-  }).then(function(r){return r.json();}).then(function(d){
-    if (d.success) {
-      showToast(window.t(newVis === 'public' ? 'toast.visibilityPublic' : 'toast.visibilityFollowers'), 'success');
-      loadFeed();
-    } else showToast((d.error && d.error.message) || window.t('common.error'), 'error');
-  }).catch(function(){ showToast(window.t('common.networkError'), 'error'); });
-}
-
-
 // POST OVERFLOW MENU
 function openPostMenu(btn) {
   document.querySelectorAll('.post-menu-popup').forEach(function(m){ m.remove(); });
@@ -5496,15 +5141,25 @@ function showExternalLinkWarning(e,url){
   var m=document.createElement('div');
   m.id='ext-link-modal';
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
+  // XSS-safe: the URL comes straight out of post content, so it must never be
+  // concatenated into innerHTML or an onclick string — set it via textContent
+  // and open it from a closure instead.
   m.innerHTML='<div style="background:#16181c;border:1px solid #333;border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:12px"><span class="yi yi-link"></span></div>'
     +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">'+window.t('extlink.title')+'</h3>'
     +'<p style="color:#888;font-size:13px;margin:0 0 16px">'+window.t('extlink.subtitle')+'</p>'
-    +'<div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left">'+url+'</div>'
+    +'<div class="ext-link-url" style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:#c6f135;text-align:left"></div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
-    +'<button onclick="document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">'+window.t('common.cancel')+'</button>'
-    +'<button onclick="window.open(\''+url+'\',\'_blank\',\'noopener,noreferrer\');document.getElementById(\'ext-link-modal\').remove()" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">'+window.t('common.open')+'</button>'
+    +'<button class="ext-link-cancel" style="flex:1;padding:10px;border:1px solid #444;border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">'+window.t('common.cancel')+'</button>'
+    +'<button class="ext-link-open" style="flex:1;padding:10px;border:none;border-radius:20px;background:#c6f135;color:#000;cursor:pointer;font-weight:600;font-size:14px">'+window.t('common.open')+'</button>'
     +'</div></div>';
+  m.querySelector('.ext-link-url').textContent=url;
+  m.querySelector('.ext-link-cancel').addEventListener('click',function(){m.remove();});
+  m.querySelector('.ext-link-open').addEventListener('click',function(){
+    // Only ever open http(s) targets from posts.
+    if(/^https?:\/\//i.test(url)) window.open(url,'_blank','noopener,noreferrer');
+    m.remove();
+  });
   m.addEventListener('click',function(ev){if(ev.target===m)m.remove();});
   document.body.appendChild(m);
 }
@@ -5542,29 +5197,6 @@ function showExternalLinkWarning(e,url){
       <span>I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
     </label>
     <button id="regNext1Btn" class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue <span class="yi yi-arrowr"></span></button>
-  </div>
-  <div id="regStep2" style="display:none">
-    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
-      <div class="sdot done"></div><div class="sdot on"></div><div class="sdot"></div>
-    </div>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Recovery Phrase</h3>
-    <div style="background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:12px;margin:10px 0;font-size:12px;color:#ffd700">
-      <span class="yi yi-warning"></span> <strong>Never share your seed phrase.</strong> YEET will never ask for it. Store it offline safely.
-    </div>
-    <div id="seedGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0"></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn-sm" style="flex:1" onclick="copySeedAuth()"><span class="yi yi-copy"></span> Copy</button>
-      <button class="btn-yeet" style="flex:1;padding:10px" onclick="regNext2()">Saved <span class="yi yi-arrowr"></span></button>
-    </div>
-  </div>
-  <div id="regStep3" style="display:none">
-    <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
-      <div class="sdot done"></div><div class="sdot done"></div><div class="sdot on"></div>
-    </div>
-    <h3 style="font-size:16px;font-weight:800;margin-bottom:6px">Verify Phrase</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Enter the words at the requested positions.</p>
-    <div id="verifyInputs"></div>
-    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="completeReg()">Create Account</button>
   </div>
 </div>
 </div>
@@ -5620,15 +5252,7 @@ function showExternalLinkWarning(e,url){
 .ff input{width:100%;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
 .ff input:focus{border-color:var(--yeet)}
 .sdot{width:7px;height:7px;border-radius:50%;background:var(--border);display:inline-block}
-.sdot.on{background:var(--yeet)}.sdot.done{background:#26a05a}
-.yeet-widget{display:inline-flex;align-items:center;gap:8px;background:rgba(38,240,117,.08);border:1px solid rgba(38,240,117,.25);border-radius:20px;padding:4px 12px 4px 6px;cursor:pointer}
-.yeet-widget:hover{border-color:var(--yeet)}
-.yeet-icon{width:22px;height:22px;background:var(--yeet);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000}
-.cur-tog{display:flex;gap:2px;margin-left:4px}
-.cur-tog button{background:none;border:1px solid var(--border);color:var(--muted);font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer}
-.cur-tog button.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
-.cur-btn{background:none;border:1px solid #333;color:#888;font-family:inherit;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-weight:600}
-.cur-btn.active{background:var(--yeet)!important;color:#000!important;border-color:var(--yeet)!important}
+.sdot.on{background:var(--yeet)}
 .btn-login{background:none;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;cursor:pointer}
 .btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
 .btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
@@ -5644,46 +5268,8 @@ function showExternalLinkWarning(e,url){
 <script>
 (function() {
   // BIP39 wordlist (subset)
-  var _BIP39 = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','balance','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brave','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz'];
 
-  var _yState = {usd:.001,eur:.00092,chg:2.4,cur:'USD',eurRate:.92};
-  var _seedWords = [];
-  var _verifyIdx = [];
   var _regData = {};
-
-  // Wait for ethers.js to finish loading (it's deferred, so usually present
-  // by the time the user reaches the seed step, but we still defend against
-  // a slow CDN with a 5s timeout).
-  function _waitForEthers(timeoutMs){
-    timeoutMs = timeoutMs || 5000;
-    return new Promise(function(res, rej){
-      if(window.ethers) return res(window.ethers);
-      var t = 0;
-      var iv = setInterval(function(){
-        if(window.ethers){ clearInterval(iv); res(window.ethers); }
-        else if((t += 60) > timeoutMs){ clearInterval(iv); rej(new Error('ethers_unavailable')); }
-      }, 60);
-    });
-  }
-
-  // Proper BIP39 + BIP44 (m/44'/60'/0'/0/0) wallet generation. Replaces
-  // the legacy hash+LCG scheme that produced non-recoverable addresses.
-  // Returns { words:[...], address:'0x...' }. Throws if ethers fails to
-  // load (network) — caller surfaces a user-facing error.
-  // Non-custodial model (docs/mica/05): the platform no longer generates or
-  // derives wallets for users. These helpers are retired. Users bring their
-  // OWN external wallet (MetaMask/WalletConnect) for payouts; their recovery
-  // phrase is their wallet's concern, never the platform's.
-  async function _generateWallet(){
-    throw new Error('Wallet generation removed — connect your own external wallet.');
-  }
-  async function _verifySeedMatches(){ return false; }
-  window._verifySeedMatches = _verifySeedMatches;
-  window.verifyRecoveryPhrase = function(){
-    if(window.showToast) window.showToast(
-      window.t ? window.t('settings.verifyRetired') : 'Recovery phrases are managed by your own wallet app.',
-      'error');
-  };
 
   // ---------- Admin moderation ----------
   // The admin secret is stored locally per-browser; without it the
@@ -5790,15 +5376,12 @@ function showExternalLinkWarning(e,url){
   }
 
   function _showErr(m){var e=document.getElementById('mErr');if(e){e.textContent=m;e.classList.add('show')}var o=document.getElementById('mOk');if(o)o.classList.remove('show')}
-  function _showOk(m){var e=document.getElementById('mOk');if(e){e.textContent=m;e.classList.add('show')}var er=document.getElementById('mErr');if(er)er.classList.remove('show')}
   function _clearMsg(){var e=document.getElementById('mErr'),o=document.getElementById('mOk');if(e)e.classList.remove('show');if(o)o.classList.remove('show')}
 
   // MiCA/UWG (Doc 06, F4): YEET has no market, so we deliberately show no
   // fiat price. These stay as guarded no-ops so any legacy callers don't
   // throw; reinstate real values only with a sourced market price.
-  function _updatePrice(){ /* no fiat price shown for YEET (see F4) */ }
 
-  async function _fetchEur(){ /* disabled: no fiat conversion for a token without a market (F4) */ }
 
   function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
 
@@ -5905,14 +5488,10 @@ function showExternalLinkWarning(e,url){
     document.getElementById('atReg').classList.toggle('active',!isL);
     document.getElementById('loginForm').style.display=isL?'block':'none';
     document.getElementById('regStep1').style.display=!isL?'block':'none';
-    document.getElementById('regStep2').style.display='none';
-    document.getElementById('regStep3').style.display='none';
     document.getElementById('mTitle').textContent=isL?'Welcome back':'Create Account';
     document.getElementById('mSub').textContent=isL?'Sign in to YEET Social':'Join YEET - get your Web3 wallet instantly';
     _clearMsg();
   };
-  window.setCur = function(c){_yState.cur=c;localStorage.setItem('yeetCur',c);_updatePrice()};
-  window.toggleCur = function(){window.setCur(_yState.cur==='USD'?'EUR':'USD')};
   window.doLogout = function(){
     // Delegate to the full disconnect path so EVERY token copy (yeet_jwt,
     // yeetToken, yt, yeet_refresh) gets cleared, the server-side session
@@ -6008,17 +5587,9 @@ function showExternalLinkWarning(e,url){
     }catch(err){_showErr(err.message)}
     finally{ if(btn){ btn.disabled=false; btn.textContent=btn.dataset.oldText||'Create account'; } }
   };
-  // Seed-wizard steps retired — kept as no-ops so any stale onclick can't throw.
-  window.regNext2 = function(){};
-  window.completeReg = function(){ return window.regNext1(); };
-  window.copySeedAuth = function(){};
 
   // Init on load
   document.addEventListener('DOMContentLoaded',function(){
-    _yState.cur=localStorage.getItem('yeetCur')||'USD';
-    _updatePrice();
-    _fetchEur();
-    setInterval(_fetchEur,60000);
     // Check saved session. Wallet/web3 logins only write yeet_jwt, so
     // reading yeetToken alone left those users looking logged-out on reload.
     var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt')||localStorage.getItem('yt');
@@ -6191,16 +5762,6 @@ function showExternalLinkWarning(e,url){
 </script>
 
 <script>
-
-function _tipPick(btn,amount){
-  window._tipSelected=amount;
-  ['_tp1','_tp3','_tp5','_tp10'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.borderColor='#333';});
-  btn.style.borderColor='#c8ff00';
-  var inp=document.getElementById('_tipCustom');if(inp)inp.value='';
-}
-</script>
-
-<script>
 function openTipModal(postId,toAddr){
   var jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){window.showToast(window.t('tip.notLogged'));return;}
@@ -6229,12 +5790,14 @@ function openTipModal(postId,toAddr){
   box.appendChild(row);
   var p3=document.createElement('p');p3.style.cssText='color:#888;font-size:12px;margin:0 0 6px';p3.textContent=window.t('tip.orEnter');box.appendChild(p3);
   var inp=document.createElement('input');
+  inp.id='_tipCustom'; // _doTip reads the custom amount via this id
   inp.type='number';inp.min='0.1';inp.step='0.1';inp.placeholder=window.t('tip.customPlaceholder');
   inp.style.cssText='width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:16px';
   inp.oninput=function(){window._tipSelected=parseFloat(inp.value)||0;row.querySelectorAll('button').forEach(function(x){x.style.borderColor='#333';});};
   box.appendChild(inp);
   var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:10px';
   var sendBtn=document.createElement('button');
+  sendBtn.id='_tipSendBtn'; // _doTip disables it during the request (double-submit guard)
   sendBtn.style.cssText='flex:1;padding:12px;background:#c8ff00;color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer';
   sendBtn.textContent=window.t('tip.send');
   sendBtn.onclick=function(){_doTip(window._tipPostId,window._tipToAddr);};
@@ -6254,10 +5817,6 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 <!-- Paper-wallet PDF + QR libs (loaded async; UI gracefully waits) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
-<!-- ethers.js v6 for proper BIP39 + BIP44 (m/44'/60'/0'/0/0) seed -> wallet derivation,
-     so accounts generated at registration are real Ethereum/BSC wallets importable into
-     MetaMask, Trezor, Ledger etc. on both testnet and mainnet. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js" defer></script>
 <!-- LiveKit client (WebRTC). Royalty-free codecs (VP8/VP9/Opus). Loaded
      lazily so the rest of the app boots without it; openLiveViewer
      waits for window.LivekitClient before connecting. -->
@@ -7240,6 +6799,9 @@ info@blocksocial.eu</address>
 (function(){
   function secret(){ return localStorage.getItem('yeet_admin_secret') || ''; }
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  // For values interpolated into single-quoted JS strings inside onclick
+  // attributes — esc() leaves ' untouched, which would break out of them.
+  function jsq(s){ return String(s==null?'':s).replace(/[\\'"<>]/g,''); }
   function fmtTime(iso){
     try {
       var d = new Date(iso);
@@ -7570,12 +7132,12 @@ info@blocksocial.eu</address>
           + '</div>'
           + (u.post_ban_reason ? '<div style="color:#ffb84d;margin-top:6px;font-size:11px">Ban reason: '+ esc(u.post_ban_reason) +'</div>' : '')
           + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 12)">Ban 12 h</button>'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 24)">Ban 24 h</button>'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 168)">Ban 7 d</button>'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ esc(addr) +'\', 720)">Ban 30 d</button>'
-          +   '<button class="adm-btn" onclick="adminUnbanFromCard(\''+ esc(addr) +'\')">Unban</button>'
-          +   '<button class="adm-btn danger" onclick="adminDeleteFromCard(\''+ esc(addr) +'\', \''+ esc(u.username||'') +'\')">Delete…</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 12)">Ban 12 h</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 24)">Ban 24 h</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 168)">Ban 7 d</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 720)">Ban 30 d</button>'
+          +   '<button class="adm-btn" onclick="adminUnbanFromCard(\''+ jsq(addr) +'\')">Unban</button>'
+          +   '<button class="adm-btn danger" onclick="adminDeleteFromCard(\''+ jsq(addr) +'\', \''+ jsq(u.username||'') +'\')">Delete…</button>'
           + '</div>'
           + '</div>';
       }).join('');
@@ -8703,7 +8265,6 @@ info@blocksocial.eu</address>
   }
 
   // Back-compat alias used by some older call sites
-  async function convKeyFor(peerPubB64){ return await dmKeyFor(peerPubB64); }
 
   function escapeHtml(s){
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
