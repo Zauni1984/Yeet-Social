@@ -54,6 +54,14 @@ pub async fn convert(
     }
     let user_id = caller_user_id(&state, &auth).await?;
 
+    // Drain guard: never queue a payout the finite on-chain conversion pool
+    // cannot cover. The pool refills from platform fees, so this is a soft,
+    // self-healing ceiling rather than a hard stop.
+    let pool = crate::services::tokens::pool_status(&state.db).await?;
+    if (req.points as f64) > pool.remaining {
+        return Err(AppError::Forbidden("CONVERSION_POOL_EXHAUSTED".into()));
+    }
+
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 
     // The payout target MUST be a verified EXTERNAL wallet the user linked via
@@ -81,10 +89,14 @@ pub async fn convert(
         .bind(req.points as f64).bind(user_id)
         .execute(&mut *tx).await.map_err(AppError::Database)?;
 
-    // Queue the on-chain payout for the batch minter (kind='conversion').
+    // Queue the payout for MANUAL ADMIN APPROVAL (kind='conversion',
+    // status='awaiting_approval'). The on-chain batch minter only ever picks up
+    // status='pending', so nothing is paid out until an admin approves it (which
+    // flips the row to 'pending'). Rejecting refunds the points. This human gate
+    // is deliberate for launch; automated rules will replace it later.
     let payout_id: Uuid = sqlx::query_scalar(
         "INSERT INTO token_rewards (user_id, action, amount, status, kind)
-         VALUES ($1, 'conversion', $2, 'pending', 'conversion') RETURNING id"
+         VALUES ($1, 'conversion', $2, 'awaiting_approval', 'conversion') RETURNING id"
     )
     .bind(user_id).bind(req.points)
     .fetch_one(&mut *tx).await.map_err(AppError::Database)?;
@@ -109,6 +121,6 @@ pub async fn convert(
         payout_id,
         wallet_address: wallet,
         points_balance: balance - req.points as f64,
-        status: "queued",
+        status: "awaiting_approval",
     })))
 }

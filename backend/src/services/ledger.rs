@@ -36,6 +36,7 @@ pub mod tx_type {
     pub const PAPER_WALLET_CLAIM: &str  = "paper_wallet_claim";  // points released to redeemer
     pub const PAPER_WALLET_REFUND: &str = "paper_wallet_refund"; // points returned to issuer
     pub const POINTS_CONVERSION: &str   = "points_conversion";   // points debited for a YEET payout
+    pub const PAYOUT_REFUND: &str       = "payout_refund";       // points returned after an admin-rejected payout
     pub const ONCHAIN_PAYOUT: &str      = "onchain_payout";      // YEET minted to a user wallet
     pub const ONCHAIN_TIP: &str         = "onchain_tip";         // on-chain YEET tip (indexer)
     pub const ONCHAIN_PPV: &str         = "onchain_ppv";         // on-chain YEET PPV (indexer)

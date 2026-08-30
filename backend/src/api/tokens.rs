@@ -81,9 +81,18 @@ pub async fn get_rewards(
     )
     .bind(user_id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
+    let cap = tokens::daily_cap();
     Ok(Json(ApiResponse::ok(RewardsResponse {
         total_earned,
-        daily_limit: tokens::rewards::DAILY_CAP,
-        daily_remaining: (tokens::rewards::DAILY_CAP - today_earned).max(0),
+        daily_limit: cap,
+        daily_remaining: (cap - today_earned).max(0),
     })))
+}
+
+/// GET /api/v1/tokens/pool — public conversion-pool health (drain transparency).
+/// Aggregate only, no PII; supports the "everything visible on-chain" ethos.
+pub async fn get_pool(
+    State(state): State<AppState>,
+) -> AppResult<Json<ApiResponse<tokens::PoolStatus>>> {
+    Ok(Json(ApiResponse::ok(tokens::pool_status(&state.db).await?)))
 }

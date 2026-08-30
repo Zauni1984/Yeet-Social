@@ -13,6 +13,7 @@ pub mod tips;
 pub mod tips_received;
 pub mod tokens;
 pub mod points;
+pub mod payouts;
 pub mod users;
 pub mod boards;
 pub mod notifications;

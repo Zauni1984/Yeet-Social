@@ -97,7 +97,10 @@ die Plattform via `batchMintRewards`; Emittent = Betreiber-Rechtsträger.⟧
   externe Wallet**. Ein Rücktausch YEET → Punkte ist ausgeschlossen. Yeet nimmt zu keinem
   Zeitpunkt Kundengelder oder -Token in Verwahrung (non-custodial). Voraussetzung für die
   Auszahlung: abgeschlossene KYC. Alle Transaktionen sind öffentlich im Blockchain-Explorer
-  einsehbar.
+  einsehbar. **Auszahlungen werden in der Startphase manuell von einem Admin
+  freigegeben** (Betrugs-/Missbrauchsschutz); ohne Freigabe erfolgt keine
+  On-Chain-Zahlung, eine Ablehnung erstattet die Punkte. Automatisierte Regeln
+  ersetzen diese manuelle Freigabe später.
 
 ## Teil G — Zugrunde liegende Technologie
 
@@ -185,6 +188,23 @@ Energieintensität je Transaktion, THG-Emissionen.
 | Team-Coins | Team verzichtet auf zuvor geminte Note-Coins → **kein Swap alter Team-Coins** |
 | Note-Menge (Schätzung) | bis zu **50.000.000.000 Note** (⟦TODO(verify): exakte swap-berechtigte Menge⟧) |
 | Swap-Pool | max. **500.000.000 YEET** (50 Mrd. Note ÷ 100) — ca. **2,4 % der 21 Mrd.**, aus dem Rewards-/Community-Pool. Reicht selbst bei vollständigem Swap aller Note-Coins. |
+
+### Reserve-/Drain-Schutz & Auszahlungsfreigabe
+
+Punkte können nicht „leerlaufen" (sie werden je Reward neu erzeugt) — endlich ist
+der **On-Chain-Auszahlungs-Pool** (Rewards-/Community-Anteil). Damit dieser nicht
+einseitig entleert wird:
+
+| Mechanismus | Wirkung |
+| --- | --- |
+| **Manuelle Auszahlungsfreigabe** | Jede Points→YEET-Auszahlung wird zunächst als „wartet auf Freigabe" eingereiht; erst nach Admin-Freigabe zahlt der Minter aus. Ablehnung erstattet die Punkte. (Startphase; später regelbasiert.) |
+| **Fee-Recycling** | Die 10 % Plattform-Gebühren fließen als Reserve zurück in den effektiven Pool — ein aktives Ökosystem füllt nach, was Auszahlungen abziehen. |
+| **Drain-Guard** | Auszahlungen, die den verbleibenden Pool übersteigen würden, werden abgelehnt (`CONVERSION_POOL_EXHAUSTED`). |
+| **Reward-Taper** | Sinkt der Pool unter einen Schwellwert (Standard 10 %), wird die Reward-Ausgabe automatisch reduziert (Standard-Faktor 0,5). |
+| **Transparenz** | Öffentlicher Pool-Status via `GET /api/v1/tokens/pool` (Basis, recycelte Fees, ausgezahlt, Rest). |
+
+Alle Parameter sind per Env konfigurierbar (`YEET_CONVERSION_POOL`,
+`YEET_TAPER_THRESHOLD_PCT`, `YEET_TAPER_FACTOR`).
 
 ### Offene Punkte (nicht Teil dieses Whitepapers)
 
