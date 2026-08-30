@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOTE → YEET Swap</title>
+<meta name="description" content="Offizieller NOTE→YEET Swap von Yeet Social. Kurs 100 NOTE = 1 YEET. Start wird angekündigt.">
+<style>
+:root{
+  --bg:#0a0a0a; --bg-2:#0d0d0d; --card:#111; --card-2:#1a1a1a;
+  --border:#222; --border-2:#333; --text:#e8e8e8; --muted:#8a8f7f; --dim:#555;
+  --accent:#c6f135; --accent-rgb:198,241,53; --on-accent:#000;
+  --warn:#f5a623; --warn-rgb:245,166,35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(1200px 800px at 50% -10%,#13150b 0%,var(--bg) 60%);background-attachment:fixed;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6}
+a{color:var(--accent)}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px 64px}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border);margin-bottom:36px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;color:var(--text);text-decoration:none}
+.logo .dot{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:15px}
+.lang{display:flex;gap:4px}
+.lang button{background:transparent;border:1px solid var(--border-2);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:700}
+.lang button.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-.01em}
+h1 .n{color:#6ba8ff}
+h1 .y{color:var(--accent)}
+.sub{color:var(--muted);font-size:16px;margin:0 0 28px;max-width:56ch}
+.banner{display:flex;gap:12px;align-items:flex-start;background:rgba(var(--warn-rgb),.08);border:1px solid rgba(var(--warn-rgb),.35);border-radius:14px;padding:16px 18px;margin-bottom:32px}
+.banner .ico{font-size:20px;line-height:1.3}
+.banner b{color:var(--warn)}
+.banner p{margin:4px 0 0;font-size:14px;color:var(--text)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:20px}
+.rate{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;font-weight:900;font-size:clamp(20px,4.5vw,28px);padding:8px 0 14px}
+.rate .chip{background:var(--card-2);border:1px solid var(--border-2);border-radius:14px;padding:10px 18px}
+.rate .arrow{color:var(--accent);font-size:26px}
+.rate small{display:block;font-weight:600;font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.calc{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.calc .f{flex:1;min-width:200px}
+.calc label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.calc input{width:100%;background:var(--bg-2);border:1px solid var(--border-2);border-radius:12px;padding:12px 14px;color:var(--text);font-size:18px;font-weight:700;outline:none}
+.calc input:focus{border-color:var(--accent)}
+.calc input[readonly]{color:var(--accent)}
+.swapbtn{width:100%;margin-top:14px;padding:14px;border:none;border-radius:12px;background:var(--card-2);color:var(--dim);font-weight:900;font-size:16px;cursor:not-allowed;letter-spacing:.02em}
+.swapnote{text-align:center;font-size:12px;color:var(--muted);margin-top:8px}
+h2{font-size:18px;margin:34px 0 12px}
+ul.facts{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+ul.facts li{display:flex;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:14px}
+ul.facts li b{color:var(--accent)}
+ul.facts .fi{color:var(--accent);flex:none}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;display:grid;gap:12px;margin:0}
+ol.steps li{counter-increment:s;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px 14px 54px;position:relative;font-size:14px}
+ol.steps li::before{content:counter(s);position:absolute;left:14px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-weight:900;display:flex;align-items:center;justify-content:center;font-size:13px}
+ol.steps b{display:block;margin-bottom:2px}
+details{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:0 16px;margin-bottom:10px}
+details summary{cursor:pointer;font-weight:700;font-size:14px;padding:13px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::after{content:'+';color:var(--accent);font-size:18px;font-weight:900}
+details[open] summary::after{content:'–'}
+details p{margin:0 0 14px;font-size:14px;color:var(--muted)}
+footer{border-top:1px solid var(--border);margin-top:44px;padding-top:18px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+/* Hide only the non-active language (and everything before init). !important
+   so component rules like .rate small{display:block} can't resurface the
+   wrong language; the active language keeps its authored display. */
+html[data-lang="de"] [data-l="en"],
+html[data-lang="en"] [data-l="de"],
+html:not([data-lang]) [data-l]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="https://justyeet.it/"><span class="dot">Y</span> YEET</a>
+    <div class="lang">
+      <button id="lde" onclick="setL('de')">DE</button>
+      <button id="len" onclick="setL('en')">EN</button>
+    </div>
+  </header>
+
+  <h1><span class="n">NOTE</span> → <span class="y">YEET</span> Swap</h1>
+  <p class="sub" data-l="de">Der offizielle Umtausch von Note-Blockchain-Coins in den YEET Utility-Token (BEP-20, BNB Smart Chain) — direkt bei Yeet Social.</p>
+  <p class="sub" data-l="en">The official exchange of Note blockchain coins into the YEET utility token (BEP-20, BNB Smart Chain) — right here at Yeet Social.</p>
+
+  <div class="banner">
+    <span class="ico">🔒</span>
+    <div>
+      <b data-l="de">Der Swap ist noch nicht gestartet.</b>
+      <b data-l="en">The swap has not started yet.</b>
+      <p data-l="de">Der Smart Contract befindet sich in Vorbereitung. Sobald der Swap live geht, kündigen wir den Start überall an — auf justyeet.it, in der App und auf allen Kanälen. Bis dahin sind Swaps gesperrt. <strong>Sende noch keine NOTE-Coins an irgendeine Adresse!</strong></p>
+      <p data-l="en">The smart contract is in preparation. Once the swap goes live we will announce the start everywhere — on justyeet.it, in the app and on all channels. Until then, swaps are locked. <strong>Do not send NOTE coins to any address yet!</strong></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="rate">
+      <span class="chip">100 NOTE<small data-l="de">du gibst</small><small data-l="en">you give</small></span>
+      <span class="arrow">→</span>
+      <span class="chip" style="border-color:rgba(var(--accent-rgb),.5)">1 YEET<small data-l="de">du erhältst</small><small data-l="en">you receive</small></span>
+    </div>
+    <div class="calc">
+      <div class="f">
+        <label>NOTE</label>
+        <input id="inNote" type="number" min="0" step="1" placeholder="z. B. 250000" oninput="calc()">
+      </div>
+      <div class="f">
+        <label>YEET</label>
+        <input id="outYeet" readonly placeholder="—">
+      </div>
+    </div>
+    <button class="swapbtn" disabled>
+      <span data-l="de">🔒 Swap gesperrt — Start wird angekündigt</span>
+      <span data-l="en">🔒 Swap locked — start will be announced</span>
+    </button>
+    <div class="swapnote" data-l="de">Fester Kurs 100:1 · keine Yeet-Gebühr auf den Swap · Netzwerkgebühren trägst du selbst</div>
+    <div class="swapnote" data-l="en">Fixed rate 100:1 · no Yeet fee on the swap · you cover network fees yourself</div>
+  </div>
+
+  <h2 data-l="de">Die Eckdaten</h2>
+  <h2 data-l="en">Key facts</h2>
+  <ul class="facts">
+    <li><span class="fi">◆</span><span data-l="de"><b>Kurs fix:</b> 100 NOTE = 1 YEET. Der Kurs ist festgelegt und ändert sich nicht.</span><span data-l="en"><b>Fixed rate:</b> 100 NOTE = 1 YEET. The rate is fixed and will not change.</span></li>
+    <li><span class="fi">◆</span><span data-l="de"><b>Einbahnstraße:</b> Der Swap läuft nur NOTE → YEET. Ein Rücktausch ist ausgeschlossen.</span><span data-l="en"><b>One-way:</b> The swap only goes NOTE → YEET. There is no way back.</span></li>
+    <li><span class="fi">◆</span><span data-l="de"><b>Gebühren:</b> Yeet erhebt keine Swap-Gebühr. Netzwerkgebühren (NOTE-Transaktionsgebühr, später BNB-Gas für Transfers, Richtwert ~0,01 BNB) trägst du selbst.</span><span data-l="en"><b>Fees:</b> Yeet charges no swap fee. Network fees (NOTE transaction fee, later BNB gas for transfers, ballpark ~0.01 BNB) are yours to cover.</span></li>
+    <li><span class="fi">◆</span><span data-l="de"><b>Voraussetzungen:</b> Yeet-Konto auf justyeet.it mit abgeschlossener Verifizierung (KYC) und einer verknüpften, eigenen BSC-Wallet (z. B. MetaMask).</span><span data-l="en"><b>Requirements:</b> a Yeet account on justyeet.it with completed verification (KYC) and your own linked BSC wallet (e.g. MetaMask).</span></li>
+    <li><span class="fi">◆</span><span data-l="de"><b>Swap-Pool:</b> maximal 500.000.000 YEET (aus dem Community-Pool der fest begrenzten 21 Mrd. Gesamtmenge) — genug selbst dann, wenn alle NOTE getauscht werden.</span><span data-l="en"><b>Swap pool:</b> capped at 500,000,000 YEET (from the community pool of the fixed 21B total supply) — enough even if every NOTE is swapped.</span></li>
+    <li><span class="fi">◆</span><span data-l="de"><b>Team-Coins ausgeschlossen:</b> Das Yeet-Team verzichtet auf seine früher geminten NOTE — sie sind vom Swap ausgeschlossen.</span><span data-l="en"><b>Team coins excluded:</b> the Yeet team forgoes its previously mined NOTE — they are excluded from the swap.</span></li>
+    <li><span class="fi">◆</span><span data-l="de"><b>Non-custodial:</b> YEET landet direkt in deiner eigenen Wallet. Yeet verwahrt niemals Token für dich.</span><span data-l="en"><b>Non-custodial:</b> YEET goes straight to your own wallet. Yeet never holds tokens for you.</span></li>
+  </ul>
+
+  <h2 data-l="de">So wird der Swap ablaufen</h2>
+  <h2 data-l="en">How the swap will work</h2>
+  <ol class="steps">
+    <li><b data-l="de">Anmelden &amp; verknüpfen</b><b data-l="en">Sign up &amp; link</b><span data-l="de">Melde dich auf justyeet.it an, schließe die Verifizierung (KYC) ab und verknüpfe deine BSC-Wallet über den signierten Wallet-Login.</span><span data-l="en">Sign in on justyeet.it, complete verification (KYC) and link your BSC wallet via the signed wallet login.</span></li>
+    <li><b data-l="de">Persönliche NOTE-Einzahladresse erhalten</b><b data-l="en">Get your personal NOTE deposit address</b><span data-l="de">Auf dieser Seite bekommst du nach dem Start eine Einzahladresse auf der Note-Blockchain, die nur dir zugeordnet ist.</span><span data-l="en">After launch, this page gives you a deposit address on the Note blockchain that is mapped to you alone.</span></li>
+    <li><b data-l="de">NOTE senden — YEET erhalten</b><b data-l="en">Send NOTE — receive YEET</b><span data-l="de">Sende NOTE aus deiner eigenen Wallet an deine Einzahladresse. Nach ausreichend Bestätigungen auf der Note-Chain wird dir automatisch 1 YEET je 100 NOTE auf deine verknüpfte BSC-Wallet ausgezahlt. Jede Auszahlung ist im öffentlichen Explorer nachvollziehbar.</span><span data-l="en">Send NOTE from your own wallet to your deposit address. After enough confirmations on the Note chain, 1 YEET per 100 NOTE is paid out automatically to your linked BSC wallet. Every payout is traceable in the public explorer.</span></li>
+  </ol>
+
+  <h2>FAQ</h2>
+  <details><summary data-l="de">Wann startet der Swap?</summary><summary data-l="en">When does the swap start?</summary>
+    <p data-l="de">Sobald der YEET-Smart-Contract fertiggestellt und geprüft ist. Den Starttermin kündigen wir überall an — es gibt keinen stillen Start. Bis dahin: keine NOTE an irgendjemanden senden, der einen „Swap" verspricht.</p>
+    <p data-l="en">As soon as the YEET smart contract is finished and reviewed. We will announce the start date everywhere — there will be no silent launch. Until then: do not send NOTE to anyone promising a "swap".</p>
+  </details>
+  <details><summary data-l="de">Was passiert mit den eingezahlten NOTE?</summary><summary data-l="en">What happens to the deposited NOTE?</summary>
+    <p data-l="de">Eingezahlte NOTE werden dauerhaft aus dem Verkehr gezogen und in einer öffentlich einsehbaren Adresse verwahrt — sie kommen nie zurück in den Umlauf.</p>
+    <p data-l="en">Deposited NOTE are permanently taken out of circulation and held at a publicly viewable address — they never re-enter circulation.</p>
+  </details>
+  <details><summary data-l="de">Warum brauche ich KYC und eine eigene Wallet?</summary><summary data-l="en">Why do I need KYC and my own wallet?</summary>
+    <p data-l="de">Yeet ist non-custodial: Wir verwahren nie Token für dich, deshalb brauchst du eine eigene BSC-Wallet als Auszahlungsziel. Die Verifizierung ist Voraussetzung für alle Yeet-Dienste und schützt den Swap vor Missbrauch.</p>
+    <p data-l="en">Yeet is non-custodial: we never hold tokens for you, so you need your own BSC wallet as the payout target. Verification is required for all Yeet services and protects the swap against abuse.</p>
+  </details>
+  <details><summary data-l="de">Gibt es eine Mindest- oder Höchstmenge?</summary><summary data-l="en">Is there a minimum or maximum?</summary>
+    <p data-l="de">Details wie Mindestbetrag und Bestätigungsanzahl geben wir mit der Startankündigung bekannt. Der Gesamt-Pool ist auf 500 Mio. YEET begrenzt.</p>
+    <p data-l="en">Details such as the minimum amount and confirmation count will be published with the launch announcement. The total pool is capped at 500M YEET.</p>
+  </details>
+  <details><summary data-l="de">Was ist YEET überhaupt?</summary><summary data-l="en">What is YEET anyway?</summary>
+    <p data-l="de">YEET ist der Utility-Token der Social-Plattform <a href="https://justyeet.it/">justyeet.it</a> (BEP-20 auf der BNB Smart Chain, feste Gesamtmenge 21 Mrd.). Auf der Plattform werden Punkte verdient (Posts, Rewards, Tips) und einweg in YEET umgetauscht.</p>
+    <p data-l="en">YEET is the utility token of the social platform <a href="https://justyeet.it/">justyeet.it</a> (BEP-20 on BNB Smart Chain, fixed total supply of 21B). On the platform you earn points (posts, rewards, tips) and convert them one-way into YEET.</p>
+  </details>
+
+  <footer>
+    <span>© Yeet Social · <a href="https://justyeet.it/">justyeet.it</a></span>
+    <span data-l="de">Kein Angebot, keine Anlageberatung. Kryptowerte können an Wert verlieren.</span>
+    <span data-l="en">Not an offer, not investment advice. Crypto assets can lose value.</span>
+  </footer>
+</div>
+<script>
+function setL(l){
+  document.documentElement.dataset.lang=l;
+  document.documentElement.lang=l;
+  document.getElementById('lde').classList.toggle('on',l==='de');
+  document.getElementById('len').classList.toggle('on',l==='en');
+  try{localStorage.setItem('yeet_swap_lang',l);}catch(e){}
+}
+function calc(){
+  var n=parseFloat(document.getElementById('inNote').value)||0;
+  var y=n/100;
+  document.getElementById('outYeet').value=n>0?(y%1===0?y.toLocaleString('de-DE'):y.toLocaleString('de-DE',{maximumFractionDigits:2})):'';
+}
+(function(){
+  var l='de';
+  try{l=localStorage.getItem('yeet_swap_lang')||((navigator.language||'de').slice(0,2)==='en'?'en':'de');}catch(e){}
+  setL(l==='en'?'en':'de');
+})();
+</script>
+</body>
+</html>

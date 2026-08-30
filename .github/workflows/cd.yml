@@ -66,6 +66,12 @@ jobs:
             mv $HTML_DIR/admin.html.new $HTML_DIR/admin.html
             ls -la $HTML_DIR/admin.html
 
+            # Public NOTE→YEET swap page (swaps locked until the contract
+            # is live) — same static docroot, synced every deploy.
+            curl -fsSL "$REPO_RAW/frontend/swap.html" -o $HTML_DIR/swap.html.new
+            mv $HTML_DIR/swap.html.new $HTML_DIR/swap.html
+            ls -la $HTML_DIR/swap.html
+
             docker exec yeet-nginx nginx -s reload || \
               docker compose restart nginx
 

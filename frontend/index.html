@@ -1644,7 +1644,27 @@ async function loadProfile(){
     const pw=document.getElementById('profileWidget');
     const pi=document.getElementById('profileInfo');
     if(pw)pw.style.display='';
-    if(pi)pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:36px;height:36px;border-radius:50%;background:var(--yeet);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000">'+(short?short[0].toUpperCase():'Y')+'</div><div><div style="font-weight:700;font-size:14px">'+short+'</div><div style="font-size:11px;color:var(--muted)">'+(u.username?'@'+String(u.username).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):'')+'</div></div></div>';
+    if(pi){
+      // Main line: the real user (display name, else @username) — never the
+      // raw wallet address; that moves to the small subline. Points row is
+      // kept fresh by refreshTokenBalance (same source as the nav pill).
+      var _e=function(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+      var name=u.display_name||(u.username?'@'+u.username:'')||short||'You';
+      var sub=(u.username&&u.display_name)?'@'+u.username:(short&&name!==short?short:'');
+      var initial=_e(String(name).replace(/^@/,'').trim().charAt(0).toUpperCase()||'Y');
+      var avStyle='width:36px;height:36px;border-radius:50%;background:var(--yeet);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--on-accent,#000);overflow:hidden;flex:none';
+      var avInner=initial;
+      if(u.avatar_url){
+        avStyle+=';background-image:url(\''+String(u.avatar_url).replace(/['"<>\\]/g,'')+'\');background-size:cover;background-position:center';
+        avInner='';
+      }
+      pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+        +'<div style="'+avStyle+'">'+avInner+'</div>'
+        +'<div style="min-width:0"><div style="font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_e(name)+'</div>'
+        +'<div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_e(sub)+'</div></div>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><span class="yi yi-bolt"></span> <b id="profilePoints">'+(typeof window._yeetBalance==='number'?window._yeetBalance:'—')+'</b> <span style="color:var(--muted)" data-i18n="balance.unit">Points</span></div>';
+    }
   }catch(e){}
 }
 function showLoginGate(){
@@ -1663,6 +1683,8 @@ function showLoginGate(){
 }
 // Build a single feed-post DOM element (markup + wired listeners).
 // Extracted so loadFeed() and loadPermanentPosts() render identically.
+// Also exported on window (below) — loadFollowingFeed lives in a different
+// script scope and renders the same cards.
 function _buildFeedPostEl(p){
   const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
   // Escape: display_name/username are user-controlled and this value is
@@ -1709,6 +1731,7 @@ function _buildFeedPostEl(p){
   el.querySelector('.more-btn').addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openPostMenu(this);});
   return el;
 }
+window._buildFeedPostEl = _buildFeedPostEl;
 
 async function loadFeed(){
   try{
@@ -2087,6 +2110,10 @@ async function refreshTokenBalance(){
   pill.style.color       = n > 0 ? 'var(--yeet)' : 'rgba(var(--accent-rgb),.55)';
   pill.title = (window.t ? window.t('balance.title') : 'Your points balance');
   window._yeetBalance = n;
+  // Mirror into the sidebar "My Profile" widget so its points line stays in
+  // sync with the nav pill (same fetch, no extra request).
+  var pp = document.getElementById('profilePoints');
+  if(pp) pp.textContent = pretty;
 }
 window.refreshTokenBalance = refreshTokenBalance;
 
@@ -3816,7 +3843,11 @@ async function loadFollowingFeed() {
     var wrap = document.createElement('div');
     wrap.id = 'feed-posts';
     for (var p of d.data) {
-      var el = buildPostEl(p);
+      // window._buildFeedPostEl is the shared feed-card renderer (exported —
+      // it lives in another script scope). The old call target buildPostEl
+      // never existed, so a non-empty following feed threw a ReferenceError
+      // into the catch below and rendered NOTHING.
+      var el = window._buildFeedPostEl(p);
       wrap.appendChild(el);
     }
     var c = document.querySelector('.composer');
