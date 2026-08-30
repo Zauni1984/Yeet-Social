@@ -682,7 +682,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <a class="nav-link active" href="#" onclick="showGlobalFeed();return false;"><span class="yi yi-home"></span> Global Feed</a>
-    <a class="nav-link" href="#"><span class="yi yi-user"></span> Following</a>
+    <a class="nav-link" href="#" onclick="showFollowingFeed();return false;"><span class="yi yi-user"></span> Following</a>
     <a class="nav-link" href="#" onclick="showTrendingFeed();return false;"><span class="yi yi-star"></span> Trending <span class="badge">HOT</span></a>
     <div class="nav-section">Discover</div>
     <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));loadPermanentPosts();if(typeof toggleNav==='function'&&window.innerWidth<=700)toggleNav();return false;"><span class="yi yi-pin"></span> Permanent Posts</a>
@@ -1494,6 +1494,27 @@ function showGlobalFeed(){
   document.querySelectorAll('.tab').forEach(x=>{x.style.opacity='';x.style.display='';});
   loadFeed();
 }
+// Sidebar "Following": same chrome resets as showGlobalFeed, but loads the
+// followed-users feed and marks the matching header tab active. (The nav
+// link used to have NO handler at all, so clicking it silently left the
+// global feed on screen.)
+function showFollowingFeed(){
+  if(typeof _hideTipsView==='function') _hideTipsView();
+  if(typeof _exitProfileView==='function') _exitProfileView();
+  document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(function(x){if(x.textContent.trim().startsWith('Following'))x.classList.add('active');});
+  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
+  if(title)title.textContent='Following';
+  document.querySelectorAll('.tab').forEach(x=>{
+    x.style.opacity='';x.style.display='';
+    x.classList.toggle('active', x.textContent.trim().includes('FOLLOWING'));
+  });
+  var comp=document.querySelector('.composer'); if(comp)comp.style.display='';
+  var lw=document.getElementById('lives-wrap'); if(lw)lw.remove();
+  if(typeof window.loadFollowingFeed==='function') window.loadFollowingFeed();
+  if(typeof toggleNav==='function'&&window.innerWidth<=700)toggleNav();
+}
+window.showFollowingFeed = showFollowingFeed;
 function showTrendingFeed(){
   if(typeof _hideTipsView==='function') _hideTipsView();
   if(typeof _exitProfileView==='function') _exitProfileView();
