@@ -13,3 +13,4 @@ pub mod pii_vault;
 pub mod ledger;
 pub mod note_swap;
 pub mod translate;
+pub mod changelog_bot;

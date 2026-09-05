@@ -47,6 +47,7 @@ async fn main() {
     // NOTE→YEET swap watcher — idle until SWAP_ENABLED + NOTE_RPC_URL are set.
     tokio::spawn(services::note_swap::start_swap_watcher(state.clone()));
     tokio::spawn(services::translate::start_lang_sweep(state.clone()));
+    tokio::spawn(services::changelog_bot::start_changelog_bot(state.clone()));
     info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");

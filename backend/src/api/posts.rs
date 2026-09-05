@@ -45,6 +45,8 @@ struct PostRow {
     lang: Option<String>,
     #[sqlx(default)]
     kind: Option<String>,
+    #[sqlx(default)]
+    author_is_bot: Option<bool>,
 }
 
 fn row_to_feed_post(r: PostRow) -> FeedPost {
@@ -59,6 +61,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         author: FeedPostAuthor {
             id: r.author_id, wallet_address: Some(r.wallet_address),
             display_name: r.display_name, avatar_url: r.avatar_url,
+            is_bot: r.author_is_bot.unwrap_or(false),
         },
         tip_total_yeet: None,
         nft_price_yeet: None,
@@ -168,7 +171,7 @@ pub async fn get_post(
     let r = sqlx::query_as::<_, PostRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
                 p.like_count, p.reshare_count, p.comment_count, p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.lang, p.kind
+                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.lang, p.kind, u.is_bot AS author_is_bot
          FROM posts p JOIN users u ON p.author_id = u.id
          WHERE p.id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
     )
