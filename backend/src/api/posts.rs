@@ -17,6 +17,9 @@ pub struct CreatePostRequest {
     pub nft_price_yeet: Option<f64>,
     pub is_permanent: Option<bool>,
     pub ppv_price_yeet: Option<f64>,
+    /// `text` (default) or `audio` (Audio Story: media_url required,
+    /// caption optional).
+    pub kind: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -40,6 +43,8 @@ struct PostRow {
     avatar_url: Option<String>,
     #[sqlx(default)]
     lang: Option<String>,
+    #[sqlx(default)]
+    kind: Option<String>,
 }
 
 fn row_to_feed_post(r: PostRow) -> FeedPost {
@@ -66,6 +71,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         promoted_live_id: None,
         pinned_until: None,
         lang: r.lang,
+        kind: r.kind,
     }
 }
 
@@ -74,7 +80,15 @@ pub async fn create_post(
     auth: AuthUser,
     Json(req): Json<CreatePostRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
-    if req.content.trim().is_empty() || req.content.trim().chars().count() > 420 {
+    let kind = match req.kind.as_deref().map(|k| k.trim()) {
+        None | Some("") | Some("text") => "text",
+        Some("audio") => "audio",
+        Some(_) => return Err(AppError::Validation("kind must be text or audio".into())),
+    };
+    if kind == "audio" && req.media_url.as_deref().map(|m| m.trim().is_empty()).unwrap_or(true) {
+        return Err(AppError::Validation("Audio story needs a media_url".into()));
+    }
+    if (kind != "audio" && req.content.trim().is_empty()) || req.content.trim().chars().count() > 420 {
         return Err(AppError::Validation("Post content must be 1-420 chars".into()));
     }
     // Support both wallet users (auth.address = "0x...") and email users (auth.address = "email:UUID")
@@ -116,8 +130,8 @@ pub async fn create_post(
     let media_url_clone = req.media_url.clone();
     let media_arr: Vec<String> = req.media_url.into_iter().collect();
     let post_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO posts (author_id, content, media_urls, media_url, expires_at, is_adult, is_nft, nft_price_yeet, is_permanent, ppv_price_yeet)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
+        "INSERT INTO posts (author_id, content, media_urls, media_url, expires_at, is_adult, is_nft, nft_price_yeet, is_permanent, ppv_price_yeet, kind)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id"
     )
     .bind(user_id).bind(&req.content).bind(&media_arr)
     .bind(media_url_clone.as_deref())
@@ -132,6 +146,7 @@ pub async fn create_post(
     // per-user permanent list. Bind the same value used for expires_at.
     .bind(is_permanent)
     .bind(req.ppv_price_yeet)
+    .bind(kind)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     // Posting reward: only articles of at least the configured length earn
@@ -153,7 +168,7 @@ pub async fn get_post(
     let r = sqlx::query_as::<_, PostRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
                 p.like_count, p.reshare_count, p.comment_count, p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.lang
+                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.lang, p.kind
          FROM posts p JOIN users u ON p.author_id = u.id
          WHERE p.id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
     )

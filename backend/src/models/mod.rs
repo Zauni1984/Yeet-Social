@@ -96,6 +96,9 @@ pub struct FeedPost {
     /// decide whether to offer / auto-run a translation.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lang: Option<String>,
+    /// `text` or `audio` (Audio Story).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

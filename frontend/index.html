@@ -736,6 +736,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
     <div class="tabs" role="tablist">
       <div class="tab active" data-tab="foryou" data-i18n="tab.forYou" onclick="setTab(this)">FOR YOU</div>
       <div class="tab" data-tab="following" data-i18n="tab.following" onclick="setTab(this)">FOLLOWING</div>
+      <div class="tab" data-tab="audio" onclick="setTab(this)"><span class="yi yi-mic"></span> <span data-i18n="tab.audio">AUDIO</span></div>
       <!-- LIVE tab parked: see README_LIVEKIT.md for re-enable steps.
            To restore, add this line back:
              <div class="tab" data-tab="live" onclick="setTab(this)">LIVE <span class="yi yi-live"></span></div>
@@ -846,6 +847,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 (function(){
   var DICTS = {
     en: {
+      // --- audio stories ---
+      'tab.audio':'AUDIO',
+      'audio.title':'Audio Stories',
+      'audio.record':'Record',
+      'audio.ctaText':'Record a voice story straight from your phone — gone after 24 hours or permanent, optionally 18+.',
+      'audio.start':'Start recording',
+      'audio.stop':'Stop recording',
+      'audio.recording':'Recording…',
+      'audio.rerecord':'Record again',
+      'audio.preview':'Preview',
+      'audio.caption':'Add a caption (optional)',
+      'audio.expire24':'Disappears in 24 h',
+      'audio.permanent':'Permanent',
+      'audio.adult':'18+',
+      'audio.publish':'Publish',
+      'audio.publishing':'Publishing…',
+      'audio.posted':'Audio story published!',
+      'audio.micDenied':'Microphone access was denied. Allow it in your browser settings and try again.',
+      'audio.unsupported':'Recording is not supported in this browser — you can upload an audio file instead.',
+      'audio.pickFile':'Choose audio file',
+      'audio.durationHint':'Up to {s} seconds',
+      'audio.story':'Audio Story',
+      'audio.uploadFailed':'Upload failed',
+      'audio.empty':'No audio stories yet — record the first one!',
       // --- accessibility / reader / translation ---
       'a11y.skip':'Skip to content',
       'a11y.topbar':'Top bar',
@@ -1233,6 +1258,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'No comments yet',
     },
     de: {
+      // --- audio stories ---
+      'tab.audio':'AUDIO',
+      'audio.title':'Audio Stories',
+      'audio.record':'Aufnehmen',
+      'audio.ctaText':'Sprich eine Story direkt mit dem Smartphone ein – nach 24 Stunden weg oder permanent, optional 18+.',
+      'audio.start':'Aufnahme starten',
+      'audio.stop':'Aufnahme stoppen',
+      'audio.recording':'Aufnahme läuft…',
+      'audio.rerecord':'Neu aufnehmen',
+      'audio.preview':'Vorschau',
+      'audio.caption':'Text dazu (optional)',
+      'audio.expire24':'Verschwindet in 24 h',
+      'audio.permanent':'Permanent',
+      'audio.adult':'18+',
+      'audio.publish':'Veröffentlichen',
+      'audio.publishing':'Wird veröffentlicht…',
+      'audio.posted':'Audio Story veröffentlicht!',
+      'audio.micDenied':'Mikrofonzugriff verweigert. Erlaube ihn in den Browser-Einstellungen und versuche es erneut.',
+      'audio.unsupported':'Aufnahme wird in diesem Browser nicht unterstützt – du kannst stattdessen eine Audiodatei hochladen.',
+      'audio.pickFile':'Audiodatei wählen',
+      'audio.durationHint':'Bis zu {s} Sekunden',
+      'audio.story':'Audio Story',
+      'audio.uploadFailed':'Upload fehlgeschlagen',
+      'audio.empty':'Noch keine Audio Stories – nimm die erste auf!',
       // --- accessibility / reader / translation ---
       'a11y.skip':'Zum Inhalt springen',
       'a11y.topbar':'Kopfleiste',
@@ -1598,6 +1647,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'Noch keine Kommentare',
     },
     it: {
+      // --- audio stories ---
+      'tab.audio':'AUDIO',
+      'audio.title':'Audio Stories',
+      'audio.record':'Registra',
+      'audio.ctaText':'Registra una storia vocale direttamente dal telefono: sparisce dopo 24 ore o resta permanente, opzionalmente 18+.',
+      'audio.start':'Avvia registrazione',
+      'audio.stop':'Ferma registrazione',
+      'audio.recording':'Registrazione in corso…',
+      'audio.rerecord':'Registra di nuovo',
+      'audio.preview':'Anteprima',
+      'audio.caption':'Aggiungi un testo (facoltativo)',
+      'audio.expire24':'Sparisce tra 24 h',
+      'audio.permanent':'Permanente',
+      'audio.adult':'18+',
+      'audio.publish':'Pubblica',
+      'audio.publishing':'Pubblicazione…',
+      'audio.posted':'Audio story pubblicata!',
+      'audio.micDenied':'Accesso al microfono negato. Consentilo nelle impostazioni del browser e riprova.',
+      'audio.unsupported':'La registrazione non è supportata in questo browser: puoi caricare un file audio.',
+      'audio.pickFile':'Scegli file audio',
+      'audio.durationHint':'Fino a {s} secondi',
+      'audio.story':'Audio Story',
+      'audio.uploadFailed':'Caricamento non riuscito',
+      'audio.empty':'Ancora nessuna audio story: registra la prima!',
       // --- accessibility / reader / translation ---
       'a11y.skip':'Vai al contenuto',
       'a11y.topbar':'Barra superiore',
@@ -2238,6 +2311,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portoghese',
     },
     fr: {
+      // --- audio stories ---
+      'tab.audio':'AUDIO',
+      'audio.title':'Audio Stories',
+      'audio.record':'Enregistrer',
+      'audio.ctaText':'Enregistre une story vocale directement depuis ton téléphone : effacée après 24 h ou permanente, 18+ en option.',
+      'audio.start':'Démarrer l\'enregistrement',
+      'audio.stop':'Arrêter l\'enregistrement',
+      'audio.recording':'Enregistrement…',
+      'audio.rerecord':'Réenregistrer',
+      'audio.preview':'Aperçu',
+      'audio.caption':'Ajouter un texte (facultatif)',
+      'audio.expire24':'Disparaît dans 24 h',
+      'audio.permanent':'Permanent',
+      'audio.adult':'18+',
+      'audio.publish':'Publier',
+      'audio.publishing':'Publication…',
+      'audio.posted':'Audio story publiée !',
+      'audio.micDenied':'Accès au micro refusé. Autorise-le dans les réglages du navigateur et réessaie.',
+      'audio.unsupported':'L\'enregistrement n\'est pas pris en charge par ce navigateur : tu peux importer un fichier audio.',
+      'audio.pickFile':'Choisir un fichier audio',
+      'audio.durationHint':'Jusqu\'à {s} secondes',
+      'audio.story':'Audio Story',
+      'audio.uploadFailed':'Échec de l\'envoi',
+      'audio.empty':'Pas encore d\'audio story : enregistre la première !',
       // --- accessibility / reader / translation ---
       'a11y.skip':'Aller au contenu',
       'a11y.topbar':'Barre supérieure',
@@ -2878,6 +2975,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugais',
     },
     es: {
+      // --- audio stories ---
+      'tab.audio':'AUDIO',
+      'audio.title':'Audio Stories',
+      'audio.record':'Grabar',
+      'audio.ctaText':'Graba una historia de voz directamente desde tu móvil: desaparece a las 24 h o queda permanente, opcionalmente 18+.',
+      'audio.start':'Empezar a grabar',
+      'audio.stop':'Detener grabación',
+      'audio.recording':'Grabando…',
+      'audio.rerecord':'Grabar de nuevo',
+      'audio.preview':'Vista previa',
+      'audio.caption':'Añade un texto (opcional)',
+      'audio.expire24':'Desaparece en 24 h',
+      'audio.permanent':'Permanente',
+      'audio.adult':'18+',
+      'audio.publish':'Publicar',
+      'audio.publishing':'Publicando…',
+      'audio.posted':'¡Audio story publicada!',
+      'audio.micDenied':'Acceso al micrófono denegado. Permítelo en los ajustes del navegador e inténtalo de nuevo.',
+      'audio.unsupported':'Este navegador no admite grabación: puedes subir un archivo de audio.',
+      'audio.pickFile':'Elegir archivo de audio',
+      'audio.durationHint':'Hasta {s} segundos',
+      'audio.story':'Audio Story',
+      'audio.uploadFailed':'Error al subir',
+      'audio.empty':'Aún no hay audio stories: ¡graba la primera!',
       // --- accessibility / reader / translation ---
       'a11y.skip':'Saltar al contenido',
       'a11y.topbar':'Barra superior',
@@ -3518,6 +3639,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugués',
     },
     pt: {
+      // --- audio stories ---
+      'tab.audio':'ÁUDIO',
+      'audio.title':'Audio Stories',
+      'audio.record':'Gravar',
+      'audio.ctaText':'Grave uma história por voz direto do celular: some em 24 h ou fica permanente, opcionalmente 18+.',
+      'audio.start':'Iniciar gravação',
+      'audio.stop':'Parar gravação',
+      'audio.recording':'Gravando…',
+      'audio.rerecord':'Gravar de novo',
+      'audio.preview':'Prévia',
+      'audio.caption':'Adicione um texto (opcional)',
+      'audio.expire24':'Some em 24 h',
+      'audio.permanent':'Permanente',
+      'audio.adult':'18+',
+      'audio.publish':'Publicar',
+      'audio.publishing':'Publicando…',
+      'audio.posted':'Audio story publicada!',
+      'audio.micDenied':'Acesso ao microfone negado. Permita nas configurações do navegador e tente de novo.',
+      'audio.unsupported':'Este navegador não suporta gravação: você pode enviar um arquivo de áudio.',
+      'audio.pickFile':'Escolher arquivo de áudio',
+      'audio.durationHint':'Até {s} segundos',
+      'audio.story':'Audio Story',
+      'audio.uploadFailed':'Falha no envio',
+      'audio.empty':'Ainda não há audio stories: grave a primeira!',
       // --- accessibility / reader / translation ---
       'a11y.skip':'Ir para o conteúdo',
       'a11y.topbar':'Barra superior',
@@ -4249,6 +4394,7 @@ function _setFeedTitle(key){
   if(!title) return;
   title.setAttribute('data-i18n',key);
   title.textContent=window.t?window.t(key):key;
+  if(window.YeetAudio) window.YeetAudio.hideCta();
 }
 function showGlobalFeed(){
   if(typeof _hideTipsView==='function') _hideTipsView();
@@ -5662,6 +5808,8 @@ function setTab(t){
     var comp = document.querySelector('.composer'); if(comp) comp.style.display='';
     var lw = document.getElementById('lives-wrap'); if(lw) lw.remove();
   }
+  if(kind!=='audio'&&window.YeetAudio) window.YeetAudio.hideCta();
+  if(kind==='audio'){ if(window.YeetAudio) window.YeetAudio.showCta(); loadFeedFiltered('audio'); return; }
   if(kind==='adult'){ check18Plus(); return; }
   if(kind==='live'){ loadLives(); return; }
   if(kind==='nft'){ loadFeedFiltered('nft'); return; }
@@ -5672,7 +5820,7 @@ function loadFeedFiltered(filter){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){ showLoginGate(); return; }
   const headers={'Content-Type':'application/json','Authorization':'Bearer '+jwt};
-  var url=filter==='adult'?'/api/v1/feed/adult':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
+  var url=filter==='adult'?'/api/v1/feed/adult':filter==='audio'?'/api/v1/feed?kind=audio':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
   // Toggle is a composer-only hint  never force it from tab switches.
   var atl=document.getElementById('adultToggleLabel');
   if(atl)atl.style.display='flex';
@@ -5690,10 +5838,12 @@ function loadFeedFiltered(filter){
         if(empty)empty.style.display='none';
         const wrap=document.createElement('div');wrap.id='feed-posts';
         for(const p of d.data){ wrap.appendChild(window._buildFeedPostEl(p)); }
-        const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
-      }else{if(empty)empty.style.display='';}
+        const anchor=document.getElementById('audioCta')||document.querySelector('.composer');if(anchor)anchor.after(wrap);
+      }else{if(empty)empty.style.display=filter==='audio'?'none':'';}
+      if(filter==='audio'&&window.YeetAudio) window.YeetAudio.setEmpty(!(d.success&&d.data&&d.data.length>0));
     }).catch(e=>console.error('loadFeedFiltered:',e));
 }
+window.loadFeedFiltered = loadFeedFiltered;
 // check18Plus: see face scan implementation below
 function submitPost(){
   // Token must come from localStorage AND must not be empty. The
@@ -7886,10 +8036,17 @@ function _isVideoUrl(u){
   return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.mov');
 }
 
+function _isAudioUrl(u){
+  if(!u || typeof u !== 'string') return false;
+  return /\.(weba|ogg|oga|opus|m4a|aac|mp3|wav)(\?|#|$)/i.test(u);
+}
 function renderMediaUrl(p) {
   if (!p.media_url) return '';
-  var isVideo = _isVideoUrl(p.media_url);
-  var openMedia = isVideo
+  var isAudio = p.kind === 'audio' || _isAudioUrl(p.media_url);
+  var isVideo = !isAudio && _isVideoUrl(p.media_url);
+  var openMedia = isAudio
+    ? '<div class="audio-story"><span class="yi yi-mic" aria-hidden="true"></span><audio class="story-audio" src="' + p.media_url + '" controls preload="metadata" aria-label="' + window.t('audio.story') + '"></audio><span class="as-label">' + window.t('audio.story') + '</span></div>'
+    : isVideo
     ? '<video src="' + p.media_url + '" controls preload="metadata" playsinline style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;background:var(--bg)"></video>'
     : '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   // No PPV price set: render normally.
@@ -7909,8 +8066,8 @@ function renderMediaUrl(p) {
   // icon; for images we blur the actual image. Video frames aren't
   // trivially blurrable client-side without decoding, so a tile keeps
   // PPV simple and prevents accidental playback before payment.
-  var lockedPreview = isVideo
-    ? '<div style="width:100%;height:280px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--border-2)"><span class="yi yi-video"></span></div>'
+  var lockedPreview = (isVideo || isAudio)
+    ? '<div style="width:100%;height:' + (isAudio ? '120px' : '280px') + ';background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--border-2)"><span class="yi ' + (isAudio ? 'yi-mic' : 'yi-video') + '"></span></div>'
     : '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">';
   return '<div class="ppv-wrap" data-pid="' + p.id + '" data-aid="' + aid + '" data-price="' + price + '" style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:block">'
     + lockedPreview
@@ -13566,7 +13723,22 @@ var Reader=(function(){
     if(n<0||n>=queue.length){ var was=playing; stop(); if(was) announce(T('tts.done')); return; }
     idx=n; var el=queue[idx]; playing=true; paused=false; highlight(el); renderBar();
     var p=el._yeetPost||{}; announce(T('tts.now',{name:authorName(p)}));
-    speakItem(textFor(el),function(){ if(playing&&!paused) playIndex(idx+1); });
+    var au=el.querySelector('audio.story-audio'); var item=textFor(el);
+    if(au){ item.text=[T('a11y.postBy',{name:authorName(p),time:spokenAgo(p)}),T('tts.audioPost')].concat(p.content?[clean(p.content)]:[]).join('. '); }
+    speakItem(item,function(){
+      if(!playing||paused) return;
+      if(au) playStory(au,function(){ if(playing&&!paused) playIndex(idx+1); });
+      else playIndex(idx+1);
+    });
+  }
+  // Audio stories: after the spoken intro, play the recording itself and
+  // continue with the next post when it ends (pause/stop follow along).
+  var storyAudio=null;
+  function playStory(au,cb){
+    storyAudio=au;
+    var done=function(){ if(storyAudio!==au) return; au.onended=null; au.onerror=null; storyAudio=null; cb(); };
+    au.onended=done; au.onerror=done;
+    try{ au.currentTime=0; var pr=au.play(); if(pr&&pr.catch) pr.catch(done); }catch(e){ done(); }
   }
   function readPost(el){ if(!supported||!el) return; queue=[el]; playIndex(0); }
   function readFeed(fromEl){
@@ -13576,10 +13748,10 @@ var Reader=(function(){
     if(!arts.length){ announce(T('tts.nothing')); if(window.showToast) window.showToast(T('tts.nothing')); return; }
     queue=arts; var start=fromEl?arts.indexOf(fromEl):0; playIndex(start<0?0:start);
   }
-  function pause(){ if(!supported||!playing||paused) return; paused=true; try{synth.pause();}catch(e){} renderBar(); }
-  function resume(){ if(!supported||!playing||!paused) return; paused=false; try{synth.resume();}catch(e){} renderBar(); }
+  function pause(){ if(!supported||!playing||paused) return; paused=true; try{synth.pause();}catch(e){} if(storyAudio){ try{storyAudio.pause();}catch(e){} } renderBar(); }
+  function resume(){ if(!supported||!playing||!paused) return; paused=false; try{synth.resume();}catch(e){} if(storyAudio){ try{var pr=storyAudio.play(); if(pr&&pr.catch) pr.catch(function(){});}catch(e){} } renderBar(); }
   function toggle(){ if(!playing) readFeed(null); else if(paused) resume(); else pause(); }
-  function stop(){ if(!supported) return; playing=false; paused=false; current=null; try{synth.cancel();}catch(e){} highlight(null); queue=[]; idx=-1; renderBar(); }
+  function stop(){ if(!supported) return; playing=false; paused=false; current=null; try{synth.cancel();}catch(e){} if(storyAudio){ try{storyAudio.pause();}catch(e){} storyAudio=null; } highlight(null); queue=[]; idx=-1; renderBar(); }
   function next(){ if(playing) playIndex(idx+1); }
   function prev(){ if(playing) playIndex(Math.max(0,idx-1)); }
   function renderBar(){
@@ -13723,6 +13895,180 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 window.YeetA11y={decoratePost:decoratePost,setPref:setPref,announce:announce,showHelp:showHelp,syncSettingsUI:syncSettingsUI};
 window.YeetReader=Reader;
 window.YeetTranslate=Translate;
+})();
+</script>
+
+<style>
+/* ===== Audio Stories ===== */
+.audio-story{display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--card-2)}
+.audio-story>.yi{font-size:22px;color:var(--accent);flex:none}
+.audio-story audio{flex:1;min-width:0;width:100%;height:36px}
+.audio-story .as-label{font-size:11px;color:var(--muted);white-space:nowrap}
+#audioCta{margin:12px 16px;padding:14px 16px;border:1px dashed var(--accent);border-radius:14px;background:rgba(var(--accent-rgb),.06);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#audioCta .cta-txt{flex:1;min-width:200px;font-size:13px;color:var(--muted)}
+#audioCta .cta-txt b{display:block;color:var(--text);font-size:15px;margin-bottom:2px}
+#audioCta .cta-empty{display:block;margin-top:4px;color:var(--accent)}
+.rec-btn{width:76px;height:76px;border-radius:50%;border:none;background:#e63946;color:#fff;font-size:30px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 0 0 0 rgba(230,57,70,.5);margin:6px 0}
+.rec-btn .yi{background:#fff}
+.rec-btn:disabled{opacity:.4;cursor:not-allowed}
+.rec-btn.on{animation:recpulse 1.2s infinite}
+@keyframes recpulse{0%{box-shadow:0 0 0 0 rgba(230,57,70,.6)}100%{box-shadow:0 0 0 18px rgba(230,57,70,0)}}
+.rec-timer{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;margin:6px 0 4px}
+.rec-level{height:6px;border-radius:3px;background:var(--card-2);overflow:hidden;margin:8px 0}
+.rec-level i{display:block;height:100%;width:0;background:var(--accent);transition:width .08s}
+.rec-opts{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:13px;margin:10px 0;justify-content:center}
+.rec-opts label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.rec-opts input{accent-color:var(--accent)}
+</style>
+<script>
+/* ===== YeetAudio — Audio Stories: record in the browser (MediaRecorder),
+   upload via /api/v1/uploads/post-media, publish as a kind='audio' post
+   (24 h or permanent, optional 18+). Falls back to a native audio file
+   picker (with `capture`) where MediaRecorder is unavailable. ===== */
+(function(){
+'use strict';
+var T=function(k,v){return window.t?window.t(k,v):k;};
+var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var announce=function(m){ if(window.YeetA11y) window.YeetA11y.announce(m); };
+var MAX_S=180;
+var state='idle', rec=null, stream=null, chunks=[], blob=null, mime='', startedAt=0, timer=null, audioCtx=null, raf=null, blobUrl=null;
+
+function supported(){ return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder); }
+function pickMime(){
+  var c=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus','audio/ogg'];
+  for(var i=0;i<c.length;i++){ try{ if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
+  return '';
+}
+function extFor(m){ m=String(m||'').split(';')[0].trim(); return m==='audio/mp4'||m==='audio/x-m4a'||m==='audio/aac'?'m4a':m==='audio/ogg'?'ogg':m==='audio/mpeg'?'mp3':m==='audio/wav'?'wav':'weba'; }
+function fmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function setStatus(m){ var s=document.getElementById('arStatus'); if(s) s.textContent=m||''; }
+
+function ensureModal(){
+  if(document.getElementById('audioRecModal')) return;
+  var d=document.createElement('div'); d.className='modal-bg'; d.id='audioRecModal';
+  d.addEventListener('click',function(e){ if(e.target===d) close(); });
+  d.innerHTML='<div class="modal modal-wrap" style="max-width:460px;width:95vw;text-align:center">'
+    +'<button class="modal-close" type="button" aria-label="'+esc(T('a11y.close'))+'"><span class="yi yi-close" aria-hidden="true"></span></button>'
+    +'<h3 style="margin-top:0"><span class="yi yi-mic" aria-hidden="true"></span> <span data-i18n="audio.title">'+esc(T('audio.title'))+'</span></h3>'
+    +'<div id="arStage"></div></div>';
+  d.querySelector('.modal-close').addEventListener('click',close);
+  document.body.appendChild(d);
+}
+function open(){
+  if(!localStorage.getItem('yeet_jwt')){ if(window.openWalletModal) window.openWalletModal(); return; }
+  ensureModal(); state='idle'; blob=null; render();
+  document.getElementById('audioRecModal').classList.add('on');
+}
+function close(){
+  clearInterval(timer); if(raf) cancelAnimationFrame(raf);
+  if(rec&&rec.state!=='inactive'){ rec.onstop=null; try{rec.stop();}catch(e){} }
+  stopTracks();
+  var m=document.getElementById('audioRecModal'); if(m) m.classList.remove('on');
+  if(blobUrl){ try{URL.revokeObjectURL(blobUrl);}catch(e){} blobUrl=null; }
+  state='idle'; blob=null;
+}
+function render(){
+  var st=document.getElementById('arStage'); if(!st) return;
+  if(state==='idle'||state==='recording'){
+    var recording=state==='recording';
+    st.innerHTML='<p style="color:var(--muted);font-size:13px;margin:0 0 6px">'+esc(T('audio.durationHint',{s:MAX_S}))+'</p>'
+      +'<button type="button" class="rec-btn'+(recording?' on':'')+'" id="arRecBtn" aria-label="'+esc(T(recording?'audio.stop':'audio.start'))+'" title="'+esc(T(recording?'audio.stop':'audio.start'))+'"><span class="yi '+(recording?'yi-stop':'yi-mic')+'" aria-hidden="true"></span></button>'
+      +'<div class="rec-timer" id="arTimer">0:00 / '+fmt(MAX_S)+'</div>'
+      +'<div class="rec-level" aria-hidden="true"><i id="arLevel"></i></div>'
+      +'<div id="arStatus" role="status" style="font-size:13px;color:var(--muted);min-height:18px">'+esc(recording?T('audio.recording'):'')+'</div>'
+      +(supported()?'':'<p style="color:var(--muted);font-size:12px;margin:6px 0">'+esc(T('audio.unsupported'))+'</p>')
+      +(recording?'':'<label class="a11y-btn" style="display:inline-block;width:auto;margin-top:8px;cursor:pointer"><input type="file" id="arFile" accept="audio/*" capture style="display:none"> '+esc(T('audio.pickFile'))+'</label>');
+    var rb=st.querySelector('#arRecBtn'); rb.addEventListener('click',function(){ state==='recording'?stop():start(); });
+    if(!supported()) rb.disabled=true;
+    var f=st.querySelector('#arFile'); if(f) f.addEventListener('change',function(){ var file=this.files&&this.files[0]; if(file){ blob=file; mime=file.type||'audio/mpeg'; state='review'; render(); } });
+    if(recording) rb.focus();
+  } else {
+    if(blobUrl){ try{URL.revokeObjectURL(blobUrl);}catch(e){} }
+    blobUrl=URL.createObjectURL(blob);
+    var adultOk=localStorage.getItem('yeet_adult')==='1';
+    st.innerHTML='<audio controls src="'+blobUrl+'" style="width:100%;margin:6px 0" aria-label="'+esc(T('audio.preview'))+'"></audio>'
+      +'<textarea id="arCaption" maxlength="420" rows="2" placeholder="'+esc(T('audio.caption'))+'" aria-label="'+esc(T('audio.caption'))+'" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 10px;color:var(--text);font-size:13px;resize:vertical;margin:6px 0"></textarea>'
+      +'<div class="rec-opts" role="group" aria-label="'+esc(T('audio.title'))+'">'
+      +'<label><input type="radio" name="arLife" value="24h" checked> '+esc(T('audio.expire24'))+'</label>'
+      +'<label><input type="radio" name="arLife" value="perm"> '+esc(T('audio.permanent'))+'</label>'
+      +(adultOk?'<label><input type="checkbox" id="arAdult"> '+esc(T('audio.adult'))+'</label>':'')
+      +'</div>'
+      +'<div style="display:flex;gap:8px;margin-top:6px"><button type="button" class="a11y-btn" id="arAgain" style="margin:0;flex:0 0 auto">'+esc(T('audio.rerecord'))+'</button><button type="button" class="btn-yeet" id="arPublish" style="flex:1;padding:10px">'+esc(T('audio.publish'))+'</button></div>'
+      +'<div id="arStatus" role="status" style="font-size:13px;color:var(--muted);min-height:18px;margin-top:6px"></div>';
+    st.querySelector('#arAgain').addEventListener('click',function(){ blob=null; state='idle'; render(); });
+    st.querySelector('#arPublish').addEventListener('click',publish);
+  }
+}
+async function start(){
+  if(!supported()) return;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}}); }
+  catch(e){ setStatus(T('audio.micDenied')); announce(T('audio.micDenied')); return; }
+  mime=pickMime(); chunks=[];
+  try{ rec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream); }catch(e){ try{ rec=new MediaRecorder(stream); }catch(e2){ setStatus(T('audio.unsupported')); stopTracks(); return; } }
+  mime=rec.mimeType||mime||'audio/webm';
+  rec.ondataavailable=function(e){ if(e.data&&e.data.size) chunks.push(e.data); };
+  rec.onstop=function(){ blob=new Blob(chunks,{type:String(mime).split(';')[0]}); stopTracks(); if(raf) cancelAnimationFrame(raf); state='review'; render(); };
+  try{ rec.start(250); }catch(e){ setStatus(T('audio.unsupported')); stopTracks(); return; }
+  startedAt=Date.now(); state='recording'; render(); announce(T('audio.recording'));
+  clearInterval(timer);
+  timer=setInterval(function(){ var s=(Date.now()-startedAt)/1000; var t=document.getElementById('arTimer'); if(t) t.textContent=fmt(s)+' / '+fmt(MAX_S); if(s>=MAX_S) stop(); },200);
+  meter();
+}
+function meter(){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    var src=audioCtx.createMediaStreamSource(stream); var an=audioCtx.createAnalyser(); an.fftSize=512; src.connect(an);
+    var buf=new Uint8Array(an.frequencyBinCount);
+    (function loop(){ if(state!=='recording') return; an.getByteTimeDomainData(buf); var sum=0; for(var i=0;i<buf.length;i++){ var v=(buf[i]-128)/128; sum+=v*v; } var rms=Math.sqrt(sum/buf.length); var el=document.getElementById('arLevel'); if(el) el.style.width=Math.min(100,Math.round(rms*300))+'%'; raf=requestAnimationFrame(loop); })();
+  }catch(e){}
+}
+function stop(){ clearInterval(timer); if(rec&&rec.state!=='inactive'){ try{rec.stop();}catch(e){ stopTracks(); } } else { stopTracks(); } }
+function stopTracks(){ if(stream){ try{stream.getTracks().forEach(function(t){ try{t.stop();}catch(e){} });}catch(e){} stream=null; } }
+async function publish(){
+  if(!blob||state==='uploading') return;
+  state='uploading';
+  var btn=document.getElementById('arPublish'); if(btn){ btn.disabled=true; btn.textContent=T('audio.publishing'); }
+  setStatus(T('audio.publishing'));
+  var jwt=localStorage.getItem('yeet_jwt')||'';
+  var life=(document.querySelector('input[name="arLife"]:checked')||{}).value||'24h';
+  var adult=!!(document.getElementById('arAdult')&&document.getElementById('arAdult').checked);
+  var caption=((document.getElementById('arCaption')||{}).value||'').trim();
+  try{
+    var type=String(blob.type||mime||'audio/webm').split(';')[0];
+    var fd=new FormData(); fd.append('file', blob, 'story.'+extFor(type));
+    var r=await fetch('/api/v1/uploads/post-media',{method:'POST',headers:{'Authorization':'Bearer '+jwt},body:fd});
+    var d=null; try{ d=await r.json(); }catch(e){}
+    if(r.status===413) throw new Error(T('toast.videoTooLarge'));
+    if(!r.ok||!d||!d.success||!d.data||!d.data.url) throw new Error((d&&d.error&&d.error.message)||T('audio.uploadFailed'));
+    var pr=await fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
+      body:JSON.stringify({content:caption,kind:'audio',media_url:d.data.url,is_adult:adult,is_permanent:life==='perm',is_nft:false})});
+    var pd=null; try{ pd=await pr.json(); }catch(e){}
+    if(!pr.ok||!pd||!pd.success) throw new Error((pd&&pd.error&&pd.error.message)||T('toast.postFailed'));
+    if(window.showToast) window.showToast(T('audio.posted'),'success'); announce(T('audio.posted'));
+    close();
+    var active=document.querySelector('.tab.active');
+    if(active&&active.dataset.tab==='audio'&&typeof window.loadFeedFiltered==='function') window.loadFeedFiltered('audio');
+    else if(!adult&&typeof window.loadFeed==='function') window.loadFeed();
+  }catch(e){
+    state='review';
+    if(btn){ btn.disabled=false; btn.textContent=T('audio.publish'); }
+    setStatus(e&&e.message||T('common.error'));
+    if(window.showToast) window.showToast(e&&e.message||T('common.error'),'error');
+  }
+}
+function showCta(){
+  if(document.getElementById('audioCta')) return;
+  var comp=document.querySelector('.composer'); if(!comp) return;
+  var c=document.createElement('div'); c.id='audioCta'; c.setAttribute('role','region'); c.setAttribute('aria-label',T('audio.title'));
+  c.innerHTML='<span class="yi yi-mic" aria-hidden="true" style="font-size:28px;color:var(--accent)"></span>'
+    +'<div class="cta-txt"><b>'+esc(T('audio.title'))+'</b>'+esc(T('audio.ctaText'))+'<span class="cta-empty" id="audioCtaEmpty" hidden>'+esc(T('audio.empty'))+'</span></div>'
+    +'<button type="button" class="btn-yeet" style="padding:10px 16px"><span class="yi yi-mic" aria-hidden="true"></span> '+esc(T('audio.record'))+'</button>';
+  c.querySelector('button').addEventListener('click',open);
+  comp.after(c);
+}
+function hideCta(){ var c=document.getElementById('audioCta'); if(c) c.remove(); }
+function setEmpty(isEmpty){ var e=document.getElementById('audioCtaEmpty'); if(e) e.hidden=!isEmpty; }
+window.YeetAudio={open:open,close:close,showCta:showCta,hideCta:hideCta,setEmpty:setEmpty,supported:supported};
 })();
 </script>
 

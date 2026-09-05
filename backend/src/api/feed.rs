@@ -11,6 +11,8 @@ pub struct FeedQuery {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
     pub adult: Option<bool>,
+    /// Restrict the global feed to one post kind (`audio` = Audio Stories tab).
+    pub kind: Option<String>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -48,6 +50,8 @@ struct FeedRow {
     pinned_until: Option<DateTime<Utc>>,
     #[sqlx(default)]
     lang: Option<String>,
+    #[sqlx(default)]
+    kind: Option<String>,
 }
 
 pub async fn get_feed(
@@ -59,6 +63,11 @@ pub async fn get_feed(
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset = (page - 1) * per_page;
     let viewer_id = resolve_viewer_id(&state, &auth).await?;
+    let kind: Option<String> = match q.kind.as_deref().map(|k| k.trim()) {
+        Some("audio") => Some("audio".into()),
+        Some("text") => Some("text".into()),
+        _ => None,
+    };
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
@@ -70,11 +79,13 @@ pub async fn get_feed(
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
-            p.promoted_live_id, p.pinned_until, p.lang,
+            p.promoted_live_id, p.pinned_until, p.lang, p.kind,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $3
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
-        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours')
+        WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
+          AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $4::text IS NOT NULL)
+          AND ($4::text IS NULL OR p.kind = $4)
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                            WHERE (ub.blocker_id = $3 AND ub.blocked_id = u.id)
                               OR (ub.blocker_id = u.id AND ub.blocked_id = $3))
@@ -83,18 +94,19 @@ pub async fn get_feed(
                  p.created_at DESC
         LIMIT $1 OFFSET $2"
     )
-    .bind(per_page).bind(offset).bind(viewer_id)
+    .bind(per_page).bind(offset).bind(viewer_id).bind(&kind)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
           WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
-            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours')
+            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $2::text IS NOT NULL)
+            AND ($2::text IS NULL OR p.kind = $2)
             AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                              WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
                                 OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"
     )
-    .bind(viewer_id)
+    .bind(viewer_id).bind(&kind)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let posts = rows.into_iter().map(row_to_feed_post).collect();
@@ -141,7 +153,7 @@ pub async fn get_following_feed(
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
-            p.promoted_live_id, p.pinned_until, p.lang,
+            p.promoted_live_id, p.pinned_until, p.lang, p.kind,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $1
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $1 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
@@ -203,6 +215,7 @@ fn row_to_feed_post(r: FeedRow) -> FeedPost {
         promoted_live_id: r.promoted_live_id,
         pinned_until: r.pinned_until,
         lang: r.lang,
+        kind: r.kind,
     }
 }
 
@@ -278,7 +291,7 @@ pub async fn get_user_posts(
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
-            p.promoted_live_id, p.pinned_until, p.lang,
+            p.promoted_live_id, p.pinned_until, p.lang, p.kind,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $4
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $4 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
@@ -340,7 +353,7 @@ pub async fn get_adult_feed(
             u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
             COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
             p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
-            p.lang
+            p.lang, p.kind
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE
           AND p.deleted_at IS NULL AND p.is_adult = TRUE
