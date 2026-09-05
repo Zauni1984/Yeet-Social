@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 14] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl"];
+pub const SUPPORTED: [&str; 18] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -231,7 +231,7 @@ pub async fn detect(cfg: &TranslateConfig, text: &str) -> Option<String> {
     }
 }
 
-/// Cheap stop-word detector for the fourteen UI languages. Deliberately
+/// Cheap stop-word detector for the eighteen UI languages. Deliberately
 /// conservative: needs a clear winner with at least two hits, otherwise
 /// `None`. Wrong guesses only cost a needless Translate button, missing
 /// guesses only cost auto-translation — so err on the side of `None`.
@@ -250,6 +250,12 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     const DA: &[&str] = &["af","hvad","meget","hvordan","hvorfor","kun","også","jeg","ikke","det","og","er","der","til","har","kan","skal","vil","med","som","på","men","nu","ikke","dig"];
     const NL: &[&str] = &["het","een","niet","ik","je","ook","maar","vandaag","dat","is","op","te","met","voor","zijn","dit","wat","nu","heb","kan","er","naar","van","wij","jij"];
     const PL: &[&str] = &["nie","się","jest","że","już","też","dzisiaj","tylko","ale","jak","co","tak","mam","być","dla","ten","lub","kiedy","bardzo","jeszcze","może","wszystko","dzięki","cześć","bo"];
+    // Croatian and Serbian share most function words; the ijekavian /
+    // ekavian pairs (lijepo/lepo, vrijeme/vreme, što/šta, …) break the tie.
+    const HR: &[&str] = &["je","se","na","da","ne","za","su","sam","ali","kako","tako","već","samo","danas","nije","biti","ili","što","također","tko","uvijek","lijepo","vrijeme","gdje","tjedan","ovdje","netko","cijeli","svijet","htio"];
+    const SR: &[&str] = &["je","se","na","da","ne","za","su","sam","ali","kako","tako","već","samo","danas","nije","biti","ili","šta","takođe","ko","uvek","lepo","vreme","gde","nedelja","ovde","neko","ceo","svet","hteo"];
+    const TR: &[&str] = &["ve","bir","bu","için","ile","çok","ama","gibi","daha","var","yok","ben","sen","biz","bugün","değil","şey","kadar","sonra","olarak","her","hiç","nasıl","neden","şimdi"];
+    const LV: &[&str] = &["un","ir","tu","ar","uz","par","kā","ka","bet","arī","tikai","šodien","nav","būt","vai","kad","šis","kas","mēs","jau","ļoti","viss","paldies","labi","tagad"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -259,7 +265,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     let score = |list: &[&str]| words.iter().filter(|w| list.contains(w)).count();
     let mut scores = [("en", score(EN)), ("de", score(DE)), ("it", score(IT)), ("fr", score(FR)), ("es", score(ES)), ("pt", score(PT)),
                       ("fi", score(FI)), ("sv", score(SV)), ("nb", score(NB)), ("is", score(IS)),
-                      ("cs", score(CS)), ("da", score(DA)), ("nl", score(NL)), ("pl", score(PL))];
+                      ("cs", score(CS)), ("da", score(DA)), ("nl", score(NL)), ("pl", score(PL)),
+                      ("hr", score(HR)), ("sr", score(SR)), ("tr", score(TR)), ("lv", score(LV))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -357,6 +364,10 @@ mod tests {
         assert_eq!(heuristic_detect("Jeg ved det ikke, men hvad synes du? Det er meget godt.").as_deref(), Some("da"));
         assert_eq!(heuristic_detect("Ik weet het niet, maar dit is een goede dag voor ons.").as_deref(), Some("nl"));
         assert_eq!(heuristic_detect("Nie wiem, ale to jest bardzo dobre i już dzisiaj mam wszystko.").as_deref(), Some("pl"));
+        assert_eq!(heuristic_detect("Ne znam, ali to je lijepo i uvijek imamo vrijeme za sve što treba.").as_deref(), Some("hr"));
+        assert_eq!(heuristic_detect("Ne znam, ali to je lepo i uvek imamo vreme za sve šta treba.").as_deref(), Some("sr"));
+        assert_eq!(heuristic_detect("Bugün çok güzel bir gün ve ben bunu çok seviyorum ama yarın yok.").as_deref(), Some("tr"));
+        assert_eq!(heuristic_detect("Nezinu, bet tas ir ļoti labi un mēs šodien varam visu.").as_deref(), Some("lv"));
     }
 
     #[test]
