@@ -363,7 +363,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 <!-- NAV -->
 <nav>
  <div class="nav-inner">
-  <button class="hamburger" onclick="toggleNav()" aria-label="Menu">
+  <button class="hamburger" onclick="toggleNav()" aria-label="Menu" data-i18n-aria="nav.menu">
     <span></span><span></span><span></span>
   </button>
   <a class="logo" href="/">
@@ -384,11 +384,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
     <!-- decoy fields absorb autofill heuristics -->
     <input type="text" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
     <input type="password" name="password" autocomplete="current-password" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
-    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')performSearch(this.value);else if(event.key==='Escape')closeSearchResults()">
+    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." data-i18n-placeholder="search.placeholder" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')performSearch(this.value);else if(event.key==='Escape')closeSearchResults()">
   </div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
-      <button class="btn-login" onclick="openAuthModal('login')">Login</button>
-      <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
+      <button class="btn-login" onclick="openAuthModal('login')" data-i18n="auth.login">Login</button>
+      <button class="btn-reg" onclick="openAuthModal('register')" data-i18n="auth.register">Register</button>
       <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:var(--on-accent);width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center"><span class="yi yi-user"></span></button>
     </div>
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px;position:relative">
@@ -611,9 +611,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.account">Account</div>
         <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:rgba(var(--accent-rgb),0.13);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.27);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none"><span class="yi yi-key"></span> <span data-i18n="settings.linkWallet">Connect payout wallet</span></button>
-        <button onclick="openConvertPoints()" style="width:100%;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.convertPoints"><span class="yi yi-coins"></span> Convert points to YEET</button>
-        <button onclick="adminSecretPrompt()" id="adminSecretBtn" style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px" data-i18n="settings.admin"><span class="yi yi-shield"></span> Admin secret</button>
-        <a href="/admin" data-admin-link style="display:block;width:100%;box-sizing:border-box;text-align:center;background:transparent;color:#ff6666;border:1px solid #5a2a2a;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;text-decoration:none"><span class="yi yi-shield"></span> Open admin dashboard</a>
+        <button onclick="openConvertPoints()" style="width:100%;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px"><span class="yi yi-coins"></span> <span data-i18n="settings.convertPoints">Convert points to YEET</span></button>
+        <button onclick="adminSecretPrompt()" id="adminSecretBtn" style="width:100%;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px"><span class="yi yi-shield"></span> <span data-i18n="settings.admin">Admin secret</span></button>
+        <a href="/admin" data-admin-link style="display:block;width:100%;box-sizing:border-box;text-align:center;background:transparent;color:#ff6666;border:1px solid #5a2a2a;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;text-decoration:none"><span class="yi yi-shield"></span> <span data-i18n="settings.openAdmin">Open admin dashboard</span></a>
         <button onclick="disconnectWallet()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px" data-i18n="settings.disconnect">Disconnect Wallet</button>
       </div>
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
@@ -666,15 +666,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 <div class="pwa-modal" id="pwaModal" onclick="closePwaModal(event)">
   <div class="pwa-box">
     <div class="icon"><span class="yi yi-bolt"></span></div>
-    <h3>Install YEET App</h3>
-    <p>Get the full YEET Social experience on your device &mdash; no App Store needed.</p>
+    <h3 data-i18n="pwa.install">Install YEET App</h3>
+    <p data-i18n="pwa.text">Get the full YEET Social experience on your device — no App Store needed.</p>
     <ul class="pwa-steps">
-      <li><strong>Android:</strong> Tap the browser menu &rarr; "Add to Home Screen"</li>
-      <li><strong>iPhone/iPad:</strong> Tap Share <span class="yi yi-link"></span> &rarr; "Add to Home Screen"</li>
-      <li><strong>Desktop:</strong> Click the install icon in the address bar</li>
+      <li><strong>Android:</strong> <span data-i18n="pwa.android">Tap the browser menu → "Add to Home Screen"</span></li>
+      <li><strong>iPhone/iPad:</strong> <span class="yi yi-link"></span> <span data-i18n="pwa.ios">Tap Share → "Add to Home Screen"</span></li>
+      <li><strong>Desktop:</strong> <span data-i18n="pwa.desktop">Click the install icon in the address bar</span></li>
     </ul>
-    <button class="btn-primary" id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none"><span class="yi yi-rocket"></span> Install Now</button>
-    <button class="btn-secondary" onclick="closePwaModal()">Close</button>
+    <button class="btn-primary" id="pwaInstallBtn" onclick="triggerPwaInstall()" style="display:none"><span class="yi yi-rocket"></span> <span data-i18n="pwa.installNow">Install Now</span></button>
+    <button class="btn-secondary" onclick="closePwaModal()" data-i18n="pwa.close">Close</button>
   </div>
 </div>
 
@@ -682,44 +682,44 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 <div class="pwa-banner hide" id="pwaBanner">
   <div style="font-size:28px"><span class="yi yi-bolt"></span></div>
   <div style="flex:1">
-    <div style="font-size:14px;font-weight:700">Install YEET App</div>
-    <div style="font-size:12px;color:var(--muted)">Add to Home Screen &mdash; no App Store needed</div>
+    <div style="font-size:14px;font-weight:700" data-i18n="pwa.install">Install YEET App</div>
+    <div style="font-size:12px;color:var(--muted)" data-i18n="pwa.bannerSub">Add to Home Screen — no App Store needed</div>
   </div>
-  <button onclick="document.getElementById('pwaBanner').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">Later</button>
-  <button onclick="triggerPwaInstall()" style="background:var(--yeet);color:var(--on-accent);border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
+  <button onclick="document.getElementById('pwaBanner').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px" data-i18n="pwa.later">Later</button>
+  <button onclick="triggerPwaInstall()" style="background:var(--yeet);color:var(--on-accent);border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px" data-i18n="pwa.installShort">Install</button>
 </div>
 
 <!-- LAYOUT -->
 <div class="layout">
   <aside class="sidebar" id="sidebar">
-    <a class="nav-link active" href="#" onclick="showGlobalFeed();return false;"><span class="yi yi-home"></span> Global Feed</a>
-    <a class="nav-link" href="#" onclick="showFollowingFeed();return false;"><span class="yi yi-user"></span> Following</a>
-    <a class="nav-link" href="#" onclick="showTrendingFeed();return false;"><span class="yi yi-star"></span> Trending <span class="badge">HOT</span></a>
-    <div class="nav-section">Discover</div>
-    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));loadPermanentPosts();if(typeof toggleNav==='function'&&window.innerWidth<=700)toggleNav();return false;"><span class="yi yi-pin"></span> Permanent Posts</a>
-    <a class="nav-link" href="#" onclick="showTipsView();return false;"><span class="yi yi-bolt"></span> <span data-i18n="nav.tokenTips">Token Tips</span></a>
-    <a class="nav-link" href="#" onclick="openWebboardsModal()"><span class="yi yi-boards"></span> Webboards</a>
-    <a class="nav-link" href="#" onclick="check18Plus();return false;"><span class="yi yi-adult"></span> 18+ Content</a>
-    <a class="nav-link" href="#" onclick="openMessagesModal();return false;"><span class="yi yi-chat"></span> Messages <span id="dmInviteBadge" style="display:none;background:#ff4444;color:var(--text);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px"></span></a>
-    <a class="nav-link" href="#" onclick="openPaperWalletModal();return false;"><span class="yi yi-cash"></span> Paper Wallets</a>
-    <div class="nav-section">Account</div>
-    <a class="nav-link" href="#" onclick="showMyProfile();return false;"><span class="yi yi-user"></span> Profile</a>
-    <a class="nav-link" href="#" onclick="openSettingsModal();return false;"><span class="yi yi-gear"></span> Settings</a>
+    <a class="nav-link active" href="#" data-nav="global" onclick="showGlobalFeed();return false;"><span class="yi yi-home"></span> <span data-i18n="nav.global">Global Feed</span></a>
+    <a class="nav-link" href="#" data-nav="following" onclick="showFollowingFeed();return false;"><span class="yi yi-user"></span> <span data-i18n="nav.following">Following</span></a>
+    <a class="nav-link" href="#" data-nav="trending" onclick="showTrendingFeed();return false;"><span class="yi yi-star"></span> <span data-i18n="nav.trending">Trending</span> <span class="badge">HOT</span></a>
+    <div class="nav-section" data-i18n="nav.discover">Discover</div>
+    <a class="nav-link" href="#" onclick="document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));loadPermanentPosts();if(typeof toggleNav==='function'&&window.innerWidth<=700)toggleNav();return false;" data-nav="permanent"><span class="yi yi-pin"></span> <span data-i18n="nav.permanent">Permanent Posts</span></a>
+    <a class="nav-link" href="#" data-nav="tips" onclick="showTipsView();return false;"><span class="yi yi-bolt"></span> <span data-i18n="nav.tokenTips">Token Tips</span></a>
+    <a class="nav-link" href="#" data-nav="webboards" onclick="openWebboardsModal();return false;"><span class="yi yi-boards"></span> <span data-i18n="nav.webboards">Webboards</span></a>
+    <a class="nav-link" href="#" data-nav="adult" onclick="check18Plus();return false;"><span class="yi yi-adult"></span> <span data-i18n="nav.adult">18+ Content</span></a>
+    <a class="nav-link" href="#" data-nav="messages" onclick="openMessagesModal();return false;"><span class="yi yi-chat"></span> <span data-i18n="nav.messages">Messages</span> <span id="dmInviteBadge" style="display:none;background:#ff4444;color:var(--text);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px"></span></a>
+    <a class="nav-link" href="#" data-nav="paper" onclick="openPaperWalletModal();return false;"><span class="yi yi-cash"></span> <span data-i18n="nav.paper">Paper Wallets</span></a>
+    <div class="nav-section" data-i18n="nav.account">Account</div>
+    <a class="nav-link" href="#" data-nav="profile" onclick="showMyProfile();return false;"><span class="yi yi-user"></span> <span data-i18n="nav.profile">Profile</span></a>
+    <a class="nav-link" href="#" data-nav="settings" onclick="openSettingsModal();return false;"><span class="yi yi-gear"></span> <span data-i18n="nav.settings">Settings</span></a>
   </aside>
 
   <main class="main">
     <div class="feed-header">
-      <h2>Global Feed</h2>
-      <button class="btn-sm" onclick="loadFeed()"><span class="yi yi-refresh"></span> REFRESH</button>
+      <h2 data-i18n="feed.global">Global Feed</h2>
+      <button class="btn-sm" onclick="loadFeed()"><span class="yi yi-refresh"></span> <span data-i18n="feed.refresh">REFRESH</span></button>
     </div>
     <div class="tabs">
-      <div class="tab active" onclick="setTab(this)">FOR YOU</div>
-      <div class="tab" onclick="setTab(this)">FOLLOWING</div>
+      <div class="tab active" data-tab="foryou" data-i18n="tab.forYou" onclick="setTab(this)">FOR YOU</div>
+      <div class="tab" data-tab="following" data-i18n="tab.following" onclick="setTab(this)">FOLLOWING</div>
       <!-- LIVE tab parked: see README_LIVEKIT.md for re-enable steps.
            To restore, add this line back:
-             <div class="tab" onclick="setTab(this)">LIVE <span class="yi yi-live"></span></div>
+             <div class="tab" data-tab="live" onclick="setTab(this)">LIVE <span class="yi yi-live"></span></div>
            Backend + frontend JS code paths stay intact.            -->
-      <div class="tab" onclick="setTab(this)">18+ <span class="yi yi-fire"></span></div>
+      <div class="tab" data-tab="adult" onclick="setTab(this)">18+ <span class="yi yi-fire"></span></div>
     </div>
     <div class="composer">
       <div class="avatar"><span class="yi yi-user"></span></div>
@@ -736,21 +736,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
           <button class="icon-btn" id="permToggleBtn" title="Mark as permanent post" data-i18n-title="composer.markPermanent" onclick="togglePermanent()"><span class="yi yi-pin"></span></button>
           <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" data-i18n-title="composer.payPerView" onclick="togglePPV()"><span class="yi yi-lock"></span></button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:var(--accent);margin:4px 0"><span class="yi yi-lock"></span> PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
           <button class="icon-btn" title="Tip" data-i18n-title="composer.tip"><span class="yi yi-bolt"></span></button>
-          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/420</div><label id="adultToggleLabel" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()">YEET IT</button>
+          <div style="text-align:right;font-size:11px;color:var(--muted);margin:4px 0"><span id="charCount">0</span>/420</div><label id="adultToggleLabel" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;cursor:pointer;margin-right:8px"><input type="checkbox" id="adultToggle" style="accent-color:#f5a623"> 18+</label><button class="btn-yeet" onclick="submitPost()" data-i18n="composer.submit">YEET IT</button>
         </div>
       </div>
     </div>
     <div class="empty">
       <div class="icon"><span class="yi yi-fire"></span></div>
-      <strong>No posts yet. Be the first to Yeet!</strong>
-      <p style="margin-top:8px;font-size:13px">Connect your wallet to start posting</p>
+      <strong data-i18n="feed.emptyTitle">No posts yet. Be the first to Yeet!</strong>
+      <p style="margin-top:8px;font-size:13px" data-i18n="feed.emptyHint">Connect your wallet to start posting</p>
     </div>
 
     <!-- PROFILE VIEW -->
     <div id="profileView" style="display:none">
       <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
-        <button onclick="closeProfile()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:6px 10px" title="Back">&larr;</button>
-        <h2 id="profileHeaderName" style="margin:0;font-size:17px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Profile</h2>
+        <button onclick="closeProfile()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:6px 10px" title="Back" data-i18n-title="common.back">&larr;</button>
+        <h2 id="profileHeaderName" style="margin:0;font-size:17px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-i18n="profile.title">Profile</h2>
       </div>
       <div id="profileHeader" style="padding:20px"></div>
       <div id="profileEditForm" style="display:none;padding:0 20px 20px">
@@ -767,15 +767,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
           </div>
         </div>
       </div>
-      <div style="padding:12px 16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Posts</div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px" data-i18n="profile.posts">Posts</div>
       <div id="profilePosts"></div>
-      <div id="profileEmpty" class="empty" style="display:none"><div class="icon"><span class="yi yi-fire"></span></div><strong>No posts yet</strong></div>
+      <div id="profileEmpty" class="empty" style="display:none"><div class="icon"><span class="yi yi-fire"></span></div><strong data-i18n="profile.noPosts">No posts yet</strong></div>
     </div>
 
     <!-- ===== My Tips Received (private per-user overview) ===== -->
     <div id="tipsView" style="display:none">
       <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
-        <button onclick="closeTipsView()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:6px 10px" title="Back"><span class="yi yi-arrowl"></span></button>
+        <button onclick="closeTipsView()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:6px 10px" title="Back" data-i18n-title="common.back"><span class="yi yi-arrowl"></span></button>
         <h2 style="margin:0;font-size:17px;flex:1"><span class="yi yi-bolt"></span> <span data-i18n="tips.title">Tips received</span></h2>
         <button class="btn-sm" onclick="exportTipsCsv()" title="" data-i18n-title="tips.export"><span class="yi yi-save"></span> <span data-i18n="tips.export">Export CSV</span></button>
       </div>
@@ -803,19 +803,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 
   <aside class="sidebar-right">
     <div class="widget">
-      <div class="widget-title"><span class="yi yi-chart"></span> Live Prices</div>
-      <div id="prices"><p style="color:var(--muted);font-size:13px">Loading...</p></div>
+      <div class="widget-title"><span class="yi yi-chart"></span> <span data-i18n="widget.prices">Live Prices</span></div>
+      <div id="prices"><p style="color:var(--muted);font-size:13px" data-i18n="common.loading">Loading...</p></div>
     </div>
     <div class="widget" id="profileWidget" style="display:none">
-      <div class="widget-title"><span class="yi yi-user"></span> My Profile</div>
+      <div class="widget-title"><span class="yi yi-user"></span> <span data-i18n="widget.myProfile">My Profile</span></div>
       <div id="profileInfo"></div>
     </div>
     <div class="widget">
-      <div class="widget-title"><span class="yi yi-fire"></span> Trending</div>
-      <div id="trendingTags"><span style="color:var(--muted);font-size:12px">Loading...</span></div>
+      <div class="widget-title"><span class="yi yi-fire"></span> <span data-i18n="widget.trending">Trending</span></div>
+      <div id="trendingTags"><span style="color:var(--muted);font-size:12px" data-i18n="common.loading">Loading...</span></div>
     </div>
     <div class="widget">
-      <button onclick="openAuthModal('login')" style="width:100%;background:var(--yeet);color:var(--on-accent);border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px"><span class="yi yi-rocket"></span> Install YEET App</button>
+      <button onclick="openPwaModal()" style="width:100%;background:var(--yeet);color:var(--on-accent);border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px"><span class="yi yi-rocket"></span> <span data-i18n="pwa.install">Install YEET App</span></button>
     </div>
   </aside>
 </div>
@@ -825,6 +825,53 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 (function(){
   var DICTS = {
     en: {
+      // --- chrome: nav / search / tabs / feed ---
+      'nav.global':'Global Feed','nav.following':'Following','nav.trending':'Trending','nav.discover':'Discover','nav.permanent':'Permanent Posts',
+      'nav.webboards':'Webboards','nav.adult':'18+ Content','nav.messages':'Messages','nav.paper':'Paper Wallets','nav.account':'Account',
+      'nav.profile':'Profile','nav.settings':'Settings','nav.menu':'Menu',
+      'search.placeholder':'Search posts, users, tags...',
+      'feed.global':'Global Feed','feed.following':'Following','feed.trending':'Trending Feed','feed.refresh':'REFRESH',
+      'tab.forYou':'FOR YOU','tab.following':'FOLLOWING',
+      'feed.emptyTitle':'No posts yet. Be the first to Yeet!','feed.emptyHint':'Log in to start posting','feed.noTrending':'No trending posts yet',
+      'composer.submit':'YEET IT',
+      'gate.title':'Login required','gate.text':'Register or log in to see posts.','gate.cta':'Register / Login',
+      'widget.prices':'Live Prices','widget.pricesUnavailable':'Prices unavailable','widget.myProfile':'My Profile','widget.trending':'Trending',
+      'pwa.install':'Install YEET App','pwa.text':'Get the full YEET Social experience on your device — no App Store needed.',
+      'pwa.android':'Tap the browser menu → "Add to Home Screen"','pwa.ios':'Tap Share → "Add to Home Screen"','pwa.desktop':'Click the install icon in the address bar',
+      'pwa.installNow':'Install Now','pwa.close':'Close','pwa.bannerSub':'Add to Home Screen — no App Store needed','pwa.later':'Later','pwa.installShort':'Install',
+      'common.back':'Back','common.loadError':'Error loading','common.user':'user','time.ago':'{v} ago',
+      'settings.openAdmin':'Open admin dashboard',
+      // --- profile / follow ---
+      'profile.posts':'Posts','profile.noPosts':'No posts yet','profile.adminMod':'Admin moderation','profile.adultVerified':'18+ verified',
+      'profile.loadError':'Error loading posts','profile.notFound':'Profile not found','profile.error':'Error loading profile','profile.loadFailed':'Profile load failed','profile.noAddress':'No address',
+      'toast.connectFirst':'Please log in first',
+      'follow.followers':'Followers','follow.following':'Following','follow.noneFollowing':'Not following anyone yet','follow.noneFollowers':'No followers yet',
+      // --- post card / detail ---
+      'post.reshare':'Reshare','post.more':'More','post.permanent':'Permanent','post.visFollowers':'Followers','post.visPublic':'Public',
+      'post.notFound':'Post not found or you can\'t see it.','comments.placeholder':'Write a comment...','comments.send':'Send','comments.sent':'Comment sent!',
+      'live.now':'LIVE NOW','share.title':'YEET Post',
+      // --- webboards ---
+      'webboard.loadingFeed':'Loading feed...','webboard.proxyError':'RSS proxy returned HTTP {status}. Try again in a minute.','webboard.parseError':'Feed could not be parsed.',
+      'webboard.noItems':'No items found','webboard.loadError':'Error loading feed',
+      // --- auth modal ---
+      'auth.welcomeBack':'Welcome back','auth.createAccount':'Create Account','auth.subLogin':'Sign in to YEET Social','auth.subRegister':'Join YEET - get your Web3 wallet instantly',
+      'auth.subDefault':'Connect wallet or use email to continue','auth.login':'Login','auth.register':'Register','auth.orEmail':'or use email',
+      'auth.email':'Email','auth.password':'Password','auth.username':'Username','auth.passwordMin':'Min. 8 characters','auth.continue':'Continue',
+      'auth.consent':'I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).',
+      'auth.fillAll':'Fill all fields','auth.loginFailed':'Login failed','auth.welcomeBackUser':'Welcome back, @{u}','auth.usernameMin':'Username min 3 chars',
+      'auth.passwordMinErr':'Password min 8 chars','auth.invalidEmail':'Invalid email','auth.acceptPrivacy':'Please accept the privacy policy (GDPR)',
+      'auth.registerFailed':'Registration failed','auth.welcomeNew':'Welcome to YEET, @{u}','auth.nonceFailed':'Nonce failed','auth.failed':'Auth failed',
+      'auth.connected':'Connected: {addr}','auth.addressCopied':'Address copied',
+      // --- onboarding / email verification ---
+      'onboard.title':'One last step','onboard.text':'Add an email for account recovery and verify it (GDPR double opt-in).','onboard.send':'Send verification link',
+      'onboard.skip':'Skip for now','onboard.skipped':'You can add an email later in settings','onboard.acceptPrivacy':'Please accept the privacy policy',
+      'mail.banner':'Please verify your email.','mail.bannerWithEmail':'Please verify your email ({email}). Check your inbox.','mail.resend':'Resend email',
+      'mail.sent':'Verification email sent. Check your inbox.','mail.loginFirst':'Please log in first','mail.resent':'Verification email re-sent',
+      'mail.resendFailed':'Failed to resend','mail.failed':'Verification failed','mail.done':'Email verified! Welcome to YEET.','mail.failedPrefix':'Verify failed: {error}',
+      // --- footer / explorer / dm ---
+      'footer.imprint':'Imprint','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.cookies':'Cookies','footer.disclaimer':'Disclaimer',
+      'explorer.richlist':'Richlist','explorer.transfers':'Recent transfers','explorer.note':'Public read-only data from the YEET token indexer. Values in YEET (18 decimals). API:',
+      'dm.tooLong':'Too long','dm.groupNameRequired':'Group name required','dm.decryptFailed':'Could not decrypt message','dm.safetyNumber':'Safety number',
       // generic
       'common.cancel':'Cancel','common.confirm':'Confirm','common.save':'Save',
       'common.loading':'Loading...','common.error':'Error','common.networkError':'Network error',
@@ -1110,6 +1157,53 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'No comments yet',
     },
     de: {
+      // --- chrome: nav / search / tabs / feed ---
+      'nav.global':'Globaler Feed','nav.following':'Gefolgt','nav.trending':'Trending','nav.discover':'Entdecken','nav.permanent':'Permanente Posts',
+      'nav.webboards':'Webboards','nav.adult':'18+ Inhalte','nav.messages':'Nachrichten','nav.paper':'Paper Wallets','nav.account':'Konto',
+      'nav.profile':'Profil','nav.settings':'Einstellungen','nav.menu':'Menü',
+      'search.placeholder':'Posts, Nutzer, Tags suchen...',
+      'feed.global':'Globaler Feed','feed.following':'Gefolgt','feed.trending':'Trending-Feed','feed.refresh':'AKTUALISIEREN',
+      'tab.forYou':'FÜR DICH','tab.following':'GEFOLGT',
+      'feed.emptyTitle':'Noch keine Posts. Sei der Erste, der yeetet!','feed.emptyHint':'Melde dich an, um zu posten','feed.noTrending':'Noch keine Trending-Posts',
+      'composer.submit':'YEET IT',
+      'gate.title':'Login erforderlich','gate.text':'Registriere dich oder melde dich an, um Posts zu sehen.','gate.cta':'Registrieren / Anmelden',
+      'widget.prices':'Live-Kurse','widget.pricesUnavailable':'Kurse nicht verfügbar','widget.myProfile':'Mein Profil','widget.trending':'Trending',
+      'pwa.install':'YEET-App installieren','pwa.text':'Hol dir das volle YEET-Social-Erlebnis auf dein Gerät – ganz ohne App Store.',
+      'pwa.android':'Browser-Menü antippen → „Zum Startbildschirm hinzufügen“','pwa.ios':'„Teilen“ antippen → „Zum Home-Bildschirm“','pwa.desktop':'Auf das Installations-Symbol in der Adressleiste klicken',
+      'pwa.installNow':'Jetzt installieren','pwa.close':'Schließen','pwa.bannerSub':'Zum Startbildschirm hinzufügen – ohne App Store','pwa.later':'Später','pwa.installShort':'Installieren',
+      'common.back':'Zurück','common.loadError':'Fehler beim Laden','common.user':'Nutzer','time.ago':'vor {v}',
+      'settings.openAdmin':'Admin-Dashboard öffnen',
+      // --- profile / follow ---
+      'profile.posts':'Posts','profile.noPosts':'Noch keine Posts','profile.adminMod':'Admin-Moderation','profile.adultVerified':'18+ verifiziert',
+      'profile.loadError':'Fehler beim Laden der Posts','profile.notFound':'Profil nicht gefunden','profile.error':'Fehler beim Laden des Profils','profile.loadFailed':'Profil konnte nicht geladen werden','profile.noAddress':'Keine Adresse',
+      'toast.connectFirst':'Bitte zuerst anmelden',
+      'follow.followers':'Follower','follow.following':'Folgt','follow.noneFollowing':'Folgt noch niemandem','follow.noneFollowers':'Noch keine Follower',
+      // --- post card / detail ---
+      'post.reshare':'Erneut teilen','post.more':'Mehr','post.permanent':'Permanent','post.visFollowers':'Follower','post.visPublic':'Öffentlich',
+      'post.notFound':'Post nicht gefunden oder nicht sichtbar.','comments.placeholder':'Kommentar schreiben...','comments.send':'Senden','comments.sent':'Kommentar gesendet!',
+      'live.now':'JETZT LIVE','share.title':'YEET-Post',
+      // --- webboards ---
+      'webboard.loadingFeed':'Feed wird geladen...','webboard.proxyError':'RSS-Proxy antwortete mit HTTP {status}. Bitte in einer Minute erneut versuchen.','webboard.parseError':'Feed konnte nicht gelesen werden.',
+      'webboard.noItems':'Keine Einträge gefunden','webboard.loadError':'Fehler beim Laden des Feeds',
+      // --- auth modal ---
+      'auth.welcomeBack':'Willkommen zurück','auth.createAccount':'Konto erstellen','auth.subLogin':'Melde dich bei YEET Social an','auth.subRegister':'Werde Teil von YEET – Web3-Wallet inklusive',
+      'auth.subDefault':'Wallet verbinden oder mit E-Mail fortfahren','auth.login':'Anmelden','auth.register':'Registrieren','auth.orEmail':'oder mit E-Mail',
+      'auth.email':'E-Mail','auth.password':'Passwort','auth.username':'Benutzername','auth.passwordMin':'Mind. 8 Zeichen','auth.continue':'Weiter',
+      'auth.consent':'Ich stimme der <a href="/privacy.html" target="_blank" style="color:var(--yeet)">Datenschutzerklärung</a> zu und willige ein, eine Bestätigungs-E-Mail zu erhalten (DSGVO-Double-Opt-in).',
+      'auth.fillAll':'Bitte alle Felder ausfüllen','auth.loginFailed':'Anmeldung fehlgeschlagen','auth.welcomeBackUser':'Willkommen zurück, @{u}','auth.usernameMin':'Benutzername: mind. 3 Zeichen',
+      'auth.passwordMinErr':'Passwort: mind. 8 Zeichen','auth.invalidEmail':'Ungültige E-Mail-Adresse','auth.acceptPrivacy':'Bitte akzeptiere die Datenschutzerklärung (DSGVO)',
+      'auth.registerFailed':'Registrierung fehlgeschlagen','auth.welcomeNew':'Willkommen bei YEET, @{u}','auth.nonceFailed':'Nonce fehlgeschlagen','auth.failed':'Authentifizierung fehlgeschlagen',
+      'auth.connected':'Verbunden: {addr}','auth.addressCopied':'Adresse kopiert',
+      // --- onboarding / email verification ---
+      'onboard.title':'Ein letzter Schritt','onboard.text':'Hinterlege eine E-Mail zur Kontowiederherstellung und bestätige sie (DSGVO-Double-Opt-in).','onboard.send':'Bestätigungslink senden',
+      'onboard.skip':'Später','onboard.skipped':'Du kannst später in den Einstellungen eine E-Mail hinzufügen','onboard.acceptPrivacy':'Bitte akzeptiere die Datenschutzerklärung',
+      'mail.banner':'Bitte bestätige deine E-Mail-Adresse.','mail.bannerWithEmail':'Bitte bestätige deine E-Mail ({email}). Prüfe deinen Posteingang.','mail.resend':'E-Mail erneut senden',
+      'mail.sent':'Bestätigungs-E-Mail gesendet. Bitte Posteingang prüfen.','mail.loginFirst':'Bitte zuerst anmelden','mail.resent':'Bestätigungs-E-Mail erneut gesendet',
+      'mail.resendFailed':'Erneutes Senden fehlgeschlagen','mail.failed':'Bestätigung fehlgeschlagen','mail.done':'E-Mail bestätigt! Willkommen bei YEET.','mail.failedPrefix':'Bestätigung fehlgeschlagen: {error}',
+      // --- footer / explorer / dm ---
+      'footer.imprint':'Impressum','footer.privacy':'Datenschutz','footer.terms':'Nutzungsbedingungen','footer.cookies':'Cookies','footer.disclaimer':'Haftungsausschluss',
+      'explorer.richlist':'Richlist','explorer.transfers':'Letzte Transfers','explorer.note':'Öffentliche, schreibgeschützte Daten aus dem YEET-Token-Indexer. Werte in YEET (18 Dezimalstellen). API:',
+      'dm.tooLong':'Zu lang','dm.groupNameRequired':'Gruppenname erforderlich','dm.decryptFailed':'Nachricht konnte nicht entschlüsselt werden','dm.safetyNumber':'Sicherheitsnummer',
       'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.save':'Speichern',
       'common.loading':'Lädt...','common.error':'Fehler','common.networkError':'Netzwerkfehler',
       'webboard.subtitle':'Stelle dir dein eigenes Board aus RSS-Feeds zusammen','webboard.phUrl':'RSS/Atom-Feed-URL','webboard.phTitle':'Name (optional)','webboard.add':'Hinzufügen','webboard.loginToAdd':'Melde dich an, um eigene Feeds zu speichern.','webboard.myFeeds':'Deine Feeds','webboard.suggestions':'Vorschläge','webboard.empty':'Noch keine Feeds — füge oben einen hinzu.','webboard.added':'Feed hinzugefügt','webboard.removed':'Feed entfernt','webboard.remove':'Entfernen',
@@ -1396,6 +1490,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       var val = t(key);
       if(typeof val === 'string') el.textContent = val;
     });
+    // Trusted static markup from the dictionary (e.g. consent text with a link).
+    root.querySelectorAll('[data-i18n-html]').forEach(function(el){
+      var val = t(el.getAttribute('data-i18n-html'));
+      if(typeof val === 'string') el.innerHTML = val;
+    });
     root.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
       el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
     });
@@ -1412,6 +1511,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
     document.documentElement.setAttribute('lang', lang);
     applyTranslations();
   }
+  // Relative time "5m ago" / "vor 5m" from a seconds delta.
+  function fmtAgo(sec){
+    var s=Math.max(0,Math.floor(sec));
+    var v=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
+    return t('time.ago',{v:v});
+  }
+  window.fmtAgo = fmtAgo;
   window.t = t;
   window.setLang = setLang;
   window.getLang = getLang;
@@ -1440,16 +1546,23 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 // Crypto prices disabled  no external calls.
 function loadPrices(){
   var el=document.getElementById('prices');
-  if(el&&!el.dataset.init){el.dataset.init='1';el.innerHTML='<p style="color:var(--muted);font-size:13px">Prices unavailable</p>';}
+  if(el&&!el.dataset.init){el.dataset.init='1';el.innerHTML='<p style="color:var(--muted);font-size:13px">'+window.t('widget.pricesUnavailable')+'</p>';}
 }
 
+// Feed header title: store the i18n key on the element so a later
+// setLang() re-translates it via applyTranslations().
+function _setFeedTitle(key){
+  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
+  if(!title) return;
+  title.setAttribute('data-i18n',key);
+  title.textContent=window.t?window.t(key):key;
+}
 function showGlobalFeed(){
   if(typeof _hideTipsView==='function') _hideTipsView();
   if(typeof _exitProfileView==='function') _exitProfileView();
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-link')[0].classList.add('active');
-  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
-  if(title)title.textContent='Global Feed';
+  var gl=document.querySelector('.nav-link[data-nav="global"]'); if(gl)gl.classList.add('active');
+  _setFeedTitle('feed.global');
   document.querySelectorAll('.tab').forEach(x=>{x.style.opacity='';x.style.display='';});
   loadFeed();
 }
@@ -1461,12 +1574,11 @@ function showFollowingFeed(){
   if(typeof _hideTipsView==='function') _hideTipsView();
   if(typeof _exitProfileView==='function') _exitProfileView();
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(function(x){if(x.textContent.trim().startsWith('Following'))x.classList.add('active');});
-  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
-  if(title)title.textContent='Following';
+  var fl=document.querySelector('.nav-link[data-nav="following"]'); if(fl)fl.classList.add('active');
+  _setFeedTitle('feed.following');
   document.querySelectorAll('.tab').forEach(x=>{
     x.style.opacity='';x.style.display='';
-    x.classList.toggle('active', x.textContent.trim().includes('FOLLOWING'));
+    x.classList.toggle('active', x.dataset.tab==='following');
   });
   var comp=document.querySelector('.composer'); if(comp)comp.style.display='';
   var lw=document.getElementById('lives-wrap'); if(lw)lw.remove();
@@ -1478,11 +1590,8 @@ function showTrendingFeed(){
   if(typeof _hideTipsView==='function') _hideTipsView();
   if(typeof _exitProfileView==='function') _exitProfileView();
   document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
-  var navLinks=document.querySelectorAll('.nav-link');
-  navLinks.forEach(function(x){if(x.textContent.includes('Trending'))x.classList.add('active');});
-  // Feed-Titel auf Trending setzen
-  var title=document.querySelector('.feed-header h2')||document.querySelector('h2');
-  if(title)title.textContent='Trending Feed';
+  var tl=document.querySelector('.nav-link[data-nav="trending"]'); if(tl)tl.classList.add('active');
+  _setFeedTitle('feed.trending');
   // Tabs ausblenden
   document.querySelectorAll('.tab').forEach(x=>x.style.opacity='0.4');
   loadTrendingFeedPosts();
@@ -1499,14 +1608,13 @@ async function loadTrendingFeedPosts(){
     var empty=document.querySelector('.empty');
     var old=document.getElementById('feed-posts');
     if(old)old.remove();
-    if(trending.length===0){if(empty){empty.style.display='';empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px"><span class="yi yi-cash"></span></div><p style="color:var(--muted);margin-top:12px">No trending posts yet</p></div>';}return;}
+    if(trending.length===0){if(empty){empty.style.display='';empty.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px"><span class="yi yi-cash"></span></div><p style="color:var(--muted);margin-top:12px">'+window.t('feed.noTrending')+'</p></div>';}return;}
     if(empty)empty.style.display='none';
     var wrap=document.createElement('div');
     wrap.id='feed-posts';
     trending.forEach(function(p){
       var short=(p.author&&(p.author.display_name||p.author.username))||'@user';
       var s=Math.floor((Date.now()-new Date(p.created_at))/1000);
-      var ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
       var hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
       var rawContent=String(p.content||'');
       var foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
@@ -1528,7 +1636,7 @@ async function loadTrendingFeedPosts(){
       // Header row
       var header=document.createElement('div');
       header.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
-      header.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b style="font-size:14px">'+String(short).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull; '+hrs+'h &bull; <span style="color:#f5a623"><span class="yi yi-cash"></span> '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span></div></div>';
+      header.innerHTML='<div style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b style="font-size:14px">'+String(short).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</b><div style="font-size:12px;color:var(--muted)">'+window.fmtAgo(s)+' &bull; '+hrs+'h &bull; <span style="color:#f5a623"><span class="yi yi-cash"></span> '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span></div></div>';
       div.appendChild(header);
       // Sponsored badge (boost-tier promotions, while still pinned)
       var promoBan = _promoBanner(p);
@@ -1598,7 +1706,7 @@ async function loadTrendingTags(){
     var el=document.getElementById('trendingTags');
     if(!el||!d.success||!d.data)return;
     var posts=d.data.filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;}).sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);}).slice(0,5);
-    if(posts.length===0){el.innerHTML='<span style="color:var(--muted);font-size:12px">No trending posts yet</span>';return;}
+    if(posts.length===0){el.innerHTML='<span style="color:var(--muted);font-size:12px">'+window.t('feed.noTrending')+'</span>';return;}
     el.innerHTML=posts.map(function(p){var preview=(p.content||''). substring(0,45)+((p.content||'').length>45?'...':'')+' <span style="color:#f5a623"><span class="yi yi-cash"></span> '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span>';return '<div style="margin:4px 0;padding:5px 8px;border-radius:5px;background:rgba(255,255,255,0.04);font-size:12px;color:var(--text)">'+preview+'</div>';}).join('');
   }catch(e){}
 }
@@ -1644,6 +1752,7 @@ async function loadProfile(){
         +'<div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_e(sub)+'</div></div>'
         +'</div>'
         +'<div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text)"><span class="yi yi-bolt"></span> <b id="profilePoints">'+(typeof window._yeetBalance==='number'?window._yeetBalance:'—')+'</b> <span style="color:var(--muted)" data-i18n="balance.unit">Points</span></div>';
+      if(window.applyTranslations) window.applyTranslations(pi);
     }
   }catch(e){}
 }
@@ -1655,9 +1764,9 @@ function showLoginGate(){
     empty.style.display='';
     empty.innerHTML='<div style="text-align:center;padding:48px 24px">'
       +'<div style="font-size:44px;margin-bottom:8px"><span class="yi yi-lock"></span></div>'
-      +'<h3 style="margin:0 0 6px;font-size:18px">Login erforderlich</h3>'
-      +'<p style="color:var(--muted);margin:0 0 16px;font-size:14px">Registriere oder melde dich an, um Posts zu sehen.</p>'
-      +'<button onclick="openWalletModal()" style="background:var(--accent);border:none;border-radius:20px;padding:10px 22px;color:var(--on-accent);font-weight:700;cursor:pointer;font-size:14px">Register / Login</button>'
+      +'<h3 style="margin:0 0 6px;font-size:18px">'+window.t('gate.title')+'</h3>'
+      +'<p style="color:var(--muted);margin:0 0 16px;font-size:14px">'+window.t('gate.text')+'</p>'
+      +'<button onclick="openWalletModal()" style="background:var(--accent);border:none;border-radius:20px;padding:10px 22px;color:var(--on-accent);font-weight:700;cursor:pointer;font-size:14px">'+window.t('gate.cta')+'</button>'
       +'</div>';
   }
 }
@@ -1676,13 +1785,12 @@ function _buildFeedPostEl(p, opts){
   // who views the feed.
   const short=_esc((p.author&&(p.author.display_name||p.author.username))||(authorAddr?authorAddr.slice(0,6)+'...'+authorAddr.slice(-4):'@user'));
   const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
-  const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
   // Permanent posts have a ~100y expiry; the "Xh left" badge only makes
   // sense for ephemeral posts, so suppress it when permanent.
   const hrsRaw=Math.floor((new Date(p.expires_at)-Date.now())/3600000);
   const hrs=Math.max(0,hrsRaw);
   const showHrs=!p.is_permanent && isFinite(hrsRaw);
-  const metaTime=ago+' ago'+(showHrs?' &bull; '+hrs+'h':'')+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'');
+  const metaTime=window.fmtAgo(s)+(showHrs?' &bull; '+hrs+'h':'')+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'');
   const rawContent=String(p.content||'');
   const foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
   let txt=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1695,7 +1803,7 @@ function _buildFeedPostEl(p, opts){
   });
   const el=document.createElement('div');
   el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-  el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+metaTime+'</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+_liveCtaCard(p)+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:2px 8px;margin:4px 0"><span class="yi yi-pin"></span> Permanent &bull; '+(p.visibility==='followers'?'<span class="yi yi-user"></span> Follower':'<span class="yi yi-globe"></span> Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart"><span class="yi yi-heart"></span></span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="yi yi-chat"></span> <span>'+(p.comment_count||0)+'</span></button>'+(showTip?'<button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'"><span class="yi yi-gift"></span> <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button>':'')+''+(showRepost?'<button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="Reshare"><span class="yi yi-repost"></span> <span>'+(p.repost_count||0)+'</span></button>':'')+'<button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr"><span class="yi yi-more"></span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+  el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+metaTime+'</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+_liveCtaCard(p)+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:2px 8px;margin:4px 0"><span class="yi yi-pin"></span> '+window.t('post.permanent')+' &bull; '+(p.visibility==='followers'?'<span class="yi yi-user"></span> '+window.t('post.visFollowers'):'<span class="yi yi-globe"></span> '+window.t('post.visPublic'))+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart"><span class="yi yi-heart"></span></span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="yi yi-chat"></span> <span>'+(p.comment_count||0)+'</span></button>'+(showTip?'<button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'"><span class="yi yi-gift"></span> <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button>':'')+''+(showRepost?'<button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="'+window.t('post.reshare')+'"><span class="yi yi-repost"></span> <span>'+(p.repost_count||0)+'</span></button>':'')+'<button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="'+window.t('post.more')+'"><span class="yi yi-more"></span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="'+window.t('comments.placeholder')+'" id="cinput-'+p.id+'" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">'+window.t('comments.send')+'</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
   if(foundUrls.length>0){
     var previewEl=document.createElement('div');
     previewEl.style.cssText='margin:8px 0 4px';
@@ -2282,7 +2390,7 @@ function _wbBackButton(){
   if(!t || t.querySelector('.wb-back')) return;
   var btn = document.createElement('button');
   btn.className = 'wb-back';
-  btn.innerHTML = '<span class="yi yi-arrowl"></span> Back';
+  btn.innerHTML = '<span class="yi yi-arrowl"></span> '+window.t('common.back');
   btn.style.cssText = 'background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:11px;margin-right:8px;cursor:pointer';
   btn.onclick = function(){
     document.getElementById('wbFeed').style.display='none';
@@ -2293,20 +2401,20 @@ function _wbBackButton(){
 async function loadRSS(url,name){
   document.getElementById('wbList').style.display='none';
   document.getElementById('wbFeed').style.display='';
-  document.getElementById('wbFeedTitle').textContent = name + ' — Loading…';
+  document.getElementById('wbFeedTitle').textContent = name + ' — ' + window.t('common.loading');
   _wbBackButton();
-  document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--muted)">Loading feed...</p>';
+  document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--muted)">'+window.t('webboard.loadingFeed')+'</p>';
   try{
     const proxy='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)+'&count=10';
     const r2=await fetch(proxy);
     if(!r2.ok){
-      document.getElementById('wbFeedTitle').textContent = name + ' — Error';
-      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">RSS proxy returned HTTP '+ r2.status +'. Try again in a minute.</p>';
+      document.getElementById('wbFeedTitle').textContent = name + ' — ' + window.t('common.error');
+      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">'+window.t('webboard.proxyError',{status:r2.status})+'</p>';
       _wbBackButton(); return;
     }
     const d2=await r2.json();
     if(d2.status && d2.status !== 'ok'){
-      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">'+ String(d2.message||'Feed could not be parsed.') +'</p>';
+      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">'+ String(d2.message||window.t('webboard.parseError')) +'</p>';
       _wbBackButton(); return;
     }
     document.getElementById('wbFeedTitle').textContent=(d2.feed&&d2.feed.title)||name;
@@ -2326,10 +2434,10 @@ async function loadRSS(url,name){
         container.appendChild(el);
       });
     }else{
-      container.innerHTML='<p style="color:var(--muted)">No items found</p>';
+      container.innerHTML='<p style="color:var(--muted)">'+window.t('webboard.noItems')+'</p>';
     }
     var backBtn=document.createElement('span');
-    backBtn.textContent=' Back';
+    backBtn.textContent=' '+window.t('common.back');
     backBtn.style.cssText='cursor:pointer;font-size:12px;color:var(--muted);margin-left:8px';
     backBtn.addEventListener('click',function(){
       document.getElementById('wbList').style.display='';
@@ -2337,7 +2445,7 @@ async function loadRSS(url,name){
     });
     document.getElementById('wbFeedTitle').appendChild(backBtn);
   }catch(ex){
-    document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--red)">Error loading feed</p>';
+    document.getElementById('wbFeedItems').innerHTML='<p style="color:var(--red)">'+window.t('webboard.loadError')+'</p>';
   }
 }
 
@@ -2554,11 +2662,11 @@ function updateAdultUiVisibility(enabled){
   // Never show 18+ entry points to logged-out visitors, regardless of the cached setting.
   var jwt=localStorage.getItem('yeet_jwt');
   var show = !!enabled && !!jwt;
-  var navLink=document.querySelector('.sidebar a.nav-link[onclick*="check18Plus"]');
+  var navLink=document.querySelector('.sidebar a.nav-link[data-nav="adult"]');
   if(navLink) navLink.style.display = show ? '' : 'none';
   var tabs=document.querySelectorAll('.tabs .tab');
   tabs.forEach(function(t){
-    if(t.textContent && t.textContent.indexOf('18+')!==-1){
+    if(t.dataset && t.dataset.tab==='adult'){
       t.style.display = show ? '' : 'none';
       if(!show && t.classList.contains('active')){
         t.classList.remove('active');
@@ -2681,7 +2789,7 @@ function _liveCtaCard(p){
   var lid = String(p.promoted_live_id).replace(/[^a-zA-Z0-9-]/g,'');
   return '<div onclick="event.stopPropagation();openLiveViewer(\''+lid+'\')" style="margin:8px 0;padding:12px 14px;border:1px solid #e63946;border-radius:12px;background:linear-gradient(90deg,#1a0606,#0e0e0e);cursor:pointer;display:flex;align-items:center;gap:10px">'
     + '<div style="font-size:22px"><span class="yi yi-live"></span></div>'
-    + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#e63946">LIVE NOW</div><div style="font-size:11px;color:var(--muted)">'+window.t('promo.cta')+' &rarr;</div></div>'
+    + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#e63946">'+window.t('live.now')+'</div><div style="font-size:11px;color:var(--muted)">'+window.t('promo.cta')+' &rarr;</div></div>'
     + '</div>';
 }
 window._liveCtaCard = _liveCtaCard;
@@ -2850,17 +2958,18 @@ function setTab(t){
   if(typeof _exitProfileView==='function') _exitProfileView();
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   t.classList.add('active');
-  const label=t.textContent.trim();
+  // Dispatch on data-tab (labels are translated, so never match on text).
+  const kind=(t.dataset&&t.dataset.tab)||'';
   // Reset state that the LIVE tab toggles: re-show composer + drop the
   // lives panel before falling into the feed loaders.
-  if(!label.includes('LIVE')){
+  if(kind!=='live'){
     var comp = document.querySelector('.composer'); if(comp) comp.style.display='';
     var lw = document.getElementById('lives-wrap'); if(lw) lw.remove();
   }
-  if(label.includes('18+')){ check18Plus(); return; }
-  if(label.includes('LIVE')){ loadLives(); return; }
-  if(label.includes('NFT')){ loadFeedFiltered('nft'); return; }
-  if(label.includes('FOLLOWING')){ loadFollowingFeed(); return; }
+  if(kind==='adult'){ check18Plus(); return; }
+  if(kind==='live'){ loadLives(); return; }
+  if(kind==='nft'){ loadFeedFiltered('nft'); return; }
+  if(kind==='following'){ loadFollowingFeed(); return; }
   loadFeed();
 }
 function loadFeedFiltered(filter){
@@ -2903,7 +3012,7 @@ function submitPost(){
   if(!txt)return;
   showToast(window.t('toast.posting'));
   var _activeTab=document.querySelector('.tab.active');
-  var _tabIs18=(_activeTab&&_activeTab.textContent&&_activeTab.textContent.indexOf('18')!==-1)||false;
+  var _tabIs18=(_activeTab&&_activeTab.dataset&&_activeTab.dataset.tab==='adult')||false;
   var _checkboxIs18=!!(document.getElementById('adultToggle')&&document.getElementById('adultToggle').checked);
   var isAdult=_tabIs18||_checkboxIs18;
   // Videos are uploaded separately and exposed as a /uploads/posts-media/
@@ -3070,18 +3179,18 @@ function _avatarInner(author){
 
 async function showMyProfile(){
   var jwt = localStorage.getItem('yeet_jwt');
-  if(!jwt){ showToast('Connect wallet first'); if(window.openWalletModal)openWalletModal(); return; }
+  if(!jwt){ showToast(window.t('toast.connectFirst')); if(window.openWalletModal)openWalletModal(); return; }
   try{
     var r = await fetch('/api/v1/users/me', {headers:{'Authorization':'Bearer '+jwt}});
     var d = await r.json();
-    if(!d.success){ showToast('Profile load failed'); return; }
+    if(!d.success){ showToast(window.t('profile.loadFailed')); return; }
     var addr = d.data.wallet_address || d.data.id;
     showProfile(addr, true);
-  }catch(e){ showToast('Profile error'); }
+  }catch(e){ showToast(window.t('profile.error')); }
 }
 
 async function showProfile(address, own){
-  if(!address){ showToast('No address'); return; }
+  if(!address){ showToast(window.t('profile.noAddress')); return; }
   if(typeof _hideTipsView==='function') _hideTipsView();
   var m = document.querySelector('.main');
   // hide feed UI
@@ -3098,7 +3207,7 @@ async function showProfile(address, own){
     var pr = await fetch('/api/v1/users/'+encodeURIComponent(address), {headers:headers});
     var pd = await pr.json();
     if(!pd.success){
-      document.getElementById('profileHeader').innerHTML = '<p style="color:var(--muted)">Profile not found</p>';
+      document.getElementById('profileHeader').innerHTML = '<p style="color:var(--muted)">'+window.t('profile.notFound')+'</p>';
       return;
     }
     // Surface block/E2EE state on the cached profile object so other
@@ -3109,7 +3218,7 @@ async function showProfile(address, own){
     window._currentProfile.e2ee_ready       = !!pd.data.e2ee_ready;
     renderProfileHeader(pd.data, !!own);
   }catch(e){
-    document.getElementById('profileHeader').innerHTML = '<p style="color:var(--muted)">Error loading profile</p>';
+    document.getElementById('profileHeader').innerHTML = '<p style="color:var(--muted)">'+window.t('profile.error')+'</p>';
   }
   // Don't load posts from someone the viewer has blocked or who blocked them.
   if(window._currentProfile.is_blocked_by_me || window._currentProfile.has_blocked_me){
@@ -3174,7 +3283,7 @@ function renderProfileHeader(u, own){
       // Admin actions appear only when the admin secret is set in
       // this browser. Defensive: still 401s server-side without it.
       if(localStorage.getItem('yeet_admin_secret')){
-        pieces.push('<button onclick="openAdminModModal('+ addrJsArg +')" title="Admin moderation" style="background:transparent;border:1px solid #ff4444;color:#ff6666;border-radius:20px;padding:8px 12px;cursor:pointer;font-size:16px"><span class="yi yi-shield"></span></button>');
+        pieces.push('<button onclick="openAdminModModal('+ addrJsArg +')" title="'+window.t('profile.adminMod')+'" style="background:transparent;border:1px solid #ff4444;color:#ff6666;border-radius:20px;padding:8px 12px;cursor:pointer;font-size:16px"><span class="yi yi-shield"></span></button>');
       }
     }
     btn = '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'+ pieces.join('') +'</div>';
@@ -3184,7 +3293,7 @@ function renderProfileHeader(u, own){
   // Purple 18+ badge: shown when the backend reports age_verified=true
   // (which is gated by users.age_verified_at AND NOT age_badge_hidden).
   var badge18 = u.age_verified
-    ? ' <span title="18+ verified" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--text);background:#7c3aed;border-radius:10px;padding:2px 7px;vertical-align:middle"><span class="yi yi-check"></span> 18+</span>'
+    ? ' <span title="'+window.t('profile.adultVerified')+'" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--text);background:#7c3aed;border-radius:10px;padding:2px 7px;vertical-align:middle"><span class="yi yi-check"></span> 18+</span>'
     : '';
   document.getElementById('profileHeader').innerHTML =
       coverBlock
@@ -3198,9 +3307,9 @@ function renderProfileHeader(u, own){
     + '</div>'
     + (bio ? '<div style="font-size:14px;line-height:1.6;margin:12px 0;white-space:pre-wrap">'+bio+'</div>' : '')
     + '<div style="display:flex;gap:20px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap">'
-      + '<span onclick="openFollowList(\''+_jsq(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> Followers</span>'
-      + '<span onclick="openFollowList(\''+_jsq(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> Following</span>'
-      + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> Posts</span>'
+      + '<span onclick="openFollowList(\''+_jsq(addr||u.id)+'\',\'followers\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.follower_count||0)+'</b> '+window.t('follow.followers')+'</span>'
+      + '<span onclick="openFollowList(\''+_jsq(addr||u.id)+'\',\'following\')" style="cursor:pointer"><b style="color:var(--text)">'+(u.following_count||0)+'</b> '+window.t('follow.following')+'</span>'
+      + '<span><b style="color:var(--text)">'+(u.post_count||0)+'</b> '+window.t('profile.posts')+'</span>'
       + (own ? '<span style="color:var(--yeet)"><span class="yi yi-bolt"></span> <b id="profileBalanceVal" style="color:var(--yeet)">—</b> YEET</span>' : '')
     + '</div>'
     + uploadInputs;
@@ -3224,7 +3333,7 @@ async function loadUserPosts(address){
   var wrap = document.getElementById('profilePosts');
   var em = document.getElementById('profileEmpty');
   if(!wrap) return;
-  wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Loading...</div>';
+  wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">'+window.t('common.loading')+'</div>';
   if(em) em.style.display = 'none';
   var isOwnProfile = !!(window._currentProfile && window._currentProfile.own);
   try{
@@ -3245,7 +3354,7 @@ async function loadUserPosts(address){
     });
   }catch(e){
     console.error('loadUserPosts:', e);
-    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Error loading posts</div>';
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">'+window.t('profile.loadError')+'</div>';
   }
 }
 
@@ -3497,15 +3606,15 @@ async function openFollowList(address, kind){
   var title = document.getElementById('followListTitle');
   var body = document.getElementById('followListBody');
   if(!modal || !title || !body) return;
-  title.textContent = kind === 'following' ? 'Following' : 'Followers';
-  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">Loading...</div>';
+  title.textContent = window.t(kind === 'following' ? 'follow.following' : 'follow.followers');
+  body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--muted);font-size:13px">'+window.t('common.loading')+'</div>';
   modal.style.display = 'flex';
   try{
     var r = await fetch('/api/v1/users/'+encodeURIComponent(address)+'/'+kind);
     var d = await r.json();
     if(!d.success || !d.data || d.data.length === 0){
       body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">'
-        + (kind === 'following' ? 'Niemand gefolgt' : 'Keine Follower')
+        + window.t(kind === 'following' ? 'follow.noneFollowing' : 'follow.noneFollowers')
         + '</div>';
       return;
     }
@@ -3524,7 +3633,7 @@ async function openFollowList(address, kind){
       body.appendChild(row);
     });
   }catch(e){
-    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">Fehler beim Laden</div>';
+    body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">'+window.t('common.loadError')+'</div>';
   }
 }
 function closeFollowList(){
@@ -3606,13 +3715,13 @@ async function showPostDetail(postId){
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto';
   ov.onclick = function(e){ if(e.target === ov) ov.remove(); };
   ov.innerHTML = '<div id="_postDetailBox" style="background:var(--bg-2);border:1px solid var(--border);border-radius:14px;padding:18px;width:600px;max-width:96vw;color:var(--text)">'
-    + '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div></div>';
+    + '<div style="color:var(--muted);padding:20px;text-align:center">'+window.t('common.loading')+'</div></div>';
   document.body.appendChild(ov);
   try {
     var r = await fetch('/api/v1/posts/' + encodeURIComponent(postId), { headers: headers });
     if(!r.ok){
       ov.querySelector('#_postDetailBox').innerHTML =
-        '<div style="color:#ff6666;padding:18px;text-align:center">Post not found or you can&#39;t see it.</div>'
+        '<div style="color:#ff6666;padding:18px;text-align:center">'+window.t('post.notFound')+'</div>'
         + '<div style="text-align:center"><button onclick="document.getElementById(\'_postDetailOv\').remove()" style="background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 18px;border-radius:8px;cursor:pointer">Close</button></div>';
       return;
     }
@@ -3624,7 +3733,7 @@ async function showPostDetail(postId){
     var ago = '';
     try {
       var s = Math.floor((Date.now()-new Date(p.created_at))/1000);
-      ago = s<60?s+'s ago':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':Math.floor(s/86400)+'d ago';
+      ago = window.fmtAgo(s);
     } catch(e){}
     var txt = String(p.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     var media = (typeof renderMediaUrl === 'function') ? renderMediaUrl(p) : '';
@@ -3653,7 +3762,7 @@ async function showPostDetail(postId){
         var rows = (cd && cd.data) || [];
         var cont = ov.querySelector('#_pdComments');
         if(!rows.length){
-          cont.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px">No comments yet.</div>';
+          cont.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px">'+window.t('comments.empty')+'</div>';
         } else {
           cont.innerHTML = rows.map(function(c){
             var name = (c.author && (c.author.display_name || c.author.username)) || 'user';
@@ -3667,7 +3776,7 @@ async function showPostDetail(postId){
     } catch(e){}
   } catch(e){
     ov.querySelector('#_postDetailBox').innerHTML =
-      '<div style="color:#ff6666;padding:18px;text-align:center">Network error.</div>';
+      '<div style="color:#ff6666;padding:18px;text-align:center">'+window.t('common.networkError')+'</div>';
   }
 }
 document.addEventListener('keydown', function(e){
@@ -5187,7 +5296,7 @@ function openPostMenu(btn) {
 function sharePost(postId) {
   var url = window.location.origin + '/?post=' + postId;
   if (navigator.share) {
-    navigator.share({ title: 'YEET Post', url: url }).catch(function(){});
+    navigator.share({ title: window.t('share.title'), url: url }).catch(function(){});
   } else if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function(){ showToast(window.t('toast.linkCopied'), 'success'); });
   } else {
@@ -5242,34 +5351,34 @@ function showExternalLinkWarning(e,url){
 <div id="authModal" style="position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:min(440px,95vw);position:relative;max-height:90vh;overflow-y:auto">
   <button onclick="closeAuthModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer"><span class="yi yi-close"></span></button>
-  <h2 id="mTitle" style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px">Welcome back</h2>
-  <p id="mSub" style="color:var(--muted);font-size:13px;margin-bottom:20px">Connect wallet or use email to continue</p>
+  <h2 id="mTitle" style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px" data-i18n="auth.welcomeBack">Welcome back</h2>
+  <p id="mSub" style="color:var(--muted);font-size:13px;margin-bottom:20px" data-i18n="auth.subDefault">Connect wallet or use email to continue</p>
   <div style="display:flex;gap:6px;margin-bottom:20px">
-    <button class="atab active" id="atLogin" onclick="switchAuthTab('login')">Login</button>
-    <button class="atab" id="atReg" onclick="switchAuthTab('register')">Register</button>
+    <button class="atab active" id="atLogin" onclick="switchAuthTab('login')" data-i18n="auth.login">Login</button>
+    <button class="atab" id="atReg" onclick="switchAuthTab('register')" data-i18n="auth.register">Register</button>
   </div>
   <button class="wbtn" onclick="connectMetaMaskAuth()"><span class="yi yi-wallet"></span> MetaMask</button>
   <button class="wbtn" onclick="window.showToast(window.t('wallet.comingSoon'))"><span class="yi yi-link"></span> WalletConnect</button>
-  <div class="or-div">or use email</div>
+  <div class="or-div" data-i18n="auth.orEmail">or use email</div>
   <div id="mErr" class="merr"></div>
   <div id="mOk" class="mok"></div>
   <div id="loginForm">
-    <div class="ff"><label>Email</label><input type="email" id="lEmail" name="email" autocomplete="email" placeholder="you@example.com"></div>
-    <div class="ff"><label>Password</label><input type="password" id="lPass" name="password" autocomplete="current-password" placeholder="Password"></div>
-    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="doEmailLogin()">Login</button>
+    <div class="ff"><label data-i18n="auth.email">Email</label><input type="email" id="lEmail" name="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="ff"><label data-i18n="auth.password">Password</label><input type="password" id="lPass" name="password" autocomplete="current-password" placeholder="Password" data-i18n-placeholder="auth.password"></div>
+    <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="doEmailLogin()" data-i18n="auth.login">Login</button>
   </div>
   <div id="regStep1" style="display:none">
     <div style="display:flex;justify-content:center;gap:5px;margin-bottom:14px">
       <div class="sdot on"></div><div class="sdot"></div><div class="sdot"></div>
     </div>
-    <div class="ff"><label>Username</label><input type="text" id="rUser" placeholder="satoshi_yeet" maxlength="32"></div>
-    <div class="ff"><label>Email</label><input type="email" id="rEmail" name="email" autocomplete="email" placeholder="you@example.com"></div>
-    <div class="ff"><label>Password</label><input type="password" id="rPass" name="new-password" autocomplete="new-password" placeholder="Min. 8 characters"></div>
+    <div class="ff"><label data-i18n="auth.username">Username</label><input type="text" id="rUser" placeholder="satoshi_yeet" maxlength="32"></div>
+    <div class="ff"><label data-i18n="auth.email">Email</label><input type="email" id="rEmail" name="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="ff"><label data-i18n="auth.password">Password</label><input type="password" id="rPass" name="new-password" autocomplete="new-password" placeholder="Min. 8 characters" data-i18n-placeholder="auth.passwordMin"></div>
     <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.4;cursor:pointer">
       <input type="checkbox" id="rConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
-      <span>I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+      <span data-i18n-html="auth.consent">I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
     </label>
-    <button id="regNext1Btn" class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()">Continue <span class="yi yi-arrowr"></span></button>
+    <button id="regNext1Btn" class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()"><span data-i18n="auth.continue">Continue</span> <span class="yi yi-arrowr"></span></button>
   </div>
 </div>
 </div>
@@ -5277,17 +5386,17 @@ function showExternalLinkWarning(e,url){
 <!-- ONBOARDING MODAL (wallet users without email) -->
 <div id="onboardModal" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
 <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:min(440px,95vw);position:relative;max-height:90vh;overflow-y:auto">
-  <h2 style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px">One last step</h2>
-  <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Add an email for account recovery and verify it (GDPR double opt-in).</p>
+  <h2 style="font-size:22px;font-weight:800;color:var(--yeet);margin-bottom:4px" data-i18n="onboard.title">One last step</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:20px" data-i18n="onboard.text">Add an email for account recovery and verify it (GDPR double opt-in).</p>
   <div id="obErr" class="merr"></div>
   <div id="obOk" class="mok"></div>
-  <div class="ff"><label>Email</label><input type="email" id="obEmail" placeholder="you@example.com"></div>
+  <div class="ff"><label data-i18n="auth.email">Email</label><input type="email" id="obEmail" placeholder="you@example.com"></div>
   <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.4;cursor:pointer">
     <input type="checkbox" id="obConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
-    <span>I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+    <span data-i18n-html="auth.consent">I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
   </label>
-  <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="submitOnboarding()">Send verification link</button>
-  <button onclick="skipOnboarding()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline">Skip for now</button>
+  <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="submitOnboarding()" data-i18n="onboard.send">Send verification link</button>
+  <button onclick="skipOnboarding()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline" data-i18n="onboard.skip">Skip for now</button>
 </div>
 </div>
 
@@ -5295,7 +5404,7 @@ function showExternalLinkWarning(e,url){
 <div id="followListModal" onclick="if(event.target===this)closeFollowList()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px">
   <div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:16px;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column">
     <div style="padding:14px 18px;border-bottom:1px solid var(--border-2);display:flex;align-items:center;gap:10px">
-      <h3 id="followListTitle" style="margin:0;font-size:16px;flex:1">Followers</h3>
+      <h3 id="followListTitle" style="margin:0;font-size:16px;flex:1" data-i18n="follow.followers">Followers</h3>
       <button onclick="closeFollowList()" style="background:transparent;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">&times;</button>
     </div>
     <div id="followListBody" style="overflow-y:auto;padding:8px 0"></div>
@@ -5304,8 +5413,8 @@ function showExternalLinkWarning(e,url){
 
 <!-- EMAIL VERIFY BANNER -->
 <div id="verifyBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ffd700;color:var(--on-accent);padding:10px 16px;font-size:13px;font-weight:600;z-index:9998;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
-  <span id="verifyBannerText">Please verify your email.</span>
-  <button onclick="resendVerification()" style="margin-left:10px;background:var(--bg);color:#ffd700;border:none;padding:4px 12px;border-radius:4px;font-weight:700;cursor:pointer;font-size:12px">Resend email</button>
+  <span id="verifyBannerText" data-i18n="mail.banner">Please verify your email.</span>
+  <button onclick="resendVerification()" style="margin-left:10px;background:var(--bg);color:#ffd700;border:none;padding:4px 12px;border-radius:4px;font-weight:700;cursor:pointer;font-size:12px" data-i18n="mail.resend">Resend email</button>
   <button onclick="document.getElementById('verifyBanner').style.display='none'" style="margin-left:6px;background:none;border:none;color:var(--on-accent);cursor:pointer;font-weight:700;font-size:16px">&times;</button>
 </div>
 
@@ -5483,7 +5592,7 @@ function showExternalLinkWarning(e,url){
     var b=document.getElementById('verifyBanner');
     var t=document.getElementById('verifyBannerText');
     if(!b)return;
-    if(t&&email)t.textContent='Please verify your email ('+email+'). Check your inbox.';
+    if(t&&email){t.removeAttribute('data-i18n');t.textContent=window.t('mail.bannerWithEmail',{email:email});}
     b.style.display='block';
     document.body.style.paddingTop='44px';
   }
@@ -5497,32 +5606,32 @@ function showExternalLinkWarning(e,url){
   function _closeOnboarding(){
     var m=document.getElementById('onboardModal');if(m)m.style.display='none';
   }
-  window.skipOnboarding = function(){_closeOnboarding();_toast('You can add an email later in settings')};
+  window.skipOnboarding = function(){_closeOnboarding();_toast(window.t('onboard.skipped'))};
   window.submitOnboarding = async function(){
     var email=(document.getElementById('obEmail').value||'').trim();
     var consent=document.getElementById('obConsent').checked;
     var err=document.getElementById('obErr'),ok=document.getElementById('obOk');
     err.classList.remove('show');ok.classList.remove('show');
-    if(!/\S+@\S+\.\S+/.test(email)){err.textContent='Invalid email';err.classList.add('show');return}
-    if(!consent){err.textContent='Please accept the privacy policy';err.classList.add('show');return}
+    if(!/\S+@\S+\.\S+/.test(email)){err.textContent=window.t('auth.invalidEmail');err.classList.add('show');return}
+    if(!consent){err.textContent=window.t('onboard.acceptPrivacy');err.classList.add('show');return}
     var tok=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeet_jwt');
     try{
       var r=await fetch('/api/v1/auth/link-email',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({email:email,consent:true})});
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||'Failed');
-      ok.textContent='Verification email sent. Check your inbox.';ok.classList.add('show');
+      ok.textContent=window.t('mail.sent');ok.classList.add('show');
       setTimeout(function(){_closeOnboarding();_showVerifyBanner(email)},1500);
     }catch(e){err.textContent=e.message;err.classList.add('show')}
   };
   window.resendVerification = async function(){
     var tok=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeet_jwt');
-    if(!tok){_toast('Please log in first');return}
+    if(!tok){_toast(window.t('mail.loginFirst'));return}
     try{
       var r=await fetch('/api/v1/auth/email-resend',{method:'POST',headers:{'Authorization':'Bearer '+tok}});
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||'Failed');
-      _toast('Verification email re-sent');
-    }catch(e){_toast(e.message||'Failed to resend')}
+      _toast(window.t('mail.resent'));
+    }catch(e){_toast(e.message||window.t('mail.resendFailed'))}
   };
   async function _handleVerifyUrlParam(){
     var p=new URLSearchParams(window.location.search);
@@ -5531,12 +5640,12 @@ function showExternalLinkWarning(e,url){
     try{
       var r=await fetch('/api/v1/auth/email-verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t})});
       var d=await r.json();
-      if(!r.ok)throw new Error((d.error&&d.error.message)||'Verification failed');
-      _toast('Email verified! Welcome to YEET.');
+      if(!r.ok)throw new Error((d.error&&d.error.message)||window.t('mail.failed'));
+      _toast(window.t('mail.done'));
       _hideVerifyBanner();
       var usr=JSON.parse(localStorage.getItem('yeetUser')||'null');
       if(usr){usr.email_verified=true;localStorage.setItem('yeetUser',JSON.stringify(usr))}
-    }catch(e){_toast('Verify failed: '+e.message)}
+    }catch(e){_toast(window.t('mail.failedPrefix',{error:e.message}))}
     finally{
       p.delete('verify');
       var q=p.toString();
@@ -5559,8 +5668,9 @@ function showExternalLinkWarning(e,url){
     document.getElementById('atReg').classList.toggle('active',!isL);
     document.getElementById('loginForm').style.display=isL?'block':'none';
     document.getElementById('regStep1').style.display=!isL?'block':'none';
-    document.getElementById('mTitle').textContent=isL?'Welcome back':'Create Account';
-    document.getElementById('mSub').textContent=isL?'Sign in to YEET Social':'Join YEET - get your Web3 wallet instantly';
+    var _mt=document.getElementById('mTitle'), _ms=document.getElementById('mSub');
+    _mt.setAttribute('data-i18n', isL?'auth.welcomeBack':'auth.createAccount'); _mt.textContent=window.t(isL?'auth.welcomeBack':'auth.createAccount');
+    _ms.setAttribute('data-i18n', isL?'auth.subLogin':'auth.subRegister'); _ms.textContent=window.t(isL?'auth.subLogin':'auth.subRegister');
     _clearMsg();
   };
   window.doLogout = function(){
@@ -5578,9 +5688,9 @@ function showExternalLinkWarning(e,url){
     });
     location.replace('/?_=' + Date.now());
   };
-  window.copyAuthAddr = function(){navigator.clipboard?.writeText(localStorage.getItem('yeetWallet')||'');_toast('Address copied')};
+  window.copyAuthAddr = function(){navigator.clipboard?.writeText(localStorage.getItem('yeetWallet')||'');_toast(window.t('auth.addressCopied'))};
   window.connectMetaMaskAuth = async function(){
-    if(!window.ethereum){_showErr('MetaMask not found. Please install it.');return}
+    if(!window.ethereum){_showErr(window.t('toast.walletNotFound'));return}
     try{
       var acc=await window.ethereum.request({method:'eth_requestAccounts'});
       var addr=(acc[0]||'').toLowerCase();
@@ -5589,37 +5699,37 @@ function showExternalLinkWarning(e,url){
       try{await ensureYeetChain(window.ethereum);}catch(e){}
       var nr=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
       var nd=await nr.json();
-      if(!nr.ok)throw new Error((nd.error&&nd.error.message)||'Nonce failed');
+      if(!nr.ok)throw new Error((nd.error&&nd.error.message)||window.t('auth.nonceFailed'));
       var nonce=(nd.data&&nd.data.nonce)||nd.nonce;
       var msg=(nd.data&&nd.data.message)||nd.message;
       var sig=await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
       var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,nonce:nonce})});
       var vd=await vr.json();
-      if(!vr.ok)throw new Error((vd.error&&vd.error.message)||'Auth failed');
+      if(!vr.ok)throw new Error((vd.error&&vd.error.message)||window.t('auth.failed'));
       var payload=vd.data||vd;
       var tok=payload.access_token||payload.token||'';
       if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
       window.closeAuthModal();
-      _toast('Connected: '+addr.slice(0,6)+'...'+addr.slice(-4));
+      _toast(window.t('auth.connected',{addr:addr.slice(0,6)+'...'+addr.slice(-4)}));
       if(payload.needs_email===true)_showOnboarding(addr);
     }catch(e){_showErr(e.message||String(e))}
   };
   window.doEmailLogin = async function(){
     var email=document.getElementById('lEmail').value.trim();
     var pass=document.getElementById('lPass').value;
-    if(!email||!pass){_showErr('Fill all fields');return}
+    if(!email||!pass){_showErr(window.t('auth.fillAll'));return}
     try{
       var r=await fetch('/api/v1/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass})});
       var d=await r.json();
-      if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Login failed');
+      if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||window.t('auth.loginFailed'));
       var payload=d.data||d;
       var tok=payload.access_token||payload.token||'';
       if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       var usr={username:payload.username||'user',email_verified:payload.email_verified===true};
       _setLoggedIn(tok,usr,null);
       window.closeAuthModal();
-      _toast('Welcome back, @'+usr.username);
+      _toast(window.t('auth.welcomeBackUser',{u:usr.username}));
       if(payload.email_verified===false)_showVerifyBanner(email);
     }catch(e){_showErr(e.message)}
   };
@@ -5633,30 +5743,30 @@ function showExternalLinkWarning(e,url){
     var e=document.getElementById('rEmail').value.trim();
     var p=document.getElementById('rPass').value;
     var c=document.getElementById('rConsent');
-    if(!u||!e||!p){_showErr('Fill all fields');return}
-    if(u.length<3){_showErr('Username min 3 chars');return}
-    if(p.length<8){_showErr('Password min 8 chars');return}
-    if(!/\S+@\S+\.\S+/.test(e)){_showErr('Invalid email');return}
-    if(!c||!c.checked){_showErr('Please accept the privacy policy (GDPR)');return}
+    if(!u||!e||!p){_showErr(window.t('auth.fillAll'));return}
+    if(u.length<3){_showErr(window.t('auth.usernameMin'));return}
+    if(p.length<8){_showErr(window.t('auth.passwordMinErr'));return}
+    if(!/\S+@\S+\.\S+/.test(e)){_showErr(window.t('auth.invalidEmail'));return}
+    if(!c||!c.checked){_showErr(window.t('auth.acceptPrivacy'));return}
     var btn = document.getElementById('regNext1Btn');
-    if(btn){ btn.disabled = true; btn.dataset.oldText = btn.textContent; btn.textContent = '...'; }
+    if(btn){ btn.disabled = true; btn.dataset.oldHtml = btn.innerHTML; btn.textContent = '...'; }
     // No wallet_address is sent — the backend ignores it and creates a
     // wallet-less account by design.
     _regData = {username:u, email:e, password:p, display_name:u, consent:true};
     try{
       var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
       var d=await r.json();
-      if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||'Registration failed');
+      if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||window.t('auth.registerFailed'));
       var payload=d.data||d;
       var tok=payload.access_token||payload.token||'';
       if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       var usr={username:payload.username||u,email_verified:payload.email_verified===true};
       _setLoggedIn(tok,usr,null);
       window.closeAuthModal();
-      _toast('Welcome to YEET, @'+(payload.username||u));
+      _toast(window.t('auth.welcomeNew',{u:payload.username||u}));
       if(payload.email_verified===false)_showVerifyBanner(e);
     }catch(err){_showErr(err.message)}
-    finally{ if(btn){ btn.disabled=false; btn.textContent=btn.dataset.oldText||'Create account'; } }
+    finally{ if(btn){ btn.disabled=false; if(btn.dataset.oldHtml){ btn.innerHTML=btn.dataset.oldHtml; window.applyTranslations(btn); } else { btn.textContent=window.t('auth.continue'); } } }
   };
 
   // Init on load
@@ -5697,10 +5807,10 @@ function showExternalLinkWarning(e,url){
     box.style.cssText='padding:8px 16px 12px';
     var inp=document.createElement('input');
     inp.id='_ci_'+postId;
-    inp.placeholder='Write a comment...';
+    inp.placeholder=window.t('comments.placeholder');
     inp.style.cssText='flex:1;background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;outline:none';
     var btn=document.createElement('button');
-    btn.textContent='Send';
+    btn.textContent=window.t('comments.send');
     btn.style.cssText='background:var(--yeet);color:var(--on-accent);border:none;border-radius:20px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px';
     btn.onclick=function(){_sendComment(postId);};
     var row=document.createElement('div');
@@ -6351,11 +6461,11 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 <footer class="site-footer">
   <div class="site-footer-inner">
     <div class="site-footer-links">
-      <a href="/legal/imprint" data-legal="imprint">Imprint</a>
-      <a href="/legal/privacy" data-legal="privacy">Privacy Policy</a>
-      <a href="/legal/terms" data-legal="terms">Terms of Service</a>
-      <a href="/legal/cookies" data-legal="cookies">Cookies</a>
-      <a href="/legal/disclaimer" data-legal="disclaimer">Disclaimer</a>
+      <a href="/legal/imprint" data-legal="imprint" data-i18n="footer.imprint">Imprint</a>
+      <a href="/legal/privacy" data-legal="privacy" data-i18n="footer.privacy">Privacy Policy</a>
+      <a href="/legal/terms" data-legal="terms" data-i18n="footer.terms">Terms of Service</a>
+      <a href="/legal/cookies" data-legal="cookies" data-i18n="footer.cookies">Cookies</a>
+      <a href="/legal/disclaimer" data-legal="disclaimer" data-i18n="footer.disclaimer">Disclaimer</a>
       <a href="/api/v1/whitepaper.pdf" target="_blank" rel="noopener noreferrer"><span class="yi yi-doc"></span> Whitepaper</a>
       <a href="#" onclick="openExplorer();return false;"><span class="yi yi-link"></span> YEET Explorer</a>
     </div>
@@ -6367,16 +6477,16 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 <div class="legal-page" id="explorerPage" role="region" aria-label="YEET token explorer" style="display:none;position:fixed;inset:0;z-index:300;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
   <div style="max-width:900px;margin:0 auto;padding:18px 16px 90px">
     <div style="position:sticky;top:0;background:var(--bg);padding:8px 0 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:2">
-      <button onclick="closeExplorer()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;cursor:pointer">&larr; Back</button>
+      <button onclick="closeExplorer()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;cursor:pointer">&larr; <span data-i18n="common.back">Back</span></button>
       <h2 style="margin:0;font-size:18px"><span class="yi yi-link"></span> YEET Explorer</h2>
       <a id="explorerContractLink" href="#" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--muted);text-decoration:none">BscScan <span class="yi yi-external"></span></a>
     </div>
     <div id="explorerStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0"></div>
-    <h3 style="font-size:15px;margin:18px 0 8px"><span class="yi yi-trophy"></span> Richlist</h3>
-    <div id="explorerRichlist" style="font-size:13px;color:var(--muted)">Loading…</div>
-    <h3 style="font-size:15px;margin:22px 0 8px"><span class="yi yi-repost"></span> Recent transfers</h3>
-    <div id="explorerTransfers" style="font-size:13px;color:var(--muted)">Loading…</div>
-    <p style="color:var(--muted);font-size:11px;margin-top:24px">Public read-only data from the YEET token indexer. Values in YEET (18 decimals). API: <code>/api/v1/explorer/*</code></p>
+    <h3 style="font-size:15px;margin:18px 0 8px"><span class="yi yi-trophy"></span> <span data-i18n="explorer.richlist">Richlist</span></h3>
+    <div id="explorerRichlist" style="font-size:13px;color:var(--muted)" data-i18n="common.loading">Loading…</div>
+    <h3 style="font-size:15px;margin:22px 0 8px"><span class="yi yi-repost"></span> <span data-i18n="explorer.transfers">Recent transfers</span></h3>
+    <div id="explorerTransfers" style="font-size:13px;color:var(--muted)" data-i18n="common.loading">Loading…</div>
+    <p style="color:var(--muted);font-size:11px;margin-top:24px"><span data-i18n="explorer.note">Public read-only data from the YEET token indexer. Values in YEET (18 decimals). API:</span> <code>/api/v1/explorer/*</code></p>
   </div>
 </div>
 <script>
@@ -8828,7 +8938,7 @@ info@blocksocial.eu</address>
     var input = document.getElementById('dmInput');
     var text = (input.value || '').trim();
     if(!text) return;
-    if(text.length > 2000){ window.showToast('Too long','error'); return; }
+    if(text.length > 2000){ window.showToast(T('dm.tooLong'),'error'); return; }
     try {
       var blob = null;
       // Forward-secret path: 1:1 DMs only, when the peer has a prekey
@@ -9194,7 +9304,7 @@ info@blocksocial.eu</address>
 
   window.createGroup = async function(){
     var name = (document.getElementById('newGroupName').value || '').trim();
-    if(!name){ window.showToast('Group name required','error'); return; }
+    if(!name){ window.showToast(T('dm.groupNameRequired'),'error'); return; }
     // Combine the checkbox selection (people I follow) with the
     // manual extra-address rows in the collapsed details block.
     var selectedIds = Object.keys(_groupSelected);
