@@ -169,7 +169,7 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     if words.len() < 3 { return None; }
     let score = |list: &[&str]| words.iter().filter(|w| list.contains(w)).count();
     let mut scores = [("en", score(EN)), ("de", score(DE)), ("it", score(IT)), ("fr", score(FR)), ("es", score(ES)), ("pt", score(PT))];
-    scores.sort_by(|a, b| b.1.cmp(&a.1));
+    scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
     if top >= 2 && top > second { Some(best.to_string()) } else { None }
