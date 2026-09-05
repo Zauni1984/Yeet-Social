@@ -47,28 +47,49 @@ trotzdem (kostenlose Stoppwort-Heuristik), damit jeder Post ein `lang` trägt.
 
 | Variable | Default | Bedeutung |
 | --- | --- | --- |
-| `TRANSLATE_PROVIDER` | – | `libretranslate` oder `deepl`; leer = aus |
-| `TRANSLATE_URL` | `http://libretranslate:5000` bzw. `https://api-free.deepl.com` | Basis-URL des Providers |
-| `TRANSLATE_API_KEY` | – | Pflicht für DeepL (`DeepL-Auth-Key`), optional für LibreTranslate |
+| `TRANSLATE_PROVIDER` | – | `azure`, `google`, `deepl` oder `libretranslate`; leer = aus |
+| `TRANSLATE_URL` | je Provider (Azure `api.cognitive.microsofttranslator.com`, Google `translation.googleapis.com`, DeepL `api.deepl.com`, LibreTranslate `libretranslate:5000`) | Basis-URL, nur bei Bedarf überschreiben |
+| `TRANSLATE_API_KEY` | – | Pflicht für Azure, Google, DeepL; optional für LibreTranslate |
+| `TRANSLATE_REGION` | – | Nur Azure: Region der Ressource (z. B. `germanywestcentral`) |
 
-## Aktivierung: DeepL Free (entschieden)
+## Provider-Wahl (Stand September 2026)
 
-1. Konto unter https://www.deepl.com/pro-api anlegen („DeepL API Free", 500.000 Zeichen/Monat,
-   Kreditkarte nur zur Verifizierung). Den Authentication Key kopieren (endet auf `:fx`).
-2. Auf dem VPS in `/root/yeet-social/.env` eintragen (siehe `vps/.env.example`):
+DeepL bietet den früheren **API-Free-Tarif nicht mehr an** (nur noch „Developer" mit
+einmalig 1 Mio. Zeichen zum Testen und das Abo „Growth"). Kostenlose, dauerhafte
+Kontingente gibt es bei:
+
+| Provider | Gratis-Kontingent | Danach | Konto nötig | Bemerkung |
+| --- | --- | --- | --- | --- |
+| **Azure AI Translator (F0)** | **2 Mio. Zeichen/Monat**, dauerhaft | Stufe S1 ≈ 10 $/Mio. Zeichen | Azure-Konto (Kreditkarte zur Verifizierung), Ressource in EU-Region möglich | Empfehlung: größtes Gratis-Kontingent, EU-Hosting (`germanywestcentral`), gute Qualität für DE/EN/IT/FR/ES/PT. Bei Überschreitung 429/403, kein automatisches Kostenrisiko. |
+| Google Cloud Translation (v2/v3 NMT) | 500.000 Zeichen/Monat, dauerhaft | 20 $/Mio. Zeichen | Google-Cloud-Projekt mit Abrechnungskonto | Sehr gute Qualität; Abrechnung schaltet nach dem Gratis-Kontingent automatisch weiter (Budget-Alarm setzen). |
+| DeepL API (Growth) | – (Developer: 1 Mio. einmalig) | Abo + Nutzung | DeepL-Konto | Beste Qualität für DE, aber kein Gratis-Betrieb mehr. |
+| LibreTranslate (selbst gehostet) | unbegrenzt | 0 € | – | Braucht ca. 4–8 GB RAM auf dem VPS für unsere Sprachpaare; Qualität deutlich unter den Cloud-Diensten. Gehostete Variante 29 $/Monat. |
+
+Der Code ist provider-neutral (`TRANSLATE_PROVIDER=azure|google|deepl|libretranslate`),
+der Übersetzungs-Cache bleibt bei einem Wechsel gültig. Die Spracherkennung nutzt zuerst
+die kostenlose Heuristik und fragt den Provider nur bei unklaren Fällen.
+
+## Aktivierung: Azure AI Translator (empfohlen)
+
+1. Im Azure-Portal eine Ressource **„Translator"** anlegen, Tarif **F0 (Free)**, Region
+   z. B. `germanywestcentral` oder `westeurope`.
+2. Unter „Schlüssel und Endpunkt" Schlüssel 1 und die Region kopieren.
+3. Auf dem VPS in `/root/yeet-social/.env` (siehe `vps/.env.example`):
    ```
-   TRANSLATE_PROVIDER=deepl
-   TRANSLATE_URL=https://api-free.deepl.com
-   TRANSLATE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx
+   TRANSLATE_PROVIDER=azure
+   TRANSLATE_API_KEY=<Schlüssel 1>
+   TRANSLATE_REGION=germanywestcentral
    ```
-3. Backend neu starten (`bash /tmp/start_backend.sh` bzw. `docker compose restart yeet-api`).
-4. Prüfen: `curl -s https://justyeet.it/api/v1/translate/status` → `"enabled":true,"provider":"deepl"`.
+   (`TRANSLATE_URL` leer lassen → globaler Endpunkt `api.cognitive.microsofttranslator.com`.)
+4. Backend neu starten (`bash /tmp/start_backend.sh` bzw. `docker compose restart yeet-api`).
+5. Prüfen: `curl -s https://justyeet.it/api/v1/translate/status` → `"enabled":true,"provider":"azure"`.
    Ab dann erscheint der Übersetzen-Button automatisch; kein Frontend-Deploy nötig.
-5. Verbrauch im DeepL-Konto beobachten. Der Cache je Post+Sprache und das Limit pro Konto
-   (20/Minute, 300/Stunde) halten den Verbrauch niedrig; bei Bedarf auf DeepL Pro wechseln
-   (nur `TRANSLATE_URL=https://api.deepl.com` und neuer Key).
 
-## Provider-Vergleich (Referenz)
+Alternative Google: Cloud-Projekt → „Cloud Translation API" aktivieren → API-Schlüssel
+(auf die Translation API einschränken) → `TRANSLATE_PROVIDER=google`,
+`TRANSLATE_API_KEY=<Key>`; Budget-Alarm bei 0 € setzen, damit nichts durchrutscht.
+
+## Provider-Vergleich (ältere Notiz)
 
 | | LibreTranslate (selbst gehostet) | DeepL API |
 | --- | --- | --- |

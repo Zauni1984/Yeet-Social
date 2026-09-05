@@ -1,7 +1,8 @@
 //! Post translation + language detection.
 //!
-//! Provider-agnostic: `TRANSLATE_PROVIDER=libretranslate|deepl` selects the
-//! backend, `TRANSLATE_URL` / `TRANSLATE_API_KEY` configure it. Without a
+//! Provider-agnostic: `TRANSLATE_PROVIDER=azure|google|deepl|libretranslate`
+//! selects the backend, `TRANSLATE_URL` / `TRANSLATE_API_KEY` (and
+//! `TRANSLATE_REGION` for Azure) configure it. Without a
 //! provider everything is inert: the status endpoint reports `enabled:false`,
 //! the UI hides the Translate button, and detection falls back to a free
 //! stop-word heuristic so posts still carry a `lang` for the six UI
@@ -22,19 +23,24 @@ pub const SUPPORTED: [&str; 6] = ["en", "de", "it", "fr", "es", "pt"];
 pub const UNDETERMINED: &str = "und";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Provider { LibreTranslate, DeepL }
+pub enum Provider { LibreTranslate, DeepL, Azure, Google }
 
 #[derive(Debug, Clone)]
 pub struct TranslateConfig {
     pub provider: Option<Provider>,
     pub url: String,
     pub api_key: Option<String>,
+    /// Azure resource region (e.g. `westeurope`, `germanywestcentral`).
+    pub region: Option<String>,
 }
 
 impl TranslateConfig {
     pub fn enabled(&self) -> bool { self.provider.is_some() }
     pub fn provider_name(&self) -> Option<&'static str> {
-        match self.provider { Some(Provider::LibreTranslate) => Some("libretranslate"), Some(Provider::DeepL) => Some("deepl"), None => None }
+        match self.provider {
+            Some(Provider::LibreTranslate) => Some("libretranslate"), Some(Provider::DeepL) => Some("deepl"),
+            Some(Provider::Azure) => Some("azure"), Some(Provider::Google) => Some("google"), None => None,
+        }
     }
 }
 
@@ -43,21 +49,26 @@ pub fn config() -> TranslateConfig {
     let mut provider = match raw.as_deref() {
         Some("libretranslate") | Some("libre") => Some(Provider::LibreTranslate),
         Some("deepl") => Some(Provider::DeepL),
+        Some("azure") | Some("microsoft") => Some(Provider::Azure),
+        Some("google") | Some("gcp") => Some(Provider::Google),
         _ => None,
     };
     let api_key = std::env::var("TRANSLATE_API_KEY").ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
-    if provider == Some(Provider::DeepL) && api_key.is_none() {
-        warn!("translate: TRANSLATE_PROVIDER=deepl but TRANSLATE_API_KEY is missing — translation disabled");
+    if matches!(provider, Some(Provider::DeepL) | Some(Provider::Azure) | Some(Provider::Google)) && api_key.is_none() {
+        warn!("translate: TRANSLATE_PROVIDER={} needs TRANSLATE_API_KEY — translation disabled", raw.as_deref().unwrap_or(""));
         provider = None;
     }
+    let region = std::env::var("TRANSLATE_REGION").ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
     let default_url = match provider {
-        Some(Provider::DeepL) => "https://api-free.deepl.com",
+        Some(Provider::DeepL) => "https://api.deepl.com",
         Some(Provider::LibreTranslate) => "http://libretranslate:5000",
+        Some(Provider::Azure) => "https://api.cognitive.microsofttranslator.com",
+        Some(Provider::Google) => "https://translation.googleapis.com",
         None => "",
     };
     let url = std::env::var("TRANSLATE_URL").ok().map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
         .unwrap_or_else(|| default_url.to_string()).trim_end_matches('/').to_string();
-    TranslateConfig { provider, url, api_key }
+    TranslateConfig { provider, url, api_key, region }
 }
 
 /// `de`, `DE`, `de-AT`, `pt_BR` → `de` / `pt`. Anything else → None.
@@ -83,7 +94,71 @@ pub async fn translate(cfg: &TranslateConfig, text: &str, target: &str, source: 
         None => anyhow::bail!("translation disabled"),
         Some(Provider::LibreTranslate) => libre_translate(cfg, text, target, source).await,
         Some(Provider::DeepL) => deepl_translate(cfg, text, target, source).await,
+        Some(Provider::Azure) => azure_translate(cfg, text, target, source).await,
+        Some(Provider::Google) => google_translate(cfg, text, target, source).await,
     }
+}
+
+// ---- Azure AI Translator (F0: 2M chars/month free) ----
+// https://learn.microsoft.com/azure/ai-services/translator/reference/v3-0-translate
+fn azure_req(cfg: &TranslateConfig, path: &str) -> anyhow::Result<reqwest::RequestBuilder> {
+    let mut r = client()?.post(format!("{}/{path}", cfg.url))
+        .header("Ocp-Apim-Subscription-Key", cfg.api_key.clone().unwrap_or_default())
+        .header("Content-Type", "application/json");
+    if let Some(reg) = &cfg.region { r = r.header("Ocp-Apim-Subscription-Region", reg); }
+    Ok(r)
+}
+async fn azure_translate(cfg: &TranslateConfig, text: &str, target: &str, source: Option<&str>) -> anyhow::Result<Translation> {
+    #[derive(Deserialize)] struct Detected { language: String }
+    #[derive(Deserialize)] struct Tr { text: String }
+    #[derive(Deserialize)] struct Item { #[serde(rename = "detectedLanguage")] detected_language: Option<Detected>, translations: Vec<Tr> }
+    let mut path = format!("translate?api-version=3.0&to={target}&textType=plain");
+    if let Some(s) = source { path.push_str(&format!("&from={s}")); }
+    let r = azure_req(cfg, &path)?.json(&serde_json::json!([{"Text": text}])).send().await?;
+    if !r.status().is_success() {
+        let st = r.status(); let t = r.text().await.unwrap_or_default();
+        anyhow::bail!("azure http {st}: {}", t.chars().take(200).collect::<String>());
+    }
+    let items: Vec<Item> = r.json().await?;
+    let item = items.into_iter().next().ok_or_else(|| anyhow::anyhow!("azure: empty response"))?;
+    let tr = item.translations.into_iter().next().ok_or_else(|| anyhow::anyhow!("azure: no translation"))?;
+    Ok(Translation { text: tr.text, source_lang: item.detected_language.and_then(|d| normalize_lang(&d.language)).or_else(|| source.map(|s| s.to_string())) })
+}
+async fn azure_detect(cfg: &TranslateConfig, text: &str) -> anyhow::Result<Option<String>> {
+    #[derive(Deserialize)] struct D { language: String, score: f64 }
+    let r = azure_req(cfg, "detect?api-version=3.0")?.json(&serde_json::json!([{"Text": text}])).send().await?;
+    if !r.status().is_success() { anyhow::bail!("azure detect http {}", r.status()); }
+    let list: Vec<D> = r.json().await?;
+    Ok(list.into_iter().next().filter(|d| d.score >= 0.5).and_then(|d| normalize_lang(&d.language)))
+}
+
+// ---- Google Cloud Translation v2 (500k chars/month free) ----
+// https://cloud.google.com/translate/docs/reference/rest/v2/translate
+async fn google_translate(cfg: &TranslateConfig, text: &str, target: &str, source: Option<&str>) -> anyhow::Result<Translation> {
+    #[derive(Deserialize)] struct Tr { #[serde(rename = "translatedText")] translated_text: String, #[serde(rename = "detectedSourceLanguage")] detected_source_language: Option<String> }
+    #[derive(Deserialize)] struct Data { translations: Vec<Tr> }
+    #[derive(Deserialize)] struct Resp { data: Data }
+    let mut body = serde_json::json!({"q": text, "target": target, "format": "text"});
+    if let Some(s) = source { body["source"] = serde_json::Value::String(s.to_string()); }
+    let r = client()?.post(format!("{}/language/translate/v2", cfg.url))
+        .query(&[("key", cfg.api_key.clone().unwrap_or_default())]).json(&body).send().await?;
+    if !r.status().is_success() {
+        let st = r.status(); let t = r.text().await.unwrap_or_default();
+        anyhow::bail!("google http {st}: {}", t.chars().take(200).collect::<String>());
+    }
+    let resp: Resp = r.json().await?;
+    let tr = resp.data.translations.into_iter().next().ok_or_else(|| anyhow::anyhow!("google: empty response"))?;
+    Ok(Translation { text: tr.translated_text, source_lang: tr.detected_source_language.as_deref().and_then(normalize_lang).or_else(|| source.map(|s| s.to_string())) })
+}
+async fn google_detect(cfg: &TranslateConfig, text: &str) -> anyhow::Result<Option<String>> {
+    #[derive(Deserialize)] struct D { language: String, #[serde(default)] confidence: f64 }
+    #[derive(Deserialize)] struct Data { detections: Vec<Vec<D>> }
+    #[derive(Deserialize)] struct Resp { data: Data }
+    let r = client()?.post(format!("{}/language/translate/v2/detect", cfg.url))
+        .query(&[("key", cfg.api_key.clone().unwrap_or_default())]).json(&serde_json::json!({"q": text})).send().await?;
+    if !r.status().is_success() { anyhow::bail!("google detect http {}", r.status()); }
+    let resp: Resp = r.json().await?;
+    Ok(resp.data.detections.into_iter().flatten().next().filter(|d| d.confidence >= 0.5 || d.confidence == 0.0).and_then(|d| normalize_lang(&d.language)))
 }
 
 // ---- LibreTranslate (self-hosted or hosted; https://github.com/LibreTranslate/LibreTranslate) ----
@@ -140,14 +215,20 @@ async fn deepl_translate(cfg: &TranslateConfig, text: &str, target: &str, source
 /// Best available detection: provider (LibreTranslate has /detect) first,
 /// then the free heuristic. `None` = no confident answer.
 pub async fn detect(cfg: &TranslateConfig, text: &str) -> Option<String> {
-    if cfg.provider == Some(Provider::LibreTranslate) {
-        match libre_detect(cfg, text).await {
-            Ok(Some(l)) => return Some(l),
-            Ok(None) => {}
-            Err(e) => warn!("translate: detect via provider failed, using heuristic: {e}"),
-        }
+    // The free heuristic first: it costs nothing and is right for most
+    // posts in the six UI languages. Only ask the provider (which counts
+    // against the free quota) when the heuristic has no confident answer.
+    if let Some(l) = heuristic_detect(text) { return Some(l); }
+    let via = match cfg.provider {
+        Some(Provider::LibreTranslate) => libre_detect(cfg, text).await,
+        Some(Provider::Azure) => azure_detect(cfg, text).await,
+        Some(Provider::Google) => google_detect(cfg, text).await,
+        _ => Ok(None),
+    };
+    match via {
+        Ok(l) => l,
+        Err(e) => { warn!("translate: detect via provider failed: {e}"); None }
     }
-    heuristic_detect(text)
 }
 
 /// Cheap stop-word detector for the six UI languages. Deliberately
@@ -230,6 +311,17 @@ mod tests {
         assert_eq!(known_lang(Some("und")), None);
         assert_eq!(known_lang(Some("De")).as_deref(), Some("de"));
         assert_eq!(known_lang(None), None);
+    }
+
+    #[test]
+    fn provider_parsing() {
+        std::env::set_var("TRANSLATE_PROVIDER", "azure"); std::env::set_var("TRANSLATE_API_KEY", "k"); std::env::set_var("TRANSLATE_REGION", "westeurope");
+        let c = config();
+        assert_eq!(c.provider, Some(Provider::Azure)); assert_eq!(c.url, "https://api.cognitive.microsofttranslator.com"); assert_eq!(c.region.as_deref(), Some("westeurope"));
+        std::env::set_var("TRANSLATE_PROVIDER", "google"); std::env::remove_var("TRANSLATE_API_KEY");
+        assert_eq!(config().provider, None, "google without key must disable");
+        std::env::remove_var("TRANSLATE_PROVIDER"); std::env::remove_var("TRANSLATE_REGION");
+        assert!(!config().enabled());
     }
 
     #[test]
