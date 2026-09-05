@@ -13616,7 +13616,9 @@ var Translate=(function(){
     return statusP;
   }
   function enabled(){return !!(status&&status.enabled);}
-  function needs(p){ if(!p) return false; var l=String(p.lang||'').slice(0,2).toLowerCase(); return !l||l!==uiLang(); }
+  // Stored language that actually tells us something ('und' = checked, undetermined).
+  function known(p){ var raw=String((p&&p.lang)||'').toLowerCase(); if(!raw||raw==='und') return ''; return raw.slice(0,2); }
+  function needs(p){ if(!p) return false; var l=known(p); return !l||l!==uiLang(); }
   function contentDiv(el){ var acts=el.querySelector('.post-actions'); return acts?acts.previousElementSibling:null; }
   function setBtn(el,state){ var b=el.querySelector('.tr-btn'); if(!b) return; b.disabled=state==='loading'; b.style.opacity=state==='loading'?'.5':''; b.setAttribute('aria-busy',state==='loading'?'true':'false'); }
   function render(el,data){
@@ -13653,7 +13655,7 @@ var Translate=(function(){
   function pump(){ while(running<2&&pending.length){ var el=pending.shift(); if(!document.contains(el)||el.querySelector('.post-translation-wrap')) continue; running++; translatePost(el,true).finally(function(){running--;pump();}); } }
   function autoMaybe(el){
     var p=el&&el._yeetPost; if(!p||!p.id||!p.content) return;
-    if(LS(PREF.autoTr,'0')!=='1'||!enabled()||!p.lang||!needs(p)) return;
+    if(LS(PREF.autoTr,'0')!=='1'||!enabled()||!known(p)||!needs(p)) return;
     if(pending.indexOf(el)<0) pending.push(el); pump();
   }
   return {getStatus:getStatus,enabled:enabled,needs:needs,translatePost:translatePost,autoMaybe:autoMaybe};

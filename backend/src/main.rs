@@ -46,6 +46,7 @@ async fn main() {
     tokio::spawn(services::batch_rewards::start_lives_sweep_job(state.clone()));
     // NOTE→YEET swap watcher — idle until SWAP_ENABLED + NOTE_RPC_URL are set.
     tokio::spawn(services::note_swap::start_swap_watcher(state.clone()));
+    tokio::spawn(services::translate::start_lang_sweep(state.clone()));
     info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");
@@ -101,6 +102,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/posts/:id/visibility", patch(api::permanent::update_post_visibility))
         .route("/api/v1/posts/:id/unlike",  post(api::posts::unlike_post))
         .route("/api/v1/posts/:id/report",  post(api::report::report_post))
+        .route("/api/v1/posts/:id/translate", post(api::translate::translate_post))
+        .route("/api/v1/translate/status", get(api::translate::status))
         .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
         .route("/api/v1/me/permanent",     get(api::permanent::get_my_permanent_posts))
         // Tips received — private per-user overview + CSV export

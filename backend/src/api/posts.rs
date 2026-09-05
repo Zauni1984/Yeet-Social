@@ -38,6 +38,8 @@ struct PostRow {
     wallet_address: String,
     display_name: Option<String>,
     avatar_url: Option<String>,
+    #[sqlx(default)]
+    lang: Option<String>,
 }
 
 fn row_to_feed_post(r: PostRow) -> FeedPost {
@@ -63,6 +65,7 @@ fn row_to_feed_post(r: PostRow) -> FeedPost {
         reposted_from_author_username: None,
         promoted_live_id: None,
         pinned_until: None,
+        lang: r.lang,
     }
 }
 
@@ -137,6 +140,9 @@ pub async fn create_post(
     if req.content.trim().chars().count() >= tokens::post_min_chars() {
         let _ = tokens::grant_reward(&state.db, user_id, RewardAction::PostCreated, tokens::post_reward()).await;
     }
+    // Tag the post language right away (the 30 s sweep would catch it too,
+    // but the Translate button should be right on first render).
+    crate::services::translate::spawn_detect(state.clone(), post_id, req.content.clone());
     Ok(Json(ApiResponse::ok(post_id)))
 }
 
@@ -147,7 +153,7 @@ pub async fn get_post(
     let r = sqlx::query_as::<_, PostRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
                 p.like_count, p.reshare_count, p.comment_count, p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url
+                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.lang
          FROM posts p JOIN users u ON p.author_id = u.id
          WHERE p.id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
     )
