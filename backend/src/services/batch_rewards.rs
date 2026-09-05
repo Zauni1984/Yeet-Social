@@ -139,13 +139,43 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 );
 
     let contract = YeetToken::new(token_addr, client);
-    let tx = contract
-        .batch_mint_rewards(recipients, amounts, actions)
-        .gas(500_000u64)
-        .send()
-        .await?
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("No receipt"))?;
+    let mint_result: Result<_> = async {
+        contract
+            .batch_mint_rewards(recipients, amounts, actions)
+            .gas(500_000u64)
+            .send()
+            .await?
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("No receipt"))
+    }.await;
+
+    // Failure path: a failed mint used to leave every included row 'pending'
+    // forever (silently retried each hour, invisible to admins). Count the
+    // attempt; after YEET_MINT_MAX_ATTEMPTS (default 5) park the rows as
+    // 'failed' so they surface in the admin payout queue, where reject →
+    // refund closes them out. Points stay debited until then.
+    let tx = match mint_result {
+        Ok(tx) => tx,
+        Err(e) => {
+            let max_attempts: i32 = std::env::var("YEET_MINT_MAX_ATTEMPTS")
+                .ok().and_then(|s| s.parse().ok()).unwrap_or(5);
+            let err_text: String = e.to_string().chars().take(500).collect();
+            let res = sqlx::query(
+                "UPDATE token_rewards
+                    SET mint_attempts = mint_attempts + 1,
+                        last_error    = $2,
+                        status        = CASE WHEN mint_attempts + 1 >= $3 THEN 'failed' ELSE status END
+                  WHERE id = ANY($1) AND status = 'pending'"
+            )
+            .bind(&included_ids).bind(&err_text).bind(max_attempts)
+            .execute(&state.db.pool).await;
+            if let Err(db_e) = res {
+                error!("batch-rewards: could not record mint failure: {db_e}");
+            }
+            warn!("batch-rewards: mint failed for {} rows (attempt recorded, max {max_attempts}): {err_text}", included_ids.len());
+            return Err(e);
+        }
+    };
 
     let tx_hash = format!("{:?}", tx.transaction_hash);
     info!("Batch mint tx: {}", tx_hash);

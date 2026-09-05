@@ -14,6 +14,8 @@ use crate::api::middleware::AuthUser;
 
 /// Minimum points per conversion (keeps on-chain gas economical + avoids dust).
 const MIN_CONVERT_POINTS: i64 = 100;
+/// Advisory-lock key serialising pool-check + queue-insert across requests.
+const CONVERT_LOCK_KEY: i64 = 0x59_45_45_54_43_4e_56; // "YEETCNV"
 
 #[derive(Debug, Deserialize)]
 pub struct ConvertRequest {
@@ -54,15 +56,23 @@ pub async fn convert(
     }
     let user_id = caller_user_id(&state, &auth).await?;
 
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+
+    // Serialise conversions: the pool check and the queue insert below must not
+    // interleave across concurrent requests, or two callers could both pass the
+    // check and jointly overshoot the pool. Every earlier conversion commits
+    // (and thus is visible to pool_status) before this lock is granted.
+    sqlx::query("SELECT pg_advisory_xact_lock($1)")
+        .bind(CONVERT_LOCK_KEY)
+        .execute(&mut *tx).await.map_err(AppError::Database)?;
+
     // Drain guard: never queue a payout the finite on-chain conversion pool
-    // cannot cover. The pool refills from platform fees, so this is a soft,
+    // cannot cover. The pool refills from platform fees, so this is a
     // self-healing ceiling rather than a hard stop.
     let pool = crate::services::tokens::pool_status(&state.db).await?;
     if (req.points as f64) > pool.remaining {
         return Err(AppError::Forbidden("CONVERSION_POOL_EXHAUSTED".into()));
     }
-
-    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 
     // The payout target MUST be a verified EXTERNAL wallet the user linked via
     // the signature-challenge flow (email_auth::link_wallet_verify). Email
