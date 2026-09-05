@@ -36,6 +36,9 @@ input:focus{border-color:#c6f135}
 .card{background:#111;border:1px solid #222;border-radius:12px;padding:16px;margin-bottom:12px}
 .card.flagged{border-color:#f5a623}
 .card.removed{opacity:.5;border-color:#333}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px}
+.pill.wait{background:#f5a62333;color:#f5a623}.pill.fail{background:#ff444433;color:#ff6666}.pill.pend{background:#3b82f633;color:#8ab4ff}.pill.done{background:#22c55e33;color:#22c55e}.pill.rej{background:#33333388;color:#aaa}
+.kv{font-size:12px;color:#888;margin:2px 0}.kv b{color:#ddd;font-weight:600}
 .meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:#666;flex-wrap:wrap}
 .author{color:#c6f135;font-weight:600}
 .rpill{background:#ff4444;color:#fff;border-radius:999px;padding:2px 8px;font-weight:700}
@@ -143,10 +146,28 @@ input:focus{border-color:#c6f135}
   <div class="tabs">
     <div class="tab active" id="tab-reports" onclick="switchTab('reports')"><span class="yi yi-flag"></span> Gemeldet <span class="badge" id="badge">0</span></div>
     <div class="tab" id="tab-all" onclick="switchTab('all')"><span class="yi yi-copy"></span> Alle Posts</div>
+    <div class="tab" id="tab-payouts" onclick="switchTab('payouts')"><span class="yi yi-wallet"></span> Auszahlungen <span class="badge" id="payoutBadge" style="display:none">0</span></div>
   </div>
 
   <input class="search" type="text" id="searchInput" placeholder="Suche..." oninput="renderPosts()">
   <div id="grid"></div>
+
+  <!-- Payout-Freigabe: Points→YEET- und NOTE-Swap-Auszahlungen (manuelles Gate in der Startphase) -->
+  <div id="payoutsView" style="display:none">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <select id="payoutStatus" class="search" style="width:auto;margin:0" onchange="loadPayouts()">
+        <option value="awaiting_approval">Wartet auf Freigabe</option>
+        <option value="failed">Fehlgeschlagen (Mint)</option>
+        <option value="pending">Freigegeben – wartet auf Mint</option>
+        <option value="minted">Ausgezahlt</option>
+        <option value="rejected">Abgelehnt / erstattet</option>
+        <option value="all">Alle</option>
+      </select>
+      <button class="btn sm ghost" onclick="loadPayouts()"><span class="yi yi-refresh"></span> Aktualisieren</button>
+      <span id="payoutHint" style="font-size:12px;color:#888"></span>
+    </div>
+    <div id="payoutList"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -179,7 +200,8 @@ async function loadData() {
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
     updateStats();
-    renderPosts();
+    if (currentTab === 'payouts') loadPayouts(); else renderPosts();
+    refreshPayoutBadge();
   } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
 }
 
@@ -196,9 +218,90 @@ function updateStats() {
 
 function switchTab(tab) {
   currentTab = tab;
-  document.getElementById('tab-reports').classList.toggle('active', tab === 'reports');
-  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+  ['reports','all','payouts'].forEach(function(t){ document.getElementById('tab-'+t).classList.toggle('active', tab === t); });
+  var isPay = tab === 'payouts';
+  document.getElementById('payoutsView').style.display = isPay ? 'block' : 'none';
+  document.getElementById('grid').style.display = isPay ? 'none' : '';
+  document.getElementById('searchInput').style.display = isPay ? 'none' : 'block';
+  if (isPay) { loadPayouts(); return; }
   renderPosts();
+}
+
+// ---------- Payout-Freigabe ----------
+var STATUS_LABEL = {awaiting_approval:['Wartet auf Freigabe','wait'], failed:['Mint fehlgeschlagen','fail'], pending:['Freigegeben – wartet auf Mint','pend'], minted:['Ausgezahlt','done'], rejected:['Abgelehnt / erstattet','rej']};
+function shortAddr(a){ a = a || ''; return a.length > 14 ? a.slice(0,6) + '…' + a.slice(-4) : a; }
+
+async function refreshPayoutBadge() {
+  try {
+    var r = await fetch('/api/v1/admin/payouts?status=awaiting_approval&secret=' + encodeURIComponent(SECRET));
+    if (!r.ok) return;
+    var d = await r.json(); var n = (d.data || []).length;
+    var b = document.getElementById('payoutBadge'); b.textContent = n; b.style.display = n > 0 ? '' : 'none';
+  } catch(e) {}
+}
+
+async function loadPayouts() {
+  var status = document.getElementById('payoutStatus').value;
+  var list = document.getElementById('payoutList');
+  list.innerHTML = '<div class="empty">Lade…</div>';
+  try {
+    var r = await fetch('/api/v1/admin/payouts?status=' + encodeURIComponent(status) + '&secret=' + encodeURIComponent(SECRET));
+    if (r.status === 401) { showToast('Admin-Secret ungültig', 'err'); return; }
+    var d = await r.json();
+    if (!d.success) { showToast('Fehler: ' + (d.error && d.error.message), 'err'); return; }
+    var rows = d.data || [];
+    document.getElementById('payoutHint').textContent = rows.length + ' Einträge';
+    if (status === 'awaiting_approval') { var b = document.getElementById('payoutBadge'); b.textContent = rows.length; b.style.display = rows.length ? '' : 'none'; }
+    list.innerHTML = '';
+    if (!rows.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Keine Auszahlungen in diesem Status.'; list.appendChild(e); return; }
+    rows.forEach(function(p) {
+      var card = document.createElement('div'); card.className = 'card' + (p.status === 'failed' ? ' flagged' : '');
+      var meta = document.createElement('div'); meta.className = 'meta';
+      var who = document.createElement('span'); who.className = 'author'; who.textContent = '@' + (p.username || (p.user_id || '').slice(0,8)); meta.appendChild(who);
+      var age = document.createElement('span'); age.textContent = timeAgo(p.created_at); meta.appendChild(age);
+      var st = STATUS_LABEL[p.status] || [p.status, 'rej'];
+      var pill = document.createElement('span'); pill.className = 'pill ' + st[1]; pill.textContent = st[0]; meta.appendChild(pill);
+      card.appendChild(meta);
+
+      var amt = document.createElement('div'); amt.className = 'content'; amt.style.fontSize = '20px'; amt.style.fontWeight = '800';
+      amt.textContent = Number(p.amount).toLocaleString('de-DE', {maximumFractionDigits: 8}) + ' YEET'; card.appendChild(amt);
+
+      var kv1 = document.createElement('div'); kv1.className = 'kv'; kv1.innerHTML = 'Ziel-Wallet: <b></b>'; kv1.querySelector('b').textContent = p.wallet_address || '— keine verknüpft —'; card.appendChild(kv1);
+      if (p.mint_attempts > 0 || p.last_error) {
+        var kv2 = document.createElement('div'); kv2.className = 'kv'; kv2.innerHTML = 'Mint-Versuche: <b></b>'; kv2.querySelector('b').textContent = String(p.mint_attempts || 0); card.appendChild(kv2);
+        if (p.last_error) { var kv3 = document.createElement('div'); kv3.className = 'kv'; kv3.style.color = '#ff6666'; kv3.textContent = 'Letzter Fehler: ' + p.last_error; card.appendChild(kv3); }
+      }
+
+      var actions = document.createElement('div'); actions.className = 'actions';
+      if (p.status === 'awaiting_approval') {
+        var ok = document.createElement('button'); ok.className = 'btn sm ok'; ok.innerHTML = '<span class="yi yi-check"></span> Freigeben';
+        ok.onclick = (function(id){ return function(){ decidePayout(id, 'approve'); }; })(p.id); actions.appendChild(ok);
+      }
+      if (p.status === 'awaiting_approval' || p.status === 'failed') {
+        var no = document.createElement('button'); no.className = 'btn sm danger'; no.innerHTML = '<span class="yi yi-trash"></span> Ablehnen & erstatten';
+        no.onclick = (function(id){ return function(){ decidePayout(id, 'reject'); }; })(p.id); actions.appendChild(no);
+      }
+      if (actions.childElementCount) card.appendChild(actions);
+
+      var pid = document.createElement('div'); pid.className = 'pid'; pid.textContent = p.id; card.appendChild(pid);
+      list.appendChild(card);
+    });
+  } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
+}
+
+async function decidePayout(id, action) {
+  var note;
+  if (action === 'reject') { note = prompt('Grund für Ablehnung (Punkte werden dem User erstattet):'); if (note === null) return; }
+  else { if (!confirm('Auszahlung freigeben? Sie wird beim nächsten Batch-Lauf on-chain gemintet.')) return; }
+  try {
+    var r = await fetch('/api/v1/admin/payouts/' + encodeURIComponent(id) + '/' + action, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({secret: SECRET, note: note || null})
+    });
+    var d = await r.json();
+    if (d.success) { showToast(action === 'approve' ? 'Auszahlung freigegeben' : 'Abgelehnt – Punkte erstattet', 'ok'); loadPayouts(); }
+    else showToast('Fehler: ' + (d.error && d.error.message), 'err');
+  } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
 }
 
 function renderPosts() {

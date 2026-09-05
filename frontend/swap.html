@@ -114,6 +114,34 @@ html:not([data-lang]) [data-l]{display:none!important}
     <div class="swapnote" data-l="en">Fixed rate 100:1 · no Yeet fee on the swap · you cover network fees yourself</div>
   </div>
 
+  <div class="card" id="swapPanel" style="display:none">
+    <h2 style="margin:0 0 6px" data-l="de">Dein Swap</h2>
+    <h2 style="margin:0 0 6px" data-l="en">Your swap</h2>
+    <div id="swapNeedLogin" style="display:none">
+      <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-l="de">Melde dich zuerst bei Yeet an (gleicher Browser), dann kannst du hier deine persönliche NOTE-Einzahladresse anfordern.</p>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-l="en">Sign in to Yeet first (same browser), then request your personal NOTE deposit address here.</p>
+      <a href="https://justyeet.it/" style="display:inline-block;background:var(--accent);color:var(--on-accent);font-weight:800;padding:10px 18px;border-radius:10px;text-decoration:none" data-l="de">Zu Yeet anmelden</a>
+      <a href="https://justyeet.it/" style="display:inline-block;background:var(--accent);color:var(--on-accent);font-weight:800;padding:10px 18px;border-radius:10px;text-decoration:none" data-l="en">Sign in at Yeet</a>
+    </div>
+    <div id="swapRequest" style="display:none">
+      <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-l="de">Du bekommst eine Einzahladresse, die nur dir zugeordnet ist. Sende NOTE nur aus deiner eigenen Wallet dorthin.</p>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 12px" data-l="en">You get a deposit address mapped to you alone. Only send NOTE there from your own wallet.</p>
+      <button id="btnAddr" onclick="requestAddress()" style="width:100%;padding:14px;border:none;border-radius:12px;background:var(--accent);color:var(--on-accent);font-weight:900;font-size:16px;cursor:pointer"><span data-l="de">Einzahladresse anfordern</span><span data-l="en">Request deposit address</span></button>
+    </div>
+    <div id="swapAddr" style="display:none">
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px" data-l="de">Deine NOTE-Einzahladresse</div>
+      <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px" data-l="en">Your NOTE deposit address</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <code id="addrText" style="flex:1;min-width:200px;background:var(--bg-2);border:1px solid var(--border-2);border-radius:10px;padding:12px 14px;font-size:14px;word-break:break-all;color:var(--accent)"></code>
+        <button onclick="copyAddr()" style="padding:12px 16px;border:1px solid var(--border-2);border-radius:10px;background:transparent;color:var(--text);cursor:pointer;font-weight:700" data-l="de">Kopieren</button>
+        <button onclick="copyAddr()" style="padding:12px 16px;border:1px solid var(--border-2);border-radius:10px;background:transparent;color:var(--text);cursor:pointer;font-weight:700" data-l="en">Copy</button>
+      </div>
+      <p id="addrHint" style="color:var(--muted);font-size:13px;margin:10px 0 0"></p>
+      <div id="depWrap" style="margin-top:16px"></div>
+    </div>
+    <p id="swapMsg" style="display:none;margin:12px 0 0;padding:10px 12px;border-radius:10px;background:rgba(var(--warn-rgb),.08);border:1px solid rgba(var(--warn-rgb),.35);color:var(--text);font-size:14px"></p>
+  </div>
+
   <h2 data-l="de">Die Eckdaten</h2>
   <h2 data-l="en">Key facts</h2>
   <ul class="facts">
@@ -131,7 +159,7 @@ html:not([data-lang]) [data-l]{display:none!important}
   <ol class="steps">
     <li><b data-l="de">Anmelden &amp; verknüpfen</b><b data-l="en">Sign up &amp; link</b><span data-l="de">Melde dich auf justyeet.it an, schließe die Verifizierung (KYC) ab und verknüpfe deine BSC-Wallet über den signierten Wallet-Login.</span><span data-l="en">Sign in on justyeet.it, complete verification (KYC) and link your BSC wallet via the signed wallet login.</span></li>
     <li><b data-l="de">Persönliche NOTE-Einzahladresse erhalten</b><b data-l="en">Get your personal NOTE deposit address</b><span data-l="de">Auf dieser Seite bekommst du nach dem Start eine Einzahladresse auf der Note-Blockchain, die nur dir zugeordnet ist.</span><span data-l="en">After launch, this page gives you a deposit address on the Note blockchain that is mapped to you alone.</span></li>
-    <li><b data-l="de">NOTE senden — YEET erhalten</b><b data-l="en">Send NOTE — receive YEET</b><span data-l="de">Sende NOTE aus deiner eigenen Wallet an deine Einzahladresse. Nach ausreichend Bestätigungen auf der Note-Chain wird dir automatisch 1 YEET je 100 NOTE auf deine verknüpfte BSC-Wallet ausgezahlt. Jede Auszahlung ist im öffentlichen Explorer nachvollziehbar.</span><span data-l="en">Send NOTE from your own wallet to your deposit address. After enough confirmations on the Note chain, 1 YEET per 100 NOTE is paid out automatically to your linked BSC wallet. Every payout is traceable in the public explorer.</span></li>
+    <li><b data-l="de">NOTE senden — YEET erhalten</b><b data-l="en">Send NOTE — receive YEET</b><span data-l="de">Sende NOTE aus deiner eigenen Wallet an deine Einzahladresse. Nach <span class="confN">ausreichend</span> Bestätigungen auf der Note-Chain wird dir automatisch 1 YEET je 100 NOTE auf deine verknüpfte BSC-Wallet ausgezahlt. Jede Auszahlung ist im öffentlichen Explorer nachvollziehbar.</span><span data-l="en">Send NOTE from your own wallet to your deposit address. After <span class="confN">enough</span> confirmations on the Note chain, 1 YEET per 100 NOTE is paid out automatically to your linked BSC wallet. Every payout is traceable in the public explorer.</span></li>
   </ol>
 
   <h2>FAQ</h2>
@@ -175,6 +203,80 @@ function calc(){
   var y=n/100;
   document.getElementById('outYeet').value=n>0?(y%1===0?y.toLocaleString('de-DE'):y.toLocaleString('de-DE',{maximumFractionDigits:2})):'';
 }
+var SWAP={enabled:false,rate:100,conf:120,cap:500000000,swapped:0,min:0};
+var L=function(){return document.documentElement.dataset.lang||'de';};
+function jwt(){try{return localStorage.getItem('yeet_jwt')||'';}catch(e){return '';}}
+function msg(de,en,isErr){var m=document.getElementById('swapMsg');m.style.display='';m.textContent=L()==='de'?de:en;m.style.borderColor=isErr?'rgba(192,57,43,.5)':'rgba(var(--warn-rgb),.35)';}
+function fmt(n){return Number(n).toLocaleString(L()==='de'?'de-DE':'en-US',{maximumFractionDigits:2});}
+async function loadStatus(){
+  try{
+    var r=await fetch('/api/v1/swap/status',{cache:'no-store'}); if(!r.ok) return;
+    var d=await r.json(); var st=(d&&d.data)||{};
+    SWAP.enabled=!!st.enabled; SWAP.rate=st.note_per_yeet||100; SWAP.conf=st.confirmations_required||120;
+    SWAP.cap=st.pool_cap_yeet||SWAP.cap; SWAP.swapped=st.swapped_yeet||0; SWAP.min=st.min_note||0;
+    document.querySelectorAll('.confN').forEach(function(e){e.textContent=SWAP.conf;});
+    var pct=SWAP.cap>0?Math.min(100,SWAP.swapped/SWAP.cap*100):0;
+    var note=document.querySelector('.swapnote[data-l="'+L()+'"]');
+    if(SWAP.enabled){
+      var b=document.querySelector('.banner'); if(b) b.style.display='none';
+      var btn=document.querySelector('.swapbtn'); if(btn){btn.disabled=false;btn.style.cursor='pointer';btn.style.background='var(--accent)';btn.style.color='var(--on-accent)';btn.innerHTML=L()==='de'?'Einzahladresse anfordern':'Request deposit address';btn.onclick=requestAddress;}
+      document.getElementById('swapPanel').style.display='';
+      if(!jwt()){document.getElementById('swapNeedLogin').style.display='';}
+      else {document.getElementById('swapRequest').style.display=''; loadDeposits(true);}
+    }
+    if(note) note.textContent += ' · '+(L()==='de'?'Pool genutzt':'pool used')+': '+pct.toFixed(2)+'%';
+  }catch(e){}
+}
+async function requestAddress(){
+  var t=jwt(); if(!t){document.getElementById('swapNeedLogin').style.display='';return;}
+  var btn=document.getElementById('btnAddr'); if(btn){btn.disabled=true;}
+  try{
+    var r=await fetch('/api/v1/swap/address',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'}});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok){
+      var code=(d.error&&d.error.message)||'';
+      if(code.indexOf('SWAP_LOCKED')>=0) msg('Der Swap ist noch gesperrt — der Start wird angekündigt.','The swap is still locked — the start will be announced.',true);
+      else if(code.indexOf('KYC_REQUIRED')>=0) msg('Bitte zuerst die Verifizierung (KYC) in den Yeet-Einstellungen abschließen.','Please complete verification (KYC) in your Yeet settings first.',true);
+      else if(code.indexOf('NO_WALLET_LINKED')>=0) msg('Bitte zuerst deine BSC-Wallet in den Yeet-Einstellungen verknüpfen (Auszahlungsziel).','Please link your BSC wallet in your Yeet settings first (payout target).',true);
+      else if(r.status===401) {document.getElementById('swapNeedLogin').style.display='';document.getElementById('swapRequest').style.display='none';}
+      else msg('Fehler: '+(code||r.status),'Error: '+(code||r.status),true);
+      if(btn) btn.disabled=false; return;
+    }
+    showAddress(d.data);
+  }catch(e){ msg('Netzwerkfehler — bitte später erneut versuchen.','Network error — please try again later.',true); if(btn) btn.disabled=false; }
+}
+function showAddress(a){
+  document.getElementById('swapRequest').style.display='none';
+  document.getElementById('swapAddr').style.display='';
+  document.getElementById('addrText').textContent=a.note_address||'';
+  var conf=a.confirmations_required||SWAP.conf;
+  document.getElementById('addrHint').textContent = L()==='de'
+    ? ('Kurs 100 NOTE = 1 YEET · Gutschrift nach '+conf+' Bestätigungen (~'+Math.round(conf*30/60)+' Min.)'+(SWAP.min>0?' · Mindestbetrag '+fmt(SWAP.min)+' NOTE':''))
+    : ('Rate 100 NOTE = 1 YEET · credited after '+conf+' confirmations (~'+Math.round(conf*30/60)+' min)'+(SWAP.min>0?' · minimum '+fmt(SWAP.min)+' NOTE':''));
+  loadDeposits(false);
+}
+function copyAddr(){var t=document.getElementById('addrText').textContent;if(navigator.clipboard&&t){navigator.clipboard.writeText(t).then(function(){msg('Adresse kopiert.','Address copied.',false);});}}
+async function loadDeposits(quiet){
+  var t=jwt(); if(!t) return;
+  try{
+    var r=await fetch('/api/v1/swap/deposits',{headers:{'Authorization':'Bearer '+t},cache:'no-store'}); if(!r.ok) return;
+    var d=await r.json(); var rows=(d&&d.data)||[];
+    if(!rows.length){ if(!quiet){document.getElementById('depWrap').innerHTML='<p style="color:var(--muted);font-size:13px;margin:0">'+(L()==='de'?'Noch keine Einzahlungen erkannt.':'No deposits detected yet.')+'</p>';} return; }
+    // Wer schon eine Adresse hat, sieht sie sofort wieder (Deposit-Liste impliziert Adresse)
+    if(document.getElementById('swapAddr').style.display==='none' && rows[0]){ /* Adresse per Request-Klick erneut abrufbar */ }
+    var h='<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">'+(L()==='de'?'Deine Einzahlungen':'Your deposits')+'</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+    h+='<tr style="color:var(--muted);text-align:left"><th style="padding:6px 8px;font-weight:600">TX</th><th style="padding:6px 8px;font-weight:600">NOTE</th><th style="padding:6px 8px;font-weight:600">YEET</th><th style="padding:6px 8px;font-weight:600">'+(L()==='de'?'Bestät.':'Conf.')+'</th><th style="padding:6px 8px;font-weight:600">Status</th></tr>';
+    rows.forEach(function(x){
+      var st=x.status==='credited'?(L()==='de'?'gutgeschrieben':'credited'):x.status==='failed'?(L()==='de'?'fehlgeschlagen':'failed'):(L()==='de'?'wartet':'pending');
+      var col=x.status==='credited'?'var(--accent)':x.status==='failed'?'#e07a6a':'var(--muted)';
+      var tx=String(x.txid||''); tx=tx.length>14?tx.slice(0,8)+'…'+tx.slice(-6):tx;
+      h+='<tr style="border-top:1px solid var(--border)"><td style="padding:8px;font-family:ui-monospace,monospace">'+tx+'</td><td style="padding:8px">'+fmt(x.amount_note)+'</td><td style="padding:8px">'+fmt((x.amount_note||0)/SWAP.rate)+'</td><td style="padding:8px">'+(x.confirmations||0)+'/'+SWAP.conf+'</td><td style="padding:8px;color:'+col+'">'+st+(x.last_error?' <span title="'+String(x.last_error).replace(/"/g,'&quot;')+'">ⓘ</span>':'')+'</td></tr>';
+    });
+    h+='</table></div>';
+    document.getElementById('depWrap').innerHTML=h;
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded', loadStatus);
 (function(){
   var l='de';
   try{l=localStorage.getItem('yeet_swap_lang')||((navigator.language||'de').slice(0,2)==='en'?'en':'de');}catch(e){}

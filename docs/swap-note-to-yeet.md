@@ -70,17 +70,47 @@ User-NOTE-Wallet ──(NOTE-Tx, Gebühr zahlt User)──▶ persönliche Einza
 - Node läuft isoliert (eigener Container, nur RPC zum Backend, kein Wallet-Key
   auf dem Webserver-Host; Wallet verschlüsselt, Backup der wallet.dat).
 
-## 4. Was noch fehlt (Reihenfolge bis zum Start)
+## 4. Stand & Startcheckliste
 
-1. **YEET-Smart-Contract** (BEP-20, 21-Mrd.-Cap, Minter/Vesting) — wird separat
-   geschrieben; der Swap zahlt über denselben Minter-Pfad aus.
-2. Note-Fullnode aufsetzen (+ ggf. Fork/Docker), Testnet-Durchstich:
-   tnote-Einzahlung → YEET-Testnet-Mint.
-3. Backend: Migration (`swap_addresses`, `swap_deposits`), Watcher-Job,
-   API (`POST /api/v1/swap/address`, `GET /api/v1/swap/status`),
-   Ledger-tx_types `NOTE_SWAP_IN` / `NOTE_SWAP_PAYOUT`.
-4. Swap-Seite entsperren (Formular aktivieren), Mindestbetrag + Confirmations
-   final festlegen, **Startankündigung überall**.
+**Bereits umgesetzt (im Repo):**
+
+- ✅ Öffentliche Swap-Seite `frontend/swap.html` (DE/EN, Rechner, Sperr-Banner,
+  liest `GET /api/v1/swap/status`; sobald `enabled`, erscheint der Ablauf
+  „Einzahladresse anfordern → Adresse + eigene Einzahlungen").
+- ✅ Migration `0044_note_swap.sql`: `swap_addresses` (1 Adresse ↔ 1 User),
+  `swap_deposits` (Idempotenz über `txid,vout`; `seen|credited|failed`).
+- ✅ `services/note_swap.rs`: Env-Konfiguration, Bitcoin-Core-JSON-RPC-Client,
+  Adressvergabe (`getnewaddress`, Label = User-ID), 60-s-Watcher
+  (`listtransactions` → Upsert → Gutschrift ab N Bestätigungen als
+  `token_rewards` `kind='conversion', action='note_swap'` → Admin-Freigabe →
+  Batch-Minter), Ledger-Eintrag `note_swap_in` (Asset `NOTE`), Guards
+  (Mindestbetrag, 500-Mio.-Cap, verknüpfte Wallet → sonst `failed` + Grund).
+- ✅ API: `GET /api/v1/swap/status` (öffentlich), `POST /api/v1/swap/address`
+  (`SWAP_LOCKED` → `KYC_REQUIRED` → `NO_WALLET_LINKED`), `GET /api/v1/swap/deposits`.
+- ✅ Payout-Fehlerpfad (`0043`): gescheiterte Mints werden nach
+  `YEET_MINT_MAX_ATTEMPTS` als `failed` geparkt und sind im Admin ablehn-/erstattbar.
+
+**Env-Variablen (Backend):**
+
+| Variable | Default | Bedeutung |
+| --- | --- | --- |
+| `SWAP_ENABLED` | `false` | Hauptschalter; solange aus, ist alles inert |
+| `NOTE_RPC_URL` | – | JSON-RPC des eigenen Note-Nodes, z. B. `http://note-node:16157` |
+| `NOTE_RPC_USER` / `NOTE_RPC_PASS` | – | RPC-Zugang (Basic Auth) |
+| `SWAP_CONFIRMATIONS` | `120` | Bestätigungen bis Gutschrift (~1 h bei 30-s-Blöcken) |
+| `SWAP_POOL_CAP_YEET` | `500000000` | Deckel der Swap-Auszahlungen in YEET |
+| `SWAP_MIN_NOTE` | `0` | Mindestbetrag je Einzahlung (0 = keiner) |
+| `YEET_MINT_MAX_ATTEMPTS` | `5` | Mint-Versuche bis `failed` |
+
+**Noch offen bis zum Start (Reihenfolge):**
+
+1. **YEET-Smart-Contract** (BEP-20, 21-Mrd.-Cap, Minter/Vesting) — separat;
+   der Swap zahlt über denselben Minter-Pfad aus.
+2. **Note-Fullnode** aufsetzen (Release ≥ v1.1.0.0; ggf. Fork für Build/Docker/ZMQ),
+   RPC nur intern erreichbar, Wallet verschlüsselt + Backup.
+3. **Testnet-Durchstich:** `tnote`-Einzahlung → Watcher → Admin-Freigabe → Testnet-Mint.
+4. Mindestbetrag + Bestätigungen final festlegen (`SWAP_MIN_NOTE`, `SWAP_CONFIRMATIONS`).
+5. `SWAP_ENABLED=true` setzen → Seite entsperrt sich automatisch → **Startankündigung überall**.
 
 ## 5. Sicherheits-/Compliance-Notizen
 
