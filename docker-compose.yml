@@ -56,6 +56,7 @@ services:
       TRANSLATE_PROVIDER: ${TRANSLATE_PROVIDER:-}
       TRANSLATE_URL: ${TRANSLATE_URL:-}
       TRANSLATE_API_KEY: ${TRANSLATE_API_KEY:-}
+      TRANSLATE_REGION: ${TRANSLATE_REGION:-}
       UPLOADS_DIR: /app/uploads
     volumes:
       - yeet_uploads:/app/uploads

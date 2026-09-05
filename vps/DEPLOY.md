@@ -57,10 +57,10 @@ SMTP_PASS=...
 SMTP_FROM=noreply@justyeet.it
 PUBLIC_BASE_URL=https://justyeet.it
 
-# Post translation via DeepL API Free (500k chars/month). Empty provider = off.
-TRANSLATE_PROVIDER=deepl
-TRANSLATE_URL=https://api-free.deepl.com
-TRANSLATE_API_KEY=...:fx
+# Post translation: azure (2M chars/month free) | google (500k free) | deepl | libretranslate. Empty = off.
+TRANSLATE_PROVIDER=azure
+TRANSLATE_API_KEY=...
+TRANSLATE_REGION=germanywestcentral   # Azure only
 ```
 Generate fresh values with `openssl rand -hex 64` and `openssl rand -hex 32`,
 then `chmod 600 /root/yeet-social/.env`. Never commit.

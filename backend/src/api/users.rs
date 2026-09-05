@@ -14,6 +14,8 @@ struct ProfileRow {
     age_verified_at: Option<DateTime<Utc>>,
     age_badge_hidden: Option<bool>,
     e2ee_public_key: Option<String>,
+    #[sqlx(default)]
+    is_bot: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,14 +48,14 @@ pub async fn get_profile(
 ) -> AppResult<Json<ApiResponse<UserProfile>>> {
     // Accept either a UUID (email-only users) or a wallet address
     let query = if address.parse::<Uuid>().is_ok() {
-        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
+        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at, u.is_bot,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
                 u.age_verified_at, u.age_badge_hidden, u.e2ee_public_key
          FROM users u WHERE u.id = $1::uuid"
     } else {
-        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at,
+        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at, u.is_bot,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
@@ -107,6 +109,7 @@ pub async fn get_profile(
         has_blocked_me,
         e2ee_ready: r.e2ee_public_key.is_some(),
         is_following,
+        is_bot: r.is_bot.unwrap_or(false),
     })))
 }
 

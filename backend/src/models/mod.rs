@@ -32,6 +32,9 @@ pub struct UserProfile {
     // anonymous callers.
     #[serde(default)]
     pub is_following: bool,
+    /// System account (changelog bot etc.) — UI shows a BOT badge.
+    #[serde(default)]
+    pub is_bot: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -107,6 +110,9 @@ pub struct FeedPostAuthor {
     pub wallet_address: Option<String>,
     pub display_name: Option<String>,
     pub avatar_url: Option<String>,
+    /// System account (e.g. the changelog bot) — UI shows a BOT badge.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub is_bot: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
