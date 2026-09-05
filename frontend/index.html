@@ -618,6 +618,22 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-star"></span> <span data-i18n="settings.mood">Color mood</span></div>
         <div id="moodPicker" style="display:flex;flex-wrap:wrap;gap:10px"></div>
       </div>
+      <div style="background:var(--card-2);border-radius:12px;padding:16px" id="feedFilterSettings">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-globe"></span> <span data-i18n="ff.title">Feed filter</span></div>
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px" data-i18n="ff.hint">Show only posts in certain languages or from certain countries. Applies to the global feed, Audio and 18+. Following always stays complete.</p>
+        <div style="font-weight:600;font-size:13px;margin:8px 0 6px" data-i18n="ff.langTitle">Languages</div>
+        <label class="a11y-row"><input type="radio" name="ffLangMode" value="all"><span data-i18n="ff.langAll">All languages</span></label>
+        <label class="a11y-row"><input type="radio" name="ffLangMode" value="mine"><span><span data-i18n="ff.langMine">Only my language</span> <small id="ffLangMineName" style="display:inline"></small></span></label>
+        <label class="a11y-row"><input type="radio" name="ffLangMode" value="custom"><span data-i18n="ff.langCustom">Selected languages</span></label>
+        <div id="ffLangList" class="ff-list" style="display:none"></div>
+        <div style="font-weight:600;font-size:13px;margin:12px 0 6px" data-i18n="ff.countryTitle">Countries</div>
+        <div class="a11y-row" style="align-items:center;cursor:default"><label for="ffMyCountry" data-i18n="ff.myCountry" style="flex:1">My country</label><select id="ffMyCountry" class="ff-select"></select></div>
+        <label class="a11y-row"><input type="radio" name="ffCountryMode" value="all"><span data-i18n="ff.countryAll">Posts from all countries</span></label>
+        <label class="a11y-row"><input type="radio" name="ffCountryMode" value="custom"><span data-i18n="ff.countryCustom">Only posts from these countries</span></label>
+        <div id="ffCountryPick" style="display:none;margin-left:28px"><div style="display:flex;gap:6px;align-items:center"><select id="ffCountryAdd" class="ff-select" style="flex:1"></select><button type="button" id="ffCountryAddBtn" class="a11y-btn" style="width:auto;margin:0;padding:6px 12px" data-i18n="ff.add">Add</button></div><div id="ffCountryChips" class="ff-chips"></div></div>
+        <p style="font-size:11px;color:var(--muted);margin:10px 0 6px" data-i18n="ff.unknownNote">Posts whose language is unknown stay visible. When a country filter is active, authors who have not set a country are hidden.</p>
+        <button type="button" class="a11y-btn" id="ffSaveBtn" data-i18n="ff.save">Save filter</button>
+      </div>
       <div style="background:var(--card-2);border-radius:12px;padding:16px" id="a11ySettings">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-eye"></span> <span data-i18n="a11y.title">Accessibility</span></div>
         <label class="a11y-row"><input type="checkbox" id="a11ySr" onchange="YeetA11y.setPref('sr',this.checked)"><span><b data-i18n="a11y.srMode">Screen reader mode</b><small data-i18n="a11y.srModeHint">Visible button labels, strong focus outline, keyboard shortcuts (press ? for help), spoken view changes, no animations.</small></span></label>
@@ -851,6 +867,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 (function(){
   var DICTS = {
     en: {
+      // --- feed filter ---
+      'ff.title':'Feed filter',
+      'ff.hint':'Show only posts in certain languages or from certain countries. Applies to the global feed, Audio and 18+. Following always stays complete.',
+      'ff.langTitle':'Languages',
+      'ff.langAll':'All languages',
+      'ff.langMine':'Only my language',
+      'ff.langCustom':'Selected languages',
+      'ff.countryTitle':'Countries',
+      'ff.myCountry':'My country',
+      'ff.countryNone':'— not set —',
+      'ff.countryAll':'Posts from all countries',
+      'ff.countryCustom':'Only posts from these countries',
+      'ff.add':'Add',
+      'ff.remove':'Remove',
+      'ff.unknownNote':'Posts whose language is unknown stay visible. When a country filter is active, authors who have not set a country are hidden.',
+      'ff.save':'Save filter',
+      'ff.saved':'Feed filter saved',
+      'ff.chip':'Filter',
       // --- audio stories ---
       'tab.audio':'AUDIO',
       'audio.title':'Audio Stories',
@@ -1262,6 +1296,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'No comments yet',
     },
     de: {
+      // --- feed filter ---
+      'ff.title':'Feed-Filter',
+      'ff.hint':'Zeige nur Posts in bestimmten Sprachen oder aus bestimmten Ländern. Gilt für den globalen Feed, Audio und 18+. „Gefolgt" bleibt immer vollständig.',
+      'ff.langTitle':'Sprachen',
+      'ff.langAll':'Alle Sprachen',
+      'ff.langMine':'Nur meine Sprache',
+      'ff.langCustom':'Ausgewählte Sprachen',
+      'ff.countryTitle':'Länder',
+      'ff.myCountry':'Mein Land',
+      'ff.countryNone':'— nicht gesetzt —',
+      'ff.countryAll':'Posts aus allen Ländern',
+      'ff.countryCustom':'Nur Posts aus diesen Ländern',
+      'ff.add':'Hinzufügen',
+      'ff.remove':'Entfernen',
+      'ff.unknownNote':'Posts mit unbekannter Sprache bleiben sichtbar. Bei aktivem Länderfilter werden Autoren ohne gesetztes Land ausgeblendet.',
+      'ff.save':'Filter speichern',
+      'ff.saved':'Feed-Filter gespeichert',
+      'ff.chip':'Filter',
       // --- audio stories ---
       'tab.audio':'AUDIO',
       'audio.title':'Audio Stories',
@@ -1651,6 +1703,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'Noch keine Kommentare',
     },
     it: {
+      // --- feed filter ---
+      'ff.title':'Filtro del feed',
+      'ff.hint':'Mostra solo post in certe lingue o da certi paesi. Vale per il feed globale, Audio e 18+. „Seguiti" resta sempre completo.',
+      'ff.langTitle':'Lingue',
+      'ff.langAll':'Tutte le lingue',
+      'ff.langMine':'Solo la mia lingua',
+      'ff.langCustom':'Lingue selezionate',
+      'ff.countryTitle':'Paesi',
+      'ff.myCountry':'Il mio paese',
+      'ff.countryNone':'— non impostato —',
+      'ff.countryAll':'Post da tutti i paesi',
+      'ff.countryCustom':'Solo post da questi paesi',
+      'ff.add':'Aggiungi',
+      'ff.remove':'Rimuovi',
+      'ff.unknownNote':'I post con lingua sconosciuta restano visibili. Con un filtro per paese attivo, gli autori senza paese impostato vengono nascosti.',
+      'ff.save':'Salva filtro',
+      'ff.saved':'Filtro del feed salvato',
+      'ff.chip':'Filtro',
       // --- audio stories ---
       'tab.audio':'AUDIO',
       'audio.title':'Audio Stories',
@@ -2315,6 +2385,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portoghese','settings.langFinnish':'Finlandese','settings.langSwedish':'Svedese','settings.langNorwegian':'Norvegese','settings.langIcelandic':'Islandese',
     },
     fr: {
+      // --- feed filter ---
+      'ff.title':'Filtre du fil',
+      'ff.hint':'Affiche uniquement les posts dans certaines langues ou de certains pays. S\'applique au fil global, à Audio et à 18+. « Abonnements » reste toujours complet.',
+      'ff.langTitle':'Langues',
+      'ff.langAll':'Toutes les langues',
+      'ff.langMine':'Seulement ma langue',
+      'ff.langCustom':'Langues sélectionnées',
+      'ff.countryTitle':'Pays',
+      'ff.myCountry':'Mon pays',
+      'ff.countryNone':'— non défini —',
+      'ff.countryAll':'Posts de tous les pays',
+      'ff.countryCustom':'Seulement les posts de ces pays',
+      'ff.add':'Ajouter',
+      'ff.remove':'Retirer',
+      'ff.unknownNote':'Les posts dont la langue est inconnue restent visibles. Avec un filtre par pays actif, les auteurs sans pays défini sont masqués.',
+      'ff.save':'Enregistrer le filtre',
+      'ff.saved':'Filtre du fil enregistré',
+      'ff.chip':'Filtre',
       // --- audio stories ---
       'tab.audio':'AUDIO',
       'audio.title':'Audio Stories',
@@ -2979,6 +3067,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugais','settings.langFinnish':'Finnois','settings.langSwedish':'Suédois','settings.langNorwegian':'Norvégien','settings.langIcelandic':'Islandais',
     },
     es: {
+      // --- feed filter ---
+      'ff.title':'Filtro del feed',
+      'ff.hint':'Muestra solo posts en ciertos idiomas o de ciertos países. Se aplica al feed global, Audio y 18+. „Siguiendo" siempre se muestra completo.',
+      'ff.langTitle':'Idiomas',
+      'ff.langAll':'Todos los idiomas',
+      'ff.langMine':'Solo mi idioma',
+      'ff.langCustom':'Idiomas seleccionados',
+      'ff.countryTitle':'Países',
+      'ff.myCountry':'Mi país',
+      'ff.countryNone':'— sin definir —',
+      'ff.countryAll':'Posts de todos los países',
+      'ff.countryCustom':'Solo posts de estos países',
+      'ff.add':'Añadir',
+      'ff.remove':'Quitar',
+      'ff.unknownNote':'Los posts con idioma desconocido siguen visibles. Con un filtro de país activo, se ocultan los autores que no han definido su país.',
+      'ff.save':'Guardar filtro',
+      'ff.saved':'Filtro del feed guardado',
+      'ff.chip':'Filtro',
       // --- audio stories ---
       'tab.audio':'AUDIO',
       'audio.title':'Audio Stories',
@@ -3643,6 +3749,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugués','settings.langFinnish':'Finés','settings.langSwedish':'Sueco','settings.langNorwegian':'Noruego','settings.langIcelandic':'Islandés',
     },
     pt: {
+      // --- feed filter ---
+      'ff.title':'Filtro do feed',
+      'ff.hint':'Mostre só posts em certos idiomas ou de certos países. Vale para o feed global, Áudio e 18+. „Seguindo" continua sempre completo.',
+      'ff.langTitle':'Idiomas',
+      'ff.langAll':'Todos os idiomas',
+      'ff.langMine':'Só o meu idioma',
+      'ff.langCustom':'Idiomas selecionados',
+      'ff.countryTitle':'Países',
+      'ff.myCountry':'Meu país',
+      'ff.countryNone':'— não definido —',
+      'ff.countryAll':'Posts de todos os países',
+      'ff.countryCustom':'Só posts destes países',
+      'ff.add':'Adicionar',
+      'ff.remove':'Remover',
+      'ff.unknownNote':'Posts com idioma desconhecido continuam visíveis. Com um filtro de país ativo, autores sem país definido ficam ocultos.',
+      'ff.save':'Salvar filtro',
+      'ff.saved':'Filtro do feed salvo',
+      'ff.chip':'Filtro',
       // --- audio stories ---
       'tab.audio':'ÁUDIO',
       'audio.title':'Audio Stories',
@@ -4307,6 +4431,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Português','settings.langFinnish':'Finlandês','settings.langSwedish':'Sueco','settings.langNorwegian':'Norueguês','settings.langIcelandic':'Islandês',
     },
     fi: {
+      // --- feed filter ---
+      'ff.title':'Syötteen suodatin',
+      'ff.hint':'Näytä vain tietynkieliset tai tietyistä maista tulevat postaukset. Koskee yleistä syötettä, Ääntä ja 18+. „Seuratut" pysyy aina täydellisenä.',
+      'ff.langTitle':'Kielet',
+      'ff.langAll':'Kaikki kielet',
+      'ff.langMine':'Vain oma kieleni',
+      'ff.langCustom':'Valitut kielet',
+      'ff.countryTitle':'Maat',
+      'ff.myCountry':'Oma maani',
+      'ff.countryNone':'— ei asetettu —',
+      'ff.countryAll':'Postaukset kaikista maista',
+      'ff.countryCustom':'Vain postaukset näistä maista',
+      'ff.add':'Lisää',
+      'ff.remove':'Poista',
+      'ff.unknownNote':'Postaukset, joiden kieli on tuntematon, pysyvät näkyvissä. Kun maasuodatin on käytössä, kirjoittajat ilman maata piilotetaan.',
+      'ff.save':'Tallenna suodatin',
+      'ff.saved':'Syötteen suodatin tallennettu',
+      'ff.chip':'Suodatin',
       'tab.audio':'ÄÄNI',
       'audio.title':'Audio Stories',
       'audio.record':'Äänitä',
@@ -4973,6 +5115,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'islanti',
     },
     sv: {
+      // --- feed filter ---
+      'ff.title':'Flödesfilter',
+      'ff.hint':'Visa bara inlägg på vissa språk eller från vissa länder. Gäller det globala flödet, Ljud och 18+. „Följer" är alltid komplett.',
+      'ff.langTitle':'Språk',
+      'ff.langAll':'Alla språk',
+      'ff.langMine':'Bara mitt språk',
+      'ff.langCustom':'Valda språk',
+      'ff.countryTitle':'Länder',
+      'ff.myCountry':'Mitt land',
+      'ff.countryNone':'— inte angivet —',
+      'ff.countryAll':'Inlägg från alla länder',
+      'ff.countryCustom':'Bara inlägg från dessa länder',
+      'ff.add':'Lägg till',
+      'ff.remove':'Ta bort',
+      'ff.unknownNote':'Inlägg med okänt språk visas fortfarande. När ett landsfilter är aktivt döljs författare som inte angett något land.',
+      'ff.save':'Spara filter',
+      'ff.saved':'Flödesfilter sparat',
+      'ff.chip':'Filter',
       'tab.audio':'LJUD',
       'audio.title':'Audio Stories',
       'audio.record':'Spela in',
@@ -5639,6 +5799,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'isländska',
     },
     nb: {
+      // --- feed filter ---
+      'ff.title':'Feedfilter',
+      'ff.hint':'Vis bare innlegg på visse språk eller fra visse land. Gjelder den globale feeden, Lyd og 18+. „Følger" er alltid komplett.',
+      'ff.langTitle':'Språk',
+      'ff.langAll':'Alle språk',
+      'ff.langMine':'Bare mitt språk',
+      'ff.langCustom':'Valgte språk',
+      'ff.countryTitle':'Land',
+      'ff.myCountry':'Mitt land',
+      'ff.countryNone':'— ikke angitt —',
+      'ff.countryAll':'Innlegg fra alle land',
+      'ff.countryCustom':'Bare innlegg fra disse landene',
+      'ff.add':'Legg til',
+      'ff.remove':'Fjern',
+      'ff.unknownNote':'Innlegg med ukjent språk vises fortsatt. Når et landsfilter er aktivt, skjules forfattere som ikke har angitt land.',
+      'ff.save':'Lagre filter',
+      'ff.saved':'Feedfilter lagret',
+      'ff.chip':'Filter',
       'tab.audio':'LYD',
       'audio.title':'Audio Stories',
       'audio.record':'Ta opp',
@@ -6305,6 +6483,24 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'islandsk',
     },
     is: {
+      // --- feed filter ---
+      'ff.title':'Sía fyrir strauminn',
+      'ff.hint':'Sýna aðeins færslur á ákveðnum tungumálum eða frá ákveðnum löndum. Gildir um heimsstrauminn, Hljóð og 18+. „Fylgt" er alltaf heilt.',
+      'ff.langTitle':'Tungumál',
+      'ff.langAll':'Öll tungumál',
+      'ff.langMine':'Aðeins mitt tungumál',
+      'ff.langCustom':'Valin tungumál',
+      'ff.countryTitle':'Lönd',
+      'ff.myCountry':'Landið mitt',
+      'ff.countryNone':'— ekki stillt —',
+      'ff.countryAll':'Færslur frá öllum löndum',
+      'ff.countryCustom':'Aðeins færslur frá þessum löndum',
+      'ff.add':'Bæta við',
+      'ff.remove':'Fjarlægja',
+      'ff.unknownNote':'Færslur með óþekkt tungumál eru áfram sýnilegar. Þegar landasía er virk eru höfundar án lands faldir.',
+      'ff.save':'Vista síu',
+      'ff.saved':'Sía vistuð',
+      'ff.chip':'Sía',
       'tab.audio':'HLJÓÐ',
       'audio.title':'Audio Stories',
       'audio.record':'Taka upp',
@@ -16740,6 +16936,157 @@ function showCta(){
 function hideCta(){ var c=document.getElementById('audioCta'); if(c) c.remove(); }
 function setEmpty(isEmpty){ var e=document.getElementById('audioCtaEmpty'); if(e) e.hidden=!isEmpty; }
 window.YeetAudio={open:open,close:close,showCta:showCta,hideCta:hideCta,setEmpty:setEmpty,supported:supported};
+})();
+</script>
+
+<style>
+/* ===== Feed filter (language / country) ===== */
+#feedFilterChip{display:inline-flex;align-items:center;gap:6px;background:rgba(var(--accent-rgb),.12);color:var(--accent);border:1px solid rgba(var(--accent-rgb),.4);border-radius:14px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ff-list{display:flex;flex-wrap:wrap;gap:6px 14px;margin:4px 0 10px 28px}
+.ff-list label{display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.ff-list input{accent-color:var(--accent)}
+.ff-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ff-chip{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:12px}
+.ff-chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+.ff-select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px;max-width:100%}
+</style>
+<script>
+/* ===== YeetFeedFilter — show only posts in chosen languages and/or from
+   chosen countries. Stored server-side (user_settings.feed_langs /
+   feed_countries), applied by the backend to the global, audio and 18+
+   feeds; "Following" always stays complete. ===== */
+(function(){
+'use strict';
+var T=function(k,v){return window.t?window.t(k,v):k;};
+var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+var LANGS=['en','de','it','fr','es','pt','fi','sv','nb','is'];
+var LANGKEY={en:'settings.langEnglish',de:'settings.langGerman',it:'settings.langItalian',fr:'settings.langFrench',es:'settings.langSpanish',pt:'settings.langPortuguese',fi:'settings.langFinnish',sv:'settings.langSwedish',nb:'settings.langNorwegian',is:'settings.langIcelandic'};
+var COUNTRIES=('AD AE AF AG AI AL AM AO AR AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GH GI GL GM GN GQ GR GT GW GY HK HN HR HT HU ID IE IL IN IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MR MT MU MV MW MX MY MZ NA NE NG NI NL NO NP NZ OM PA PE PG PH PK PL PR PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VN VU WS YE ZA ZM ZW').split(' ');
+var state={langs:[],countries:[],myCountry:'',loaded:false};
+var uiLang=function(){return window.getLang?window.getLang():'en';};
+var jwt=function(){try{return localStorage.getItem('yeet_jwt')||'';}catch(e){return '';}};
+var langMode=function(){try{return localStorage.getItem('yeet_ff_lang_mode')||'';}catch(e){return '';}};
+
+function countryName(code){
+  try{ var dn=new Intl.DisplayNames([uiLang()],{type:'region'}); return dn.of(code)||code; }catch(e){ return code; }
+}
+function countryOptions(sel,includeNone){
+  var names=COUNTRIES.map(function(c){return {c:c,n:countryName(c)};}).sort(function(a,b){return a.n.localeCompare(b.n,uiLang());});
+  var html=includeNone?'<option value="">'+esc(T('ff.countryNone'))+'</option>':'';
+  names.forEach(function(x){ html+='<option value="'+x.c+'">'+esc(x.n)+'</option>'; });
+  sel.innerHTML=html;
+}
+function renderSettings(){
+  var box=document.getElementById('feedFilterSettings'); if(!box) return;
+  // languages
+  var list=document.getElementById('ffLangList');
+  list.innerHTML=LANGS.map(function(l){ return '<label><input type="checkbox" value="'+l+'"'+(state.langs.indexOf(l)>=0?' checked':'')+'> '+esc(T(LANGKEY[l]))+'</label>'; }).join('');
+  var mode=langMode()||(state.langs.length===0?'all':(state.langs.length===1&&state.langs[0]===uiLang()?'mine':'custom'));
+  if(state.langs.length===0) mode='all';
+  var r=box.querySelector('input[name="ffLangMode"][value="'+mode+'"]'); if(r) r.checked=true;
+  list.style.display=mode==='custom'?'flex':'none';
+  var mn=document.getElementById('ffLangMineName'); if(mn) mn.textContent='('+T(LANGKEY[uiLang()])+')';
+  // countries
+  var my=document.getElementById('ffMyCountry'); countryOptions(my,true); my.value=state.myCountry||'';
+  var add=document.getElementById('ffCountryAdd'); countryOptions(add,false);
+  var cm=box.querySelector('input[name="ffCountryMode"][value="'+(state.countries.length?'custom':'all')+'"]'); if(cm) cm.checked=true;
+  document.getElementById('ffCountryPick').style.display=state.countries.length?'block':'none';
+  renderChips();
+}
+function renderChips(){
+  var wrap=document.getElementById('ffCountryChips'); if(!wrap) return;
+  wrap.innerHTML=state.countries.map(function(c){ return '<span class="ff-chip">'+esc(countryName(c))+' <button type="button" data-c="'+c+'" aria-label="'+esc(T('ff.remove'))+' '+esc(countryName(c))+'">×</button></span>'; }).join('');
+}
+function bind(){
+  var box=document.getElementById('feedFilterSettings'); if(!box||box.__bound) return; box.__bound=true;
+  box.addEventListener('change',function(e){
+    var t=e.target;
+    if(t.name==='ffLangMode'){ document.getElementById('ffLangList').style.display=t.value==='custom'?'flex':'none'; }
+    if(t.name==='ffCountryMode'){ document.getElementById('ffCountryPick').style.display=t.value==='custom'?'block':'none'; }
+  });
+  document.getElementById('ffCountryAddBtn').addEventListener('click',function(){
+    var v=document.getElementById('ffCountryAdd').value; if(v&&state.countries.indexOf(v)<0){ state.countries.push(v); renderChips(); }
+  });
+  document.getElementById('ffCountryChips').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-c]'); if(!b) return; state.countries=state.countries.filter(function(c){return c!==b.dataset.c;}); renderChips();
+  });
+  document.getElementById('ffSaveBtn').addEventListener('click',save);
+}
+async function load(){
+  if(!jwt()) return;
+  try{
+    var r=await fetch('/api/v1/settings',{headers:{'Authorization':'Bearer '+jwt()}}); var d=await r.json();
+    if(d&&d.success&&d.data){ state.langs=Array.isArray(d.data.feed_langs)?d.data.feed_langs:[]; state.countries=Array.isArray(d.data.feed_countries)?d.data.feed_countries:[]; }
+    var r2=await fetch('/api/v1/users/me',{headers:{'Authorization':'Bearer '+jwt()}}); var d2=await r2.json();
+    if(d2&&d2.success&&d2.data) state.myCountry=d2.data.country_code||'';
+    state.loaded=true;
+  }catch(e){}
+  renderChip(); if(document.getElementById('feedFilterSettings')) renderSettings();
+}
+function collect(){
+  var box=document.getElementById('feedFilterSettings');
+  var lm=(box.querySelector('input[name="ffLangMode"]:checked')||{}).value||'all';
+  var langs=lm==='all'?[]:lm==='mine'?[uiLang()]:Array.prototype.map.call(box.querySelectorAll('#ffLangList input:checked'),function(i){return i.value;});
+  var cm=(box.querySelector('input[name="ffCountryMode"]:checked')||{}).value||'all';
+  var countries=cm==='all'?[]:state.countries.slice();
+  var my=(document.getElementById('ffMyCountry')||{}).value||'';
+  try{ localStorage.setItem('yeet_ff_lang_mode',lm); }catch(e){}
+  return {langs:langs,countries:countries,my:my,lm:lm};
+}
+async function save(){
+  if(!jwt()){ if(window.showToast) window.showToast(T('common.pleaseLogin')); return; }
+  var c=collect(); var btn=document.getElementById('ffSaveBtn'); if(btn) btn.disabled=true;
+  try{
+    var r=await fetch('/api/v1/settings',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt()},body:JSON.stringify({feed_langs:c.langs,feed_countries:c.countries})});
+    var d=await r.json().catch(function(){return null;});
+    if(!r.ok||!d||!d.success) throw new Error((d&&d.error&&d.error.message)||T('common.error'));
+    state.langs=(d.data&&d.data.feed_langs)||c.langs; state.countries=(d.data&&d.data.feed_countries)||c.countries;
+    if(c.my!==state.myCountry){
+      var r3=await fetch('/api/v1/users/me',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt()},body:JSON.stringify({country_code:c.my})});
+      if(!r3.ok) throw new Error(T('common.error'));
+      state.myCountry=c.my;
+    }
+    renderChip(); if(window.showToast) window.showToast(T('ff.saved'),'success');
+    if(window.YeetA11y) window.YeetA11y.announce(T('ff.saved'));
+    reloadFeed();
+  }catch(e){ if(window.showToast) window.showToast(e&&e.message||T('common.error'),'error'); }
+  finally{ if(btn) btn.disabled=false; }
+}
+function reloadFeed(){
+  var active=document.querySelector('.tab.active'); var k=active&&active.dataset.tab;
+  if(k==='audio'&&window.loadFeedFiltered) window.loadFeedFiltered('audio');
+  else if(k==='adult'&&window.loadFeedFiltered) window.loadFeedFiltered('adult');
+  else if(k==='following'&&window.loadFollowingFeed) window.loadFollowingFeed();
+  else if(typeof window.loadFeed==='function') window.loadFeed();
+}
+function renderChip(){
+  var h=document.querySelector('.feed-header'); if(!h) return;
+  var chip=document.getElementById('feedFilterChip');
+  var parts=[];
+  if(state.langs.length) parts.push(state.langs.map(function(l){return LANGKEY[l]?T(LANGKEY[l]):l.toUpperCase();}).join(', '));
+  if(state.countries.length) parts.push(state.countries.join(', '));
+  if(!parts.length){ if(chip) chip.remove(); return; }
+  if(!chip){ chip=document.createElement('button'); chip.id='feedFilterChip'; chip.type='button'; chip.addEventListener('click',function(){ if(window.openSettingsModal) window.openSettingsModal(); setTimeout(function(){ var b=document.getElementById('feedFilterSettings'); if(b) b.scrollIntoView({block:'start'}); },80); }); var h2=h.querySelector('h2'); (h2||h).insertAdjacentElement('afterend',chip); }
+  var label=T('ff.chip')+': '+parts.join(' · '); chip.textContent=label; chip.title=label; chip.setAttribute('aria-label',label);
+}
+function onLangChange(){
+  // "Only my language" follows the UI language.
+  if(langMode()==='mine'&&jwt()&&state.langs.length===1&&state.langs[0]!==uiLang()){
+    state.langs=[uiLang()];
+    fetch('/api/v1/settings',{method:'PATCH',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt()},body:JSON.stringify({feed_langs:state.langs})}).catch(function(){});
+  }
+  renderChip(); if(document.getElementById('feedFilterSettings')&&document.getElementById('settingsModal').classList.contains('on')) renderSettings();
+}
+function boot(){
+  bind();
+  var origOpen=window.openSettingsModal;
+  if(typeof origOpen==='function') window.openSettingsModal=function(){ var r=origOpen.apply(this,arguments); bind(); if(state.loaded) renderSettings(); load(); return r; };
+  var origSet=window.setLang;
+  if(typeof origSet==='function') window.setLang=function(l){ var r=origSet.apply(this,arguments); onLangChange(); return r; };
+  if(jwt()) setTimeout(load,700);
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+window.YeetFeedFilter={load:load,save:save,renderChip:renderChip,state:state};
 })();
 </script>
 

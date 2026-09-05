@@ -16,6 +16,8 @@ struct ProfileRow {
     e2ee_public_key: Option<String>,
     #[sqlx(default)]
     is_bot: Option<bool>,
+    #[sqlx(default)]
+    country_code: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,6 +26,8 @@ pub struct UpdateProfileRequest {
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
     pub adult_content: Option<bool>,
+    /// ISO 3166-1 alpha-2 (e.g. "DE"); empty string clears it.
+    pub country_code: Option<String>,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -48,14 +52,14 @@ pub async fn get_profile(
 ) -> AppResult<Json<ApiResponse<UserProfile>>> {
     // Accept either a UUID (email-only users) or a wallet address
     let query = if address.parse::<Uuid>().is_ok() {
-        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at, u.is_bot,
+        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at, u.is_bot, u.country_code,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
                 u.age_verified_at, u.age_badge_hidden, u.e2ee_public_key
          FROM users u WHERE u.id = $1::uuid"
     } else {
-        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at, u.is_bot,
+        "SELECT u.id, u.wallet_address, u.display_name, u.bio, u.avatar_url, u.cover_url, u.created_at, u.is_bot, u.country_code,
                 (SELECT COUNT(*) FROM follows WHERE following_id = u.id)::bigint as follower_count,
                 (SELECT COUNT(*) FROM follows WHERE follower_id  = u.id)::bigint as following_count,
                 (SELECT COUNT(*) FROM posts WHERE author_id = u.id)::bigint as post_count,
@@ -110,6 +114,7 @@ pub async fn get_profile(
         e2ee_ready: r.e2ee_public_key.is_some(),
         is_following,
         is_bot: r.is_bot.unwrap_or(false),
+        country_code: r.country_code,
     })))
 }
 
@@ -129,6 +134,13 @@ pub async fn update_profile(
 ) -> AppResult<Json<ApiResponse<()>>> {
     if let Some(ref n) = req.display_name { if n.len() > 50 { return Err(AppError::Validation("Display name max 50 chars".into())); } }
     if let Some(ref b) = req.bio { if b.len() > 280 { return Err(AppError::Validation("Bio max 280 chars".into())); } }
+    // country: Some("") clears, Some("de") sets "DE", None leaves untouched.
+    let country: Option<Option<String>> = match req.country_code.as_deref().map(|c| c.trim().to_ascii_uppercase()) {
+        None => None,
+        Some(c) if c.is_empty() => Some(None),
+        Some(c) if c.len() == 2 && c.chars().all(|ch| ch.is_ascii_uppercase()) => Some(Some(c)),
+        Some(_) => return Err(AppError::Validation("country_code must be ISO 3166-1 alpha-2".into())),
+    };
 
     let user_id = resolve_user_id(&state, &auth.address).await?;
     sqlx::query(
@@ -136,11 +148,13 @@ pub async fn update_profile(
             display_name  = COALESCE($2, display_name),
             bio           = COALESCE($3, bio),
             avatar_url    = COALESCE($4, avatar_url),
+            country_code  = CASE WHEN $5 THEN $6 ELSE country_code END,
             updated_at    = NOW()
          WHERE id = $1"
     )
     .bind(user_id).bind(&req.display_name).bind(&req.bio)
     .bind(&req.avatar_url)
+    .bind(country.is_some()).bind(country.clone().flatten())
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
     if let Some(nsfw) = req.adult_content {

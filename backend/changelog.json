@@ -76,6 +76,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-06-02-feed-filter",
+      "text": "New: filter your feed by language and country. Settings → Feed filter lets you show only posts in your language (or a selection) and only from the countries you choose – change it any time. Set your own country there too so others can find your posts.",
+      "tags": [
+        "#FeedFilter",
+        "#NewFeature"
+      ]
     }
   ]
 }

@@ -70,6 +70,7 @@ pub async fn get_feed(
         Some("text") => Some("text".into()),
         _ => None,
     };
+    let (f_langs, f_countries) = viewer_filters(&state, viewer_id).await;
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
@@ -88,6 +89,8 @@ pub async fn get_feed(
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
           AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $4::text IS NOT NULL)
           AND ($4::text IS NULL OR p.kind = $4)
+          AND (cardinality($5::text[]) = 0 OR p.lang = ANY($5) OR p.lang IS NULL OR p.lang = 'und')
+          AND (cardinality($6::text[]) = 0 OR u.country_code = ANY($6))
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                            WHERE (ub.blocker_id = $3 AND ub.blocked_id = u.id)
                               OR (ub.blocker_id = u.id AND ub.blocked_id = $3))
@@ -96,7 +99,7 @@ pub async fn get_feed(
                  p.created_at DESC
         LIMIT $1 OFFSET $2"
     )
-    .bind(per_page).bind(offset).bind(viewer_id).bind(&kind)
+    .bind(per_page).bind(offset).bind(viewer_id).bind(&kind).bind(&f_langs).bind(&f_countries)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
@@ -104,11 +107,13 @@ pub async fn get_feed(
           WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
             AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $2::text IS NOT NULL)
             AND ($2::text IS NULL OR p.kind = $2)
+            AND (cardinality($3::text[]) = 0 OR p.lang = ANY($3) OR p.lang IS NULL OR p.lang = 'und')
+            AND (cardinality($4::text[]) = 0 OR u.country_code = ANY($4))
             AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                              WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
                                 OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"
     )
-    .bind(viewer_id).bind(&kind)
+    .bind(viewer_id).bind(&kind).bind(&f_langs).bind(&f_countries)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let posts = rows.into_iter().map(row_to_feed_post).collect();
@@ -117,6 +122,13 @@ pub async fn get_feed(
 
 /// Resolve the caller's UUID from the JWT subject (wallet address or
 /// `email:<uuid>` for the email-auth path).
+/// The viewer's feed filters (languages, countries); empty = no filter.
+async fn viewer_filters(state: &AppState, viewer_id: Uuid) -> (Vec<String>, Vec<String>) {
+    sqlx::query_as::<_, (Vec<String>, Vec<String>)>(
+        "SELECT COALESCE(feed_langs, '{}'), COALESCE(feed_countries, '{}') FROM user_settings WHERE user_id = $1"
+    ).bind(viewer_id).fetch_optional(state.db.pool()).await.ok().flatten().unwrap_or_default()
+}
+
 async fn resolve_viewer_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid> {
     if let Some(rest) = auth.address.strip_prefix("email:") {
         return rest.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
@@ -348,6 +360,7 @@ pub async fn get_adult_feed(
     let page = q.page.unwrap_or(1).max(1);
     let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
     let offset = (page - 1) * per_page;
+    let (f_langs, f_countries) = match resolve_viewer_id(&state, &auth).await { Ok(id) => viewer_filters(&state, id).await, Err(_) => (Vec::new(), Vec::new()) };
 
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
@@ -360,16 +373,23 @@ pub async fn get_adult_feed(
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE
           AND p.deleted_at IS NULL AND p.is_adult = TRUE
+          AND (cardinality($3::text[]) = 0 OR p.lang = ANY($3) OR p.lang IS NULL OR p.lang = 'und')
+          AND (cardinality($4::text[]) = 0 OR u.country_code = ANY($4))
         ORDER BY (p.pinned_until IS NOT NULL AND p.pinned_until > NOW()) DESC,
                  p.pinned_until DESC NULLS LAST,
                  p.created_at DESC
         LIMIT $1 OFFSET $2"
     )
-    .bind(per_page).bind(offset)
+    .bind(per_page).bind(offset).bind(&f_langs).bind(&f_countries)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM posts WHERE expires_at > NOW() AND deleted_at IS NULL AND is_adult = TRUE AND is_removed = FALSE"
+        "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
+          WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = TRUE AND p.is_removed = FALSE
+            AND (cardinality($1::text[]) = 0 OR p.lang = ANY($1) OR p.lang IS NULL OR p.lang = 'und')
+            AND (cardinality($2::text[]) = 0 OR u.country_code = ANY($2))"
+    )
+    .bind(&f_langs).bind(&f_countries
     )
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
