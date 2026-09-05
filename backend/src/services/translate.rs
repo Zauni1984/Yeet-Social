@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 6] = ["en", "de", "it", "fr", "es", "pt"];
+pub const SUPPORTED: [&str; 10] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -231,7 +231,7 @@ pub async fn detect(cfg: &TranslateConfig, text: &str) -> Option<String> {
     }
 }
 
-/// Cheap stop-word detector for the six UI languages. Deliberately
+/// Cheap stop-word detector for the ten UI languages. Deliberately
 /// conservative: needs a clear winner with at least two hits, otherwise
 /// `None`. Wrong guesses only cost a needless Translate button, missing
 /// guesses only cost auto-translation — so err on the side of `None`.
@@ -242,6 +242,10 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     const FR: &[&str] = &["les","des","est","pas","une","que","pour","dans","avec","vous","nous","sur","je","c'est","mais","très","tout","aussi","ce","au","du","le","la","et","un"];
     const ES: &[&str] = &["que","los","las","por","una","con","para","del","está","pero","como","más","este","esta","hoy","muy","también","yo","es","el","y","un","no","en","lo"];
     const PT: &[&str] = &["não","uma","com","para","você","que","isso","mais","muito","está","também","hoje","ele","ela","nós","um","os","as","do","da","é","o","e","em","de"];
+    const FI: &[&str] = &["ja","on","ei","että","se","hän","mutta","niin","kun","tämä","ole","olen","sinä","minä","myös","vain","nyt","kanssa","voi","tai","oli","ovat","jos","mitä","tänään"];
+    const SV: &[&str] = &["och","att","det","är","inte","jag","du","för","med","som","på","har","den","kan","ett","om","men","vi","så","nu","idag","bara","också","mycket","alla"];
+    const NB: &[&str] = &["og","er","det","ikke","jeg","du","for","med","som","på","har","den","kan","et","om","men","vi","så","nå","dag","bare","også","veldig","alle","til"];
+    const IS: &[&str] = &["og","er","það","ekki","ég","þú","fyrir","með","sem","á","hefur","hann","hún","getur","um","en","við","svo","núna","bara","líka","mjög","allir","til","að"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -249,7 +253,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
         .collect();
     if words.len() < 3 { return None; }
     let score = |list: &[&str]| words.iter().filter(|w| list.contains(w)).count();
-    let mut scores = [("en", score(EN)), ("de", score(DE)), ("it", score(IT)), ("fr", score(FR)), ("es", score(ES)), ("pt", score(PT))];
+    let mut scores = [("en", score(EN)), ("de", score(DE)), ("it", score(IT)), ("fr", score(FR)), ("es", score(ES)), ("pt", score(PT)),
+                      ("fi", score(FI)), ("sv", score(SV)), ("nb", score(NB)), ("is", score(IS))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -339,6 +344,10 @@ mod tests {
         assert_eq!(heuristic_detect("Je ne sais pas pour vous, mais c'est très bien aussi.").as_deref(), Some("fr"));
         assert_eq!(heuristic_detect("Hoy no tengo ganas de trabajar, pero es lo que hay.").as_deref(), Some("es"));
         assert_eq!(heuristic_detect("Hoje não estou com vontade de trabalhar, mas você sabe como é.").as_deref(), Some("pt"));
+        assert_eq!(heuristic_detect("Minä en tiedä, mutta se on hyvä ja sinä voit tulla tänään.").as_deref(), Some("fi"));
+        assert_eq!(heuristic_detect("Jag vet inte, men det är bra och du kan komma idag.").as_deref(), Some("sv"));
+        assert_eq!(heuristic_detect("Jeg vet ikke, men det er bra og du kan komme i dag.").as_deref(), Some("nb"));
+        assert_eq!(heuristic_detect("Ég veit það ekki, en þú getur komið með okkur núna.").as_deref(), Some("is"));
     }
 
     #[test]

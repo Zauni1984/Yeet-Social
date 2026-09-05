@@ -35,6 +35,9 @@ pub struct UserProfile {
     /// System account (changelog bot etc.) — UI shows a BOT badge.
     #[serde(default)]
     pub is_bot: bool,
+    /// Author's country (ISO 3166-1 alpha-2), if set in Settings.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub country_code: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
