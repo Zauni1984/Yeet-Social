@@ -53,6 +53,9 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://justyeet.it}
+      TRANSLATE_PROVIDER: ${TRANSLATE_PROVIDER:-}
+      TRANSLATE_URL: ${TRANSLATE_URL:-}
+      TRANSLATE_API_KEY: ${TRANSLATE_API_KEY:-}
       UPLOADS_DIR: /app/uploads
     volumes:
       - yeet_uploads:/app/uploads
