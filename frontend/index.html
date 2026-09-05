@@ -357,11 +357,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 </style>
 </head>
 <body>
+<a href="#main" class="skip-link" data-i18n="a11y.skip">Skip to content</a>
+<div id="a11yLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
 <!-- TICKER REMOVED -->
 
 <!-- NAV -->
-<nav>
+<nav aria-label="Top" data-i18n-aria="a11y.topbar">
  <div class="nav-inner">
   <button class="hamburger" onclick="toggleNav()" aria-label="Menu" data-i18n-aria="nav.menu">
     <span></span><span></span><span></span>
@@ -384,7 +386,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
     <!-- decoy fields absorb autofill heuristics -->
     <input type="text" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
     <input type="password" name="password" autocomplete="current-password" tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px">
-    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." data-i18n-placeholder="search.placeholder" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')performSearch(this.value);else if(event.key==='Escape')closeSearchResults()">
+    <input type="search" id="searchInput" placeholder="Search posts, users, tags..." data-i18n-placeholder="search.placeholder" data-i18n-aria="search.placeholder" inputmode="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" readonly onfocus="this.removeAttribute('readonly')" name="yeet_search" oninput="liveSearch(this.value)" onkeydown="if(event.key==='Enter')performSearch(this.value);else if(event.key==='Escape')closeSearchResults()">
   </div>
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')" data-i18n="auth.login">Login</button>
@@ -612,6 +614,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-star"></span> <span data-i18n="settings.mood">Color mood</span></div>
         <div id="moodPicker" style="display:flex;flex-wrap:wrap;gap:10px"></div>
       </div>
+      <div style="background:var(--card-2);border-radius:12px;padding:16px" id="a11ySettings">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-eye"></span> <span data-i18n="a11y.title">Accessibility</span></div>
+        <label class="a11y-row"><input type="checkbox" id="a11ySr" onchange="YeetA11y.setPref('sr',this.checked)"><span><b data-i18n="a11y.srMode">Screen reader mode</b><small data-i18n="a11y.srModeHint">Visible button labels, strong focus outline, keyboard shortcuts (press ? for help), spoken view changes, no animations.</small></span></label>
+        <label class="a11y-row"><input type="checkbox" id="a11yContrast" onchange="YeetA11y.setPref('contrast',this.checked)"><span><b data-i18n="a11y.contrast">High contrast</b></span></label>
+        <label class="a11y-row"><input type="checkbox" id="a11yText" onchange="YeetA11y.setPref('text',this.checked)"><span><b data-i18n="a11y.textSize">Large text</b></span></label>
+        <button type="button" class="a11y-btn" onclick="YeetA11y.showHelp()"><span data-i18n="a11y.shortcuts">Keyboard shortcuts</span></button>
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin:16px 0 10px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-speaker"></span> <span data-i18n="tts.title">Read aloud</span></div>
+        <p id="a11yTtsUnsupported" hidden style="font-size:12px;color:var(--muted);margin:0 0 8px" data-i18n="tts.unsupported">Your browser does not support speech output.</p>
+        <label class="a11y-row"><input type="checkbox" id="a11yTtsAuto" onchange="YeetA11y.setPref('ttsAuto',this.checked)"><span><b data-i18n="tts.auto">Read the feed aloud automatically</b><small data-i18n="tts.autoHint">Starts reading as soon as the feed loads (screen reader mode).</small></span></label>
+        <div class="a11y-row" style="align-items:center;cursor:default"><label for="a11yRate" data-i18n="tts.rate" style="flex:1">Reading speed</label><select id="a11yRate" onchange="YeetA11y.setPref('rate',this.value)" style="background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px"><option value="0.8">0.8×</option><option value="1">1×</option><option value="1.2">1.2×</option><option value="1.5">1.5×</option></select></div>
+        <button type="button" class="a11y-btn" id="a11yReadFeedBtn" onclick="closeSettingsModal();YeetReader.readFeed(null)"><span class="yi yi-play"></span> <span data-i18n="tts.readFeed">Read feed aloud</span></button>
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin:16px 0 10px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-translate"></span> <span data-i18n="tr.button">Translate</span></div>
+        <p id="trUnavailable" hidden style="font-size:12px;color:var(--muted);margin:0 0 8px" data-i18n="tr.unavailable">Translation is not available yet.</p>
+        <label class="a11y-row"><input type="checkbox" id="a11yAutoTr" onchange="YeetA11y.setPref('autoTr',this.checked)"><span><b data-i18n="tr.auto">Translate posts automatically</b><small data-i18n="tr.autoHint">Posts written in another language are shown in your language.</small></span></label>
+      </div>
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.account">Account</div>
         <button id="linkWalletBtn" onclick="linkWalletToEmailUser()" style="width:100%;background:rgba(var(--accent-rgb),0.13);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.27);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px;display:none"><span class="yi yi-key"></span> <span data-i18n="settings.linkWallet">Connect payout wallet</span></button>
@@ -695,7 +712,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 
 <!-- LAYOUT -->
 <div class="layout">
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main" data-i18n-aria="a11y.mainNav">
     <a class="nav-link active" href="#" data-nav="global" onclick="showGlobalFeed();return false;"><span class="yi yi-home"></span> <span data-i18n="nav.global">Global Feed</span></a>
     <a class="nav-link" href="#" data-nav="following" onclick="showFollowingFeed();return false;"><span class="yi yi-user"></span> <span data-i18n="nav.following">Following</span></a>
     <a class="nav-link" href="#" data-nav="trending" onclick="showTrendingFeed();return false;"><span class="yi yi-star"></span> <span data-i18n="nav.trending">Trending</span> <span class="badge">HOT</span></a>
@@ -711,12 +728,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
     <a class="nav-link" href="#" data-nav="settings" onclick="openSettingsModal();return false;"><span class="yi yi-gear"></span> <span data-i18n="nav.settings">Settings</span></a>
   </aside>
 
-  <main class="main">
+  <main class="main" id="main" tabindex="-1">
     <div class="feed-header">
       <h2 data-i18n="feed.global">Global Feed</h2>
       <button class="btn-sm" onclick="loadFeed()"><span class="yi yi-refresh"></span> <span data-i18n="feed.refresh">REFRESH</span></button>
     </div>
-    <div class="tabs">
+    <div class="tabs" role="tablist">
       <div class="tab active" data-tab="foryou" data-i18n="tab.forYou" onclick="setTab(this)">FOR YOU</div>
       <div class="tab" data-tab="following" data-i18n="tab.following" onclick="setTab(this)">FOLLOWING</div>
       <!-- LIVE tab parked: see README_LIVEKIT.md for re-enable steps.
@@ -805,7 +822,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
     </div>
   </main>
 
-  <aside class="sidebar-right">
+  <aside class="sidebar-right" aria-label="Widgets" data-i18n-aria="a11y.widgets">
     <div class="widget">
       <div class="widget-title"><span class="yi yi-chart"></span> <span data-i18n="widget.prices">Live Prices</span></div>
       <div id="prices"><p style="color:var(--muted);font-size:13px" data-i18n="common.loading">Loading...</p></div>
@@ -829,6 +846,61 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 (function(){
   var DICTS = {
     en: {
+      // --- accessibility / reader / translation ---
+      'a11y.skip':'Skip to content',
+      'a11y.topbar':'Top bar',
+      'a11y.mainNav':'Main navigation',
+      'a11y.widgets':'Widgets',
+      'a11y.feed':'Posts',
+      'a11y.postBy':'Post by {name}, {time}',
+      'a11y.imageBy':'Image in a post by {name}',
+      'a11y.like':'Like',
+      'a11y.comment':'Comment',
+      'a11y.tip':'Tip',
+      'a11y.repost':'Repost',
+      'a11y.title':'Accessibility',
+      'a11y.srMode':'Screen reader mode',
+      'a11y.srModeHint':'Visible button labels, strong focus outline, keyboard shortcuts (press ? for help), spoken view changes, no animations.',
+      'a11y.contrast':'High contrast',
+      'a11y.textSize':'Large text',
+      'a11y.shortcuts':'Keyboard shortcuts',
+      'a11y.close':'Close',
+      'a11y.helpBody':'J = Next post\nK = Previous post\nL = Like the post\nC = Comment on the post\nR = Read this post aloud\nShift+R = Read the feed from here\nT = Translate the post\nSpace = Pause / resume reading\nEsc = Stop reading, close dialog\n? = Show this help',
+      'a11y.srOn':'Screen reader mode on. Press ? for keyboard shortcuts.',
+      'a11y.srOff':'Screen reader mode off.',
+      'tts.title':'Read aloud',
+      'tts.readPost':'Read post aloud',
+      'tts.readFeed':'Read feed aloud',
+      'tts.play':'Resume',
+      'tts.pause':'Pause',
+      'tts.stop':'Stop',
+      'tts.next':'Next post',
+      'tts.prev':'Previous post',
+      'tts.rate':'Reading speed',
+      'tts.auto':'Read the feed aloud automatically',
+      'tts.autoHint':'Starts reading as soon as the feed loads (screen reader mode).',
+      'tts.unsupported':'Your browser does not support speech output.',
+      'tts.link':'link',
+      'tts.hashtag':'hashtag',
+      'tts.adult':'Adult content',
+      'tts.audioPost':'Audio post',
+      'tts.stats':'{likes} likes, {comments} comments',
+      'tts.done':'End of feed',
+      'tts.nothing':'Nothing to read',
+      'tts.now':'Reading {name}',
+      'tts.position':'{i} of {n}',
+      'tts.units':'seconds|minutes|hours|days',
+      'tts.justNow':'just now',
+      'tr.button':'Translate',
+      'tr.from':'Translated from {lang}',
+      'tr.showOriginal':'Show original',
+      'tr.hideOriginal':'Hide original',
+      'tr.auto':'Translate posts automatically',
+      'tr.autoHint':'Posts written in another language are shown in your language.',
+      'tr.unavailable':'Translation is not available yet.',
+      'tr.failed':'Translation failed',
+      'tr.same':'This post is already in your language',
+      'tr.limit':'Too many translations right now, please try again later',
       // --- chrome: nav / search / tabs / feed ---
       'nav.global':'Global Feed','nav.following':'Following','nav.trending':'Trending','nav.discover':'Discover','nav.permanent':'Permanent Posts',
       'nav.webboards':'Webboards','nav.adult':'18+ Content','nav.messages':'Messages','nav.paper':'Paper Wallets','nav.account':'Account',
@@ -1161,6 +1233,61 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'No comments yet',
     },
     de: {
+      // --- accessibility / reader / translation ---
+      'a11y.skip':'Zum Inhalt springen',
+      'a11y.topbar':'Kopfleiste',
+      'a11y.mainNav':'Hauptnavigation',
+      'a11y.widgets':'Widgets',
+      'a11y.feed':'Posts',
+      'a11y.postBy':'Post von {name}, {time}',
+      'a11y.imageBy':'Bild in einem Post von {name}',
+      'a11y.like':'Gefällt mir',
+      'a11y.comment':'Kommentieren',
+      'a11y.tip':'Trinkgeld',
+      'a11y.repost':'Reposten',
+      'a11y.title':'Barrierefreiheit',
+      'a11y.srMode':'Screenreader-Modus (Blindenmodus)',
+      'a11y.srModeHint':'Sichtbare Button-Beschriftungen, deutlicher Fokusrahmen, Tastenkürzel (? für Hilfe), Ansagen bei Ansichtswechsel, keine Animationen.',
+      'a11y.contrast':'Hoher Kontrast',
+      'a11y.textSize':'Große Schrift',
+      'a11y.shortcuts':'Tastenkürzel',
+      'a11y.close':'Schließen',
+      'a11y.helpBody':'J = Nächster Post\nK = Vorheriger Post\nL = Post liken\nC = Post kommentieren\nR = Diesen Post vorlesen\nUmschalt+R = Feed ab hier vorlesen\nT = Post übersetzen\nLeertaste = Vorlesen pausieren / fortsetzen\nEsc = Vorlesen stoppen, Dialog schließen\n? = Diese Hilfe anzeigen',
+      'a11y.srOn':'Screenreader-Modus an. Drücke ? für die Tastenkürzel.',
+      'a11y.srOff':'Screenreader-Modus aus.',
+      'tts.title':'Vorlesen',
+      'tts.readPost':'Post vorlesen',
+      'tts.readFeed':'Feed vorlesen',
+      'tts.play':'Fortsetzen',
+      'tts.pause':'Pause',
+      'tts.stop':'Stopp',
+      'tts.next':'Nächster Post',
+      'tts.prev':'Vorheriger Post',
+      'tts.rate':'Vorlesegeschwindigkeit',
+      'tts.auto':'Feed automatisch vorlesen',
+      'tts.autoHint':'Beginnt zu lesen, sobald der Feed geladen ist (Screenreader-Modus).',
+      'tts.unsupported':'Dein Browser unterstützt keine Sprachausgabe.',
+      'tts.link':'Link',
+      'tts.hashtag':'Hashtag',
+      'tts.adult':'Inhalt ab 18',
+      'tts.audioPost':'Audio-Post',
+      'tts.stats':'{likes} Likes, {comments} Kommentare',
+      'tts.done':'Ende des Feeds',
+      'tts.nothing':'Nichts zum Vorlesen',
+      'tts.now':'Lese {name}',
+      'tts.position':'{i} von {n}',
+      'tts.units':'Sekunden|Minuten|Stunden|Tagen',
+      'tts.justNow':'gerade eben',
+      'tr.button':'Übersetzen',
+      'tr.from':'Übersetzt aus {lang}',
+      'tr.showOriginal':'Original anzeigen',
+      'tr.hideOriginal':'Original ausblenden',
+      'tr.auto':'Posts automatisch übersetzen',
+      'tr.autoHint':'Posts in anderen Sprachen werden in deiner Sprache angezeigt.',
+      'tr.unavailable':'Übersetzung ist noch nicht verfügbar.',
+      'tr.failed':'Übersetzung fehlgeschlagen',
+      'tr.same':'Dieser Post ist bereits in deiner Sprache',
+      'tr.limit':'Gerade zu viele Übersetzungen, bitte später erneut versuchen',
       // --- chrome: nav / search / tabs / feed ---
       'nav.global':'Globaler Feed','nav.following':'Gefolgt','nav.trending':'Trending','nav.discover':'Entdecken','nav.permanent':'Permanente Posts',
       'nav.webboards':'Webboards','nav.adult':'18+ Inhalte','nav.messages':'Nachrichten','nav.paper':'Paper Wallets','nav.account':'Konto',
@@ -1471,6 +1598,61 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'Noch keine Kommentare',
     },
     it: {
+      // --- accessibility / reader / translation ---
+      'a11y.skip':'Vai al contenuto',
+      'a11y.topbar':'Barra superiore',
+      'a11y.mainNav':'Navigazione principale',
+      'a11y.widgets':'Widget',
+      'a11y.feed':'Post',
+      'a11y.postBy':'Post di {name}, {time}',
+      'a11y.imageBy':'Immagine in un post di {name}',
+      'a11y.like':'Mi piace',
+      'a11y.comment':'Commenta',
+      'a11y.tip':'Mancia',
+      'a11y.repost':'Repost',
+      'a11y.title':'Accessibilità',
+      'a11y.srMode':'Modalità screen reader',
+      'a11y.srModeHint':'Etichette visibili sui pulsanti, focus ben evidenziato, scorciatoie da tastiera (premi ? per l\'aiuto), annunci al cambio di vista, nessuna animazione.',
+      'a11y.contrast':'Contrasto elevato',
+      'a11y.textSize':'Testo grande',
+      'a11y.shortcuts':'Scorciatoie da tastiera',
+      'a11y.close':'Chiudi',
+      'a11y.helpBody':'J = Post successivo\nK = Post precedente\nL = Metti mi piace\nC = Commenta il post\nR = Leggi questo post\nMaiusc+R = Leggi il feed da qui\nT = Traduci il post\nSpazio = Pausa / riprendi lettura\nEsc = Ferma la lettura, chiudi la finestra\n? = Mostra questo aiuto',
+      'a11y.srOn':'Modalità screen reader attiva. Premi ? per le scorciatoie.',
+      'a11y.srOff':'Modalità screen reader disattivata.',
+      'tts.title':'Leggi ad alta voce',
+      'tts.readPost':'Leggi il post',
+      'tts.readFeed':'Leggi il feed',
+      'tts.play':'Riprendi',
+      'tts.pause':'Pausa',
+      'tts.stop':'Stop',
+      'tts.next':'Post successivo',
+      'tts.prev':'Post precedente',
+      'tts.rate':'Velocità di lettura',
+      'tts.auto':'Leggi il feed automaticamente',
+      'tts.autoHint':'Inizia a leggere appena il feed è caricato (modalità screen reader).',
+      'tts.unsupported':'Il tuo browser non supporta la sintesi vocale.',
+      'tts.link':'link',
+      'tts.hashtag':'hashtag',
+      'tts.adult':'Contenuto per adulti',
+      'tts.audioPost':'Post audio',
+      'tts.stats':'{likes} mi piace, {comments} commenti',
+      'tts.done':'Fine del feed',
+      'tts.nothing':'Niente da leggere',
+      'tts.now':'Leggo {name}',
+      'tts.position':'{i} di {n}',
+      'tts.units':'secondi|minuti|ore|giorni',
+      'tts.justNow':'adesso',
+      'tr.button':'Traduci',
+      'tr.from':'Tradotto da {lang}',
+      'tr.showOriginal':'Mostra originale',
+      'tr.hideOriginal':'Nascondi originale',
+      'tr.auto':'Traduci i post automaticamente',
+      'tr.autoHint':'I post in altre lingue vengono mostrati nella tua lingua.',
+      'tr.unavailable':'La traduzione non è ancora disponibile.',
+      'tr.failed':'Traduzione non riuscita',
+      'tr.same':'Questo post è già nella tua lingua',
+      'tr.limit':'Troppe traduzioni in questo momento, riprova più tardi',
       'nav.global':'Feed globale',
       'nav.following':'Seguiti',
       'nav.trending':'Trending',
@@ -2056,6 +2238,61 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portoghese',
     },
     fr: {
+      // --- accessibility / reader / translation ---
+      'a11y.skip':'Aller au contenu',
+      'a11y.topbar':'Barre supérieure',
+      'a11y.mainNav':'Navigation principale',
+      'a11y.widgets':'Widgets',
+      'a11y.feed':'Posts',
+      'a11y.postBy':'Post de {name}, {time}',
+      'a11y.imageBy':'Image dans un post de {name}',
+      'a11y.like':'J\'aime',
+      'a11y.comment':'Commenter',
+      'a11y.tip':'Pourboire',
+      'a11y.repost':'Reposter',
+      'a11y.title':'Accessibilité',
+      'a11y.srMode':'Mode lecteur d\'écran',
+      'a11y.srModeHint':'Libellés visibles sur les boutons, focus bien marqué, raccourcis clavier (? pour l\'aide), annonces des changements de vue, pas d\'animations.',
+      'a11y.contrast':'Contraste élevé',
+      'a11y.textSize':'Grand texte',
+      'a11y.shortcuts':'Raccourcis clavier',
+      'a11y.close':'Fermer',
+      'a11y.helpBody':'J = Post suivant\nK = Post précédent\nL = Aimer le post\nC = Commenter le post\nR = Lire ce post à voix haute\nMaj+R = Lire le fil à partir d\'ici\nT = Traduire le post\nEspace = Pause / reprise de la lecture\nÉchap = Arrêter la lecture, fermer la fenêtre\n? = Afficher cette aide',
+      'a11y.srOn':'Mode lecteur d\'écran activé. Appuie sur ? pour les raccourcis.',
+      'a11y.srOff':'Mode lecteur d\'écran désactivé.',
+      'tts.title':'Lecture à voix haute',
+      'tts.readPost':'Lire le post',
+      'tts.readFeed':'Lire le fil',
+      'tts.play':'Reprendre',
+      'tts.pause':'Pause',
+      'tts.stop':'Arrêter',
+      'tts.next':'Post suivant',
+      'tts.prev':'Post précédent',
+      'tts.rate':'Vitesse de lecture',
+      'tts.auto':'Lire le fil automatiquement',
+      'tts.autoHint':'Commence la lecture dès que le fil est chargé (mode lecteur d\'écran).',
+      'tts.unsupported':'Ton navigateur ne prend pas en charge la synthèse vocale.',
+      'tts.link':'lien',
+      'tts.hashtag':'hashtag',
+      'tts.adult':'Contenu pour adultes',
+      'tts.audioPost':'Post audio',
+      'tts.stats':'{likes} j\'aime, {comments} commentaires',
+      'tts.done':'Fin du fil',
+      'tts.nothing':'Rien à lire',
+      'tts.now':'Lecture de {name}',
+      'tts.position':'{i} sur {n}',
+      'tts.units':'secondes|minutes|heures|jours',
+      'tts.justNow':'à l\'instant',
+      'tr.button':'Traduire',
+      'tr.from':'Traduit depuis {lang}',
+      'tr.showOriginal':'Afficher l\'original',
+      'tr.hideOriginal':'Masquer l\'original',
+      'tr.auto':'Traduire les posts automatiquement',
+      'tr.autoHint':'Les posts écrits dans une autre langue sont affichés dans ta langue.',
+      'tr.unavailable':'La traduction n\'est pas encore disponible.',
+      'tr.failed':'Échec de la traduction',
+      'tr.same':'Ce post est déjà dans ta langue',
+      'tr.limit':'Trop de traductions pour le moment, réessaie plus tard',
       'nav.global':'Fil global',
       'nav.following':'Abonnements',
       'nav.trending':'Trending',
@@ -2641,6 +2878,61 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugais',
     },
     es: {
+      // --- accessibility / reader / translation ---
+      'a11y.skip':'Saltar al contenido',
+      'a11y.topbar':'Barra superior',
+      'a11y.mainNav':'Navegación principal',
+      'a11y.widgets':'Widgets',
+      'a11y.feed':'Posts',
+      'a11y.postBy':'Post de {name}, {time}',
+      'a11y.imageBy':'Imagen en un post de {name}',
+      'a11y.like':'Me gusta',
+      'a11y.comment':'Comentar',
+      'a11y.tip':'Propina',
+      'a11y.repost':'Repostear',
+      'a11y.title':'Accesibilidad',
+      'a11y.srMode':'Modo lector de pantalla',
+      'a11y.srModeHint':'Etiquetas visibles en los botones, foco bien marcado, atajos de teclado (pulsa ? para ayuda), anuncios al cambiar de vista, sin animaciones.',
+      'a11y.contrast':'Alto contraste',
+      'a11y.textSize':'Texto grande',
+      'a11y.shortcuts':'Atajos de teclado',
+      'a11y.close':'Cerrar',
+      'a11y.helpBody':'J = Siguiente post\nK = Post anterior\nL = Dar me gusta\nC = Comentar el post\nR = Leer este post en voz alta\nMayús+R = Leer el feed desde aquí\nT = Traducir el post\nEspacio = Pausar / reanudar la lectura\nEsc = Detener la lectura, cerrar el diálogo\n? = Mostrar esta ayuda',
+      'a11y.srOn':'Modo lector de pantalla activado. Pulsa ? para ver los atajos.',
+      'a11y.srOff':'Modo lector de pantalla desactivado.',
+      'tts.title':'Leer en voz alta',
+      'tts.readPost':'Leer el post',
+      'tts.readFeed':'Leer el feed',
+      'tts.play':'Reanudar',
+      'tts.pause':'Pausa',
+      'tts.stop':'Detener',
+      'tts.next':'Siguiente post',
+      'tts.prev':'Post anterior',
+      'tts.rate':'Velocidad de lectura',
+      'tts.auto':'Leer el feed automáticamente',
+      'tts.autoHint':'Empieza a leer en cuanto se carga el feed (modo lector de pantalla).',
+      'tts.unsupported':'Tu navegador no admite salida de voz.',
+      'tts.link':'enlace',
+      'tts.hashtag':'hashtag',
+      'tts.adult':'Contenido para adultos',
+      'tts.audioPost':'Post de audio',
+      'tts.stats':'{likes} me gusta, {comments} comentarios',
+      'tts.done':'Fin del feed',
+      'tts.nothing':'Nada que leer',
+      'tts.now':'Leyendo a {name}',
+      'tts.position':'{i} de {n}',
+      'tts.units':'segundos|minutos|horas|días',
+      'tts.justNow':'justo ahora',
+      'tr.button':'Traducir',
+      'tr.from':'Traducido del {lang}',
+      'tr.showOriginal':'Mostrar original',
+      'tr.hideOriginal':'Ocultar original',
+      'tr.auto':'Traducir posts automáticamente',
+      'tr.autoHint':'Los posts escritos en otro idioma se muestran en tu idioma.',
+      'tr.unavailable':'La traducción aún no está disponible.',
+      'tr.failed':'Error al traducir',
+      'tr.same':'Este post ya está en tu idioma',
+      'tr.limit':'Demasiadas traducciones ahora mismo, inténtalo más tarde',
       'nav.global':'Feed global',
       'nav.following':'Siguiendo',
       'nav.trending':'Trending',
@@ -3226,6 +3518,61 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugués',
     },
     pt: {
+      // --- accessibility / reader / translation ---
+      'a11y.skip':'Ir para o conteúdo',
+      'a11y.topbar':'Barra superior',
+      'a11y.mainNav':'Navegação principal',
+      'a11y.widgets':'Widgets',
+      'a11y.feed':'Posts',
+      'a11y.postBy':'Post de {name}, {time}',
+      'a11y.imageBy':'Imagem em um post de {name}',
+      'a11y.like':'Curtir',
+      'a11y.comment':'Comentar',
+      'a11y.tip':'Gorjeta',
+      'a11y.repost':'Repostar',
+      'a11y.title':'Acessibilidade',
+      'a11y.srMode':'Modo leitor de tela',
+      'a11y.srModeHint':'Rótulos visíveis nos botões, foco bem destacado, atalhos de teclado (pressione ? para ajuda), anúncios ao mudar de tela, sem animações.',
+      'a11y.contrast':'Alto contraste',
+      'a11y.textSize':'Texto grande',
+      'a11y.shortcuts':'Atalhos de teclado',
+      'a11y.close':'Fechar',
+      'a11y.helpBody':'J = Próximo post\nK = Post anterior\nL = Curtir o post\nC = Comentar o post\nR = Ler este post em voz alta\nShift+R = Ler o feed a partir daqui\nT = Traduzir o post\nEspaço = Pausar / retomar a leitura\nEsc = Parar a leitura, fechar a janela\n? = Mostrar esta ajuda',
+      'a11y.srOn':'Modo leitor de tela ativado. Pressione ? para ver os atalhos.',
+      'a11y.srOff':'Modo leitor de tela desativado.',
+      'tts.title':'Ler em voz alta',
+      'tts.readPost':'Ler o post',
+      'tts.readFeed':'Ler o feed',
+      'tts.play':'Retomar',
+      'tts.pause':'Pausar',
+      'tts.stop':'Parar',
+      'tts.next':'Próximo post',
+      'tts.prev':'Post anterior',
+      'tts.rate':'Velocidade de leitura',
+      'tts.auto':'Ler o feed automaticamente',
+      'tts.autoHint':'Começa a ler assim que o feed carregar (modo leitor de tela).',
+      'tts.unsupported':'Seu navegador não suporta síntese de voz.',
+      'tts.link':'link',
+      'tts.hashtag':'hashtag',
+      'tts.adult':'Conteúdo adulto',
+      'tts.audioPost':'Post de áudio',
+      'tts.stats':'{likes} curtidas, {comments} comentários',
+      'tts.done':'Fim do feed',
+      'tts.nothing':'Nada para ler',
+      'tts.now':'Lendo {name}',
+      'tts.position':'{i} de {n}',
+      'tts.units':'segundos|minutos|horas|dias',
+      'tts.justNow':'agora mesmo',
+      'tr.button':'Traduzir',
+      'tr.from':'Traduzido do {lang}',
+      'tr.showOriginal':'Mostrar original',
+      'tr.hideOriginal':'Ocultar original',
+      'tr.auto':'Traduzir posts automaticamente',
+      'tr.autoHint':'Posts escritos em outro idioma são exibidos no seu idioma.',
+      'tr.unavailable':'A tradução ainda não está disponível.',
+      'tr.failed':'Falha na tradução',
+      'tr.same':'Este post já está no seu idioma',
+      'tr.limit':'Muitas traduções agora, tente novamente mais tarde',
       'nav.global':'Feed Global',
       'nav.following':'Seguindo',
       'nav.trending':'Trending',
@@ -4016,6 +4363,7 @@ async function loadTrendingFeedPosts(){
         div.appendChild(previewDiv);
         loadLinkPreview(foundUrls[0], previewDiv);
       }
+      div._yeetPost=p; if(window.YeetA11y) window.YeetA11y.decoratePost(div,p);
       wrap.appendChild(div);
     });
     var composer=document.querySelector('.composer');
@@ -4166,6 +4514,8 @@ function _buildFeedPostEl(p, opts){
     _mb.dataset.authorwallet = (p.author && (p.author.wallet_address || p.author.id)) || '';
   }
   el.querySelector('.more-btn').addEventListener('click',function(e){e.stopPropagation();e.preventDefault();openPostMenu(this);});
+  el._yeetPost=p;
+  if(window.YeetA11y) window.YeetA11y.decoratePost(el,p);
   return el;
 }
 window._buildFeedPostEl = _buildFeedPostEl;
@@ -4379,7 +4729,7 @@ function openWalletModal(){
 
 function showToast(msg){
   let t=document.getElementById('toast');
-  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--border);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;border:1px solid var(--border-2);transition:opacity .3s';document.body.appendChild(t);}
+  if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--border);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;z-index:999;border:1px solid var(--border-2);transition:opacity .3s';document.body.appendChild(t);}
   t.textContent=msg;t.style.opacity='1';
   setTimeout(()=>t.style.opacity='0',3000);
 }
@@ -12928,6 +13278,449 @@ info@blocksocial.eu</address>
   // before the user opens the modal.
   setTimeout(function(){ if(jwt()) refreshInvitations(); }, 1500);
   setInterval(function(){ if(jwt()) refreshInvitations(); }, 60000);
+})();
+</script>
+
+<style>
+/* ===== Accessibility (screen-reader mode, contrast, text size), Reader, Translation ===== */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:8px;top:-60px;z-index:10000;background:var(--yeet);color:var(--on-accent);padding:10px 14px;border-radius:8px;font-weight:700;text-decoration:none}
+.skip-link:focus{top:8px;outline:3px solid var(--text)}
+.a11y-label{display:none!important;font-size:12px;margin-left:4px}
+html[data-a11y="sr"] .a11y-label{display:inline!important}
+html[data-a11y="sr"] :focus-visible{outline:3px solid var(--accent)!important;outline-offset:2px}
+html[data-a11y="sr"] .post-actions{flex-wrap:wrap;gap:4px}
+html[data-a11y="sr"] .post-actions button{min-height:44px;min-width:44px}
+html[data-a11y="sr"] *{transition:none!important;animation:none!important}
+html[data-contrast="high"]{--text:#ffffff;--text-2:#ffffff;--muted:#e6e6e6;--dim:#d0d0d0;--border:#9a9a9a;--border-2:#b0b0b0;--border-3:#c0c0c0}
+html[data-contrast="high"][data-theme="arctic"]{--text:#000;--text-2:#000;--muted:#222;--dim:#333;--border:#555;--border-2:#444;--border-3:#333}
+html[data-textsize="large"] body{zoom:1.18}
+.tts-current{outline:3px solid var(--accent);outline-offset:-3px;border-radius:12px;background:rgba(var(--accent-rgb),.06)}
+#ttsBar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9500;background:var(--card);border:1px solid var(--border-2);border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:min(560px,96vw);box-sizing:border-box}
+@media(max-width:700px){#ttsBar{bottom:76px}}
+#ttsBar button{background:var(--card-2);border:1px solid var(--border);color:var(--text);border-radius:10px;min-width:40px;min-height:40px;cursor:pointer;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:0 8px}
+#ttsBar .tts-label{font-size:12px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ttsBar select{background:var(--card-2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:4px}
+.tr-link{background:transparent;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:0 0 8px;display:inline-flex;align-items:center;gap:4px}
+.post-translation-wrap{border-left:3px solid var(--accent);padding:6px 10px;margin:0 0 10px;background:rgba(var(--accent-rgb),.06);border-radius:0 8px 8px 0}
+.post-translation{font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.tr-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.tr-meta button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px;padding:0}
+.a11y-row{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text);margin-bottom:10px;cursor:pointer}
+.a11y-row small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.a11y-row input[type=checkbox]{accent-color:var(--accent);margin-top:3px;width:18px;height:18px;flex:none}
+.a11y-btn{width:100%;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-top:6px}
+#a11yHelp{position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px}
+#a11yHelp .box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:440px;width:100%;color:var(--text);font-size:14px;line-height:1.7;max-height:90vh;overflow:auto}
+#a11yHelp kbd{background:var(--card-2);border:1px solid var(--border);border-radius:5px;padding:1px 7px;font-family:inherit;font-weight:700}
+.yi-speaker{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='11 5 6 9 2 9 2 15 6 15 11 19 11 5'/%3E%3Cpath d='M15.5 8.5a5 5 0 0 1 0 7'/%3E%3Cpath d='M19 5a9 9 0 0 1 0 14'/%3E%3C/svg%3E")}
+.yi-translate{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5h9M7.5 3v2M5 5c.5 4.5 3.5 8 7 9.5M11.5 5c-1 3.5-3.5 6.5-6.5 8.5'/%3E%3Cpath d='M13 21l4.5-10 4.5 10M14.7 17.5h5.6'/%3E%3C/svg%3E")}
+.yi-play{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000' stroke='%23000' stroke-width='1.7' stroke-linejoin='round'%3E%3Cpolygon points='7 4 20 12 7 20 7 4'/%3E%3C/svg%3E")}
+.yi-pause{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000' stroke='%23000' stroke-width='1.7'%3E%3Crect x='6' y='4' width='4' height='16' rx='1'/%3E%3Crect x='14' y='4' width='4' height='16' rx='1'/%3E%3C/svg%3E")}
+.yi-stop{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000' stroke='%23000' stroke-width='1.7'%3E%3Crect x='5' y='5' width='14' height='14' rx='2'/%3E%3C/svg%3E")}
+.yi-skipf{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='5 4 15 12 5 20 5 4'/%3E%3Cline x1='19' y1='5' x2='19' y2='19'/%3E%3C/svg%3E")}
+.yi-skipb{--yi-m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='19 4 9 12 19 20 19 4'/%3E%3Cline x1='5' y1='5' x2='5' y2='19'/%3E%3C/svg%3E")}
+</style>
+<script>
+/* ===== YeetA11y / YeetReader / YeetTranslate =====
+   Screen-reader mode (landmarks, labels, focus management, keyboard
+   shortcuts, live announcements), a Web-Speech reader for posts and
+   feeds, and the client side of post translation. Self-contained: it
+   decorates post cards after they are built (see _buildFeedPostEl) and
+   watches the DOM for dialogs, tabs and feeds instead of patching every
+   caller. Everything degrades silently when an API is missing. */
+(function(){
+'use strict';
+var T=function(k,v){return window.t?window.t(k,v):k;};
+var LS=function(k,d){try{var v=localStorage.getItem(k);return v==null?d:v;}catch(e){return d;}};
+var LSset=function(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,String(v));}catch(e){}};
+var PREF={sr:'yeet_a11y_sr',contrast:'yeet_a11y_contrast',text:'yeet_a11y_text',rate:'yeet_tts_rate',ttsAuto:'yeet_tts_auto',autoTr:'yeet_auto_translate'};
+var LANGTAG={en:'en-US',de:'de-DE',it:'it-IT',fr:'fr-FR',es:'es-ES',pt:'pt-BR'};
+var LANGKEY={en:'settings.langEnglish',de:'settings.langGerman',it:'settings.langItalian',fr:'settings.langFrench',es:'settings.langSpanish',pt:'settings.langPortuguese'};
+function uiLang(){return window.getLang?window.getLang():'en';}
+function langName(code){code=String(code||'').slice(0,2).toLowerCase();return LANGKEY[code]?T(LANGKEY[code]):code.toUpperCase();}
+function isVisible(el){return !!el&&!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ---------- preferences ----------
+function applyPrefs(){
+  var h=document.documentElement;
+  if(LS(PREF.sr,'0')==='1') h.setAttribute('data-a11y','sr'); else h.removeAttribute('data-a11y');
+  if(LS(PREF.contrast,'0')==='1') h.setAttribute('data-contrast','high'); else h.removeAttribute('data-contrast');
+  if(LS(PREF.text,'0')==='1') h.setAttribute('data-textsize','large'); else h.removeAttribute('data-textsize');
+}
+applyPrefs();
+function setPref(name,val){
+  if(name==='sr'){LSset(PREF.sr,val?'1':'0');applyPrefs();announce(T(val?'a11y.srOn':'a11y.srOff'));}
+  else if(name==='contrast'){LSset(PREF.contrast,val?'1':'0');applyPrefs();}
+  else if(name==='text'){LSset(PREF.text,val?'1':'0');applyPrefs();}
+  else if(name==='rate'){LSset(PREF.rate,val);}
+  else if(name==='ttsAuto'){LSset(PREF.ttsAuto,val?'1':'0');}
+  else if(name==='autoTr'){LSset(PREF.autoTr,val?'1':'0'); if(val) document.querySelectorAll('[role="article"]').forEach(function(el){Translate.autoMaybe(el);});}
+}
+function syncSettingsUI(){
+  var q=function(id){return document.getElementById(id);};
+  if(q('a11ySr')) q('a11ySr').checked=LS(PREF.sr,'0')==='1';
+  if(q('a11yContrast')) q('a11yContrast').checked=LS(PREF.contrast,'0')==='1';
+  if(q('a11yText')) q('a11yText').checked=LS(PREF.text,'0')==='1';
+  if(q('a11yTtsAuto')) q('a11yTtsAuto').checked=LS(PREF.ttsAuto,'0')==='1';
+  if(q('a11yRate')) q('a11yRate').value=LS(PREF.rate,'1');
+  if(q('a11yAutoTr')) q('a11yAutoTr').checked=LS(PREF.autoTr,'0')==='1';
+  if(q('a11yTtsUnsupported')) q('a11yTtsUnsupported').hidden=Reader.supported;
+  if(q('a11yReadFeedBtn')) q('a11yReadFeedBtn').disabled=!Reader.supported;
+  Translate.getStatus().then(function(st){ if(q('trUnavailable')) q('trUnavailable').hidden=!!st.enabled; if(q('a11yAutoTr')) q('a11yAutoTr').disabled=!st.enabled; });
+}
+
+// ---------- live announcements ----------
+function announce(msg){
+  var r=document.getElementById('a11yLive'); if(!r||!msg) return;
+  r.textContent=''; setTimeout(function(){r.textContent=String(msg);},30);
+}
+
+// ---------- icons: decorative ----------
+function hideIcons(root){
+  if(!root||!root.querySelectorAll) return;
+  root.querySelectorAll('.yi:not([aria-hidden])').forEach(function(i){i.setAttribute('aria-hidden','true');});
+}
+
+// ---------- dialogs: role, label, focus in/out, tab trap ----------
+var DIALOG_SEL='.modal-bg,.pwa-modal,#authModal,#onboardModal,#followListModal,#settingsModal,.legal-page,#_postDetailOv,#tipModal,#a11yHelp';
+var openStack=[];
+function focusables(el){
+  return Array.prototype.filter.call(el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'),function(x){return isVisible(x)&&!x.closest('[aria-hidden="true"]');});
+}
+function onOpen(el){
+  if(!el.getAttribute('role')||el.getAttribute('role')==='region') el.setAttribute('role','dialog');
+  el.setAttribute('aria-modal','true');
+  if(!el.getAttribute('aria-label')&&!el.getAttribute('aria-labelledby')){
+    var h=el.querySelector('h1,h2,h3'); if(h){ if(!h.id) h.id='dlg-'+Math.random().toString(36).slice(2,8); el.setAttribute('aria-labelledby',h.id); }
+  }
+  openStack.push({el:el,prev:document.activeElement});
+  Reader.pause();
+  if(el.id==='settingsModal') syncSettingsUI();
+  var f=focusables(el);
+  var target=f.find(function(x){return !/close|×/i.test(x.getAttribute('aria-label')||x.className||'')&&!x.classList.contains('modal-close');})||f[0];
+  if(target){ try{target.focus({preventScroll:true});}catch(e){} }
+  else { el.tabIndex=-1; try{el.focus({preventScroll:true});}catch(e){} }
+}
+function onClose(idx){
+  var o=openStack.splice(idx,1)[0];
+  if(o&&o.prev&&o.prev.focus&&document.contains(o.prev)&&!o.prev.closest(DIALOG_SEL)){ try{o.prev.focus({preventScroll:true});}catch(e){} }
+}
+function syncDialogs(){
+  var seen=[];
+  document.querySelectorAll(DIALOG_SEL).forEach(function(el){
+    var vis=isVisible(el); var idx=-1;
+    for(var k=0;k<openStack.length;k++){ if(openStack[k].el===el){idx=k;break;} }
+    if(vis&&idx<0) onOpen(el); else if(!vis&&idx>=0) onClose(idx);
+    if(vis) seen.push(el);
+  });
+  for(var i=openStack.length-1;i>=0;i--){ if(seen.indexOf(openStack[i].el)<0) onClose(i); }
+}
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Tab'||!openStack.length) return;
+  var top=openStack[openStack.length-1].el; if(!document.contains(top)||!isVisible(top)) return;
+  var f=focusables(top); if(!f.length) return;
+  var first=f[0],last=f[f.length-1],inside=top.contains(document.activeElement);
+  if(e.shiftKey&&(document.activeElement===first||!inside)){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&(document.activeElement===last||!inside)){e.preventDefault();first.focus();}
+},true);
+
+// ---------- tabs ----------
+function syncTabs(){
+  var list=document.querySelector('.tabs'); if(!list) return;
+  list.setAttribute('role','tablist');
+  list.querySelectorAll('.tab').forEach(function(t){
+    t.setAttribute('role','tab'); t.setAttribute('aria-selected',t.classList.contains('active')?'true':'false');
+    if(!t.hasAttribute('tabindex')) t.tabIndex=0;
+  });
+}
+document.addEventListener('keydown',function(e){
+  var t=e.target; if(!t||!t.classList||!t.classList.contains('tab')) return;
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();t.click();}
+  else if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+    var tabs=Array.prototype.filter.call(document.querySelectorAll('.tabs .tab'),isVisible); var i=tabs.indexOf(t); if(i<0) return;
+    var n=tabs[(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length]; n.focus(); e.preventDefault();
+  }
+});
+
+// ---------- post cards ----------
+function authorName(p){
+  if(!p) return T('common.user');
+  var a=p.author||{}; var n=a.display_name||a.username||p.author_name||p.author_username;
+  if(n) return n;
+  var w=a.wallet_address||''; return w?w.slice(0,6)+'…'+w.slice(-4):T('common.user');
+}
+function spokenAgo(p){
+  if(!p||!p.created_at) return '';
+  var s=Math.max(0,Math.floor((Date.now()-new Date(p.created_at))/1000));
+  if(s<60) return T('tts.justNow');
+  var u=String(T('tts.units')).split('|'); var n,unit;
+  if(s<3600){n=Math.floor(s/60);unit=u[1];} else if(s<86400){n=Math.floor(s/3600);unit=u[2];} else {n=Math.floor(s/86400);unit=u[3];}
+  return T('time.ago',{v:n+' '+(unit||'')});
+}
+function labelBtn(btn,key,count){
+  if(!btn) return;
+  var txt=T(key); btn.setAttribute('aria-label',txt+(count!=null?', '+count:''));
+  if(!btn.querySelector('.a11y-label')){ var s=document.createElement('span'); s.className='a11y-label'; s.textContent=txt; btn.appendChild(s); }
+}
+function mkBtn(cls,icon,key,color){
+  var b=document.createElement('button'); b.className=cls; b.type='button';
+  b.style.cssText='background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:'+(color||'var(--muted)');
+  b.innerHTML='<span class="yi '+icon+'" aria-hidden="true"></span>'; b.title=T(key); b.setAttribute('aria-label',T(key));
+  var s=document.createElement('span'); s.className='a11y-label'; s.textContent=T(key); b.appendChild(s);
+  return b;
+}
+function decoratePost(el,p){
+  if(!el||el.__a11y) return; el.__a11y=true; if(p) el._yeetPost=p; p=el._yeetPost||{};
+  el.setAttribute('role','article'); if(!el.hasAttribute('tabindex')) el.tabIndex=0;
+  el.setAttribute('aria-label',T('a11y.postBy',{name:authorName(p),time:spokenAgo(p)}));
+  hideIcons(el);
+  el.querySelectorAll('img:not([alt])').forEach(function(im){im.setAttribute('alt',T('a11y.imageBy',{name:authorName(p)}));});
+  var acts=el.querySelector('.post-actions');
+  if(acts){
+    labelBtn(el.querySelector('.like-btn'),'a11y.like',p.like_count||0);
+    labelBtn(el.querySelector('.comment-btn'),'a11y.comment',p.comment_count||0);
+    labelBtn(el.querySelector('.tip-btn'),'a11y.tip',p.tip_total_yeet||0);
+    labelBtn(el.querySelector('.repost-btn'),'a11y.repost',p.repost_count||0);
+    var more=el.querySelector('.more-btn'); if(more){ more.setAttribute('aria-label',T('post.more')); more.setAttribute('aria-haspopup','menu'); }
+    if(Reader.supported){
+      var rb=mkBtn('tts-btn','yi-speaker','tts.readPost'); rb.addEventListener('click',function(ev){ev.stopPropagation();Reader.readPost(el);});
+      acts.insertBefore(rb, more||null);
+    }
+    if(p.id&&p.content){
+      var tr=mkBtn('tr-btn','yi-translate','tr.button'); tr.style.display='none';
+      tr.addEventListener('click',function(ev){ev.stopPropagation();Translate.translatePost(el);});
+      acts.insertBefore(tr, more||null);
+      Translate.getStatus().then(function(st){ if(st.enabled&&Translate.needs(p)){ tr.style.display=''; Translate.autoMaybe(el); } });
+    }
+  }
+  var ci=el.querySelector('.comment-input'); if(ci) ci.setAttribute('aria-label',T('comments.placeholder'));
+}
+
+// ---------- reader ----------
+var Reader=(function(){
+  var synth=window.speechSynthesis, supported=!!(synth&&window.SpeechSynthesisUtterance);
+  var queue=[],idx=-1,playing=false,paused=false,current=null,voices=[];
+  function loadVoices(){try{voices=synth.getVoices()||[];}catch(e){voices=[];}}
+  if(supported){loadVoices(); try{synth.onvoiceschanged=loadVoices;}catch(e){}}
+  function pickVoice(lang){
+    lang=String(lang||'').slice(0,2).toLowerCase(); if(!lang) return null;
+    var tag=LANGTAG[lang]||lang;
+    var c=voices.filter(function(v){return v.lang&&v.lang.toLowerCase().replace('_','-').indexOf(lang)===0;});
+    if(!c.length) return null;
+    var exact=function(v){return v.lang.replace('_','-')===tag;};
+    var loc=c.filter(function(v){return v.localService;});
+    return loc.find(exact)||loc[0]||c.find(exact)||c[0];
+  }
+  function rate(){var r=parseFloat(LS(PREF.rate,'1'));return isFinite(r)&&r>=0.5&&r<=2?r:1;}
+  function clean(text){
+    return String(text||'')
+      .replace(/https?:\/\/\S+/gi,' '+T('tts.link')+' ')
+      .replace(/#([\p{L}\p{N}_]+)/gu,' '+T('tts.hashtag')+' $1 ')
+      .replace(/@([\w.]+)/g,' $1 ')
+      .replace(/[*_~`>|]/g,' ')
+      .replace(/\s+/g,' ').trim();
+  }
+  function chunk(text){
+    var parts=String(text).match(/[^.!?。\n]+[.!?。]*\s*/g)||[text]; var out=[],buf='';
+    parts.forEach(function(s){ if((buf+s).length>180&&buf){out.push(buf.trim());buf='';} buf+=s; });
+    if(buf.trim()) out.push(buf.trim());
+    return out.length?out:[String(text)];
+  }
+  function textFor(el){
+    var p=el._yeetPost||{};
+    var tr=el.querySelector('.post-translation-wrap'); var useTr=tr&&tr.style.display!=='none';
+    var body=useTr?tr.querySelector('.post-translation').textContent:(p.content!=null?p.content:(el.querySelector('.post-body')||{}).textContent||'');
+    var lang=useTr?uiLang():((p.lang&&String(p.lang).slice(0,2))||uiLang());
+    var parts=[T('a11y.postBy',{name:authorName(p),time:spokenAgo(p)})];
+    if(p.is_adult) parts.push(T('tts.adult'));
+    if(p.media_url&&/\.(mp3|m4a|ogg|webm|wav|aac)(\?|$)/i.test(p.media_url)) parts.push(T('tts.audioPost'));
+    var c=clean(body); if(c) parts.push(c);
+    parts.push(T('tts.stats',{likes:p.like_count||0,comments:p.comment_count||0}));
+    return {text:parts.join('. '),lang:lang,uiLang:uiLang()};
+  }
+  function speakItem(item,done){
+    synth.cancel();
+    var chunks=chunk(item.text), n=0, token={};
+    current=token;
+    var v=pickVoice(item.lang)||pickVoice(item.uiLang);
+    function nextChunk(){
+      if(current!==token) return;
+      if(n>=chunks.length){done();return;}
+      var u=new SpeechSynthesisUtterance(chunks[n++]);
+      u.lang=(v&&v.lang)||LANGTAG[item.lang]||item.lang||'en-US'; if(v) u.voice=v; u.rate=rate();
+      u.onend=function(){ if(current===token&&!paused) nextChunk(); else if(current===token) u._pending=true; };
+      u.onerror=function(ev){ if(current!==token) return; if(ev&&(ev.error==='interrupted'||ev.error==='canceled')) return; nextChunk(); };
+      try{synth.speak(u);}catch(e){done();}
+    }
+    nextChunk();
+  }
+  function highlight(el){
+    document.querySelectorAll('.tts-current').forEach(function(x){x.classList.remove('tts-current');x.removeAttribute('aria-current');});
+    if(el){ el.classList.add('tts-current'); el.setAttribute('aria-current','true'); try{el.scrollIntoView({block:'center',behavior:LS(PREF.sr,'0')==='1'?'auto':'smooth'});}catch(e){} }
+  }
+  function playIndex(n){
+    if(!supported) return;
+    queue=queue.filter(function(e){return document.contains(e);});
+    if(n<0||n>=queue.length){ var was=playing; stop(); if(was) announce(T('tts.done')); return; }
+    idx=n; var el=queue[idx]; playing=true; paused=false; highlight(el); renderBar();
+    var p=el._yeetPost||{}; announce(T('tts.now',{name:authorName(p)}));
+    speakItem(textFor(el),function(){ if(playing&&!paused) playIndex(idx+1); });
+  }
+  function readPost(el){ if(!supported||!el) return; queue=[el]; playIndex(0); }
+  function readFeed(fromEl){
+    if(!supported) return;
+    var container=fromEl?fromEl.parentElement:(document.getElementById('feed-posts')||document.getElementById('profilePosts'));
+    var arts=container?Array.prototype.slice.call(container.querySelectorAll('[role="article"]')):[];
+    if(!arts.length){ announce(T('tts.nothing')); if(window.showToast) window.showToast(T('tts.nothing')); return; }
+    queue=arts; var start=fromEl?arts.indexOf(fromEl):0; playIndex(start<0?0:start);
+  }
+  function pause(){ if(!supported||!playing||paused) return; paused=true; try{synth.pause();}catch(e){} renderBar(); }
+  function resume(){ if(!supported||!playing||!paused) return; paused=false; try{synth.resume();}catch(e){} renderBar(); }
+  function toggle(){ if(!playing) readFeed(null); else if(paused) resume(); else pause(); }
+  function stop(){ if(!supported) return; playing=false; paused=false; current=null; try{synth.cancel();}catch(e){} highlight(null); queue=[]; idx=-1; renderBar(); }
+  function next(){ if(playing) playIndex(idx+1); }
+  function prev(){ if(playing) playIndex(Math.max(0,idx-1)); }
+  function renderBar(){
+    var bar=document.getElementById('ttsBar');
+    if(!playing){ if(bar) bar.remove(); return; }
+    if(!bar){
+      bar=document.createElement('div'); bar.id='ttsBar'; bar.setAttribute('role','region'); bar.setAttribute('aria-label',T('tts.title'));
+      bar.innerHTML='<button data-act="prev" aria-label="'+esc(T('tts.prev'))+'" title="'+esc(T('tts.prev'))+'"><span class="yi yi-skipb" aria-hidden="true"></span></button>'
+        +'<button data-act="toggle" class="tts-toggle"></button>'
+        +'<button data-act="next" aria-label="'+esc(T('tts.next'))+'" title="'+esc(T('tts.next'))+'"><span class="yi yi-skipf" aria-hidden="true"></span></button>'
+        +'<span class="tts-label" aria-live="off"></span>'
+        +'<select class="tts-rate" aria-label="'+esc(T('tts.rate'))+'"><option value="0.8">0.8×</option><option value="1">1×</option><option value="1.2">1.2×</option><option value="1.5">1.5×</option></select>'
+        +'<button data-act="stop" aria-label="'+esc(T('tts.stop'))+'" title="'+esc(T('tts.stop'))+'"><span class="yi yi-stop" aria-hidden="true"></span></button>';
+      document.body.appendChild(bar);
+      bar.addEventListener('click',function(e){ var b=e.target.closest('[data-act]'); if(!b) return; ({prev:prev,toggle:toggle,next:next,stop:stop})[b.dataset.act](); });
+      bar.querySelector('.tts-rate').addEventListener('change',function(){ setPref('rate',this.value); if(playing&&!paused) playIndex(idx); });
+    }
+    bar.querySelector('.tts-rate').value=String(rate());
+    var tg=bar.querySelector('.tts-toggle'); var lab=paused?T('tts.play'):T('tts.pause');
+    tg.innerHTML='<span class="yi '+(paused?'yi-play':'yi-pause')+'" aria-hidden="true"></span>'; tg.setAttribute('aria-label',lab); tg.title=lab;
+    var p=(queue[idx]||{})._yeetPost||{};
+    bar.querySelector('.tts-label').textContent=T('tts.now',{name:authorName(p)})+' · '+T('tts.position',{i:idx+1,n:queue.length});
+  }
+  document.addEventListener('visibilitychange',function(){ if(document.hidden) pause(); });
+  return {supported:supported,readPost:readPost,readFeed:readFeed,pause:pause,resume:resume,toggle:toggle,stop:stop,next:next,prev:prev,isPlaying:function(){return playing;}};
+})();
+
+// ---------- translation (client) ----------
+var Translate=(function(){
+  var status=null,statusP=null,running=0,pending=[];
+  function getStatus(){
+    if(statusP) return statusP;
+    statusP=fetch('/api/v1/translate/status').then(function(r){return r.ok?r.json():{success:false};}).then(function(d){status=(d&&d.success&&d.data)||{enabled:false};return status;}).catch(function(){status={enabled:false};return status;});
+    return statusP;
+  }
+  function enabled(){return !!(status&&status.enabled);}
+  function needs(p){ if(!p) return false; var l=String(p.lang||'').slice(0,2).toLowerCase(); return !l||l!==uiLang(); }
+  function contentDiv(el){ var acts=el.querySelector('.post-actions'); return acts?acts.previousElementSibling:null; }
+  function setBtn(el,state){ var b=el.querySelector('.tr-btn'); if(!b) return; b.disabled=state==='loading'; b.style.opacity=state==='loading'?'.5':''; b.setAttribute('aria-busy',state==='loading'?'true':'false'); }
+  function render(el,data){
+    var cd=contentDiv(el); if(!cd) return;
+    var wrap=document.createElement('div'); wrap.className='post-translation-wrap'; wrap.setAttribute('lang',data.target_lang||uiLang());
+    var body=document.createElement('div'); body.className='post-translation'; body.textContent=data.text||'';
+    var meta=document.createElement('div'); meta.className='tr-meta';
+    meta.appendChild(document.createTextNode(T('tr.from',{lang:langName(data.source_lang)})+' · '));
+    var tog=document.createElement('button'); tog.type='button'; tog.textContent=T('tr.hideOriginal');
+    tog.addEventListener('click',function(){ var hidden=cd.style.display==='none'; cd.style.display=hidden?'':'none'; tog.textContent=T(hidden?'tr.hideOriginal':'tr.showOriginal'); });
+    meta.appendChild(tog);
+    wrap.appendChild(body); wrap.appendChild(meta);
+    cd.parentNode.insertBefore(wrap,cd.nextSibling);
+    var b=el.querySelector('.tr-btn'); if(b){ b.setAttribute('aria-pressed','true'); }
+  }
+  async function translatePost(el,silent){
+    var p=el&&el._yeetPost; if(!p||!p.id) return;
+    var existing=el.querySelector('.post-translation-wrap');
+    if(existing){ var hide=existing.style.display!=='none'; existing.style.display=hide?'none':''; var bb=el.querySelector('.tr-btn'); if(bb) bb.setAttribute('aria-pressed',hide?'false':'true'); return; }
+    var jwt=LS('yeet_jwt',''); if(!jwt){ if(!silent&&window.showToast) window.showToast(T('common.pleaseLogin')); return; }
+    setBtn(el,'loading');
+    try{
+      var r=await fetch('/api/v1/posts/'+encodeURIComponent(p.id)+'/translate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({target:uiLang()})});
+      var d=null; try{d=await r.json();}catch(e){}
+      if(r.status===429){ if(!silent&&window.showToast) window.showToast(T('tr.limit'),'error'); return; }
+      if(!r.ok||!d||!d.success||!d.data){ if(!silent&&window.showToast) window.showToast((d&&d.error&&d.error.message)||T('tr.failed'),'error'); return; }
+      if(d.data.same_language){ p.lang=d.data.source_lang||uiLang(); var b=el.querySelector('.tr-btn'); if(b) b.style.display='none'; if(!silent&&window.showToast) window.showToast(T('tr.same')); return; }
+      if(d.data.source_lang) p.lang=d.data.source_lang;
+      render(el,d.data);
+      if(!silent) announce(T('tr.from',{lang:langName(d.data.source_lang)}));
+    }catch(e){ if(!silent&&window.showToast) window.showToast(T('common.networkError'),'error'); }
+    finally{ setBtn(el,'idle'); }
+  }
+  function pump(){ while(running<2&&pending.length){ var el=pending.shift(); if(!document.contains(el)||el.querySelector('.post-translation-wrap')) continue; running++; translatePost(el,true).finally(function(){running--;pump();}); } }
+  function autoMaybe(el){
+    var p=el&&el._yeetPost; if(!p||!p.id||!p.content) return;
+    if(LS(PREF.autoTr,'0')!=='1'||!enabled()||!p.lang||!needs(p)) return;
+    if(pending.indexOf(el)<0) pending.push(el); pump();
+  }
+  return {getStatus:getStatus,enabled:enabled,needs:needs,translatePost:translatePost,autoMaybe:autoMaybe};
+})();
+
+// ---------- keyboard shortcuts (screen-reader mode) ----------
+function showHelp(){
+  var old=document.getElementById('a11yHelp'); if(old){old.remove();return;}
+  var d=document.createElement('div'); d.id='a11yHelp'; d.setAttribute('role','dialog'); d.setAttribute('aria-modal','true'); d.setAttribute('aria-labelledby','a11yHelpTitle');
+  var rows=String(T('a11y.helpBody')).split('\n').map(function(line){ var m=line.split('='); return '<div><kbd>'+esc(m[0].trim())+'</kbd> '+esc(m.slice(1).join('=').trim())+'</div>'; }).join('');
+  d.innerHTML='<div class="box"><h3 id="a11yHelpTitle" style="margin:0 0 10px">'+esc(T('a11y.shortcuts'))+'</h3>'+rows+'<button type="button" class="a11y-btn" style="margin-top:14px">'+esc(T('a11y.close'))+'</button></div>';
+  d.addEventListener('click',function(e){ if(e.target===d||e.target.tagName==='BUTTON') d.remove(); });
+  document.body.appendChild(d);
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){ var h=document.getElementById('a11yHelp'); if(h){h.remove();e.stopPropagation();return;} if(Reader.isPlaying()&&!openStack.length){Reader.stop();return;} }
+  if(LS(PREF.sr,'0')!=='1') return;
+  var tg=e.target; if(tg&&(tg.tagName==='INPUT'||tg.tagName==='TEXTAREA'||tg.tagName==='SELECT'||tg.isContentEditable)) return;
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  if(openStack.length&&e.key!=='?') return;
+  var cur=document.activeElement&&document.activeElement.closest?document.activeElement.closest('[role="article"]'):null;
+  var arts=Array.prototype.filter.call(document.querySelectorAll('#feed-posts [role="article"],#profilePosts [role="article"]'),isVisible);
+  var q=function(sel){return cur?cur.querySelector(sel):null;};
+  switch(e.key){
+    case 'j': case 'k': { if(!arts.length) return; var i=cur?arts.indexOf(cur):-1; var n=e.key==='j'?Math.min(arts.length-1,i+1):Math.max(0,i-1); arts[n].focus(); try{arts[n].scrollIntoView({block:'center'});}catch(x){} e.preventDefault(); break; }
+    case 'l': { var b=q('.like-btn'); if(b){b.click();e.preventDefault();} break; }
+    case 'c': { var cb=q('.comment-btn'); if(cb){cb.click();e.preventDefault();setTimeout(function(){var i=q('.comment-input');if(i&&isVisible(i))i.focus();},80);} break; }
+    case 'r': if(cur){Reader.readPost(cur);e.preventDefault();} break;
+    case 'R': Reader.readFeed(cur||null); e.preventDefault(); break;
+    case 't': { var tb=q('.tr-btn'); if(tb&&isVisible(tb)){Translate.translatePost(cur);e.preventDefault();} break; }
+    case ' ': if(Reader.isPlaying()){Reader.toggle();e.preventDefault();} break;
+    case '?': showHelp(); e.preventDefault(); break;
+  }
+});
+
+// ---------- DOM watcher ----------
+var pendingSync=false, autoReadTimer=null;
+function scheduleSync(){ if(pendingSync) return; pendingSync=true; requestAnimationFrame(function(){pendingSync=false;syncDialogs();syncTabs();}); }
+function onAdded(node){
+  if(!node||node.nodeType!==1) return;
+  hideIcons(node);
+  var feeds=[]; if(node.id==='feed-posts'||node.id==='profilePosts') feeds.push(node); if(node.querySelectorAll) feeds=feeds.concat(Array.prototype.slice.call(node.querySelectorAll('#feed-posts,#profilePosts')));
+  feeds.forEach(function(f){ f.setAttribute('role','feed'); f.setAttribute('aria-label',T('a11y.feed')); f.setAttribute('aria-busy','false'); });
+  if(node.id==='feed-posts'&&LS(PREF.ttsAuto,'0')==='1'&&LS(PREF.sr,'0')==='1'&&!document.hidden){
+    clearTimeout(autoReadTimer); autoReadTimer=setTimeout(function(){ if(!Reader.isPlaying()) Reader.readFeed(null); },700);
+  }
+}
+function boot(){
+  hideIcons(document); syncTabs(); syncDialogs();
+  // Feeds that rendered before this script ran (fast API + long document).
+  document.querySelectorAll('#feed-posts,#profilePosts').forEach(function(f){ f.setAttribute('role','feed'); f.setAttribute('aria-label',T('a11y.feed')); });
+  var main=document.getElementById('main'); if(main&&!main.hasAttribute('tabindex')) main.tabIndex=-1;
+  var h2=document.querySelector('.feed-header h2');
+  if(h2){ new MutationObserver(function(){ announce(h2.textContent.trim()); }).observe(h2,{childList:true,characterData:true,subtree:true}); }
+  new MutationObserver(function(muts){
+    var attr=false;
+    for(var i=0;i<muts.length;i++){ var m=muts[i]; if(m.type==='childList'){ for(var j=0;j<m.addedNodes.length;j++) onAdded(m.addedNodes[j]); } attr=true; }
+    if(attr) scheduleSync();
+  }).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style']});
+  Translate.getStatus();
+  document.querySelectorAll('[role="article"]').forEach(function(el){decoratePost(el);});
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+
+window.YeetA11y={decoratePost:decoratePost,setPref:setPref,announce:announce,showHelp:showHelp,syncSettingsUI:syncSettingsUI};
+window.YeetReader=Reader;
+window.YeetTranslate=Translate;
 })();
 </script>
 
