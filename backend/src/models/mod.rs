@@ -4,19 +4,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
-pub struct User {
-    pub id: Uuid,
-    pub wallet_address: Option<String>,
-    pub display_name: Option<String>,
-    pub bio: Option<String>,
-    pub avatar_url: Option<String>,
-    pub adult_content: bool,
-    pub total_yeet_earned: i64,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserProfile {
     pub id: Uuid,

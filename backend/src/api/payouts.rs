@@ -14,7 +14,7 @@ use crate::api::admin_mod::{check_admin_secret, record_action};
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
     pub secret: String,
-    /// 'awaiting_approval' (default) | 'pending' | 'minted' | 'rejected' | 'all'
+    /// 'awaiting_approval' (default) | 'pending' | 'minted' | 'failed' | 'rejected' | 'all'
     pub status: Option<String>,
 }
 
@@ -27,10 +27,15 @@ pub struct PayoutRow {
     pub amount: f64,
     pub status: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    /// How often the on-chain mint has been attempted (see batch_rewards).
+    pub mint_attempts: i32,
+    /// Last mint error, if any — why a payout is 'failed' or still retrying.
+    pub last_error: Option<String>,
 }
 
 const SELECT: &str =
-    "SELECT r.id, r.user_id, u.username, u.wallet_address, r.amount::float8 AS amount, r.status, r.created_at
+    "SELECT r.id, r.user_id, u.username, u.wallet_address, r.amount::float8 AS amount, r.status, r.created_at,
+            r.mint_attempts, r.last_error
        FROM token_rewards r JOIN users u ON u.id = r.user_id
       WHERE r.kind = 'conversion'";
 
@@ -41,7 +46,7 @@ pub async fn admin_list(
 ) -> AppResult<Json<ApiResponse<Vec<PayoutRow>>>> {
     check_admin_secret(&q.secret)?;
     let status = q.status.unwrap_or_else(|| "awaiting_approval".into());
-    if !["awaiting_approval", "pending", "minted", "rejected", "all"].contains(&status.as_str()) {
+    if !["awaiting_approval", "pending", "minted", "failed", "rejected", "all"].contains(&status.as_str()) {
         return Err(AppError::Validation("invalid status filter".into()));
     }
     let rows: Vec<PayoutRow> = if status == "all" {
@@ -99,7 +104,8 @@ pub async fn admin_approve(
 }
 
 /// POST /api/v1/admin/payouts/:id/reject — refund the points and close the
-/// request. Only an `awaiting_approval` conversion can be rejected.
+/// request. Allowed for `awaiting_approval` (not yet released) and `failed`
+/// (on-chain mint gave up after max attempts) conversions.
 pub async fn admin_reject(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
@@ -109,16 +115,17 @@ pub async fn admin_reject(
 
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
 
-    // Lock the row and confirm it is still awaiting approval; grab the amount +
-    // user so we can refund exactly and atomically.
+    // Lock the row and confirm it is refundable (never a 'pending' one — the
+    // minter may be paying it out right now — and never a 'minted' one); grab
+    // the amount + user so we can refund exactly and atomically.
     let row: Option<(Uuid, f64)> = sqlx::query_as(
         "SELECT user_id, amount::float8 FROM token_rewards
-          WHERE id = $1 AND kind = 'conversion' AND status = 'awaiting_approval' FOR UPDATE"
+          WHERE id = $1 AND kind = 'conversion' AND status IN ('awaiting_approval', 'failed') FOR UPDATE"
     )
     .bind(id)
     .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
     let (user_id, amount) = row.ok_or_else(||
-        AppError::Validation("payout not found or not awaiting approval".into()))?;
+        AppError::Validation("payout not found or not refundable (must be awaiting_approval or failed)".into()))?;
 
     sqlx::query("UPDATE token_rewards SET status = 'rejected' WHERE id = $1")
         .bind(id).execute(&mut *tx).await.map_err(AppError::Database)?;
