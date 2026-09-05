@@ -44,6 +44,8 @@ async fn main() {
     tokio::spawn(services::batch_rewards::start_message_cleanup_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_scheduled_publish_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_lives_sweep_job(state.clone()));
+    // NOTE→YEET swap watcher — idle until SWAP_ENABLED + NOTE_RPC_URL are set.
+    tokio::spawn(services::note_swap::start_swap_watcher(state.clone()));
     info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");
@@ -259,6 +261,10 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/tokens/balance",   get(api::tokens::get_balance))
         .route("/api/v1/tokens/rewards",   get(api::tokens::get_rewards))
         .route("/api/v1/tokens/pool",      get(api::tokens::get_pool))
+        // NOTE→YEET swap (status public; address/deposits locked until live)
+        .route("/api/v1/swap/status",      get(api::swap::status))
+        .route("/api/v1/swap/address",     post(api::swap::address))
+        .route("/api/v1/swap/deposits",    get(api::swap::deposits))
         .route("/api/v1/points/convert",   post(api::points::convert))
         // Paper wallets — printable YEET banknotes
         .route("/api/v1/paper-wallets",          post(api::paper_wallets::create))

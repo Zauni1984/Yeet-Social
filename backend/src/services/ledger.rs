@@ -38,6 +38,7 @@ pub mod tx_type {
     pub const POINTS_CONVERSION: &str   = "points_conversion";   // points debited for a YEET payout
     pub const PAYOUT_REFUND: &str       = "payout_refund";       // points returned after an admin-rejected payout
     pub const ONCHAIN_PAYOUT: &str      = "onchain_payout";      // YEET minted to a user wallet
+    pub const NOTE_SWAP_IN: &str        = "note_swap_in";        // NOTE received on a swap deposit address
     pub const ONCHAIN_TIP: &str         = "onchain_tip";         // on-chain YEET tip (indexer)
     pub const ONCHAIN_PPV: &str         = "onchain_ppv";         // on-chain YEET PPV (indexer)
 }
@@ -46,6 +47,7 @@ pub mod asset {
     pub const POINTS: &str = "POINTS";
     pub const YEET: &str   = "YEET";
     pub const BNB: &str    = "BNB";
+    pub const NOTE: &str   = "NOTE";
     pub const EUR: &str    = "EUR";
 }
 
