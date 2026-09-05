@@ -4,7 +4,7 @@
 #
 # Reads secrets from /root/yeet-social/.env (override with ENV_FILE=...).
 # Required keys: POSTGRES_PASSWORD, JWT_SECRET, ADMIN_SECRET
-# Optional:     RUST_LOG
+# Optional:     RUST_LOG, TRANSLATE_PROVIDER/TRANSLATE_URL/TRANSLATE_API_KEY (post translation)
 
 set -eu +H
 
@@ -72,6 +72,9 @@ docker run -d --name yeet-backend \
   -e JWT_SECRET="${JWT_SECRET}" \
   -e RUST_LOG="${RUST_LOG}" \
   -e ADMIN_SECRET="${ADMIN_SECRET}" \
+  -e TRANSLATE_PROVIDER="${TRANSLATE_PROVIDER:-}" \
+  -e TRANSLATE_URL="${TRANSLATE_URL:-}" \
+  -e TRANSLATE_API_KEY="${TRANSLATE_API_KEY:-}" \
   ghcr.io/zauni1984/yeet-social/backend:main
 echo "Backend started on :8080"
 sleep 5 && curl -s http://127.0.0.1:8080/api/v1/health

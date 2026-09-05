@@ -42,3 +42,11 @@ Client Audio (`.weba`) und Video (`.webm`) an der URL unterscheiden kann.
 Punkte-Belohnung: wie bei allen Posts nur ab 120 Zeichen Text — eine reine
 Sprachnachricht ohne Text erhält aktuell keine Posting-Punkte (bewusst offen
 gelassen, bis wir eine Regel für Audio festlegen).
+
+## Beschreibungstext und Punkte
+
+Jede Audio Story kann einen Text tragen („Worum geht es?", bis 420 Zeichen). Er wird
+unter dem Player angezeigt, vom Vorleser mitgesprochen, in die Spracherkennung und
+Übersetzung einbezogen und zählt für die Posting-Punkte wie ein normaler Post: ab
+120 Zeichen Text gibt es die Posting-Belohnung (Tages-Cap wie überall). Eine Story
+ohne Text bringt keine Punkte.

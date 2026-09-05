@@ -51,7 +51,24 @@ trotzdem (kostenlose Stoppwort-Heuristik), damit jeder Post ein `lang` trägt.
 | `TRANSLATE_URL` | `http://libretranslate:5000` bzw. `https://api-free.deepl.com` | Basis-URL des Providers |
 | `TRANSLATE_API_KEY` | – | Pflicht für DeepL (`DeepL-Auth-Key`), optional für LibreTranslate |
 
-## Provider-Wahl (Entscheidung offen)
+## Aktivierung: DeepL Free (entschieden)
+
+1. Konto unter https://www.deepl.com/pro-api anlegen („DeepL API Free", 500.000 Zeichen/Monat,
+   Kreditkarte nur zur Verifizierung). Den Authentication Key kopieren (endet auf `:fx`).
+2. Auf dem VPS in `/root/yeet-social/.env` eintragen (siehe `vps/.env.example`):
+   ```
+   TRANSLATE_PROVIDER=deepl
+   TRANSLATE_URL=https://api-free.deepl.com
+   TRANSLATE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx
+   ```
+3. Backend neu starten (`bash /tmp/start_backend.sh` bzw. `docker compose restart yeet-api`).
+4. Prüfen: `curl -s https://justyeet.it/api/v1/translate/status` → `"enabled":true,"provider":"deepl"`.
+   Ab dann erscheint der Übersetzen-Button automatisch; kein Frontend-Deploy nötig.
+5. Verbrauch im DeepL-Konto beobachten. Der Cache je Post+Sprache und das Limit pro Konto
+   (20/Minute, 300/Stunde) halten den Verbrauch niedrig; bei Bedarf auf DeepL Pro wechseln
+   (nur `TRANSLATE_URL=https://api.deepl.com` und neuer Key).
+
+## Provider-Vergleich (Referenz)
 
 | | LibreTranslate (selbst gehostet) | DeepL API |
 | --- | --- | --- |
