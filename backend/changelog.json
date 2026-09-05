@@ -4,42 +4,78 @@
     {
       "id": "2026-09-05-00-hello",
       "text": "Hi, I'm the YEET Updates bot. From now on every fix and new feature that ships to justyeet.it gets posted here as a permanent post, so you always know what changed. Follow me to stay in the loop.",
-      "tags": ["#Changelog", "#YEET"]
+      "tags": [
+        "#Changelog",
+        "#YEET"
+      ]
     },
     {
       "id": "2026-09-05-01-moods-webboards-delete",
       "text": "New: Moods! Pick a color theme in Settings (Midnight, Sunset, Forest, Ocean, Violet, Mono, Arctic light). Also new: build your own Webboards from any RSS feed, and you can finally delete your own posts from the ⋯ menu.",
-      "tags": ["#Moods", "#Webboards", "#NewFeature"]
+      "tags": [
+        "#Moods",
+        "#Webboards",
+        "#NewFeature"
+      ]
     },
     {
       "id": "2026-09-05-02-profile-swap-page",
       "text": "The profile widget now shows your real name and points instead of a wallet address. And the NOTE → YEET swap page is live at justyeet.it/swap.html: 100 NOTE = 1 YEET, fixed rate. Swaps unlock once the YEET token contract is deployed – we will announce it here.",
-      "tags": ["#NOTE", "#Swap", "#Token"]
+      "tags": [
+        "#NOTE",
+        "#Swap",
+        "#Token"
+      ]
     },
     {
       "id": "2026-09-05-03-german-ui",
       "text": "Fix: the German interface is now complete. Menu, search, tabs, login and registration, prompts, footer and post cards all follow the language you pick in Settings. Switching languages updates the page instantly, no reload needed.",
-      "tags": ["#Fix", "#i18n", "#Deutsch"]
+      "tags": [
+        "#Fix",
+        "#i18n",
+        "#Deutsch"
+      ]
     },
     {
       "id": "2026-09-05-04-four-languages",
       "text": "YEET now speaks six languages: English, Deutsch, Italiano, Français, Español and Português. On your first visit we follow your browser language; you can change it any time under Settings → Language. Benvenuti, bienvenue, bienvenidos, bem-vindos!",
-      "tags": ["#i18n", "#NewFeature"]
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     },
     {
       "id": "2026-09-05-05-accessibility-reader",
       "text": "Accessibility update: a screen reader mode (visible button labels, strong focus, keyboard shortcuts – press ? for help), high contrast and large text. Plus a built-in reader: have any post or the whole feed read aloud in the right language. Settings → Accessibility.",
-      "tags": ["#Accessibility", "#a11y", "#NewFeature"]
+      "tags": [
+        "#Accessibility",
+        "#a11y",
+        "#NewFeature"
+      ]
     },
     {
       "id": "2026-09-05-06-translation",
       "text": "New: translate posts. Posts written in another language get a Translate button; one tap shows them in your language with the source noted. Turn on “Translate posts automatically” in Settings → Accessibility and foreign-language posts translate themselves as you scroll.",
-      "tags": ["#Translation", "#NewFeature"]
+      "tags": [
+        "#Translation",
+        "#NewFeature"
+      ]
     },
     {
       "id": "2026-09-05-07-audio-stories",
       "text": "New: Audio Stories! Open the AUDIO tab, tap Record and talk – straight from your phone, up to 3 minutes. Add a short text about what it is, choose 24 hours or permanent, mark it 18+ if needed, publish. The reader plays stories for you, too.",
-      "tags": ["#AudioStories", "#NewFeature"]
+      "tags": [
+        "#AudioStories",
+        "#NewFeature"
+      ]
+    },
+    {
+      "id": "2026-09-06-01-nordic-languages",
+      "text": "Four more languages: Suomi, Svenska, Norsk and Íslenska. YEET now ships in ten languages – your browser language is picked automatically on first visit, or choose under Settings → Language. Tervetuloa, välkommen, velkommen, velkomin!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
