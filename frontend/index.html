@@ -5,6 +5,9 @@
 // Moods: apply the saved color mood before CSS parses so there is no
 // flash of the default theme on reload. Namespaced key (yeet_mood) so it
 // can't collide with other apps on the same origin.
+// One-time migration: sessions from before yeet_jwt became the single
+// token key still only hold the legacy yeetToken — carry it over once.
+try{if(!localStorage.getItem('yeet_jwt')&&localStorage.getItem('yeetToken'))localStorage.setItem('yeet_jwt',localStorage.getItem('yeetToken'));}catch(e){}
 try{var _m=localStorage.getItem('yeet_mood');if(_m&&_m!=='yeet')document.documentElement.dataset.theme=_m;}catch(e){}
 </script>
 <script>
@@ -33,67 +36,75 @@ if('serviceWorker' in navigator){
    --on-accent is the text color readable on --accent (all moods ship bright
    accents, so it stays #000 — defined per-theme for future light moods). */
 :root, [data-theme="yeet"]{
-  --bg:#0a0a0a; --bg-2:#0d0d0d; --card:#111; --card-2:#1a1a1a; --card-3:#262626;
+  --bg:#0a0a0a; --bg-rgb:10,10,10; --bg-2:#0d0d0d; --card:#111; --card-2:#1a1a1a; --card-3:#262626;
   --border:#222; --border-2:#333; --border-3:#444;
-  --text:#e8e8e8; --muted:#666; --dim:#555;
+  --text:#e8e8e8; --text-2:#cfcfcf; --muted:#666; --dim:#555;
   --accent:#c6f135; --accent-rgb:198,241,53; --on-accent:#000;
   --yeet:var(--accent); --green:#26f075; --red:#ff4444;
   --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #13150b 0%, var(--bg) 60%);
 }
 [data-theme="midnight"]{
-  --bg:#070b14; --bg-2:#0a101c; --card:#0d1420; --card-2:#16202f; --card-3:#20304a;
+  --bg:#070b14; --bg-rgb:7,11,20; --bg-2:#0a101c; --card:#0d1420; --card-2:#16202f; --card-3:#20304a;
   --border:#182338; --border-2:#26364e; --border-3:#33476a;
-  --text:#e6ecf5; --muted:#6d7f96; --dim:#4d5c70;
+  --text:#e6ecf5; --text-2:#c3cddb; --muted:#6d7f96; --dim:#4d5c70;
   --accent:#5eb1ff; --accent-rgb:94,177,255; --on-accent:#000;
   --green:#3ddc84; --red:#ff5d5d;
   --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #0b1322 0%, var(--bg) 60%);
 }
 [data-theme="sunset"]{
-  --bg:#140a06; --bg-2:#190d09; --card:#1e110b; --card-2:#291810; --card-3:#3a2317;
+  --bg:#140a06; --bg-rgb:20,10,6; --bg-2:#190d09; --card:#1e110b; --card-2:#291810; --card-3:#3a2317;
   --border:#2e1b12; --border-2:#43281a; --border-3:#5a3623;
-  --text:#f5e9e2; --muted:#a17d68; --dim:#75594a;
+  --text:#f5e9e2; --text-2:#d9c7bc; --muted:#a17d68; --dim:#75594a;
   --accent:#ff9d5c; --accent-rgb:255,157,92; --on-accent:#000;
   --green:#7bd88f; --red:#ff6b6b;
   --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #241009 0%, var(--bg) 60%);
 }
 [data-theme="forest"]{
-  --bg:#071009; --bg-2:#0a150c; --card:#0d1a10; --card-2:#142619; --card-3:#1e3826;
+  --bg:#071009; --bg-rgb:7,16,9; --bg-2:#0a150c; --card:#0d1a10; --card-2:#142619; --card-3:#1e3826;
   --border:#16281b; --border-2:#213a28; --border-3:#2e5038;
-  --text:#e4f2e8; --muted:#6f9480; --dim:#4f6b5b;
+  --text:#e4f2e8; --text-2:#bfd6c7; --muted:#6f9480; --dim:#4f6b5b;
   --accent:#6bffbc; --accent-rgb:107,255,188; --on-accent:#000;
   --green:#6bffbc; --red:#ff6b6b;
   --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #0c1c10 0%, var(--bg) 60%);
 }
 [data-theme="ocean"]{
-  --bg:#050f13; --bg-2:#081419; --card:#0a1a20; --card-2:#11262e; --card-3:#1a3944;
+  --bg:#050f13; --bg-rgb:5,15,19; --bg-2:#081419; --card:#0a1a20; --card-2:#11262e; --card-3:#1a3944;
   --border:#122730; --border-2:#1d3944; --border-3:#294e5c;
-  --text:#e2f0f4; --muted:#6c93a0; --dim:#4c6a75;
+  --text:#e2f0f4; --text-2:#bcd3da; --muted:#6c93a0; --dim:#4c6a75;
   --accent:#4fe3d0; --accent-rgb:79,227,208; --on-accent:#000;
   --green:#4fe3a0; --red:#ff6b6b;
   --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #08191f 0%, var(--bg) 60%);
 }
 [data-theme="violet"]{
-  --bg:#0c0714; --bg-2:#110a1c; --card:#160e24; --card-2:#201636; --card-3:#2f2150;
+  --bg:#0c0714; --bg-rgb:12,7,20; --bg-2:#110a1c; --card:#160e24; --card-2:#201636; --card-3:#2f2150;
   --border:#241740; --border-2:#342355; --border-3:#483070;
-  --text:#ece5f7; --muted:#8b7ba8; --dim:#635678;
+  --text:#ece5f7; --text-2:#cdc2e0; --muted:#8b7ba8; --dim:#635678;
   --accent:#b78bff; --accent-rgb:183,139,255; --on-accent:#000;
   --green:#7de3a2; --red:#ff6b8a;
   --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #170e29 0%, var(--bg) 60%);
 }
 [data-theme="mono"]{
-  --bg:#0a0a0a; --bg-2:#0f0f0f; --card:#141414; --card-2:#1d1d1d; --card-3:#2b2b2b;
+  --bg:#0a0a0a; --bg-rgb:10,10,10; --bg-2:#0f0f0f; --card:#141414; --card-2:#1d1d1d; --card-3:#2b2b2b;
   --border:#242424; --border-2:#363636; --border-3:#4a4a4a;
-  --text:#efefef; --muted:#8a8a8a; --dim:#5e5e5e;
+  --text:#efefef; --text-2:#cfcfcf; --muted:#8a8a8a; --dim:#5e5e5e;
   --accent:#f2f2f2; --accent-rgb:242,242,242; --on-accent:#000;
   --green:#bdbdbd; --red:#e0e0e0;
   --bg-gradient:none;
+}
+[data-theme="arctic"]{
+  --bg:#f4f6f8; --bg-rgb:244,246,248; --bg-2:#eef1f4; --card:#ffffff; --card-2:#f1f3f6; --card-3:#e4e8ed;
+  --border:#dfe3e8; --border-2:#cbd2da; --border-3:#aeb8c3;
+  --text:#14181d; --text-2:#3d4550; --muted:#6b7480; --dim:#98a1ab;
+  --accent:#1a7f4b; --accent-rgb:26,127,75; --on-accent:#ffffff;
+  --yeet:var(--accent); --green:#1f8f52; --red:#c0392b;
+  --bg-gradient:radial-gradient(1200px 800px at 50% -10%, #ffffff 0%, var(--bg) 60%);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);background-image:var(--bg-gradient);background-attachment:fixed;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
 .tick{display:inline-flex;align-items:center;gap:5px;padding:0 18px;font-size:12px;font-weight:600}
 .tick .sym{color:var(--muted)}
 .up{color:var(--green)}.dn{color:var(--red)}
-nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;padding:0 16px;overflow:hidden}
+nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:56px;padding:0 16px;overflow:hidden}
 .nav-inner{display:flex;align-items:center;gap:12px;height:100%}
 .logo{display:flex;align-items:center;gap:8px;font-size:20px;font-weight:900;color:var(--yeet);text-decoration:none;flex-shrink:0}
 .logo svg{width:28px;height:28px}
@@ -101,7 +112,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .search input{width:100%;background:var(--card-2);border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:14px;outline:none}
 .search input:focus{border-color:var(--yeet)}
 .btn-wallet{margin-left:auto;background:transparent;border:1px solid var(--yeet);color:var(--yeet);padding:8px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.btn-wallet:hover,.btn-wallet.connected{background:var(--yeet);color:#000}
+.btn-wallet:hover,.btn-wallet.connected{background:var(--yeet);color:var(--on-accent)}
 .hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px}
 .hamburger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px}
 .layout{display:grid;grid-template-columns:240px 1fr 320px;min-height:calc(100vh - 92px)}
@@ -109,7 +120,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .nav-section{padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 .nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;border-left:3px solid transparent;cursor:pointer}
 .nav-link:hover,.nav-link.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet)}
-.badge{margin-left:auto;background:var(--yeet);color:#000;font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
+.badge{margin-left:auto;background:var(--yeet);color:var(--on-accent);font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
 .main{border-right:1px solid var(--border)}
 .feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .feed-header h2{font-size:18px;font-weight:800}
@@ -125,7 +136,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .composer-footer{display:flex;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
 .icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
 .icon-btn:hover{color:var(--yeet)}
-.btn-yeet{margin-left:auto;background:var(--yeet);color:#000;border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer}
+.btn-yeet{margin-left:auto;background:var(--yeet);color:var(--on-accent);border:none;padding:8px 20px;border-radius:20px;font-weight:800;font-size:14px;cursor:pointer}
 .empty{padding:60px 20px;text-align:center;color:var(--muted)}
 .empty .icon{font-size:48px;margin-bottom:16px}
 .sidebar-right{padding:16px}
@@ -136,7 +147,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99}
 .overlay.on{display:block}
 /* WALLET MODAL */
-.pw-quick{flex:1 0 calc(25% - 6px);padding:8px;background:var(--card-2);border:1px solid var(--border-2);color:#fff;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px}
+.pw-quick{flex:1 0 calc(25% - 6px);padding:8px;background:var(--card-2);border:1px solid var(--border-2);color:var(--text);border-radius:8px;cursor:pointer;font-weight:700;font-size:14px}
 .pw-quick.on{border-color:var(--yeet);color:var(--yeet)}
 .pw-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-2);border:1px solid var(--border-2);border-radius:10px}
 .pw-row .pw-meta{font-size:11px;color:var(--muted)}
@@ -159,10 +170,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .modal-wrap{position:relative}
 /* SETTINGS as a full scrollable page (was a centered modal that got
    clipped top+bottom once its content grew taller than the viewport). */
-.settings-page{display:none;position:fixed;inset:0;z-index:200;background:#080808;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.settings-page{display:none;position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .settings-page.on{display:block}
 .settings-page-inner{max-width:560px;margin:0 auto;padding:18px 16px 110px}
-.settings-page-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;background:#080808;padding:14px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--border)}
+.settings-page-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;background:var(--bg);padding:14px 0 12px;margin-bottom:6px;border-bottom:1px solid var(--border)}
 .settings-page-bar h3{margin:0;font-size:18px}
 .settings-back{display:inline-flex;align-items:center;gap:6px;color:var(--yeet);background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;flex-shrink:0}
 .settings-back:hover{border-color:var(--yeet)}
@@ -176,7 +187,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .pwa-steps{text-align:left;margin-bottom:20px}
 .pwa-steps li{font-size:13px;margin-bottom:8px;padding-left:4px;color:var(--muted)}
 .pwa-steps li strong{color:var(--text)}
-.btn-primary{background:var(--yeet);color:#000;border:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-bottom:8px}
+.btn-primary{background:var(--yeet);color:var(--on-accent);border:none;padding:12px 24px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;width:100%;margin-bottom:8px}
 .btn-secondary{background:none;color:var(--muted);border:1px solid var(--border);padding:10px 24px;border-radius:12px;font-size:14px;cursor:pointer;width:100%}
 .pwa-banner{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:150}
 .pwa-banner.hide{display:none}
@@ -232,21 +243,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 
 /* ticker removed */
 
-.site-footer{margin-top:40px;padding:24px 16px;border-top:1px solid var(--border);background:#080808;color:var(--muted);font-size:12px}
+.site-footer{margin-top:40px;padding:24px 16px;border-top:1px solid var(--border);background:var(--bg);color:var(--muted);font-size:12px}
 .site-footer-inner{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;max-width:1400px;margin:0 auto}
 .site-footer-links a{color:var(--muted);text-decoration:none;margin-right:14px}
 .site-footer-links a:hover{color:var(--yeet);text-decoration:underline}
 .site-footer .copy{color:var(--muted);font-size:11px}
 @media(max-width:600px){.site-footer-links a{display:inline-block;margin:4px 10px 4px 0}}
 
-.legal-page{display:none;position:fixed;inset:0;z-index:300;background:#080808;color:var(--text);overflow-y:auto;padding:24px;line-height:1.65;font-size:14px}
+.legal-page{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);color:var(--text);overflow-y:auto;padding:24px;line-height:1.65;font-size:14px}
 .legal-page.on{display:block}
 .legal-page-inner{max-width:780px;margin:0 auto;padding:32px 8px 80px}
 .legal-page h1{color:var(--yeet);font-size:28px;margin:0 0 8px;font-weight:800}
 .legal-page h2{color:var(--text);font-size:18px;margin:24px 0 8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px}
 .legal-page h3{color:var(--text);font-size:15px;margin:18px 0 6px;font-weight:700}
-.legal-page p{margin:0 0 12px;color:#cccccc}
-.legal-page ul,.legal-page ol{margin:0 0 12px;padding-left:22px;color:#cccccc}
+.legal-page p{margin:0 0 12px;color:var(--text-2)ccc}
+.legal-page ul,.legal-page ol{margin:0 0 12px;padding-left:22px;color:var(--text-2)ccc}
 .legal-page li{margin-bottom:4px}
 .legal-page table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
 .legal-page th,.legal-page td{border:1px solid var(--border);padding:6px 10px;vertical-align:top;text-align:left}
@@ -256,10 +267,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .legal-page .legal-meta{color:var(--muted);font-size:12px;margin:0 0 18px;font-style:italic}
 .legal-page article{display:none}
 .legal-page article.on{display:block}
-.legal-page address{font-style:normal;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:0 0 12px;font-family:monospace;font-size:13px;color:#dddddd;white-space:pre-wrap}
-.legal-page strong{color:#fff}
+.legal-page address{font-style:normal;background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin:0 0 12px;font-family:monospace;font-size:13px;color:var(--text-2)ddd;white-space:pre-wrap}
+.legal-page strong{color:var(--text)}
 .adm-tab{background:transparent;border:none;color:var(--muted);padding:8px 14px;cursor:pointer;font-weight:700;border-bottom:2px solid transparent;font-size:14px}
-.adm-tab:hover{color:#fff}
+.adm-tab:hover{color:var(--text)}
 .adm-tab.on{color:var(--yeet);border-bottom-color:var(--yeet)}
 .adm-card{background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
 .adm-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px}
@@ -272,7 +283,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 .adm-btn.danger{border-color:#5a2a2a;color:#ff7f7f}
 .adm-btn.danger:hover{background:#3a1a1a}
 .adm-btn.warn{border-color:#5a4a1a;color:#ffb84d}
-.adm-input{width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none}
+.adm-input{width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
 .adm-badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .adm-badge.flagged{background:#3a2a1a;color:#ffb84d}
 .adm-badge.banned{background:#3a1a1a;color:#ff7f7f}
@@ -363,7 +374,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
        there is no market for it. A fictitious price + fake 24h change would
        be misleading. Reinstate a price only with a real, sourced market
        price (exchange/pool) and a timestamp. -->
-  <div id="yeetPriceWidget" style="display:flex;align-items:center;gap:6px;background:#0f0f0f;border:1px solid var(--border-2);border-radius:20px;padding:4px 12px;margin-left:8px;cursor:default">
+  <div id="yeetPriceWidget" style="display:flex;align-items:center;gap:6px;background:var(--bg-2);border:1px solid var(--border-2);border-radius:20px;padding:4px 12px;margin-left:8px;cursor:default">
     <div style="line-height:1.2">
       <div style="font-size:12px;font-weight:700;color:var(--accent)"><span class="yi yi-logo"></span> YEET</div>
       <div style="font-size:10px;color:var(--muted)" data-i18n="token.noMarketPrice">Utility token &middot; no market price</div>
@@ -378,7 +389,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   <div id="authArea" style="display:inline-flex;align-items:center;gap:8px;margin-right:8px">
       <button class="btn-login" onclick="openAuthModal('login')">Login</button>
       <button class="btn-reg" onclick="openAuthModal('register')">Register</button>
-      <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:#000;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center"><span class="yi yi-user"></span></button>
+      <button id="mobileAuthBtn" onclick="openAuthModal('login')" style="display:none;background:var(--yeet);border:none;color:var(--on-accent);width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;align-items:center;justify-content:center"><span class="yi yi-user"></span></button>
     </div>
     <div id="walletArea" style="display:none;align-items:center;gap:8px;margin-right:8px;position:relative">
       <span class="balance-pill" id="balancePill" onclick="onBalancePillClick()" title="" data-i18n-title="balance.title"><span class="yi yi-bolt"></span> <span id="balanceAmt">—</span> <span data-i18n="balance.unit">Points</span></span>
@@ -404,9 +415,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
 
     <!-- Add-feed form (shown when logged in) -->
     <div id="wbAddRow" style="display:none;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <input id="wbAddUrl" type="url" placeholder="" data-i18n-placeholder="webboard.phUrl" style="flex:1;min-width:170px;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none">
-      <input id="wbAddTitle" type="text" maxlength="60" placeholder="" data-i18n-placeholder="webboard.phTitle" style="width:120px;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;outline:none">
-      <button onclick="addWebboard()" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px" data-i18n="webboard.add">Add</button>
+      <input id="wbAddUrl" type="url" placeholder="" data-i18n-placeholder="webboard.phUrl" style="flex:1;min-width:170px;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none">
+      <input id="wbAddTitle" type="text" maxlength="60" placeholder="" data-i18n-placeholder="webboard.phTitle" style="width:120px;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none">
+      <button onclick="addWebboard()" style="background:var(--yeet);color:var(--on-accent);border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px" data-i18n="webboard.add">Add</button>
     </div>
     <div id="wbLoginHint" style="display:none;font-size:12px;color:var(--muted);margin-bottom:10px" data-i18n="webboard.loginToAdd">Log in to save your own feeds.</div>
 
@@ -456,8 +467,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <div id="dmThreadHeader" style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted)" data-i18n="dm.pickConv">Select a conversation</div>
         <div id="dmThreadBody" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px"></div>
         <div id="dmComposer" style="display:none;border-top:1px solid var(--border);padding:8px;gap:6px;flex-wrap:wrap">
-          <textarea id="dmInput" rows="2" placeholder="" style="flex:1 1 100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;resize:vertical;min-height:34px"></textarea>
-          <button onclick="sendDmText()" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer" data-i18n="dm.send">Send</button>
+          <textarea id="dmInput" rows="2" placeholder="" style="flex:1 1 100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:34px"></textarea>
+          <button onclick="sendDmText()" style="background:var(--yeet);color:var(--on-accent);border:none;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer" data-i18n="dm.send">Send</button>
           <button onclick="document.getElementById('dmImageInput').click()" title="" data-i18n-title="dm.sendImage" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px 12px;cursor:pointer"><span class="yi yi-camera"></span></button>
           <input type="file" id="dmImageInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" onchange="sendDmImage(this)">
           <button onclick="openDmTip()" style="background:transparent;border:1px solid #f5a623;color:#f5a623;border-radius:8px;padding:8px 12px;cursor:pointer" title="" data-i18n-title="dm.sendTip"><span class="yi yi-gift"></span></button>
@@ -472,11 +483,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <button class="modal-close" onclick="closeNewDmModal()"><span class="yi yi-close"></span></button>
     <h3><span class="yi yi-chat"></span> <span data-i18n="dm.newTitle">New conversation</span></h3>
     <p style="color:var(--muted);font-size:12px;margin:6px 0 8px" data-i18n="dm.followingHint">Pick from people you follow:</p>
-    <input id="newDmFilter" type="text" autocomplete="off" placeholder="" data-i18n-placeholder="common.search" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:8px">
+    <input id="newDmFilter" type="text" autocomplete="off" placeholder="" data-i18n-placeholder="common.search" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px">
     <div id="newDmFollows" style="max-height:32vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;border:1px solid var(--border);border-radius:10px;padding:6px"></div>
     <details style="margin-bottom:10px"><summary style="cursor:pointer;color:var(--muted);font-size:12px;margin-bottom:6px" data-i18n="dm.orEnterAddr">Or enter wallet / username manually</summary>
-      <input id="newDmAddr" type="text" autocomplete="off" spellcheck="false" placeholder="0x... or @username" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;margin:6px 0;font-family:monospace">
-      <button onclick="createDmConversation()" style="width:100%;padding:8px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="dm.startChat">Start chat</button>
+      <input id="newDmAddr" type="text" autocomplete="off" spellcheck="false" placeholder="0x... or @username" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;margin:6px 0;font-family:monospace">
+      <button onclick="createDmConversation()" style="width:100%;padding:8px;background:var(--yeet);color:var(--on-accent);border:none;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="dm.startChat">Start chat</button>
     </details>
     <button onclick="closeNewDmModal();openNewGroupModal()" style="width:100%;padding:10px;background:transparent;color:var(--yeet);border:1px solid var(--yeet);border-radius:10px;font-weight:600;cursor:pointer" data-i18n="dm.groupNew">New group</button>
   </div>
@@ -486,15 +497,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   <div class="modal modal-wrap" style="max-width:480px">
     <button class="modal-close" onclick="closeNewGroupModal()"><span class="yi yi-close"></span></button>
     <h3><span class="yi yi-users"></span> <span data-i18n="dm.groupNew">New group</span></h3>
-    <input id="newGroupName" type="text" maxlength="80" placeholder="" data-i18n-placeholder="dm.groupNamePh" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin:10px 0">
+    <input id="newGroupName" type="text" maxlength="80" placeholder="" data-i18n-placeholder="dm.groupNamePh" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin:10px 0">
     <div style="font-size:12px;color:var(--muted);margin-bottom:4px" data-i18n="dm.pickMembers">Pick members from people you follow:</div>
-    <input id="newGroupFilter" type="text" autocomplete="off" placeholder="" data-i18n-placeholder="common.search" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 12px;color:#fff;font-size:13px;outline:none;margin-bottom:8px">
+    <input id="newGroupFilter" type="text" autocomplete="off" placeholder="" data-i18n-placeholder="common.search" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px">
     <div id="newGroupFollows" style="max-height:30vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;border:1px solid var(--border);border-radius:10px;padding:6px;margin-bottom:10px"></div>
     <details style="margin-bottom:10px"><summary style="cursor:pointer;color:var(--muted);font-size:12px" data-i18n="dm.orEnterAddrs">Or add extra members by address</summary>
       <div id="newGroupMembers" style="display:flex;flex-direction:column;gap:6px;margin:6px 0 8px"></div>
       <button onclick="addGroupMemberRow()" style="background:transparent;color:var(--yeet);border:1px dashed var(--border);border-radius:8px;padding:6px;width:100%;cursor:pointer" data-i18n="dm.groupAdd">+ Add member</button>
     </details>
-    <button onclick="createGroup()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="dm.groupCreate">Create group</button>
+    <button onclick="createGroup()" style="width:100%;padding:12px;background:var(--yeet);color:var(--on-accent);border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="dm.groupCreate">Create group</button>
   </div>
 </div>
 
@@ -526,9 +537,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
         <button class="pw-quick" data-amt="100">100</button>
         <button class="pw-quick" data-amt="500">500</button>
       </div>
-      <input id="pwAmount" type="number" min="0.01" step="0.01" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:12px" />
-      <input id="pwNote" type="text" maxlength="80" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:14px" />
-      <button id="pwCreateBtn" onclick="pwCreate()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="paper.create">Create &amp; Download PDF</button>
+      <input id="pwAmount" type="number" min="0.01" step="0.01" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px" />
+      <input id="pwNote" type="text" maxlength="80" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px" />
+      <button id="pwCreateBtn" onclick="pwCreate()" style="width:100%;padding:12px;background:var(--yeet);color:var(--on-accent);border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="paper.create">Create &amp; Download PDF</button>
       <div id="pwResult" style="display:none;margin-top:14px;padding:14px;background:var(--bg-2);border:1px solid var(--border-2);border-radius:12px"></div>
     </div>
     <div id="pwPaneMine" style="display:none">
@@ -543,8 +554,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <h3><span class="yi yi-cash"></span> <span data-i18n="redeem.title">Redeem Paper Wallet</span></h3>
     <p style="color:var(--muted);font-size:13px;margin:6px 0 10px" data-i18n="redeem.scanPrompt">Redeem the scanned bill?</p>
     <label style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px" data-i18n="redeem.codeLabel">Claim code</label>
-    <input id="rdCode" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin:6px 0 14px;font-family:monospace" />
-    <button id="rdSubmitBtn" onclick="pwRedeem()" style="width:100%;padding:12px;background:var(--yeet);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="redeem.submit">Redeem</button>
+    <input id="rdCode" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin:6px 0 14px;font-family:monospace" />
+    <button id="rdSubmitBtn" onclick="pwRedeem()" style="width:100%;padding:12px;background:var(--yeet);color:var(--on-accent);border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer" data-i18n="redeem.submit">Redeem</button>
   </div>
 </div>
 
@@ -569,7 +580,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-check"></span> <span data-i18n="verify.title">Age verification</span></div>
         <div id="ageVerifyStatusLine" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
-        <button id="ageVerifyActionBtn" onclick="window.check18Plus && window.check18Plus()" style="display:none;width:100%;background:#7c3aed;border:none;color:#fff;border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:10px"><span class="yi yi-check"></span> <span data-i18n="verify.openSettings">Open verification</span></button>
+        <button id="ageVerifyActionBtn" onclick="window.check18Plus && window.check18Plus()" style="display:none;width:100%;background:#7c3aed;border:none;color:var(--text);border-radius:8px;padding:9px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:10px"><span class="yi yi-check"></span> <span data-i18n="verify.openSettings">Open verification</span></button>
         <div id="ageBadgeToggleRow" style="display:none;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-2)">
           <span style="font-size:14px" data-i18n="verify.toggleBadge">Show 18+ badge on my profile</span>
           <input type="checkbox" id="settingAgeBadgeShow" onchange="window.toggleAgeBadge && window.toggleAgeBadge(this.checked)" style="width:18px;height:18px;cursor:pointer">
@@ -675,7 +686,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <div style="font-size:12px;color:var(--muted)">Add to Home Screen &mdash; no App Store needed</div>
   </div>
   <button onclick="document.getElementById('pwaBanner').classList.add('hide')" style="background:none;border:1px solid var(--border);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:13px">Later</button>
-  <button onclick="triggerPwaInstall()" style="background:var(--yeet);color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
+  <button onclick="triggerPwaInstall()" style="background:var(--yeet);color:var(--on-accent);border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px">Install</button>
 </div>
 
 <!-- LAYOUT -->
@@ -689,7 +700,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
     <a class="nav-link" href="#" onclick="showTipsView();return false;"><span class="yi yi-bolt"></span> <span data-i18n="nav.tokenTips">Token Tips</span></a>
     <a class="nav-link" href="#" onclick="openWebboardsModal()"><span class="yi yi-boards"></span> Webboards</a>
     <a class="nav-link" href="#" onclick="check18Plus();return false;"><span class="yi yi-adult"></span> 18+ Content</a>
-    <a class="nav-link" href="#" onclick="openMessagesModal();return false;"><span class="yi yi-chat"></span> Messages <span id="dmInviteBadge" style="display:none;background:#ff4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px"></span></a>
+    <a class="nav-link" href="#" onclick="openMessagesModal();return false;"><span class="yi yi-chat"></span> Messages <span id="dmInviteBadge" style="display:none;background:#ff4444;color:var(--text);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:6px"></span></a>
     <a class="nav-link" href="#" onclick="openPaperWalletModal();return false;"><span class="yi yi-cash"></span> Paper Wallets</a>
     <div class="nav-section">Account</div>
     <a class="nav-link" href="#" onclick="showMyProfile();return false;"><span class="yi yi-user"></span> Profile</a>
@@ -714,14 +725,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div class="avatar"><span class="yi yi-user"></span></div>
       <div class="composer-body">
         <textarea id="postTxt" maxlength="420" oninput="updateCharCount()" placeholder="What are you yeeting? Disappears in 24h..." data-i18n-placeholder="composer.placeholder" rows="2"></textarea>
-        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:var(--card)"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1"><span class="yi yi-close"></span></button></div><div id="videoPreviewWrap" style="display:none;margin:8px 0;position:relative"><video id="videoPreview" controls preload="metadata" style="max-width:100%;max-height:240px;border-radius:10px;background:var(--card);display:block"></video><div id="videoUploadStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div><button onclick="removeVideo()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1"><span class="yi yi-close"></span></button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:var(--accent);margin:4px 0"><span class="yi yi-pin"></span> <span data-i18n="composer.permanentSet">Permanent post set</span></div>
+        <div id="imgPreviewWrap" style="display:none;margin:8px 0;position:relative"><img id="imgPreview" style="max-width:100%;max-height:200px;border-radius:10px;object-fit:contain;background:var(--card)"><button onclick="removeImage()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:var(--text);border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1"><span class="yi yi-close"></span></button></div><div id="videoPreviewWrap" style="display:none;margin:8px 0;position:relative"><video id="videoPreview" controls preload="metadata" style="max-width:100%;max-height:240px;border-radius:10px;background:var(--card);display:block"></video><div id="videoUploadStatus" style="font-size:11px;color:var(--muted);margin-top:4px"></div><button onclick="removeVideo()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:var(--text);border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1"><span class="yi yi-close"></span></button></div><div id="nftPriceDisplay" style="display:none;font-size:12px;color:var(--accent);margin:4px 0"><span class="yi yi-pin"></span> <span data-i18n="composer.permanentSet">Permanent post set</span></div>
         <div class="composer-footer">
           <button class="icon-btn" title="Add photo" data-i18n-title="composer.addPhoto" onclick="document.getElementById('imgInput').click()"><span class="yi yi-camera"></span></button>
           <input type="file" id="imgInput" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style="display:none" onchange="handleImageSelect(this)">
           <button class="icon-btn" title="Add video" data-i18n-title="composer.addVideo" onclick="document.getElementById('videoInput').click()"><span class="yi yi-video"></span></button>
           <input type="file" id="videoInput" accept="video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleVideoSelect(this)">
           <button class="icon-btn" id="schedToggleBtn" title="Schedule for later" data-i18n-title="sched.toggle" onclick="toggleScheduleUI()"><span class="yi yi-calendar"></span></button>
-          <input type="datetime-local" id="schedAt" style="display:none;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;color:#fff;padding:4px 8px;font-size:12px">
+          <input type="datetime-local" id="schedAt" style="display:none;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;color:var(--text);padding:4px 8px;font-size:12px">
           <button class="icon-btn" id="permToggleBtn" title="Mark as permanent post" data-i18n-title="composer.markPermanent" onclick="togglePermanent()"><span class="yi yi-pin"></span></button>
           <button class="icon-btn" id="ppvToggleBtn" title="Pay-per-View" data-i18n-title="composer.payPerView" onclick="togglePPV()"><span class="yi yi-lock"></span></button><div id="ppvPriceDisplay" style="display:none;font-size:12px;color:var(--accent);margin:4px 0"><span class="yi yi-lock"></span> PPV &mdash; <span id="ppvPriceVal">1</span> YEET</div>
           <button class="icon-btn" title="Tip" data-i18n-title="composer.tip"><span class="yi yi-bolt"></span></button>
@@ -745,13 +756,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div id="profileEditForm" style="display:none;padding:0 20px 20px">
         <div style="background:var(--card-2);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px">
           <div style="display:flex;align-items:baseline;justify-content:space-between"><label data-i18n="profile.displayName" style="font-size:12px;color:var(--muted)">Display Name (max 50)</label><small class="char-counter" id="counter-displayName" style="font-size:11px;color:var(--muted)">0/50</small></div>
-          <input id="editDisplayName" maxlength="50" oninput="updateProfileCounter(this,50)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px">
+          <input id="editDisplayName" maxlength="50" oninput="updateProfileCounter(this,50)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px">
           <div style="display:flex;align-items:baseline;justify-content:space-between"><label data-i18n="profile.bio" style="font-size:12px;color:var(--muted)">Bio (max 280)</label><small class="char-counter" id="counter-bio" style="font-size:11px;color:var(--muted)">0/280</small></div>
-          <textarea id="editBio" maxlength="280" rows="3" oninput="updateProfileCounter(this,280)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px;resize:vertical"></textarea>
+          <textarea id="editBio" maxlength="280" rows="3" oninput="updateProfileCounter(this,280)" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px;resize:vertical"></textarea>
           <label data-i18n="profile.avatarUrl" style="font-size:12px;color:var(--muted)">Avatar URL</label>
-          <input id="editAvatarUrl" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:#fff;font-size:14px" placeholder="https://...">
+          <input id="editAvatarUrl" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:14px" placeholder="https://...">
           <div style="display:flex;gap:8px;margin-top:4px">
-            <button onclick="saveProfile()" data-i18n="common.save" style="flex:1;background:var(--yeet);color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Save</button>
+            <button onclick="saveProfile()" data-i18n="common.save" style="flex:1;background:var(--yeet);color:var(--on-accent);border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Save</button>
             <button onclick="toggleProfileEdit(false)" data-i18n="common.cancel" style="flex:1;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer">Cancel</button>
           </div>
         </div>
@@ -804,7 +815,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       <div id="trendingTags"><span style="color:var(--muted);font-size:12px">Loading...</span></div>
     </div>
     <div class="widget">
-      <button onclick="openAuthModal('login')" style="width:100%;background:var(--yeet);color:#000;border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px"><span class="yi yi-rocket"></span> Install YEET App</button>
+      <button onclick="openAuthModal('login')" style="width:100%;background:var(--yeet);color:var(--on-accent);border:none;padding:10px;border-radius:8px;font-weight:800;cursor:pointer;font-size:14px"><span class="yi yi-rocket"></span> Install YEET App</button>
     </div>
   </aside>
 </div>
@@ -815,22 +826,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
   var DICTS = {
     en: {
       // generic
-      'common.cancel':'Cancel','common.confirm':'Confirm','common.close':'Close','common.save':'Save',
+      'common.cancel':'Cancel','common.confirm':'Confirm','common.save':'Save',
       'common.loading':'Loading...','common.error':'Error','common.networkError':'Network error',
       'webboard.subtitle':'Compose your own board of RSS feeds','webboard.phUrl':'RSS/Atom feed URL','webboard.phTitle':'Name (optional)','webboard.add':'Add','webboard.loginToAdd':'Log in to save your own feeds.','webboard.myFeeds':'Your feeds','webboard.suggestions':'Suggestions','webboard.empty':'No feeds yet — add one above.','webboard.added':'Feed added','webboard.removed':'Feed removed','webboard.remove':'Remove',
       'common.notLoggedIn':'Not logged in','common.pleaseLogin':'Please log in','common.unknown':'unknown',
       'permanent.title':'Permanent Posts','permanent.backToFeed':'Back to feed',
       'permanent.empty':'You have no permanent posts yet. Mark a post permanent with the 📌 button in the composer.',
-      'common.aborted':'Cancelled','common.report':'Report','common.open':'Open','common.followers':'Followers',
-      'common.following':'Following',
-      // nav
-      'nav.menu':'Menu','nav.search':'Search posts, users, tags...','nav.login':'Login','nav.register':'Register',
-      'nav.globalFeed':'Global Feed','nav.trending':'Trending',
+      'common.aborted':'Cancelled','common.open':'Open',// nav
       // post composer
       'composer.placeholder':'What are you yeeting? Disappears in 24h...',
       'composer.addPhoto':'Add photo','composer.addVideo':'Add video','composer.markPermanent':'Mark as permanent post',
-      'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.yeetIt':'YEET IT',
-      'composer.permanentSet':'Permanent post set',
+      'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.permanentSet':'Permanent post set',
       // toasts
       'toast.posting':'Posting...','toast.yeeted':'Yeeted!',
       'toast.postFailed':'Posting failed','toast.imageTooLarge':'Image too large (max 8MB)',
@@ -840,7 +846,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.videoTooLong':'Video too long (max 60 s)','toast.videoSelected':'Video selected',
       'toast.uploadingVideo':'Uploading video...','toast.videoUnreadable':'Could not read video',
       // Live + scheduling
-      'live.tab':'Live','live.goLive':'Go Live','live.schedule':'Schedule Live','live.cancel':'Cancel',
+      'live.goLive':'Go Live','live.schedule':'Schedule Live','live.cancel':'Cancel',
       'live.watch':'Watch','live.endStream':'End live','live.startStream':'Start live',
       'live.tipHost':'Tip host','live.tipAmount':'How many YEET?','live.tipped':'Thanks for the tip!',
       'live.title':'Stream title','live.descr':'What is this stream about? (optional)',
@@ -849,31 +855,26 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'live.placeholder':'Live streaming server is not configured yet. Set LIVEKIT_WS_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET on the backend and reload.',
       'live.viewers':'viewers','live.startsAt':'Starts at','live.adult':'18+',
       'live.confirmEnd':'End this live stream?','live.confirmCancel':'Cancel this scheduled live?',
-      'live.iAmTheHost':'You are the host',
       'sched.toggle':'Schedule for later','sched.when':'Publish at',
       'sched.minFuture':'Pick a time at least 1 minute from now',
       'sched.maxFuture':'Cannot schedule more than 60 days ahead',
-      'sched.scheduled':'Post scheduled','sched.list':'Scheduled posts',
-      'sched.cancel':'Cancel','sched.none':'No scheduled posts',
+      'sched.scheduled':'Post scheduled','sched.cancel':'Cancel','sched.none':'No scheduled posts',
       // Live promotions (ads)
       'promo.title':'Promote this live','promo.choose':'Choose a promotion',
       'promo.none':'No promotion','promo.basic':'Basic — 10 YEET',
       'promo.basicDescr':'Auto-post in the feed when you go live.',
       'promo.boost':'Boost — 50 YEET',
       'promo.boostDescr':'Auto-post + pinned to the top of the feed for 60 minutes.',
-      'promo.book':'Book promotion','promo.alreadyBooked':'Live already has an active promotion',
-      'promo.booked':'Promotion booked — YEET deducted',
-      'promo.balance':'Your balance','promo.insufficient':'Not enough YEET',
-      'promo.bookedBadge':'PROMO READY','promo.refunded':'Promotion refunded',
+      'promo.book':'Book promotion','promo.booked':'Promotion booked — YEET deducted',
+      'promo.insufficient':'Not enough YEET',
       'promo.cta':'Watch live','promo.pinnedBadge':'Sponsored',
       'toast.uploadingAvatar':'Uploading profile picture...','toast.uploadingCover':'Uploading cover...',
       'toast.avatarUpdated':'Profile picture updated','toast.coverUpdated':'Cover updated',
       'toast.uploadError':'Upload error','toast.uploadFailed':'Upload failed',
       'toast.linkCopied':'Link copied','toast.alreadyFollowing':'Already following',
       'toast.followed':'Following!','toast.unfollowed':'Unfollowed','toast.cantFollowSelf':"You can't follow yourself",
-      'toast.userNotFound':'User not found','toast.authorNotFound':'Author not found',
-      'toast.reported':'Reported','toast.reportFailed':'Report failed',
-      'toast.tipSent':'Tip sent','toast.unlocked':'Unlocked! {price} YEET sent (incl. 10% network fee)',
+      'toast.userNotFound':'User not found','toast.reported':'Reported','toast.reportFailed':'Report failed',
+      'toast.unlocked':'Unlocked! {price} YEET sent (incl. 10% network fee)',
       'toast.unlockFailed':'Unlock failed','toast.unlocking':'Unlocking...',
       'toast.repostSuccess':'Reposted!','toast.maxRepost':'Max 1 repost allowed',
       'toast.visibilityPublic':'Visibility: Public','toast.visibilityFollowers':'Visibility: Followers only',
@@ -882,7 +883,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.priceRequired':'Please enter a price','toast.adultEnable':'Enable 18+ content in Settings',
       'toast.walletNotFound':'No browser wallet detected (e.g. MetaMask). Install or unlock one and try again.','toast.noWalletSelected':'No wallet selected',
       'toast.walletLinked':'Wallet linked','toast.walletLinkAborted':'Wallet link cancelled',
-      'toast.walletDisconnected':'Wallet disconnected','toast.exportDownloaded':'Export downloaded',
+      'toast.exportDownloaded':'Export downloaded',
       'toast.exportFailed':'Export failed','toast.deleteFailed':'Delete failed',
       'toast.search2chars':'Type at least 2 characters','toast.settingsSaved':'Settings saved',
       'toast.languageChanged':'Language changed',
@@ -919,16 +920,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.pushRegistered':'Notifications enabled on this device',
       'settings.pushUnregistered':'Notifications disabled on this device',
       'settings.verifySeed':'Verify recovery phrase',
-      'settings.verifySeedPrompt':'Enter your 12-word recovery phrase to verify it unlocks your wallet:',
-      'settings.verifyOk':'✓ Phrase matches your wallet',
-      'settings.verifyFail':'✗ Phrase does NOT match your wallet',
-      'settings.verifyNoWallet':'No wallet address on file for this account.',
       'settings.gdpr':'Privacy (GDPR)','settings.exportData':'Export my data (JSON)',
       'settings.deleteAccount':'Delete account permanently','settings.language':'Language','settings.mood':'Color mood',
       'settings.langEnglish':'English','settings.langGerman':'Deutsch',
       // profile
-      'profile.title':'Profile','profile.posts':'Posts','profile.noPosts':'No posts yet',
-      'profile.editAvatar':'Change','profile.editCover':'Change cover',
+      'profile.title':'Profile','profile.editAvatar':'Change','profile.editCover':'Change cover',
       'profile.displayName':'Display Name (max 50)','profile.bio':'Bio (max 280)',
       'profile.avatarUrl':'Avatar URL',
       'profile.editProfile':'Edit Profile','profile.saveOk':'Profile saved',
@@ -940,7 +936,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.unavailable':'This user is unavailable.',
       // direct messages
       'dm.title':'Messages','dm.newTitle':'New conversation',
-      'dm.newSubtitle':'Enter the recipient\'s wallet address or username.',
       'dm.pickConv':'Select a conversation','dm.send':'Send','dm.sendTip':'Send a tip',
       'dm.startChat':'Start chat','dm.new':'New','dm.empty':'No conversations yet.',
       'dm.composerPh':'Encrypted message... press Enter to send',
@@ -950,7 +945,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.enablePrompt':'Enable end-to-end encrypted DMs? A key will be derived once and never leaves your browser.',
       'dm.enableSetup':'Enter your account password. We derive an encryption key from it locally — the server never sees the password or the derived key.',
       'dm.enableUnlock':'Enter your account password to unlock your encrypted messages on this device.',
-      'dm.linkWallet':'Connect a wallet to enable encrypted messages.',
       'dm.tipAmount':'How much YEET to send?',
       'dm.tipSent':'Sent {amount} YEET',
       'dm.deleted':'[message deleted]','dm.deletedToast':'Message deleted',
@@ -973,9 +967,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.reportRateLimited':'Too many reports — please wait a moment',
       'dm.menu':'More','dm.muteTitle':'Mute conversation',
       'dm.muteFor':'Mute for','dm.mute1h':'1 hour','dm.mute8h':'8 hours',
-      'dm.mute24h':'24 hours','dm.mute7d':'7 days','dm.muteForever':'Until I unmute',
-      'dm.unmute':'Unmute','dm.muted':'Muted','dm.muteUntil':'Muted until',
-      'dm.archive':'Archive','dm.unarchive':'Unarchive','dm.archived':'Archived',
+      'dm.mute24h':'24 hours','dm.mute7d':'7 days','dm.unmute':'Unmute','dm.muted':'Muted','dm.archive':'Archive','dm.unarchive':'Unarchive','dm.archived':'Archived',
       'dm.selfDestruct':'Self-destruct timer','dm.selfDestructOff':'Off',
       'dm.selfDestruct1m':'1 minute','dm.selfDestruct1h':'1 hour',
       'dm.selfDestruct1d':'24 hours','dm.selfDestruct7d':'7 days',
@@ -987,7 +979,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.readReceiptsNote':'When off, neither you nor your contacts see read receipts in your chats.',
       'dm.typingIndicators':'Typing indicators',
       'dm.typingIndicatorsNote':'Show your contacts when you are typing.',
-      'dm.receiptSent':'sent','dm.receiptDelivered':'delivered','dm.receiptRead':'read',
+      'dm.receiptDelivered':'delivered','dm.receiptRead':'read',
       'dm.typingOne':'{name} is typing…','dm.typingMany':'{count} people are typing…',
       'dm.retention':'Auto-delete messages after',
       'dm.retentionUpdated':'Retention updated',
@@ -998,7 +990,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.invEmpty':'No pending invitations.','dm.invAccepted':'Joined group','dm.invDeclined':'Declined',
       'dm.groupNew':'New group','dm.groupNamePh':'Group name','dm.groupAdd':'Add member','dm.groupCreate':'Create group',
       'dm.groupMemberPh':'wallet or @username','dm.groupAtLeastOne':'Add at least one member',
-      'dm.groupNoKey':'Member has no encryption key yet — skipped.',
       'dm.groupNoReady':'None of the selected members has encrypted messages enabled.',
       'dm.followingHint':'Pick from people you follow:',
       'dm.pickMembers':'Pick members from people you follow:',
@@ -1045,18 +1036,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'post.deleteConfirm':'Delete this Yeet?','post.deleted':'Yeet deleted','post.deleteFailed':'Delete failed: {status}','post.delete':'Delete',
       'wallet.comingSoon':'WalletConnect coming soon',
       // paper wallet
-      'paper.nav':'Paper Wallets',
       'paper.title':'Print a YEET Paper Wallet',
       'paper.subtitle':'Lock YEET into a printable bill. Whoever scans the QR with the YEET App receives the tokens.',
-      'paper.amount':'Amount','paper.custom':'Custom amount...','paper.noteLabel':'Note (optional, max 80)',
-      'paper.notePh':'e.g. Birthday tip for John',
+      'paper.amount':'Amount','paper.custom':'Custom amount...','paper.notePh':'e.g. Birthday tip for John',
       'paper.create':'Create & Download PDF','paper.creating':'Creating...',
       'paper.printAgain':'Print again','paper.void':'Void & refund',
       'paper.tabCreate':'Create','paper.tabMine':'My Wallets',
       'paper.empty':'You haven’t printed any paper wallets yet.',
       'paper.statusActive':'Active','paper.statusClaimed':'Claimed','paper.statusVoided':'Voided',
-      'paper.serial':'Serial','paper.created':'Created','paper.claimedAt':'Claimed','paper.voidedAt':'Voided',
-      'paper.confirmVoid':'Void this paper wallet and refund {amount} YEET?',
+      'paper.created':'Created','paper.confirmVoid':'Void this paper wallet and refund {amount} YEET?',
       'paper.voided':'Paper wallet voided, balance refunded',
       'paper.created_ok':'Paper wallet created — download the PDF and keep it safe',
       'paper.needVerify':'Verify your account (confirm your email) before creating paper wallets.',
@@ -1094,7 +1082,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'verify.noFace':'No face detected','verify.retry':'Retry',
       'verify.imageNotStored':'Photos are stored encrypted, reviewed by a human, and deleted shortly after a decision.',
       'verify.addId':'Add ID document (optional, speeds up review)',
-      'verify.idType':'Document type','verify.idPassport':'Passport','verify.idDriver':'Driver’s license','verify.idNational':'National ID','verify.idOther':'Other',
+      'verify.idPassport':'Passport','verify.idDriver':'Driver’s license','verify.idNational':'National ID','verify.idOther':'Other',
       'verify.submitNow':'Submit for review','verify.faceMissing':'Take or upload a face photo first',
       'verify.pending':'Your submission is being reviewed.','verify.pendingSince':'Submitted','verify.withdraw':'Withdraw submission',
       'verify.approved':'You are verified 18+.','verify.rejected':'Submission rejected:','verify.serverDown':'Age verification is not available right now.',
@@ -1110,8 +1098,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Image is only visible after payment. Earnings go directly to you.',
       'ppv.unlock':'Unlock','ppv.unlockPrompt':'{price} YEET to unlock','ppv.priceSet':'PPV price: {price} YEET',
-      'ppv.alreadyUnlocked':'Already unlocked','ppv.cantUnlockOwn':'You cannot unlock your own post',
-      // external link modal
+      'ppv.alreadyUnlocked':'Already unlocked',// external link modal
       'extlink.title':'You are leaving YEET',
       'extlink.subtitle':'This link leads to an external site. YEET takes no responsibility for external content.',
       // post menu
@@ -1119,26 +1106,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       // empty states
       'empty.followingLogin':'Log in to see your Following feed',
       'empty.followingEmpty':'Follow other users to see their posts here',
-      'empty.noTrending':'No trending posts yet','empty.noPosts':'No posts yet. Be the first to Yeet!',
-      'empty.connectToPost':'Connect your wallet to start posting',
       // comments
-      'comments.placeholder':'Write a comment...','comments.empty':'No comments yet',
+      'comments.empty':'No comments yet',
     },
     de: {
-      'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.close':'Schließen','common.save':'Speichern',
+      'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.save':'Speichern',
       'common.loading':'Lädt...','common.error':'Fehler','common.networkError':'Netzwerkfehler',
       'webboard.subtitle':'Stelle dir dein eigenes Board aus RSS-Feeds zusammen','webboard.phUrl':'RSS/Atom-Feed-URL','webboard.phTitle':'Name (optional)','webboard.add':'Hinzufügen','webboard.loginToAdd':'Melde dich an, um eigene Feeds zu speichern.','webboard.myFeeds':'Deine Feeds','webboard.suggestions':'Vorschläge','webboard.empty':'Noch keine Feeds — füge oben einen hinzu.','webboard.added':'Feed hinzugefügt','webboard.removed':'Feed entfernt','webboard.remove':'Entfernen',
       'common.notLoggedIn':'Nicht eingeloggt','common.pleaseLogin':'Bitte einloggen','common.unknown':'unbekannt',
       'permanent.title':'Permanente Posts','permanent.backToFeed':'Zurück zum Feed',
       'permanent.empty':'Du hast noch keine permanenten Posts. Markiere einen Post mit dem 📌-Button im Composer als permanent.',
-      'common.aborted':'Abgebrochen','common.report':'Melden','common.open':'Öffnen','common.followers':'Follower',
-      'common.following':'Folgt',
-      'nav.menu':'Menü','nav.search':'Posts, User, Tags suchen...','nav.login':'Login','nav.register':'Registrieren',
-      'nav.globalFeed':'Globaler Feed','nav.trending':'Trending',
-      'composer.placeholder':'Was yeetst du? Verschwindet in 24h...',
+      'common.aborted':'Abgebrochen','common.open':'Öffnen','composer.placeholder':'Was yeetst du? Verschwindet in 24h...',
       'composer.addPhoto':'Foto hinzufügen','composer.addVideo':'Video hinzufügen','composer.markPermanent':'Als permanenten Post markieren',
-      'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.yeetIt':'YEET IT',
-      'composer.permanentSet':'Permanenter Post gesetzt',
+      'composer.payPerView':'Pay-per-View','composer.tip':'Tip','composer.permanentSet':'Permanenter Post gesetzt',
       'toast.posting':'Wird gesendet...','toast.yeeted':'Geyeetet!',
       'toast.postFailed':'Posten fehlgeschlagen','toast.imageTooLarge':'Bild zu groß (max. 8MB)',
       'toast.imageTooLarge5':'Bild zu groß (max. 5MB)','toast.imageTooLargeServer':'Bild zu groß für den Server',
@@ -1146,7 +1126,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.videoInvalidFormat':'Nur MP4, WebM, MOV erlaubt','toast.videoTooLarge':'Video zu groß (max. 30 MB)',
       'toast.videoTooLong':'Video zu lang (max. 60 s)','toast.videoSelected':'Video ausgewählt',
       'toast.uploadingVideo':'Video wird hochgeladen...','toast.videoUnreadable':'Video konnte nicht gelesen werden',
-      'live.tab':'Live','live.goLive':'Jetzt live gehen','live.schedule':'Live planen','live.cancel':'Abbrechen',
+      'live.goLive':'Jetzt live gehen','live.schedule':'Live planen','live.cancel':'Abbrechen',
       'live.watch':'Anschauen','live.endStream':'Live beenden','live.startStream':'Live starten',
       'live.tipHost':'Host tippen','live.tipAmount':'Wie viele YEET?','live.tipped':'Danke für den Tip!',
       'live.title':'Stream-Titel','live.descr':'Worum geht’s? (optional)',
@@ -1155,30 +1135,25 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'live.placeholder':'Live-Server ist noch nicht eingerichtet. Setze LIVEKIT_WS_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET im Backend und lade neu.',
       'live.viewers':'Zuschauer','live.startsAt':'Beginnt um','live.adult':'18+',
       'live.confirmEnd':'Diesen Live-Stream beenden?','live.confirmCancel':'Diesen geplanten Live abbrechen?',
-      'live.iAmTheHost':'Du bist der Host',
       'sched.toggle':'Später posten','sched.when':'Veröffentlichen am',
       'sched.minFuture':'Wähle einen Zeitpunkt mind. 1 Min. in der Zukunft',
       'sched.maxFuture':'Maximal 60 Tage im Voraus planbar',
-      'sched.scheduled':'Post geplant','sched.list':'Geplante Posts',
-      'sched.cancel':'Abbrechen','sched.none':'Keine geplanten Posts',
+      'sched.scheduled':'Post geplant','sched.cancel':'Abbrechen','sched.none':'Keine geplanten Posts',
       'promo.title':'Live bewerben','promo.choose':'Werbe-Paket wählen',
       'promo.none':'Keine Werbung','promo.basic':'Basic — 10 YEET',
       'promo.basicDescr':'Automatischer Post im Feed, wenn du live gehst.',
       'promo.boost':'Boost — 50 YEET',
       'promo.boostDescr':'Auto-Post + 60 Min. ganz oben im Feed angepinnt.',
-      'promo.book':'Werbung buchen','promo.alreadyBooked':'Für dieses Live ist bereits Werbung gebucht',
-      'promo.booked':'Werbung gebucht — YEET abgezogen',
-      'promo.balance':'Dein Guthaben','promo.insufficient':'Nicht genug YEET',
-      'promo.bookedBadge':'WERBUNG BUCHT','promo.refunded':'Werbung erstattet',
+      'promo.book':'Werbung buchen','promo.booked':'Werbung gebucht — YEET abgezogen',
+      'promo.insufficient':'Nicht genug YEET',
       'promo.cta':'Live anschauen','promo.pinnedBadge':'Werbung',
       'toast.uploadingAvatar':'Profilbild wird hochgeladen...','toast.uploadingCover':'Cover wird hochgeladen...',
       'toast.avatarUpdated':'Profilbild aktualisiert','toast.coverUpdated':'Cover aktualisiert',
       'toast.uploadError':'Upload-Fehler','toast.uploadFailed':'Upload fehlgeschlagen',
       'toast.linkCopied':'Link kopiert','toast.alreadyFollowing':'Bereits gefolgt',
       'toast.followed':'Gefolgt!','toast.unfollowed':'Entfolgt','toast.cantFollowSelf':'Du kannst dir nicht selbst folgen',
-      'toast.userNotFound':'Benutzer nicht gefunden','toast.authorNotFound':'Autor nicht gefunden',
-      'toast.reported':'Gemeldet','toast.reportFailed':'Fehler beim Melden',
-      'toast.tipSent':'Tip gesendet','toast.unlocked':'Entsperrt! {price} YEET gesendet (inkl. 10% Netzwerkgebühr)',
+      'toast.userNotFound':'Benutzer nicht gefunden','toast.reported':'Gemeldet','toast.reportFailed':'Fehler beim Melden',
+      'toast.unlocked':'Entsperrt! {price} YEET gesendet (inkl. 10% Netzwerkgebühr)',
       'toast.unlockFailed':'Entsperren fehlgeschlagen','toast.unlocking':'Wird entsperrt...',
       'toast.repostSuccess':'Repost erfolgreich!','toast.maxRepost':'Max. 1 Repost erlaubt',
       'toast.visibilityPublic':'Sichtbarkeit: Öffentlich','toast.visibilityFollowers':'Sichtbarkeit: Nur Follower',
@@ -1187,7 +1162,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'toast.priceRequired':'Bitte Preis eingeben','toast.adultEnable':'18+ Content in Settings aktivieren',
       'toast.walletNotFound':'Keine Browser-Wallet erkannt (z. B. MetaMask). Bitte installieren oder entsperren und erneut versuchen.','toast.noWalletSelected':'Keine Wallet ausgewählt',
       'toast.walletLinked':'Wallet verknüpft','toast.walletLinkAborted':'Wallet-Verknüpfung abgebrochen',
-      'toast.walletDisconnected':'Wallet getrennt','toast.exportDownloaded':'Export heruntergeladen',
+      'toast.exportDownloaded':'Export heruntergeladen',
       'toast.exportFailed':'Export fehlgeschlagen','toast.deleteFailed':'Löschen fehlgeschlagen',
       'toast.search2chars':'Mind. 2 Zeichen eingeben','toast.settingsSaved':'Einstellungen gespeichert',
       'toast.languageChanged':'Sprache geändert',
@@ -1223,15 +1198,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'settings.pushRegistered':'Benachrichtigungen auf diesem Gerät aktiviert',
       'settings.pushUnregistered':'Benachrichtigungen auf diesem Gerät deaktiviert',
       'settings.verifySeed':'Recovery-Phrase prüfen',
-      'settings.verifySeedPrompt':'Gib deine 12-Wort-Recovery-Phrase ein, um zu prüfen ob sie deine Wallet entsperrt:',
-      'settings.verifyOk':'✓ Phrase passt zu deiner Wallet',
-      'settings.verifyFail':'✗ Phrase passt NICHT zu deiner Wallet',
-      'settings.verifyNoWallet':'Für dieses Konto ist keine Wallet hinterlegt.',
       'settings.gdpr':'Datenschutz (DSGVO)','settings.exportData':'Daten exportieren (JSON)',
       'settings.deleteAccount':'Konto endgültig löschen','settings.language':'Sprache','settings.mood':'Farbstimmung',
       'settings.langEnglish':'English','settings.langGerman':'Deutsch',
-      'profile.title':'Profil','profile.posts':'Posts','profile.noPosts':'Noch keine Posts',
-      'profile.editAvatar':'Ändern','profile.editCover':'Cover ändern',
+      'profile.title':'Profil','profile.editAvatar':'Ändern','profile.editCover':'Cover ändern',
       'profile.displayName':'Anzeigename (max. 50)','profile.bio':'Bio (max. 280)',
       'profile.avatarUrl':'Avatar-URL',
       'profile.editProfile':'Profil bearbeiten','profile.saveOk':'Profil gespeichert',
@@ -1242,7 +1212,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'profile.blocked':'Nutzer blockiert','profile.unblocked':'Blockierung aufgehoben',
       'profile.unavailable':'Dieser Nutzer ist nicht verfügbar.',
       'dm.title':'Nachrichten','dm.newTitle':'Neue Unterhaltung',
-      'dm.newSubtitle':'Wallet-Adresse oder Benutzernamen des Empfängers eingeben.',
       'dm.pickConv':'Wähle eine Unterhaltung','dm.send':'Senden','dm.sendTip':'Tip senden',
       'dm.startChat':'Chat starten','dm.new':'Neu','dm.empty':'Noch keine Unterhaltungen.',
       'dm.composerPh':'Verschlüsselte Nachricht... Enter zum Senden',
@@ -1252,7 +1221,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.enablePrompt':'Ende-zu-Ende-verschlüsselte DMs aktivieren? Ein Schlüssel wird einmalig abgeleitet und verlässt deinen Browser nie.',
       'dm.enableSetup':'Gib dein Kontopasswort ein. Wir leiten lokal einen Verschlüsselungsschlüssel daraus ab — der Server sieht weder das Passwort noch den Schlüssel.',
       'dm.enableUnlock':'Gib dein Kontopasswort ein, um deine verschlüsselten Nachrichten auf diesem Gerät zu entsperren.',
-      'dm.linkWallet':'Wallet verbinden, um verschlüsselte Nachrichten zu aktivieren.',
       'dm.tipAmount':'Wieviel YEET senden?',
       'dm.tipSent':'{amount} YEET gesendet',
       'dm.deleted':'[Nachricht gelöscht]','dm.deletedToast':'Nachricht gelöscht',
@@ -1275,9 +1243,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.reportRateLimited':'Zu viele Meldungen — bitte kurz warten',
       'dm.menu':'Mehr','dm.muteTitle':'Konversation stummschalten',
       'dm.muteFor':'Stummschalten für','dm.mute1h':'1 Stunde','dm.mute8h':'8 Stunden',
-      'dm.mute24h':'24 Stunden','dm.mute7d':'7 Tage','dm.muteForever':'Bis ich entstummschalte',
-      'dm.unmute':'Entstummschalten','dm.muted':'Stumm','dm.muteUntil':'Stumm bis',
-      'dm.archive':'Archivieren','dm.unarchive':'Aus Archiv','dm.archived':'Archiviert',
+      'dm.mute24h':'24 Stunden','dm.mute7d':'7 Tage','dm.unmute':'Entstummschalten','dm.muted':'Stumm','dm.archive':'Archivieren','dm.unarchive':'Aus Archiv','dm.archived':'Archiviert',
       'dm.selfDestruct':'Selbstzerstörungs-Timer','dm.selfDestructOff':'Aus',
       'dm.selfDestruct1m':'1 Minute','dm.selfDestruct1h':'1 Stunde',
       'dm.selfDestruct1d':'24 Stunden','dm.selfDestruct7d':'7 Tage',
@@ -1289,7 +1255,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.readReceiptsNote':'Wenn aus, sehen weder du noch deine Kontakte Lesebestätigungen.',
       'dm.typingIndicators':'Tipp-Anzeige',
       'dm.typingIndicatorsNote':'Zeigt deinen Kontakten, wenn du gerade tippst.',
-      'dm.receiptSent':'gesendet','dm.receiptDelivered':'zugestellt','dm.receiptRead':'gelesen',
+      'dm.receiptDelivered':'zugestellt','dm.receiptRead':'gelesen',
       'dm.typingOne':'{name} tippt…','dm.typingMany':'{count} Personen tippen…',
       'dm.retention':'Nachrichten automatisch löschen nach',
       'dm.retentionUpdated':'Speicherdauer aktualisiert',
@@ -1300,7 +1266,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'dm.invEmpty':'Keine offenen Einladungen.','dm.invAccepted':'Gruppe beigetreten','dm.invDeclined':'Abgelehnt',
       'dm.groupNew':'Neue Gruppe','dm.groupNamePh':'Gruppenname','dm.groupAdd':'Mitglied hinzufügen','dm.groupCreate':'Gruppe erstellen',
       'dm.groupMemberPh':'Wallet oder @username','dm.groupAtLeastOne':'Mindestens ein Mitglied hinzufügen',
-      'dm.groupNoKey':'Mitglied hat noch keinen Encryption-Key — übersprungen.',
       'dm.groupNoReady':'Keiner der gewählten Empfänger hat verschlüsselte Nachrichten aktiviert.',
       'dm.followingHint':'Aus deinen Follows wählen:',
       'dm.pickMembers':'Mitglieder aus deinen Follows wählen:',
@@ -1344,18 +1309,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'link.loading':'Vorschau wird geladen...',
       'post.deleteConfirm':'Diesen Yeet löschen?','post.deleted':'Yeet gelöscht','post.deleteFailed':'Löschen fehlgeschlagen: {status}','post.delete':'Löschen',
       'wallet.comingSoon':'WalletConnect kommt bald',
-      'paper.nav':'Paper Wallets',
       'paper.title':'YEET Paper Wallet drucken',
       'paper.subtitle':'YEET in einen druckbaren Schein einfrieren. Wer den QR-Code mit der YEET-App scannt, bekommt die Tokens.',
-      'paper.amount':'Betrag','paper.custom':'Eigener Betrag...','paper.noteLabel':'Notiz (optional, max. 80)',
-      'paper.notePh':'z.B. Geburtstags-Tip für John',
+      'paper.amount':'Betrag','paper.custom':'Eigener Betrag...','paper.notePh':'z.B. Geburtstags-Tip für John',
       'paper.create':'Erstellen & PDF laden','paper.creating':'Erstellen...',
       'paper.printAgain':'Erneut drucken','paper.void':'Stornieren & rückbuchen',
       'paper.tabCreate':'Erstellen','paper.tabMine':'Meine Wallets',
       'paper.empty':'Du hast noch keine Paper Wallets gedruckt.',
       'paper.statusActive':'Aktiv','paper.statusClaimed':'Eingelöst','paper.statusVoided':'Storniert',
-      'paper.serial':'Seriennr.','paper.created':'Erstellt','paper.claimedAt':'Eingelöst','paper.voidedAt':'Storniert',
-      'paper.confirmVoid':'Diese Paper Wallet stornieren und {amount} YEET zurückbuchen?',
+      'paper.created':'Erstellt','paper.confirmVoid':'Diese Paper Wallet stornieren und {amount} YEET zurückbuchen?',
       'paper.voided':'Paper Wallet storniert, Guthaben rückgebucht',
       'paper.created_ok':'Paper Wallet erstellt — PDF herunterladen und sicher aufbewahren',
       'paper.needVerify':'Verifiziere dein Konto (E-Mail bestätigen), bevor du Paper Wallets erstellst.',
@@ -1380,7 +1342,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'report.reasons':['Unangemessen','Spam','Hassrede','Gewalt','Nacktheit','Fehlinformationen','Anderes'],
       'verify.title':'Altersverifikation','verify.subtitle':'18+ Bereich. Face-Scan + optionaler Ausweis — wird von unserem Team geprüft.',
       'verify.addId':'Ausweis hinzufügen (optional, beschleunigt die Prüfung)',
-      'verify.idType':'Dokumenttyp','verify.idPassport':'Reisepass','verify.idDriver':'Führerschein','verify.idNational':'Personalausweis','verify.idOther':'Sonstiges',
+      'verify.idPassport':'Reisepass','verify.idDriver':'Führerschein','verify.idNational':'Personalausweis','verify.idOther':'Sonstiges',
       'verify.submitNow':'Zur Prüfung absenden','verify.faceMissing':'Mach oder lade zuerst ein Gesichtsfoto hoch',
       'verify.pending':'Deine Einreichung wird geprüft.','verify.pendingSince':'Eingereicht','verify.withdraw':'Einreichung zurückziehen',
       'verify.approved':'Du bist 18+ verifiziert.','verify.rejected':'Einreichung abgelehnt:','verify.serverDown':'Altersverifikation aktuell nicht verfügbar.',
@@ -1403,15 +1365,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(10,10,10,.95);backdrop-fil
       'ppv.title':'Pay-per-View',
       'ppv.subtitle':'Bild wird erst nach Bezahlung sichtbar. Einnahmen gehen direkt an dich.',
       'ppv.unlock':'Entsperren','ppv.unlockPrompt':'{price} YEET zum Entsperren','ppv.priceSet':'PPV-Preis: {price} YEET',
-      'ppv.alreadyUnlocked':'Bereits entsperrt','ppv.cantUnlockOwn':'Du kannst deinen eigenen Post nicht entsperren',
-      'extlink.title':'Du verlässt YEET',
+      'ppv.alreadyUnlocked':'Bereits entsperrt','extlink.title':'Du verlässt YEET',
       'extlink.subtitle':'Dieser Link führt zu einer externen Seite. YEET übernimmt keine Verantwortung für externe Inhalte.',
       'menu.repost':'Repost','menu.share':'Teilen','menu.follow':'Folgen','menu.report':'Melden',
       'empty.followingLogin':'Einloggen, um den Following-Feed zu sehen',
       'empty.followingEmpty':'Folge anderen Usern, um ihre Posts hier zu sehen',
-      'empty.noTrending':'Noch keine Trending-Posts','empty.noPosts':'Noch keine Posts. Sei der Erste!',
-      'empty.connectToPost':'Wallet verbinden, um zu posten',
-      'comments.placeholder':'Kommentar schreiben...','comments.empty':'Noch keine Kommentare',
+      'comments.empty':'Noch keine Kommentare',
     }
   };
   function getLang(){
@@ -1698,7 +1657,7 @@ function showLoginGate(){
       +'<div style="font-size:44px;margin-bottom:8px"><span class="yi yi-lock"></span></div>'
       +'<h3 style="margin:0 0 6px;font-size:18px">Login erforderlich</h3>'
       +'<p style="color:var(--muted);margin:0 0 16px;font-size:14px">Registriere oder melde dich an, um Posts zu sehen.</p>'
-      +'<button onclick="openWalletModal()" style="background:var(--accent);border:none;border-radius:20px;padding:10px 22px;color:#000;font-weight:700;cursor:pointer;font-size:14px">Register / Login</button>'
+      +'<button onclick="openWalletModal()" style="background:var(--accent);border:none;border-radius:20px;padding:10px 22px;color:var(--on-accent);font-weight:700;cursor:pointer;font-size:14px">Register / Login</button>'
       +'</div>';
   }
 }
@@ -1706,7 +1665,10 @@ function showLoginGate(){
 // Extracted so loadFeed() and loadPermanentPosts() render identically.
 // Also exported on window (below) — loadFollowingFeed lives in a different
 // script scope and renders the same cards.
-function _buildFeedPostEl(p){
+function _buildFeedPostEl(p, opts){
+  // opts.showRepost / opts.showTip (default true) let the profile timeline
+  // reuse this exact card (no reshare button; no tip button on own posts).
+  opts=opts||{}; const showRepost=opts.showRepost!==false, showTip=opts.showTip!==false;
   const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
   // Escape: display_name/username are user-controlled and this value is
   // interpolated raw into innerHTML below — without escaping a crafted
@@ -1720,7 +1682,7 @@ function _buildFeedPostEl(p){
   const hrsRaw=Math.floor((new Date(p.expires_at)-Date.now())/3600000);
   const hrs=Math.max(0,hrsRaw);
   const showHrs=!p.is_permanent && isFinite(hrsRaw);
-  const metaTime=ago+' ago'+(showHrs?' &bull; '+hrs+'h':'');
+  const metaTime=ago+' ago'+(showHrs?' &bull; '+hrs+'h':'')+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'');
   const rawContent=String(p.content||'');
   const foundUrls=rawContent.match(/(https?:\/\/[^\s]+)/g)||[];
   let txt=rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1733,7 +1695,7 @@ function _buildFeedPostEl(p){
   });
   const el=document.createElement('div');
   el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-  el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+metaTime+'</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+_liveCtaCard(p)+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:2px 8px;margin:4px 0"><span class="yi yi-pin"></span> Permanent &bull; '+(p.visibility==='followers'?'<span class="yi yi-user"></span> Follower':'<span class="yi yi-globe"></span> Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart"><span class="yi yi-heart"></span></span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="yi yi-chat"></span> <span>'+(p.comment_count||0)+'</span></button><button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'"><span class="yi yi-gift"></span> <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button><button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="Reshare"><span class="yi yi-repost"></span> <span>'+(p.repost_count||0)+'</span></button><button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr"><span class="yi yi-more"></span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
+  el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style=display:flex;align-items:center;gap:10px;margin-bottom:10px><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style=font-size:12px;color:var(--muted)>'+metaTime+'</div></div></div><div style=font-size:15px;line-height:1.6;margin-bottom:12px>'+txt+_liveCtaCard(p)+renderMediaUrl(p)+(p.is_permanent?'<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:12px;padding:2px 8px;margin:4px 0"><span class="yi yi-pin"></span> Permanent &bull; '+(p.visibility==='followers'?'<span class="yi yi-user"></span> Follower':'<span class="yi yi-globe"></span> Public')+'</div>':'')+'</div><div class="post-actions" style="display:flex;align-items:center;position:relative"><button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart"><span class="yi yi-heart"></span></span> <span class="like-count">'+(p.like_count||0)+'</span></button><button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="yi yi-chat"></span> <span>'+(p.comment_count||0)+'</span></button>'+(showTip?'<button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'"><span class="yi yi-gift"></span> <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button>':'')+''+(showRepost?'<button class="repost-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" title="Reshare"><span class="yi yi-repost"></span> <span>'+(p.repost_count||0)+'</span></button>':'')+'<button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="Mehr"><span class="yi yi-more"></span></button></div><div class="comment-section" id="comments-'+p.id+'" style="display:none"><div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div><div class="comments-list" id="clist-'+p.id+'"></div></div>';
   if(foundUrls.length>0){
     var previewEl=document.createElement('div');
     previewEl.style.cssText='margin:8px 0 4px';
@@ -1743,7 +1705,7 @@ function _buildFeedPostEl(p){
   el.querySelector('.like-btn').addEventListener('click',function(){toggleLike(this,p.id);});
   el.querySelector('.comment-btn').addEventListener('click',function(){toggleComments(this,p.id);});
   el.querySelector('.comment-submit').addEventListener('click',function(){submitComment(this,p.id);});
-  el.querySelector('.tip-btn').addEventListener('click',function(){openTipModal(p.id,p.author?p.author.wallet_address||p.author.id:'');});
+  var _tb=el.querySelector('.tip-btn'); if(_tb) _tb.addEventListener('click',function(){openTipModal(p.id,authorAddr);});
   var _mb = el.querySelector('.more-btn');
   if (_mb) {
     _mb.dataset.authorid = (p.author && p.author.id) || '';
@@ -1756,7 +1718,7 @@ window._buildFeedPostEl = _buildFeedPostEl;
 
 async function loadFeed(){
   try{
-    const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt');
+    const jwt=localStorage.getItem('yeet_jwt');
     if(!jwt){ showLoginGate(); return; }
     // Show a small spinner so a slow network doesn't make the page
     // look frozen. The class is auto-removed when posts render.
@@ -1787,7 +1749,7 @@ async function loadFeed(){
 // cached yeet_user_id (populated by loadProfile) and fall back to a
 // /users/me fetch if it isn't there yet.
 async function loadPermanentPosts(){
-  const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt');
+  const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){ showLoginGate(); return; }
   // Leaving any open profile view so the feed column is the target.
   if(typeof _exitProfileView==='function'){ try{ _exitProfileView(); }catch(e){} }
@@ -1997,10 +1959,6 @@ async function _doTokenRefresh(){
       var pl = (d && d.data) || d;
       if(pl && pl.access_token){
         localStorage.setItem('yeet_jwt', pl.access_token);
-        // Keep the legacy mirrors in sync — a few old read sites check
-        // yeetToken/yt first and would otherwise keep using the stale token.
-        try { localStorage.setItem('yeetToken', pl.access_token); } catch(e){}
-        try { localStorage.setItem('yt', pl.access_token); } catch(e){}
         if(pl.refresh_token) localStorage.setItem('yeet_refresh', pl.refresh_token);
         return true;
       }
@@ -2395,7 +2353,8 @@ var YEET_MOODS = [
   {id:'forest',   name:'Forest',   bg:'#071009', accent:'#6bffbc'},
   {id:'ocean',    name:'Ocean',    bg:'#050f13', accent:'#4fe3d0'},
   {id:'violet',   name:'Violet',   bg:'#0c0714', accent:'#b78bff'},
-  {id:'mono',     name:'Mono',     bg:'#0a0a0a', accent:'#f2f2f2'}
+  {id:'mono',     name:'Mono',     bg:'#0a0a0a', accent:'#f2f2f2'},
+  {id:'arctic',   name:'Arctic',   bg:'#f4f6f8', accent:'#1a7f4b'}
 ];
 function applyMood(id){
   if(!YEET_MOODS.some(function(m){return m.id===id})) id='yeet';
@@ -2419,7 +2378,7 @@ function _renderMoodPicker(){
     b.title=m.name;
     b.style.cssText='display:flex;flex-direction:column;align-items:center;gap:6px;background:transparent;border:2px solid '+(m.id===cur?'var(--accent)':'var(--border-2)')+';border-radius:12px;padding:8px 10px;cursor:pointer;min-width:64px';
     var sw=document.createElement('span');
-    sw.style.cssText='width:28px;height:28px;border-radius:50%;background:'+m.bg+';border:1px solid #3a3a3a;display:inline-flex;align-items:center;justify-content:center';
+    sw.style.cssText='width:28px;height:28px;border-radius:50%;background:'+m.bg+';border:1px solid var(--border-3);display:inline-flex;align-items:center;justify-content:center';
     var dot=document.createElement('span');
     dot.style.cssText='width:12px;height:12px;border-radius:50%;background:'+m.accent;
     sw.appendChild(dot);
@@ -2511,7 +2470,7 @@ async function linkWalletToEmailUser(){
 // One-way conversion: points → on-chain YEET paid to the user's linked
 // external wallet (docs/mica/05). Requires a connected payout wallet.
 async function openConvertPoints(){
-  const jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt');
+  const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){ showToast(window.t('common.notLoggedIn'),'error'); return; }
   // Confirm a payout wallet is linked first.
   let me=null;
@@ -2593,7 +2552,7 @@ function applySettings(){
 }
 function updateAdultUiVisibility(enabled){
   // Never show 18+ entry points to logged-out visitors, regardless of the cached setting.
-  var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  var jwt=localStorage.getItem('yeet_jwt');
   var show = !!enabled && !!jwt;
   var navLink=document.querySelector('.sidebar a.nav-link[onclick*="check18Plus"]');
   if(navLink) navLink.style.display = show ? '' : 'none';
@@ -2627,7 +2586,7 @@ async function disconnectWallet(){
   // Snapshot tokens BEFORE we wipe localStorage, so the logout call
   // still goes out with a valid Authorization header even after the
   // local state is gone.
-  var tok = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || localStorage.getItem('yt');
+  var tok = localStorage.getItem('yeet_jwt');
   var rtok = localStorage.getItem('yeet_refresh');
 
   // 1) Clear local state FIRST. If anything else on the page tries to
@@ -2710,7 +2669,7 @@ function _promoBanner(p){
   if(!p) return '';
   var pinned = p.pinned_until && new Date(p.pinned_until).getTime() > Date.now();
   if(!pinned) return '';
-  return '<div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#000;background:var(--accent);border-radius:8px;padding:2px 8px;margin-bottom:6px;font-weight:700;letter-spacing:.05em"><span class="yi yi-phone"></span> '+window.t('promo.pinnedBadge').toUpperCase()+'</div>';
+  return '<div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--on-accent);background:var(--accent);border-radius:8px;padding:2px 8px;margin-bottom:6px;font-weight:700;letter-spacing:.05em"><span class="yi yi-phone"></span> '+window.t('promo.pinnedBadge').toUpperCase()+'</div>';
 }
 window._promoBanner = _promoBanner;
 
@@ -2925,18 +2884,7 @@ function loadFeedFiltered(filter){
       if(d.success&&d.data&&d.data.length>0){
         if(empty)empty.style.display='none';
         const wrap=document.createElement('div');wrap.id='feed-posts';
-        for(const p of d.data){
-          const authorAddr=(p.author&&(p.author.wallet_address||p.author.id))||'';
-          // Escape user-controlled display name/username to prevent stored XSS.
-          const short=_esc((p.author&&(p.author.display_name||p.author.username||p.author.wallet_address))||'@user');
-          const s=Math.floor((Date.now()-new Date(p.created_at))/1000);
-          const ago=s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
-          const hrs=Math.max(0,Math.floor((new Date(p.expires_at)-Date.now())/3600000));
-          const el=document.createElement('div');
-          el.style.cssText='padding:16px 20px;border-bottom:1px solid var(--border)';
-          el.innerHTML=_promoBanner(p)+_repostBanner(p)+'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+short+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago &bull;  '+hrs+'h</div></div></div><div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+String(p.content).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+_liveCtaCard(p)+renderMediaUrl(p)+'</div>';
-          wrap.appendChild(el);
-        }
+        for(const p of d.data){ wrap.appendChild(window._buildFeedPostEl(p)); }
         const comp=document.querySelector('.composer');if(comp)comp.after(wrap);
       }else{if(empty)empty.style.display='';}
     }).catch(e=>console.error('loadFeedFiltered:',e));
@@ -2949,9 +2897,7 @@ function submitPost(){
   // connection from letting a logged-out user POST with an empty
   // Authorization header (server would 401 anyway, but we keep the
   // contract honest client-side too).
-  var jwt = localStorage.getItem('yeet_jwt')
-         || localStorage.getItem('yeetToken')
-         || localStorage.getItem('yt');
+  var jwt = localStorage.getItem('yeet_jwt');
   if(!jwt){ openWalletModal(); return; }
   const txt=document.getElementById('postTxt').value.trim();
   if(!txt)return;
@@ -3004,7 +2950,7 @@ function submitPost(){
     }).catch(e=>showToast(window.t('toast.postFailed')+': '+(e.message||''),'error'));
     return;
   }
-  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken')||localStorage.getItem('yt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:(window._postIsPermanent||window._postIsNFT)||false,ppv_price_yeet:window._postPPVPrice||null})})
+  fetch('/api/v1/posts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('yeet_jwt')||'')},body:JSON.stringify({content:txt,is_adult:isAdult,media_url:mediaUrl,is_nft:window._postIsNFT||false,nft_price_yeet:window._postNFTPrice||null,is_permanent:(window._postIsPermanent||window._postIsNFT)||false,ppv_price_yeet:window._postPPVPrice||null})})
     .then(async function(r){
       if(r.status===413){throw new Error(window.t('toast.imageTooLargeServer'));}
       var ct=r.headers.get('content-type')||'';
@@ -3035,7 +2981,7 @@ async function uploadProfileImage(input, kind){
   var file = input.files && input.files[0];
   if(!file) return;
   if(file.size > 8*1024*1024){ showToast(window.t('toast.imageTooLarge'),'error'); input.value=''; return; }
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  var jwt = localStorage.getItem('yeet_jwt');
   if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); input.value=''; return; }
   var endpoint = kind === 'cover' ? '/api/v1/users/me/cover' : '/api/v1/users/me/avatar';
   showToast(window.t(kind === 'cover' ? 'toast.uploadingCover' : 'toast.uploadingAvatar'));
@@ -3180,14 +3126,14 @@ function renderProfileHeader(u, own){
   var bio = _esc(u.bio || '');
   var avatarInner = u.avatar_url
     ? '<img src="'+_esc(u.avatar_url)+'" style="width:100%;height:100%;object-fit:cover">'
-    : '<div style="width:100%;height:100%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">'+(name[0]||'Y').toUpperCase()+'</div>';
+    : '<div style="width:100%;height:100%;background:var(--yeet);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800">'+(name[0]||'Y').toUpperCase()+'</div>';
   var avatarExtra = own
-    ? '<div onclick="document.getElementById(\'avatarUploadInput\').click()" style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer" onmouseenter="this.style.display=\'flex\'" onmouseleave="this.style.display=\'none\'"><span class="yi yi-camera"></span></div>'
+    ? '<div onclick="document.getElementById(\'avatarUploadInput\').click()" style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.45);color:var(--text);display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer" onmouseenter="this.style.display=\'flex\'" onmouseleave="this.style.display=\'none\'"><span class="yi yi-camera"></span></div>'
     : '';
   var avatarBlock = '<div style="position:relative;width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid var(--border);'+(own?'cursor:pointer':'')+'" '
     + (own?'onclick="document.getElementById(\'avatarUploadInput\').click()"':'') + '>'
     + avatarInner
-    + (own ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;text-align:center;padding:2px 0">'+window.t('profile.editAvatar')+'</div>' : '')
+    + (own ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:var(--text);font-size:10px;text-align:center;padding:2px 0">'+window.t('profile.editAvatar')+'</div>' : '')
     + '</div>';
 
   var coverInner = u.cover_url
@@ -3196,7 +3142,7 @@ function renderProfileHeader(u, own){
   var coverBlock = '<div style="position:relative;width:100%;height:140px;border-radius:12px;overflow:hidden;margin-bottom:16px;background:var(--card);'+(own?'cursor:pointer':'')+'"'
     + (own?' onclick="document.getElementById(\'coverUploadInput\').click()"':'') + '>'
     + coverInner
-    + (own ? '<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:6px 12px;border-radius:14px"><span class="yi yi-camera"></span> '+window.t('profile.editCover')+'</div>' : '')
+    + (own ? '<div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:var(--text);font-size:12px;padding:6px 12px;border-radius:14px"><span class="yi yi-camera"></span> '+window.t('profile.editCover')+'</div>' : '')
     + '</div>';
 
   var uploadInputs = own
@@ -3220,7 +3166,7 @@ function renderProfileHeader(u, own){
       var following = !!u.is_following;
       var followStyle = following
         ? 'background:transparent;color:var(--text);border:1px solid var(--border);'
-        : 'background:var(--yeet);color:#000;border:none;';
+        : 'background:var(--yeet);color:var(--on-accent);border:none;';
       var followLabel = following ? window.t('profile.unfollow') : window.t('profile.follow');
       pieces.push('<button id="followBtn" onclick="toggleFollowProfile()" data-follow="'+ (following?'1':'0') +'" style="'+ followStyle +'border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700">'+ followLabel +'</button>');
       pieces.push('<button onclick="openTipModal(null, '+ addrJsArg +')" style="background:transparent;border:1px solid #f5a623;color:#f5a623;border-radius:20px;padding:8px 16px;cursor:pointer;font-weight:600"><span class="yi yi-gift"></span> '+ window.t('profile.tip') +'</button>');
@@ -3238,7 +3184,7 @@ function renderProfileHeader(u, own){
   // Purple 18+ badge: shown when the backend reports age_verified=true
   // (which is gated by users.age_verified_at AND NOT age_badge_hidden).
   var badge18 = u.age_verified
-    ? ' <span title="18+ verified" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#fff;background:#7c3aed;border-radius:10px;padding:2px 7px;vertical-align:middle"><span class="yi yi-check"></span> 18+</span>'
+    ? ' <span title="18+ verified" style="display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--text);background:#7c3aed;border-radius:10px;padding:2px 7px;vertical-align:middle"><span class="yi yi-check"></span> 18+</span>'
     : '';
   document.getElementById('profileHeader').innerHTML =
       coverBlock
@@ -3282,7 +3228,7 @@ async function loadUserPosts(address){
   if(em) em.style.display = 'none';
   var isOwnProfile = !!(window._currentProfile && window._currentProfile.own);
   try{
-    var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+    var jwt = localStorage.getItem('yeet_jwt') || '';
     var headers = jwt ? {'Authorization':'Bearer '+jwt} : {};
     var r = await fetch('/api/v1/users/'+encodeURIComponent(address)+'/posts', {headers:headers});
     var d = await r.json();
@@ -3293,55 +3239,9 @@ async function loadUserPosts(address){
     }
     wrap.innerHTML = '';
     d.data.forEach(function(p){
-      var authorAddr = (p.author && (p.author.wallet_address || p.author.id)) || '';
-      var short = (p.author && (p.author.display_name || p.author.username)) || (authorAddr ? authorAddr.slice(0,6)+'...'+authorAddr.slice(-4) : '@user');
-      var s = Math.floor((Date.now() - new Date(p.created_at))/1000);
-      var ago = s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d';
-      var hrs = p.expires_at ? Math.max(0, Math.floor((new Date(p.expires_at) - Date.now())/3600000)) : 0;
-      var rawContent = String(p.content || '');
-      var foundUrls = rawContent.match(/(https?:\/\/[^\s]+)/g) || [];
-      var txt = rawContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      txt = txt.replace(/#(\w+)/g,'<span style="color:var(--accent)">#$1</span>')
-               .replace(/@(\w+)/g,'<span style="color:var(--accent)">@$1</span>');
-      txt = txt.replace(/(https?:\/\/[^\s<"]+)/g, function(u){
-        var disp = u.replace(/^https?:\/\//,'').replace(/\/$/,'');
-        if(disp.length>45) disp = disp.slice(0,45)+'\u2026';
-        return '<a href="'+u+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();showExternalLinkWarning(event,this.href)" style="color:var(--accent);text-decoration:underline;word-break:break-all">'+disp+'</a>';
-      });
-      var tipBtnHtml = isOwnProfile ? '' : '<button class="tip-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:#f5a623" data-pid="'+(p.id)+'"><span class="yi yi-gift"></span> <span class="tip-count">'+(p.tip_total_yeet||0)+'</span></button>';
-      var el = document.createElement('div');
-      el.style.cssText = 'padding:16px 20px;border-bottom:1px solid var(--border)';
-      el.innerHTML = _promoBanner(p) + _repostBanner(p) + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="width:40px;height:40px;border-radius:50%;background:var(--card-2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;overflow:hidden">'+_avatarInner(p.author)+'</div><div><b onclick="showProfile(\''+_jsq(authorAddr)+'\')" style="font-size:14px;cursor:pointer">'+_esc(short)+'</b><div style="font-size:12px;color:var(--muted)">'+ago+' ago'+(hrs?' &bull; '+hrs+'h':'')+(p.is_adult?' &bull; <span style="color:#f5a623">18+</span>':'')+(p.is_permanent?' &bull; <span style="color:var(--accent)">Permanent</span>':'')+'</div></div></div>'
-        + '<div style="font-size:15px;line-height:1.6;margin-bottom:12px">'+txt+_liveCtaCard(p)+renderMediaUrl(p)+'</div>'
-        + '<div class="post-actions" style="display:flex;align-items:center;position:relative">'
-          + '<button class="like-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="like-heart"><span class="yi yi-heart"></span></span> <span class="like-count">'+(p.like_count||0)+'</span></button>'
-          + '<button class="comment-btn" style="background:transparent;border:none;outline:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;color:var(--muted)" data-pid="'+(p.id)+'"><span class="yi yi-chat"></span> <span>'+(p.comment_count||0)+'</span></button>'
-          + tipBtnHtml
-          + '<button class="more-btn" data-pid="'+(p.id)+'" data-reposts="'+(p.repost_count||0)+'" style="background:transparent;border:none;outline:none;cursor:pointer;color:var(--muted);font-size:20px;padding:2px 10px;margin-left:auto" title="More"><span class="yi yi-more"></span></button>'
-        + '</div>'
-        + '<div class="comment-section" id="comments-'+p.id+'" style="display:none">'
-          + '<div class="comment-input-row" style="display:none"><textarea class="comment-input" rows="1" placeholder="Write a comment..." id="cinput-'+p.id+'" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none;resize:none;flex:1"></textarea><button class="comment-submit" style="display:none" data-pid="'+p.id+'">Send</button></div>'
-          + '<div class="comments-list" id="clist-'+p.id+'"></div>'
-        + '</div>';
-      if(foundUrls.length>0){
-        var previewEl = document.createElement('div');
-        previewEl.style.cssText = 'margin:8px 0 4px';
-        el.appendChild(previewEl);
-        loadLinkPreview(foundUrls[0], previewEl);
-      }
-      el.querySelector('.like-btn').addEventListener('click', function(){ toggleLike(this, p.id); });
-      el.querySelector('.comment-btn').addEventListener('click', function(){ toggleComments(this, p.id); });
-      var subBtn = el.querySelector('.comment-submit');
-      if(subBtn) subBtn.addEventListener('click', function(){ submitComment(this, p.id); });
-      var tipBtn = el.querySelector('.tip-btn');
-      if(tipBtn) tipBtn.addEventListener('click', function(){ openTipModal(p.id, authorAddr); });
-      var mb = el.querySelector('.more-btn');
-      if(mb){
-        mb.dataset.authorid = (p.author && p.author.id) || '';
-        mb.dataset.authorwallet = authorAddr;
-        mb.addEventListener('click', function(e){ e.stopPropagation(); e.preventDefault(); openPostMenu(this); });
-      }
-      wrap.appendChild(el);
+      // Shared feed-card renderer: identical markup/behaviour to the main feed,
+      // minus the reshare button, and no tip button on the user's own profile.
+      wrap.appendChild(window._buildFeedPostEl(p, {showRepost:false, showTip:!isOwnProfile}));
     });
   }catch(e){
     console.error('loadUserPosts:', e);
@@ -3653,7 +3553,7 @@ async function toggleFollowProfile(){
       if(isFollowing){
         btn.dataset.follow='0';
         btn.textContent = window.t('profile.follow');
-        btn.style.cssText = 'background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700';
+        btn.style.cssText = 'background:var(--yeet);color:var(--on-accent);border:none;border-radius:20px;padding:8px 18px;cursor:pointer;font-weight:700';
       } else {
         btn.dataset.follow='1';
         btn.textContent = window.t('profile.unfollow');
@@ -3813,7 +3713,7 @@ function loadLinkPreview(url, container) {
       }
       inner += '<div style="padding:10px 12px">';
       inner += '<div style="font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">'+escHtml(site)+'</div>';
-      if(title) inner += '<div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:4px;line-height:1.3">'+escHtml(title)+'</div>';
+      if(title) inner += '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3">'+escHtml(title)+'</div>';
       if(desc)  inner += '<div style="font-size:12px;color:var(--muted);line-height:1.4">'+escHtml(desc)+'</div>';
       inner += '</div>';
       card.innerHTML = inner;
@@ -3891,10 +3791,10 @@ async function reportPost(postId){
     +reasons.map(function(r,i){return'<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;border:1px solid var(--border-2);border-radius:8px">'
       +'<input type="radio" name="rr" value="'+r+'"'+(i===0?' checked':'')+'>'+r+'</label>';}).join('')
     +'</div>'
-    +'<textarea id="rdetails" placeholder="'+window.t('report.detailsPlaceholder')+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:#fff;font-size:13px;resize:none;height:60px;outline:none;margin-bottom:12px"></textarea>'
+    +'<textarea id="rdetails" placeholder="'+window.t('report.detailsPlaceholder')+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;resize:none;height:60px;outline:none;margin-bottom:12px"></textarea>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'reportModal\').remove()" style="flex:1;padding:10px;background:transparent;border:1px solid var(--border-3);border-radius:8px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
-    +'<button onclick="submitReport(\''+postId+'\')" style="flex:1;padding:10px;background:#ff4444;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">'+window.t('report.submit')+'</button>'
+    +'<button onclick="document.getElementById(\'reportModal\').remove()" style="flex:1;padding:10px;background:transparent;border:1px solid var(--border-3);border-radius:8px;color:var(--text);cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button onclick="submitReport(\''+postId+'\')" style="flex:1;padding:10px;background:#ff4444;border:none;border-radius:8px;color:var(--text);font-weight:700;cursor:pointer">'+window.t('report.submit')+'</button>'
     +'</div></div>';
   modal.addEventListener('click',function(e){if(e.target===this)this.remove();});
   document.body.appendChild(modal);
@@ -3925,7 +3825,7 @@ var faceStream=null;
 //      uploaded image, so the downstream success path is identical.
 async function check18Plus(){
   if(typeof _exitProfileView==='function') _exitProfileView();
-  var jwt=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeetToken');
+  var jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){ showLoginGate(); return; }
   var s=JSON.parse(localStorage.getItem('yeet_settings')||'{}');
   var adultEnabled=s.adult===true||localStorage.getItem('yeet_adult')==='1';
@@ -3965,17 +3865,17 @@ function openAgeVerificationStatus(st){
   if(st.status === 'pending'){
     body = '<div style="font-size:40px;margin-bottom:10px"><span class="yi yi-timer"></span></div>'
       + '<h3 style="margin:0 0 8px;font-size:18px">'+ window.t('verify.title') +'</h3>'
-      + '<p style="color:#aaa;font-size:13px;margin:0 0 12px">'+ window.t('verify.pending') +'</p>'
+      + '<p style="color:var(--muted);font-size:13px;margin:0 0 12px">'+ window.t('verify.pending') +'</p>'
       + (st.submitted_at ? '<p style="color:var(--muted);font-size:11px;margin:0 0 14px">'+ window.t('verify.pendingSince') +': '+ new Date(st.submitted_at).toLocaleString() +'</p>' : '')
       + '<button onclick="withdrawAgeVerification()" style="width:100%;padding:11px;background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:10px;cursor:pointer;margin-bottom:8px">'+ window.t('verify.withdraw') +'</button>'
-      + '<button onclick="closeFaceScan()" style="width:100%;padding:11px;background:transparent;border:1px solid var(--border-3);color:#fff;border-radius:10px;cursor:pointer">'+ window.t('common.cancel') +'</button>';
+      + '<button onclick="closeFaceScan()" style="width:100%;padding:11px;background:transparent;border:1px solid var(--border-3);color:var(--text);border-radius:10px;cursor:pointer">'+ window.t('common.cancel') +'</button>';
   } else if(st.status === 'rejected'){
     body = '<div style="font-size:40px;margin-bottom:10px"><span class="yi yi-warning"></span></div>'
       + '<h3 style="margin:0 0 8px;font-size:18px">'+ window.t('verify.title') +'</h3>'
       + '<p style="color:#ff7f7f;font-size:13px;margin:0 0 8px">'+ window.t('verify.rejected') +'</p>'
-      + (st.decision_note ? '<p style="color:#ccc;font-size:13px;margin:0 0 14px;white-space:pre-wrap">'+ escapeHtml(st.decision_note) +'</p>' : '')
-      + '<button onclick="closeFaceScan();openAgeVerificationSubmit()" style="width:100%;padding:11px;background:var(--accent);border:none;color:#000;font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:8px">'+ window.t('verify.startOver') +'</button>'
-      + '<button onclick="closeFaceScan()" style="width:100%;padding:11px;background:transparent;border:1px solid var(--border-3);color:#fff;border-radius:10px;cursor:pointer">'+ window.t('common.cancel') +'</button>';
+      + (st.decision_note ? '<p style="color:var(--text-2);font-size:13px;margin:0 0 14px;white-space:pre-wrap">'+ escapeHtml(st.decision_note) +'</p>' : '')
+      + '<button onclick="closeFaceScan();openAgeVerificationSubmit()" style="width:100%;padding:11px;background:var(--accent);border:none;color:var(--on-accent);font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:8px">'+ window.t('verify.startOver') +'</button>'
+      + '<button onclick="closeFaceScan()" style="width:100%;padding:11px;background:transparent;border:1px solid var(--border-3);color:var(--text);border-radius:10px;cursor:pointer">'+ window.t('common.cancel') +'</button>';
   }
   modal.innerHTML = '<div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:16px;padding:28px;max-width:380px;width:100%;text-align:center">'+ body +'</div>';
   document.body.appendChild(modal);
@@ -4002,7 +3902,7 @@ function openAgeVerificationSubmit(){
     +'<div style="font-size:40px;margin-bottom:12px"><span class="yi yi-camera"></span></div>'
     +'<h3 style="margin:0 0 8px;font-size:18px">'+window.t('verify.title')+'</h3>'
     +'<p style="color:var(--muted);font-size:13px;margin-bottom:16px">'+window.t('verify.subtitle')+'</p>'
-    +'<div id="faceMediaWrap" style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:14px">'
+    +'<div id="faceMediaWrap" style="position:relative;border-radius:12px;overflow:hidden;background:var(--bg);aspect-ratio:4/3;margin-bottom:14px">'
     +'<video id="faceVid" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>'
     +'<img id="faceImg" alt="" style="width:100%;height:100%;object-fit:cover;display:none">'
     +'<canvas id="faceCvs" style="display:none"></canvas>'
@@ -4014,24 +3914,24 @@ function openAgeVerificationSubmit(){
       +'<button onclick="document.getElementById(\'faceFileInput\').click()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--yeet);border-radius:10px;color:var(--yeet);cursor:pointer;font-weight:700"><span class="yi yi-camera"></span> '+window.t('verify.usePhoto')+'</button>'
     +'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:14px">'
-    +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border-3);border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
-    +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer" disabled>'+window.t('verify.start')+'</button>'
+    +'<button onclick="closeFaceScan()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border-3);border-radius:10px;color:var(--text);cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button id="scanBtn" onclick="doFaceScan()" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:10px;color:var(--on-accent);font-weight:700;cursor:pointer" disabled>'+window.t('verify.start')+'</button>'
     +'</div>'
     // Optional ID document section. Hidden until a face frame is captured
     // so the user isn't asked to upload PII before the face step works.
     +'<div id="idDocSection" style="display:none;text-align:left;border-top:1px solid var(--border-2);padding-top:14px;margin-bottom:12px">'
-    +'<label style="display:block;font-size:12px;color:#aaa;margin-bottom:6px">'+window.t('verify.addId')+'</label>'
-    +'<select id="idDocType" style="width:100%;background:#0e0e0e;border:1px solid var(--border-2);border-radius:8px;color:#fff;padding:8px;margin-bottom:8px;font-size:13px">'
+    +'<label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">'+window.t('verify.addId')+'</label>'
+    +'<select id="idDocType" style="width:100%;background:#0e0e0e;border:1px solid var(--border-2);border-radius:8px;color:var(--text);padding:8px;margin-bottom:8px;font-size:13px">'
       +'<option value="passport">'+window.t('verify.idPassport')+'</option>'
       +'<option value="driver_license">'+window.t('verify.idDriver')+'</option>'
       +'<option value="national_id">'+window.t('verify.idNational')+'</option>'
       +'<option value="other">'+window.t('verify.idOther')+'</option>'
     +'</select>'
     +'<input type="file" id="idDocFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="onIdDocPicked(this)">'
-    +'<button onclick="document.getElementById(\'idDocFile\').click()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border-3);color:#ccc;border-radius:8px;cursor:pointer;font-size:12px"><span class="yi yi-folder"></span> '+window.t('verify.usePhoto')+'</button>'
+    +'<button onclick="document.getElementById(\'idDocFile\').click()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:8px;cursor:pointer;font-size:12px"><span class="yi yi-folder"></span> '+window.t('verify.usePhoto')+'</button>'
     +'<div id="idDocFileName" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center"></div>'
     +'</div>'
-    +'<button id="submitVerifyBtn" onclick="submitAgeVerification()" style="display:none;width:100%;padding:12px;background:#7c3aed;border:none;color:#fff;font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:10px">'+window.t('verify.submitNow')+'</button>'
+    +'<button id="submitVerifyBtn" onclick="submitAgeVerification()" style="display:none;width:100%;padding:12px;background:#7c3aed;border:none;color:var(--text);font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:10px">'+window.t('verify.submitNow')+'</button>'
     +'<p style="color:var(--dim);font-size:11px;margin-top:6px">'+window.t('verify.imageNotStored')+'</p>'
     +'</div>';
   document.body.appendChild(modal);
@@ -4494,7 +4394,7 @@ function ingestComposerVideo(file){
 }
 
 function uploadPostVideo(file){
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || localStorage.getItem('yt') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   var fd = new FormData();
   fd.append('file', file, file.name || 'video');
   return fetch('/api/v1/uploads/post-media',{
@@ -4562,20 +4462,20 @@ function openPPVPriceModal() {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px';
   var presets = [1,3,5,10];
   var presetBtns = presets.map(function(v){
-    return '<button onclick="selectPPVPrice('+v+',this)" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:#fff;cursor:pointer;font-size:15px;font-weight:700">'+v+' YEET</button>';
+    return '<button onclick="selectPPVPrice('+v+',this)" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);cursor:pointer;font-size:15px;font-weight:700">'+v+' YEET</button>';
   }).join('');
   modal.innerHTML = '<div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:16px;padding:24px;max-width:340px;width:100%">'
     +'<h3 style="margin:0 0 6px;font-size:16px"><span class="yi yi-lock"></span> '+window.t('ppv.title')+'</h3>'
     +'<p style="color:var(--muted);font-size:12px;margin-bottom:16px">'+window.t('ppv.subtitle')+'</p>'
-    +'<p style="font-size:13px;color:#aaa;margin-bottom:10px">'+window.t('nft.priceLabel')+'</p>'
+    +'<p style="font-size:13px;color:var(--muted);margin-bottom:10px">'+window.t('nft.priceLabel')+'</p>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+presetBtns+'</div>'
     +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">'
-    +'<input type="number" id="ppvCustomPrice" placeholder="'+window.t('nft.customPrice')+'" min="0.1" step="0.1" style="flex:1;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:#fff;font-size:13px;outline:none" oninput="clearPPVPresets()">'
+    +'<input type="number" id="ppvCustomPrice" placeholder="'+window.t('nft.customPrice')+'" min="0.1" step="0.1" style="flex:1;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;color:var(--text);font-size:13px;outline:none" oninput="clearPPVPresets()">'
     +'<span style="color:var(--accent);font-weight:700">YEET</span>'
     +'</div>'
     +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'ppvModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border-3);border-radius:10px;color:#fff;cursor:pointer">'+window.t('common.cancel')+'</button>'
-    +'<button onclick="confirmPPVPrice()" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:10px;color:#000;font-weight:700;cursor:pointer">'+window.t('common.confirm')+'</button>'
+    +'<button onclick="document.getElementById(\'ppvModal\').remove()" style="flex:1;padding:11px;background:transparent;border:1px solid var(--border-3);border-radius:10px;color:var(--text);cursor:pointer">'+window.t('common.cancel')+'</button>'
+    +'<button onclick="confirmPPVPrice()" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:10px;color:var(--on-accent);font-weight:700;cursor:pointer">'+window.t('common.confirm')+'</button>'
     +'</div></div>';
   modal.addEventListener('click', function(e){if(e.target===this)this.remove();});
   document.body.appendChild(modal);
@@ -4614,7 +4514,7 @@ function confirmPPVPrice() {
 // caller, records the unlock entitlement, and routes the fee through
 // the standard tips ledger (90% creator / 10% platform).
 function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  var jwt = localStorage.getItem('yeet_jwt');
   if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
 
   var btn = overlayEl.querySelector('button');
@@ -4676,7 +4576,7 @@ window.toggleScheduleUI = toggleScheduleUI;
 
 // ── SCHEDULED POSTS LIST (own profile) ─────────────────────────────────────
 function loadScheduledPosts(){
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); return; }
   fetch('/api/v1/scheduled-posts/mine',{headers:{'Authorization':'Bearer '+jwt}})
     .then(function(r){ return r.json(); })
@@ -4705,7 +4605,7 @@ function loadScheduledPosts(){
     .catch(function(){ /* silent */ });
 }
 function cancelScheduledPost(id){
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   fetch('/api/v1/scheduled-posts/'+encodeURIComponent(id),{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}})
     .then(function(r){ return r.json(); })
     .then(function(d){
@@ -4745,7 +4645,7 @@ function loadLives(){
   var compEl = document.querySelector('.composer');
   if(compEl && compEl.parentNode) compEl.parentNode.insertBefore(wrap, compEl.nextSibling);
 
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   var headers = jwt ? {'Authorization':'Bearer '+jwt} : {};
   fetch('/api/v1/lives/active',{headers}).then(function(r){return r.json();}).then(function(d){
     var box = document.getElementById('lives-active-list'); if(!box) return;
@@ -4776,8 +4676,8 @@ function renderLiveCard(l){
     var dt = new Date(l.scheduled_for);
     schedHtml = '<div style="font-size:11px;color:var(--accent);margin-top:2px">'+window.t('live.startsAt')+' '+dt.toLocaleString()+'</div>';
   }
-  var adultBadge = l.is_adult ? '<span style="font-size:10px;background:#f5a623;color:#000;padding:1px 6px;border-radius:8px;margin-left:6px">'+window.t('live.adult')+'</span>' : '';
-  var liveBadge = isLive ? '<span style="font-size:10px;background:#e63946;color:#fff;padding:1px 6px;border-radius:8px;margin-left:6px"><span class="yi yi-live"></span> LIVE</span>' : '';
+  var adultBadge = l.is_adult ? '<span style="font-size:10px;background:#f5a623;color:var(--on-accent);padding:1px 6px;border-radius:8px;margin-left:6px">'+window.t('live.adult')+'</span>' : '';
+  var liveBadge = isLive ? '<span style="font-size:10px;background:#e63946;color:var(--text);padding:1px 6px;border-radius:8px;margin-left:6px"><span class="yi yi-live"></span> LIVE</span>' : '';
   var tipsRow = isLive
     ? '<div style="font-size:12px;color:var(--muted);margin-top:6px"><span class="yi yi-fire"></span> '+(l.tip_total_yeet||0).toFixed(2)+' YEET &middot; <span class="yi yi-eye"></span> '+(l.viewer_count||0)+' '+window.t('live.viewers')+'</div>'
     : '';
@@ -4786,14 +4686,14 @@ function renderLiveCard(l){
   var actions = '';
   if(isLive){
     actions += '<button class="btn-sm" onclick="openLiveViewer(\''+l.id+'\')">'+window.t('live.watch')+'</button> ';
-    actions += '<button class="btn-sm" onclick="tipLivePrompt(\''+l.id+'\')" style="background:#f5a623;color:#000"><span class="yi yi-gift"></span> '+window.t('live.tipHost')+'</button>';
+    actions += '<button class="btn-sm" onclick="tipLivePrompt(\''+l.id+'\')" style="background:#f5a623;color:var(--on-accent)"><span class="yi yi-gift"></span> '+window.t('live.tipHost')+'</button>';
     if(isMine){
-      actions += ' <button class="btn-sm" onclick="openPromoteLive(\''+l.id+'\')" style="background:var(--accent);color:#000"><span class="yi yi-phone"></span> '+window.t('promo.title')+'</button>';
-      actions += ' <button class="btn-sm" onclick="endLive(\''+l.id+'\')" style="background:#e63946;color:#fff">'+window.t('live.endStream')+'</button>';
+      actions += ' <button class="btn-sm" onclick="openPromoteLive(\''+l.id+'\')" style="background:var(--accent);color:var(--on-accent)"><span class="yi yi-phone"></span> '+window.t('promo.title')+'</button>';
+      actions += ' <button class="btn-sm" onclick="endLive(\''+l.id+'\')" style="background:#e63946;color:var(--text)">'+window.t('live.endStream')+'</button>';
     }
   } else if(l.status === 'scheduled'){
     if(isMine){
-      actions += '<button class="btn-sm" onclick="startLive(\''+l.id+'\')" style="background:var(--accent);color:#000">'+window.t('live.startStream')+'</button> ';
+      actions += '<button class="btn-sm" onclick="startLive(\''+l.id+'\')" style="background:var(--accent);color:var(--on-accent)">'+window.t('live.startStream')+'</button> ';
       actions += '<button class="btn-sm" onclick="openPromoteLive(\''+l.id+'\')"><span class="yi yi-phone"></span> '+window.t('promo.title')+'</button> ';
       actions += '<button class="btn-sm" onclick="cancelLive(\''+l.id+'\')" style="background:transparent;color:#f55;border:1px solid #f55">'+window.t('live.cancel')+'</button>';
     } else {
@@ -4824,12 +4724,12 @@ function openCreateLive(scheduled){
     + '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:420px;width:100%;padding:18px">'
     + '<h3 style="margin:0 0 10px;font-size:16px">'+(scheduled?window.t('live.schedule'):window.t('live.goLive'))+'</h3>'
     + '<label style="font-size:11px;color:var(--muted)">'+window.t('live.title')+'</label>'
-    + '<input id="liveTitle" maxlength="120" placeholder="'+window.t('live.titlePh')+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;margin:4px 0 10px">'
+    + '<input id="liveTitle" maxlength="120" placeholder="'+window.t('live.titlePh')+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin:4px 0 10px">'
     + '<label style="font-size:11px;color:var(--muted)">'+window.t('live.descr')+'</label>'
-    + '<textarea id="liveDescr" maxlength="500" rows="2" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;margin:4px 0 10px;resize:vertical"></textarea>'
+    + '<textarea id="liveDescr" maxlength="500" rows="2" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin:4px 0 10px;resize:vertical"></textarea>'
     + (scheduled
         ? ('<label style="font-size:11px;color:var(--muted)">'+window.t('sched.when')+'</label>'
-           +'<input id="liveSchedAt" type="datetime-local" value="'+nowLocal+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;margin:4px 0 10px">')
+           +'<input id="liveSchedAt" type="datetime-local" value="'+nowLocal+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin:4px 0 10px">')
         : '')
     + '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;margin:0 0 12px"><input type="checkbox" id="liveAdult" style="accent-color:#f5a623"> 18+</label>'
     + '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px">'
@@ -4849,7 +4749,7 @@ function openCreateLive(scheduled){
 window.openCreateLive = openCreateLive;
 
 function submitCreateLive(scheduled){
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); return; }
   var title = document.getElementById('liveTitle').value.trim();
   var descr = document.getElementById('liveDescr').value.trim();
@@ -4934,7 +4834,7 @@ function openPromoteLive(liveId){
     var rs = document.querySelectorAll('input[name="promoTier"]');
     for(var i=0;i<rs.length;i++){ if(rs[i].checked){ tier = rs[i].value; break; } }
     if(!tier) return;
-    var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+    var jwt = localStorage.getItem('yeet_jwt') || '';
     fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/promote',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
@@ -4963,23 +4863,23 @@ function openLiveViewer(liveId, asHost, hostToken){
   var existing = document.getElementById('liveViewer'); if(existing) existing.remove();
   var modal = document.createElement('div');
   modal.id = 'liveViewer';
-  modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9000;display:flex;flex-direction:column';
+  modal.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;flex-direction:column';
   modal.innerHTML = ''
     + '<div style="padding:12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)">'
-    +   '<button onclick="closeLiveViewer()" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer">&larr;</button>'
+    +   '<button onclick="closeLiveViewer()" style="background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer">&larr;</button>'
     +   '<div id="liveViewerTitle" style="flex:1;font-weight:700">…</div>'
     +   '<div id="liveViewerMeta" style="font-size:12px;color:var(--accent)"></div>'
     + '</div>'
-    + '<div id="liveStage" style="flex:1;position:relative;background:#000;overflow:hidden">'
+    + '<div id="liveStage" style="flex:1;position:relative;background:var(--bg);overflow:hidden">'
     +   '<div id="liveRemote" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"></div>'
-    +   '<div id="liveStatus" style="position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:11px;color:#aaa;background:rgba(0,0,0,.4);text-align:center">Connecting…</div>'
+    +   '<div id="liveStatus" style="position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:11px;color:var(--muted);background:rgba(0,0,0,.4);text-align:center">Connecting…</div>'
     + '</div>'
     + '<div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap">'
     +   (asHost
         ? '<button class="btn-sm" id="liveMuteBtn" onclick="toggleLiveMute()"><span class="yi yi-mic"></span> Mute</button>'
           +'<button class="btn-sm" id="liveCamBtn" onclick="toggleLiveCam()"><span class="yi yi-camera"></span> Camera</button>'
-          +'<button class="btn-sm" onclick="endLive(\''+liveId+'\')" style="background:#e63946;color:#fff;margin-left:auto">'+window.t('live.endStream')+'</button>'
-        : '<button class="btn-sm" onclick="tipLivePrompt(\''+liveId+'\')" style="background:#f5a623;color:#000"><span class="yi yi-gift"></span> '+window.t('live.tipHost')+'</button>')
+          +'<button class="btn-sm" onclick="endLive(\''+liveId+'\')" style="background:#e63946;color:var(--text);margin-left:auto">'+window.t('live.endStream')+'</button>'
+        : '<button class="btn-sm" onclick="tipLivePrompt(\''+liveId+'\')" style="background:#f5a623;color:var(--on-accent)"><span class="yi yi-gift"></span> '+window.t('live.tipHost')+'</button>')
     + '</div>';
   document.body.appendChild(modal);
   modal.dataset.liveId = liveId;
@@ -5001,7 +4901,7 @@ function openLiveViewer(liveId, asHost, hostToken){
     return;
   }
   // Anonymous viewers are allowed.
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   var headers = jwt ? {'Content-Type':'application/json','Authorization':'Bearer '+jwt}
                     : {'Content-Type':'application/json'};
   fetch('/api/v1/lives/'+encodeURIComponent(liveId)+'/viewers',{
@@ -5122,7 +5022,7 @@ function closeLiveViewer(){
 window.closeLiveViewer = closeLiveViewer;
 
 function startLive(id){
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   fetch('/api/v1/lives/'+encodeURIComponent(id)+'/start',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
     .then(function(r){return r.json();}).then(function(d){
       if(d && d.success){ openLiveViewer(id, true, d.data); loadLives(); }
@@ -5131,7 +5031,7 @@ function startLive(id){
 }
 function endLive(id){
   if(!confirm(window.t('live.confirmEnd'))) return;
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   fetch('/api/v1/lives/'+encodeURIComponent(id)+'/end',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
     .then(function(r){return r.json();}).then(function(d){
       if(d && d.success){ closeLiveViewer(); loadLives(); }
@@ -5140,7 +5040,7 @@ function endLive(id){
 }
 function cancelLive(id){
   if(!confirm(window.t('live.confirmCancel'))) return;
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   fetch('/api/v1/lives/'+encodeURIComponent(id)+'/cancel',{method:'POST',headers:{'Authorization':'Bearer '+jwt}})
     .then(function(r){return r.json();}).then(function(d){
       if(d && d.success){ loadLives(); }
@@ -5148,7 +5048,7 @@ function cancelLive(id){
     });
 }
 function tipLivePrompt(id){
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken') || '';
+  var jwt = localStorage.getItem('yeet_jwt') || '';
   if(!jwt){ showToast(window.t('common.pleaseLogin'),'error'); return; }
   var raw = prompt(window.t('live.tipAmount'),'10');
   if(raw === null) return;
@@ -5185,7 +5085,7 @@ function renderMediaUrl(p) {
   if (!p.media_url) return '';
   var isVideo = _isVideoUrl(p.media_url);
   var openMedia = isVideo
-    ? '<video src="' + p.media_url + '" controls preload="metadata" playsinline style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;background:#000"></video>'
+    ? '<video src="' + p.media_url + '" controls preload="metadata" playsinline style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;background:var(--bg)"></video>'
     : '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   // No PPV price set: render normally.
   if (!p.ppv_price_yeet) {
@@ -5205,20 +5105,20 @@ function renderMediaUrl(p) {
   // trivially blurrable client-side without decoding, so a tile keeps
   // PPV simple and prevents accidental playback before payment.
   var lockedPreview = isVideo
-    ? '<div style="width:100%;height:280px;background:#000;display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--border-2)"><span class="yi yi-video"></span></div>'
+    ? '<div style="width:100%;height:280px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--border-2)"><span class="yi yi-video"></span></div>'
     : '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">';
   return '<div class="ppv-wrap" data-pid="' + p.id + '" data-aid="' + aid + '" data-price="' + price + '" style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:block">'
     + lockedPreview
     + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);gap:10px">'
     + '<div style="font-size:32px"><span class="yi yi-lock"></span></div>'
-    + '<div style="color:#fff;font-size:14px;font-weight:700">' + window.t('ppv.unlockPrompt',{price:price}) + '</div>'
-    + '<button class="ppv-unlock-btn" style="background:var(--accent);border:none;border-radius:20px;padding:8px 20px;color:#000;font-weight:700;cursor:pointer;font-size:13px">' + window.t('ppv.unlock') + '</button>'
+    + '<div style="color:var(--text);font-size:14px;font-weight:700">' + window.t('ppv.unlockPrompt',{price:price}) + '</div>'
+    + '<button class="ppv-unlock-btn" style="background:var(--accent);border:none;border-radius:20px;padding:8px 20px;color:var(--on-accent);font-weight:700;cursor:pointer;font-size:13px">' + window.t('ppv.unlock') + '</button>'
     + '</div></div>';
 }
 
 
 function repostPost(postId, currentReposts) {
-  var jwt = localStorage.getItem('yeet_jwt') || localStorage.getItem('yeetToken');
+  var jwt = localStorage.getItem('yeet_jwt');
   if (!jwt) { showToast(window.t('common.pleaseLogin'), 'error'); return; }
   if (currentReposts >= 1) { showToast(window.t('toast.maxRepost'), 'error'); return; }
   fetch('/api/v1/posts/' + postId + '/repost', {
@@ -5319,12 +5219,12 @@ function showExternalLinkWarning(e,url){
   // and open it from a closure instead.
   m.innerHTML='<div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:16px;padding:24px;max-width:380px;width:100%;text-align:center">'
     +'<div style="font-size:28px;margin-bottom:12px"><span class="yi yi-link"></span></div>'
-    +'<h3 style="margin:0 0 8px;font-size:17px;color:#fff">'+window.t('extlink.title')+'</h3>'
+    +'<h3 style="margin:0 0 8px;font-size:17px;color:var(--text)">'+window.t('extlink.title')+'</h3>'
     +'<p style="color:var(--muted);font-size:13px;margin:0 0 16px">'+window.t('extlink.subtitle')+'</p>'
     +'<div class="ext-link-url" style="background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:10px;margin-bottom:20px;word-break:break-all;font-size:12px;color:var(--accent);text-align:left"></div>'
     +'<div style="display:flex;gap:10px;justify-content:center">'
-    +'<button class="ext-link-cancel" style="flex:1;padding:10px;border:1px solid var(--border-3);border-radius:20px;background:transparent;color:#fff;cursor:pointer;font-size:14px">'+window.t('common.cancel')+'</button>'
-    +'<button class="ext-link-open" style="flex:1;padding:10px;border:none;border-radius:20px;background:var(--accent);color:#000;cursor:pointer;font-weight:600;font-size:14px">'+window.t('common.open')+'</button>'
+    +'<button class="ext-link-cancel" style="flex:1;padding:10px;border:1px solid var(--border-3);border-radius:20px;background:transparent;color:var(--text);cursor:pointer;font-size:14px">'+window.t('common.cancel')+'</button>'
+    +'<button class="ext-link-open" style="flex:1;padding:10px;border:none;border-radius:20px;background:var(--accent);color:var(--on-accent);cursor:pointer;font-weight:600;font-size:14px">'+window.t('common.open')+'</button>'
     +'</div></div>';
   m.querySelector('.ext-link-url').textContent=url;
   m.querySelector('.ext-link-cancel').addEventListener('click',function(){m.remove();});
@@ -5403,15 +5303,15 @@ function showExternalLinkWarning(e,url){
 </div>
 
 <!-- EMAIL VERIFY BANNER -->
-<div id="verifyBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ffd700;color:#000;padding:10px 16px;font-size:13px;font-weight:600;z-index:9998;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
+<div id="verifyBanner" style="display:none;position:fixed;top:0;left:0;right:0;background:#ffd700;color:var(--on-accent);padding:10px 16px;font-size:13px;font-weight:600;z-index:9998;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)">
   <span id="verifyBannerText">Please verify your email.</span>
-  <button onclick="resendVerification()" style="margin-left:10px;background:#000;color:#ffd700;border:none;padding:4px 12px;border-radius:4px;font-weight:700;cursor:pointer;font-size:12px">Resend email</button>
-  <button onclick="document.getElementById('verifyBanner').style.display='none'" style="margin-left:6px;background:none;border:none;color:#000;cursor:pointer;font-weight:700;font-size:16px">&times;</button>
+  <button onclick="resendVerification()" style="margin-left:10px;background:var(--bg);color:#ffd700;border:none;padding:4px 12px;border-radius:4px;font-weight:700;cursor:pointer;font-size:12px">Resend email</button>
+  <button onclick="document.getElementById('verifyBanner').style.display='none'" style="margin-left:6px;background:none;border:none;color:var(--on-accent);cursor:pointer;font-weight:700;font-size:16px">&times;</button>
 </div>
 
 <style>
 .atab{flex:1;padding:9px;text-align:center;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer}
-.atab.active{background:var(--yeet);color:#000;border-color:var(--yeet)}
+.atab.active{background:var(--yeet);color:var(--on-accent);border-color:var(--yeet)}
 .wbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--card-2);color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;margin-bottom:8px;font-weight:700}
 .wbtn:hover{border-color:var(--yeet)}
 .or-div{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
@@ -5428,7 +5328,7 @@ function showExternalLinkWarning(e,url){
 .sdot.on{background:var(--yeet)}
 .btn-login{background:none;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:20px;cursor:pointer}
 .btn-login:hover{border-color:var(--yeet);color:var(--yeet)}
-.btn-reg{background:var(--yeet);border:none;color:#000;font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
+.btn-reg{background:var(--yeet);border:none;color:var(--on-accent);font-family:inherit;font-size:13px;font-weight:700;padding:6px 16px;border-radius:20px;cursor:pointer}
 .addr-pill{font-size:11px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:4px 10px;border-radius:14px;cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
 .balance-pill{font-size:12px;color:var(--yeet);background:rgba(var(--accent-rgb),.08);border:1px solid var(--yeet);padding:4px 10px;border-radius:14px;cursor:pointer;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -5474,20 +5374,20 @@ function showExternalLinkWarning(e,url){
     box.style.cssText = 'background:var(--card);border:1px solid #ff4444;border-radius:14px;padding:22px;width:380px;max-width:92vw;color:var(--text)';
     box.innerHTML =
         '<h3 style="margin:0 0 10px;color:#ff6666;font-size:17px"><span class="yi yi-shield"></span> Admin moderation</h3>'
-      + '<p style="color:#aaa;font-size:12px;margin:0 0 14px;word-break:break-all">Target: '+ String(address).replace(/[<>"]/g,'') +'</p>'
-      + '<div style="font-size:12px;color:#aaa;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Suspend posting</div>'
+      + '<p style="color:var(--muted);font-size:12px;margin:0 0 14px;word-break:break-all">Target: '+ String(address).replace(/[<>"]/g,'') +'</p>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Suspend posting</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">'
       +   '<button class="adm-ban-btn" data-h="12">12 h</button>'
       +   '<button class="adm-ban-btn" data-h="24">24 h</button>'
       +   '<button class="adm-ban-btn" data-h="168">7 d</button>'
       +   '<button class="adm-ban-btn" data-h="720">30 d</button>'
       + '</div>'
-      + '<input id="admReason" type="text" placeholder="Reason (optional)" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;margin-bottom:14px">'
+      + '<input id="admReason" type="text" placeholder="Reason (optional)" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;margin-bottom:14px">'
       + '<button id="admUnbanBtn" style="width:100%;padding:9px;background:transparent;border:1px solid var(--yeet);color:var(--yeet);border-radius:8px;cursor:pointer;font-size:13px;margin-bottom:14px">Lift posting ban</button>'
-      + '<div style="font-size:12px;color:#aaa;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Danger zone</div>'
-      + '<input id="admDelConfirm" type="text" placeholder="Type the target username to confirm delete" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid #5a2a2a;border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;margin-bottom:8px">'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Danger zone</div>'
+      + '<input id="admDelConfirm" type="text" placeholder="Type the target username to confirm delete" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid #5a2a2a;border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px">'
       + '<button id="admDelBtn" style="width:100%;padding:10px;background:#3a1a1a;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;margin-bottom:14px">Delete user permanently</button>'
-      + '<button id="admCloseBtn" style="width:100%;padding:9px;background:var(--card-2);border:1px solid var(--border-2);color:#aaa;border-radius:8px;cursor:pointer;font-size:13px">Close</button>';
+      + '<button id="admCloseBtn" style="width:100%;padding:9px;background:var(--card-2);border:1px solid var(--border-2);color:var(--muted);border-radius:8px;cursor:pointer;font-size:13px">Close</button>';
     ov.appendChild(box);
     document.body.appendChild(ov);
     [].forEach.call(box.querySelectorAll('.adm-ban-btn'), function(b){
@@ -5556,12 +5456,10 @@ function showExternalLinkWarning(e,url){
   // throw; reinstate real values only with a sourced market price.
 
 
-  function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:#000;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
+  function _toast(msg){var t=document.createElement('div');t.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--yeet);color:var(--on-accent);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:99999;font-family:inherit';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove()},3000)}
 
   function _setLoggedIn(tok,user,wallet){
-    localStorage.setItem('yeetToken',tok);
     localStorage.setItem('yeet_jwt',tok);
-    localStorage.setItem('yt',tok);
     localStorage.setItem('yeetUser',JSON.stringify(user));
     if(wallet)localStorage.setItem('yeetWallet',wallet);
     _updateAuthUI(user,wallet);
@@ -5607,7 +5505,7 @@ function showExternalLinkWarning(e,url){
     err.classList.remove('show');ok.classList.remove('show');
     if(!/\S+@\S+\.\S+/.test(email)){err.textContent='Invalid email';err.classList.add('show');return}
     if(!consent){err.textContent='Please accept the privacy policy';err.classList.add('show');return}
-    var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt');
+    var tok=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeet_jwt');
     try{
       var r=await fetch('/api/v1/auth/link-email',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({email:email,consent:true})});
       var d=await r.json();
@@ -5617,7 +5515,7 @@ function showExternalLinkWarning(e,url){
     }catch(e){err.textContent=e.message;err.classList.add('show')}
   };
   window.resendVerification = async function(){
-    var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt');
+    var tok=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeet_jwt');
     if(!tok){_toast('Please log in first');return}
     try{
       var r=await fetch('/api/v1/auth/email-resend',{method:'POST',headers:{'Authorization':'Bearer '+tok}});
@@ -5765,7 +5663,7 @@ function showExternalLinkWarning(e,url){
   document.addEventListener('DOMContentLoaded',function(){
     // Check saved session. Wallet/web3 logins only write yeet_jwt, so
     // reading yeetToken alone left those users looking logged-out on reload.
-    var tok=localStorage.getItem('yeetToken')||localStorage.getItem('yeet_jwt')||localStorage.getItem('yt');
+    var tok=localStorage.getItem('yeet_jwt')||localStorage.getItem('yeet_jwt');
     var user=JSON.parse(localStorage.getItem('yeetUser')||'null');
     var wallet=localStorage.getItem('yeetWallet');
     if(tok&&user){
@@ -5800,10 +5698,10 @@ function showExternalLinkWarning(e,url){
     var inp=document.createElement('input');
     inp.id='_ci_'+postId;
     inp.placeholder='Write a comment...';
-    inp.style.cssText='flex:1;background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:#fff;font-size:13px;outline:none';
+    inp.style.cssText='flex:1;background:var(--card-2);border:1px solid var(--border-2);border-radius:20px;padding:8px 14px;color:var(--text);font-size:13px;outline:none';
     var btn=document.createElement('button');
     btn.textContent='Send';
-    btn.style.cssText='background:var(--yeet);color:#000;border:none;border-radius:20px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px';
+    btn.style.cssText='background:var(--yeet);color:var(--on-accent);border:none;border-radius:20px;padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px';
     btn.onclick=function(){_sendComment(postId);};
     var row=document.createElement('div');
     row.style.cssText='display:flex;gap:8px;margin-top:8px';
@@ -5923,9 +5821,9 @@ function showExternalLinkWarning(e,url){
           return '<div style="padding:8px 0;border-top:1px solid #1e1e1e;font-size:13px;display:flex;gap:8px;align-items:flex-start">'
             +'<div style="width:28px;height:28px;border-radius:50%;background:var(--card-2);border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;color:var(--accent)">'
             +name.slice(0,2).toUpperCase()+'</div>'
-            +'<div><div style="margin-bottom:2px"><b style="color:#fff;font-size:13px">'+name+'</b>'
+            +'<div><div style="margin-bottom:2px"><b style="color:var(--text);font-size:13px">'+name+'</b>'
             +(ago?'<span style="color:var(--dim);font-size:11px;margin-left:6px">'+ago+'</span>':'')+'</div>'
-            +'<div style="color:#ccc">'+safeContent+'</div></div></div>';
+            +'<div style="color:var(--text-2)">'+safeContent+'</div></div></div>';
         }).join('');
       }else{
         list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">'+(window.t?window.t('comments.empty'):'No comments yet')+'</div>';
@@ -5944,14 +5842,14 @@ function openTipModal(postId,toAddr){
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center';
   var box=document.createElement('div');
   box.style.cssText='background:var(--card);border:1px solid var(--border-2);border-radius:16px;padding:24px;width:340px;max-width:92vw';
-  var h3=document.createElement('h3');h3.style.cssText='margin:0 0 6px;color:#fff;font-size:18px';h3.innerHTML='<span class="yi yi-gift"></span> '+window.t('tip.title');box.appendChild(h3);
+  var h3=document.createElement('h3');h3.style.cssText='margin:0 0 6px;color:var(--text);font-size:18px';h3.innerHTML='<span class="yi yi-gift"></span> '+window.t('tip.title');box.appendChild(h3);
   var p1=document.createElement('p');p1.style.cssText='color:var(--muted);font-size:13px;margin:0 0 16px';p1.textContent=window.t('tip.subtitle');box.appendChild(p1);
   var p2=document.createElement('p');p2.style.cssText='color:var(--muted);font-size:12px;margin:0 0 8px';p2.textContent=window.t('tip.quickSelect');box.appendChild(p2);
   var row=document.createElement('div');row.style.cssText='display:flex;gap:8px;margin-bottom:16px';
   [1,3,5,10].forEach(function(amt,i){
     var b=document.createElement('button');
     b.textContent=amt;b.dataset.amt=amt;
-    b.style.cssText='flex:1;padding:10px;background:var(--card-2);border:2px solid '+(i===0?'var(--accent)':'var(--border-2)')+';border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:14px';
+    b.style.cssText='flex:1;padding:10px;background:var(--card-2);border:2px solid '+(i===0?'var(--accent)':'var(--border-2)')+';border-radius:10px;color:var(--text);font-weight:700;cursor:pointer;font-size:14px';
     b.onclick=function(){
       window._tipSelected=amt;
       row.querySelectorAll('button').forEach(function(x){x.style.borderColor='var(--border-2)';});
@@ -5965,13 +5863,13 @@ function openTipModal(postId,toAddr){
   var inp=document.createElement('input');
   inp.id='_tipCustom'; // _doTip reads the custom amount via this id
   inp.type='number';inp.min='0.1';inp.step='0.1';inp.placeholder=window.t('tip.customPlaceholder');
-  inp.style.cssText='width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:16px';
+  inp.style.cssText='width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:16px';
   inp.oninput=function(){window._tipSelected=parseFloat(inp.value)||0;row.querySelectorAll('button').forEach(function(x){x.style.borderColor='var(--border-2)';});};
   box.appendChild(inp);
   var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:10px';
   var sendBtn=document.createElement('button');
   sendBtn.id='_tipSendBtn'; // _doTip disables it during the request (double-submit guard)
-  sendBtn.style.cssText='flex:1;padding:12px;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer';
+  sendBtn.style.cssText='flex:1;padding:12px;background:var(--accent);color:var(--on-accent);border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer';
   sendBtn.textContent=window.t('tip.send');
   sendBtn.onclick=function(){_doTip(window._tipPostId,window._tipToAddr);};
   var cancelBtn=document.createElement('button');
@@ -6101,12 +5999,12 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
     box.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--yeet)">'+ Number(bill.amount).toLocaleString() +' YEET</b><span class="pw-meta" style="font-family:monospace;font-size:12px;color:var(--muted)">'+ pwEsc(bill.serial) +'</span></div>'
     + '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+ T('paper.warning') +'</div>'
-    + '<div style="display:flex;gap:8px;align-items:center;background:#000;padding:8px;border-radius:8px;font-family:monospace;font-size:12px;word-break:break-all">'
+    + '<div style="display:flex;gap:8px;align-items:center;background:var(--bg);padding:8px;border-radius:8px;font-family:monospace;font-size:12px;word-break:break-all">'
     + '<span id="pwSecretText" style="flex:1">'+ pwEsc(bill.claim_secret) +'</span>'
     + '<button onclick="pwCopySecret()" style="background:var(--card-2);color:var(--accent);border:1px solid var(--border-2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px">'+ T('paper.copySecret') +'</button>'
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:10px">'
-    +   '<button onclick="pwGeneratePdf(window._pwLastBill)" style="flex:1;padding:10px;background:var(--yeet);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer">'+ T('paper.printAgain') +'</button>'
+    +   '<button onclick="pwGeneratePdf(window._pwLastBill)" style="flex:1;padding:10px;background:var(--yeet);color:var(--on-accent);border:none;border-radius:8px;font-weight:700;cursor:pointer">'+ T('paper.printAgain') +'</button>'
     + '</div>';
     window._pwLastBill = bill;
   }
@@ -6466,9 +6364,9 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 </footer>
 
 <!-- Public YEET blockchain explorer (no login required) -->
-<div class="legal-page" id="explorerPage" role="region" aria-label="YEET token explorer" style="display:none;position:fixed;inset:0;z-index:300;background:#080808;overflow-y:auto;-webkit-overflow-scrolling:touch">
+<div class="legal-page" id="explorerPage" role="region" aria-label="YEET token explorer" style="display:none;position:fixed;inset:0;z-index:300;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
   <div style="max-width:900px;margin:0 auto;padding:18px 16px 90px">
-    <div style="position:sticky;top:0;background:#080808;padding:8px 0 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:2">
+    <div style="position:sticky;top:0;background:var(--bg);padding:8px 0 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:2">
       <button onclick="closeExplorer()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;cursor:pointer">&larr; Back</button>
       <h2 style="margin:0;font-size:18px"><span class="yi yi-link"></span> YEET Explorer</h2>
       <a id="explorerContractLink" href="#" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--muted);text-decoration:none">BscScan <span class="yi yi-external"></span></a>
@@ -7287,7 +7185,7 @@ info@blocksocial.eu</address>
         var initial = esc((name[0] || '?').toUpperCase());
         var avatar = u.avatar_url
           ? '<img src="'+ esc(u.avatar_url) +'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">'
-          : '<div style="width:40px;height:40px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">'+ initial +'</div>';
+          : '<div style="width:40px;height:40px;border-radius:50%;background:var(--yeet);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">'+ initial +'</div>';
         return '<div class="adm-card" style="flex-direction:column;align-items:stretch">'
           + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
           +   avatar
@@ -7300,7 +7198,7 @@ info@blocksocial.eu</address>
           +   '<div style="text-align:right;flex-shrink:0">'+ badge +'</div>'
           + '</div>'
           + '<div style="display:flex;gap:14px;margin-top:8px;color:var(--muted);font-size:11px;flex-wrap:wrap">'
-          +   '<span><b style="color:#fff">'+ (u.post_count||0) +'</b> posts</span>'
+          +   '<span><b style="color:var(--text)">'+ (u.post_count||0) +'</b> posts</span>'
           +   '<span>Joined '+ fmtTime(u.created_at) +'</span>'
           + '</div>'
           + (u.post_ban_reason ? '<div style="color:#ffb84d;margin-top:6px;font-size:11px">Ban reason: '+ esc(u.post_ban_reason) +'</div>' : '')
@@ -7379,14 +7277,14 @@ info@blocksocial.eu</address>
         var hasFace = c.has_face_blob;
         var hasId = c.has_id_blob;
         var faceBtn = hasFace
-          ? '<button onclick="window._adminViewBlob(\''+ c.id +'\',\'face\')" style="background:transparent;border:1px solid var(--border-3);color:#ccc;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">View face</button>'
+          ? '<button onclick="window._adminViewBlob(\''+ c.id +'\',\'face\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">View face</button>'
           : '<span style="color:var(--muted);font-size:11px">no face blob</span>';
         var idBtn = hasId
-          ? ' <button onclick="window._adminViewBlob(\''+ c.id +'\',\'id\')" style="background:transparent;border:1px solid var(--border-3);color:#ccc;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;margin-left:4px">View ID</button>'
+          ? ' <button onclick="window._adminViewBlob(\''+ c.id +'\',\'id\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;margin-left:4px">View ID</button>'
           : '';
         var actions = (c.status === 'pending')
-          ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="window._adminAgeDecide(\''+ c.id +'\',\'approve\')" style="background:#22c55e;color:#000;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Approve</button>'
-            +'<button onclick="window._adminAgeDecide(\''+ c.id +'\',\'reject\')" style="background:#e63946;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Reject</button></div>'
+          ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="window._adminAgeDecide(\''+ c.id +'\',\'approve\')" style="background:#22c55e;color:var(--on-accent);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Approve</button>'
+            +'<button onclick="window._adminAgeDecide(\''+ c.id +'\',\'reject\')" style="background:#e63946;color:var(--text);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Reject</button></div>'
           : '';
         return '<div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:12px;margin-bottom:10px">'
           + '<div style="font-size:13px;color:var(--text)">'+ esc(c.username || c.user_id) +' &middot; <span style="color:var(--muted)">'+ esc(c.status) +'</span>'+ idType +'</div>'
@@ -7428,7 +7326,7 @@ info@blocksocial.eu</address>
       var w = window.open();
       if(w){
         w.document.title = slot.toUpperCase() + ' · ' + caseId;
-        w.document.body.style.cssText = 'margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh';
+        w.document.body.style.cssText = 'margin:0;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:100vh';
         var img = w.document.createElement('img');
         img.src = u;
         img.style.cssText = 'max-width:100%;max-height:100vh;object-fit:contain';
@@ -7468,7 +7366,7 @@ info@blocksocial.eu</address>
               + '<td style="padding:6px 8px"><b>'+ esc(a.action_type) +'</b></td>'
               + '<td style="padding:6px 8px">'+ esc(a.target_username || (a.target_user_id?a.target_user_id.slice(0,8):'—')) +'</td>'
               + '<td style="padding:6px 8px">'+ (a.duration_hours ? a.duration_hours+' h' : '—') +'</td>'
-              + '<td style="padding:6px 8px;color:#ccc">'+ esc(a.reason || '') +'</td>'
+              + '<td style="padding:6px 8px;color:var(--text-2)">'+ esc(a.reason || '') +'</td>'
               + '</tr>';
           }).join('')
         + '</tbody></table>';
@@ -7598,21 +7496,21 @@ info@blocksocial.eu</address>
       box.style.cssText = 'background:var(--card);border:1px solid var(--border-2);border-radius:14px;padding:22px;width:360px;max-width:92vw;color:var(--text);font-family:inherit';
       var h = document.createElement('h3');
       h.innerHTML = '<span class="yi yi-lock"></span> ' + (window.t ? window.t('dm.enableTitle') : 'Enable encrypted messages');
-      h.style.cssText = 'margin:0 0 8px;color:#fff;font-size:18px';
+      h.style.cssText = 'margin:0 0 8px;color:var(--text);font-size:18px';
       var p = document.createElement('p');
       p.textContent = message;
-      p.style.cssText = 'margin:0 0 14px;color:#aaa;font-size:13px;line-height:1.45';
+      p.style.cssText = 'margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.45';
       var inp = document.createElement('input');
       inp.type = 'password'; inp.autocomplete = 'current-password';
-      inp.style.cssText = 'width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:14px';
+      inp.style.cssText = 'width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px';
       var btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:8px';
       var ok = document.createElement('button');
       ok.textContent = 'OK';
-      ok.style.cssText = 'flex:1;padding:10px;background:var(--accent);color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer';
+      ok.style.cssText = 'flex:1;padding:10px;background:var(--accent);color:var(--on-accent);border:none;border-radius:10px;font-weight:700;cursor:pointer';
       var cancel = document.createElement('button');
       cancel.textContent = (window.t ? window.t('common.cancel') : 'Cancel');
-      cancel.style.cssText = 'padding:10px 14px;background:var(--card-2);border:1px solid var(--border-2);color:#aaa;border-radius:10px;cursor:pointer';
+      cancel.style.cssText = 'padding:10px 14px;background:var(--card-2);border:1px solid var(--border-2);color:var(--muted);border-radius:10px;cursor:pointer';
       box.appendChild(h); box.appendChild(p); box.appendChild(inp); box.appendChild(btnRow);
       btnRow.appendChild(ok); btnRow.appendChild(cancel);
       ov.appendChild(box); document.body.appendChild(ov);
@@ -8363,9 +8261,7 @@ info@blocksocial.eu</address>
 (function(){
   var T = function(k,v){ return (window.t ? window.t(k,v) : k); };
   function jwt(){
-    return localStorage.getItem('yeet_jwt')
-        || localStorage.getItem('yeetToken')
-        || localStorage.getItem('yt');
+    return localStorage.getItem('yeet_jwt');
   }
   function api(path, opts){
     opts = opts || {};
@@ -8551,7 +8447,7 @@ info@blocksocial.eu</address>
         var handle = u.username ? ('<span style="color:var(--muted);font-size:11px">@'+ escapeHtml(u.username) +'</span>') : '';
         var avatar = u.avatar_url
           ? '<img src="'+ escapeHtml(u.avatar_url) +'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">'
-          : '<div style="width:32px;height:32px;border-radius:50%;background:var(--yeet);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">'+ (name[0]||'Y').toUpperCase() +'</div>';
+          : '<div style="width:32px;height:32px;border-radius:50%;background:var(--yeet);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">'+ (name[0]||'Y').toUpperCase() +'</div>';
         var locked = !u.e2ee_ready;
         var note  = locked ? '<span title="'+ T('dm.peerNoKey') +'" style="color:var(--muted);font-size:11px;margin-left:4px"><span class="yi yi-lock"></span></span>' : '';
         if(mode === 'group'){
@@ -8658,7 +8554,7 @@ info@blocksocial.eu</address>
   }
   function renderConvList(failMsg){
     var list = document.getElementById('dmConvList');
-    var top = '<button onclick="openNewDmModal()" style="width:calc(100% - 8px);margin:0 4px 8px;padding:8px;background:var(--yeet);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer">+ '+ T('dm.new') +'</button>';
+    var top = '<button onclick="openNewDmModal()" style="width:calc(100% - 8px);margin:0 4px 8px;padding:8px;background:var(--yeet);color:var(--on-accent);border:none;border-radius:8px;font-weight:700;cursor:pointer">+ '+ T('dm.new') +'</button>';
     var err = failMsg ? '<div style="color:#ff6666;font-size:12px;padding:6px 10px">'+ escapeHtml(failMsg) +'</div>' : '';
     if(!_conversations.length){
       list.innerHTML = top + err + '<div style="color:var(--muted);font-size:12px;padding:10px;text-align:center">'+ T('dm.empty') +'</div>';
@@ -8701,7 +8597,7 @@ info@blocksocial.eu</address>
     var actions = c.kind === 'group'
       ? ' <button onclick="leaveGroupConv(\''+ c.id +'\')" style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px">'+ T('dm.leave') +'</button>'
       : '';
-    hdr.innerHTML = '<b style="color:#fff">'+ (c.kind==='group' ? '<span class="yi yi-users"></span> ' : '') + escapeHtml(name) +'</b>'
+    hdr.innerHTML = '<b style="color:var(--text)">'+ (c.kind==='group' ? '<span class="yi yi-users"></span> ' : '') + escapeHtml(name) +'</b>'
       + ' <span id="dmSafety" style="font-size:11px;color:var(--muted);margin-left:6px"></span>'
       + actions;
     document.getElementById('dmThreadBody').innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center">'+ T('common.loading') +'</div>';
@@ -9237,7 +9133,7 @@ info@blocksocial.eu</address>
         + '<div style="flex:1;min-width:0"><b>'+ escapeHtml(name) +'</b>'
         +   (by ? '<div style="font-size:11px;color:var(--muted)">'+ T('dm.invFrom') +' @'+ escapeHtml(by) +'</div>' : '')
         + '</div>'
-        + '<button onclick="acceptInvitation(\''+ inv.id +'\')" style="background:var(--yeet);color:#000;border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">'+ T('dm.invAccept') +'</button>'
+        + '<button onclick="acceptInvitation(\''+ inv.id +'\')" style="background:var(--yeet);color:var(--on-accent);border:none;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">'+ T('dm.invAccept') +'</button>'
         + '<button onclick="declineInvitation(\''+ inv.id +'\')" style="background:transparent;color:#ff7f7f;border:1px solid #5a2a2a;border-radius:8px;padding:6px 12px;cursor:pointer">'+ T('dm.invDecline') +'</button>'
         + '</div>';
     }).join('');
@@ -9292,7 +9188,7 @@ info@blocksocial.eu</address>
     row.type = 'text'; row.className = 'ng-mem';
     row.placeholder = T('dm.groupMemberPh');
     row.autocomplete = 'off'; row.spellcheck = false;
-    row.style.cssText = 'background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;font-size:13px;outline:none;font-family:monospace';
+    row.style.cssText = 'background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;font-family:monospace';
     document.getElementById('newGroupMembers').appendChild(row);
   };
 
@@ -9541,14 +9437,14 @@ info@blocksocial.eu</address>
       +     '<option value="other">'+ T('dm.reportOther') +'</option>'
       +   '</select>'
       +   '<textarea id="dmReportReason" rows="2" maxlength="500" placeholder="'+ T('dm.reportReason') +'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin-bottom:10px;resize:vertical;box-sizing:border-box"></textarea>'
-      +   '<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#ccc;margin-bottom:6px">'
+      +   '<label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-2);margin-bottom:6px">'
       +     '<input type="checkbox" id="dmReportShare" style="margin-top:3px"> '
       +     '<span>'+ T('dm.reportShareCopy') +'</span>'
       +   '</label>'
       +   '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">'+ T('dm.reportShareNote') +'</div>'
       +   '<div style="display:flex;justify-content:flex-end;gap:8px">'
-      +     '<button onclick="document.getElementById(\'dmReportModal\').remove()" style="background:transparent;border:1px solid var(--border-3);color:#ccc;border-radius:8px;padding:8px 14px;cursor:pointer">'+ T('live.cancel') +'</button>'
-      +     '<button id="dmReportGo" style="background:var(--yeet);border:none;color:#000;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">'+ T('dm.reportSubmit') +'</button>'
+      +     '<button onclick="document.getElementById(\'dmReportModal\').remove()" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:8px;padding:8px 14px;cursor:pointer">'+ T('live.cancel') +'</button>'
+      +     '<button id="dmReportGo" style="background:var(--yeet);border:none;color:var(--on-accent);border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">'+ T('dm.reportSubmit') +'</button>'
       +   '</div>'
       + '</div>';
     document.body.appendChild(modal);
@@ -9711,19 +9607,19 @@ info@blocksocial.eu</address>
       : (c.peer_display_name || c.peer_username || (c.peer_id ? c.peer_id.slice(0,8) : '?'));
     var badges = '';
     if(c.muted_until && new Date(c.muted_until).getTime() > Date.now()){
-      badges += ' <span style="font-size:10px;color:#aaa;background:var(--border);border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('dm.muted') +'</span>';
+      badges += ' <span style="font-size:10px;color:var(--muted);background:var(--border);border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('dm.muted') +'</span>';
     }
     if(c.archived_at){
-      badges += ' <span style="font-size:10px;color:#aaa;background:var(--border);border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('dm.archived') +'</span>';
+      badges += ' <span style="font-size:10px;color:var(--muted);background:var(--border);border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('dm.archived') +'</span>';
     }
     if(c.self_destruct_seconds){
-      badges += ' <span style="font-size:10px;color:#000;background:var(--accent);border-radius:8px;padding:1px 6px;margin-left:6px"><span class="yi yi-hourglass"></span> '+ _fmtDur(c.self_destruct_seconds) +'</span>';
+      badges += ' <span style="font-size:10px;color:var(--on-accent);background:var(--accent);border-radius:8px;padding:1px 6px;margin-left:6px"><span class="yi yi-hourglass"></span> '+ _fmtDur(c.self_destruct_seconds) +'</span>';
     }
     var leave = c.kind === 'group'
       ? ' <button onclick="leaveGroupConv(\''+ c.id +'\')" style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px">'+ T('dm.leave') +'</button>'
       : '';
     var menuBtn = ' <button onclick="openConversationMenu(event)" title="'+ T('dm.menu') +'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;margin-left:6px"><span class="yi yi-more"></span></button>';
-    hdr.innerHTML = '<b style="color:#fff">'+ (c.kind==='group' ? '<span class="yi yi-users"></span> ' : '') + escapeHtml(name) +'</b>'
+    hdr.innerHTML = '<b style="color:var(--text)">'+ (c.kind==='group' ? '<span class="yi yi-users"></span> ' : '') + escapeHtml(name) +'</b>'
       + badges
       + ' <span id="dmSafety" style="font-size:11px;color:var(--muted);margin-left:6px"></span>'
       + menuBtn
@@ -9792,7 +9688,7 @@ info@blocksocial.eu</address>
         var country = s.ip_country ? ' &middot; '+ escapeHtml(s.ip_country) : '';
         var seen = s.last_seen_at ? new Date(s.last_seen_at).toLocaleString() : '';
         var current = s.is_current
-          ? ' <span style="font-size:10px;color:#000;background:var(--accent);border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('settings.sessionCurrent') +'</span>'
+          ? ' <span style="font-size:10px;color:var(--on-accent);background:var(--accent);border-radius:8px;padding:1px 6px;margin-left:6px">'+ T('settings.sessionCurrent') +'</span>'
           : '';
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px">'
           + '<div style="min-width:0;flex:1">'
@@ -9865,7 +9761,7 @@ info@blocksocial.eu</address>
         var lastAgo = escapeHtml(_fmtAgo(d.last_seen_at));
         var safeDev = encodeURIComponent(d.device_id);
         var currentBadge = isCurrent
-          ? ' <span style="font-size:10px;color:#000;background:var(--accent);border-radius:8px;padding:1px 6px;margin-left:4px">'+ T('devices.current') +'</span>'
+          ? ' <span style="font-size:10px;color:var(--on-accent);background:var(--accent);border-radius:8px;padding:1px 6px;margin-left:4px">'+ T('devices.current') +'</span>'
           : '';
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px">'
           + '<div style="min-width:0;flex:1">'
@@ -9877,7 +9773,7 @@ info@blocksocial.eu</address>
           + '</div>'
           + '<div style="display:flex;gap:4px">'
           +   '<button onclick="window.renameEncryptionDevice(\''+ safeDev +'\')" title="'+ T('devices.rename') +'" '
-          +     'style="background:transparent;border:1px solid var(--border-3);color:#ccc;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer"><span class="yi yi-edit"></span></button>'
+          +     'style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer"><span class="yi yi-edit"></span></button>'
           +   '<button onclick="window.revokeEncryptionDevice(\''+ safeDev +'\')" title="'+ T('devices.revoke') +'" '
           +     'style="background:transparent;border:1px solid #5a2a2a;color:#ff7f7f;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer"><span class="yi yi-close"></span></button>'
           + '</div>'
@@ -10138,10 +10034,10 @@ info@blocksocial.eu</address>
       + '<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;max-width:360px;width:100%;padding:18px;color:var(--text)">'
       +   '<h3 style="margin:0 0 8px;font-size:15px">'+ T('dm.muteTitle') +'</h3>'
       +   '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">'+ T('dm.muteCustomPrompt') +'</div>'
-      +   '<input id="dmCustomMuteAt" type="datetime-local" value="'+ iso +'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:#fff;margin-bottom:12px">'
+      +   '<input id="dmCustomMuteAt" type="datetime-local" value="'+ iso +'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin-bottom:12px">'
       +   '<div style="display:flex;justify-content:flex-end;gap:8px">'
-      +     '<button onclick="document.getElementById(\'dmCustomMute\').remove()" style="background:transparent;border:1px solid var(--border-3);color:#ccc;border-radius:8px;padding:8px 14px;cursor:pointer">'+ T('live.cancel') +'</button>'
-      +     '<button id="dmCustomMuteGo" style="background:var(--yeet);border:none;color:#000;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">'+ T('dm.muted') +'</button>'
+      +     '<button onclick="document.getElementById(\'dmCustomMute\').remove()" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:8px;padding:8px 14px;cursor:pointer">'+ T('live.cancel') +'</button>'
+      +     '<button id="dmCustomMuteGo" style="background:var(--yeet);border:none;color:var(--on-accent);border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer">'+ T('dm.muted') +'</button>'
       +   '</div>'
       + '</div>';
     document.body.appendChild(modal);
