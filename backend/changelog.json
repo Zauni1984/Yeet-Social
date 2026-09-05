@@ -84,6 +84,14 @@
         "#FeedFilter",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-06-03-cs-da-nl-pl",
+      "text": "Čeština, Dansk, Nederlands and Polski have arrived – YEET now ships in fourteen languages. Your browser language is picked automatically on first visit, or choose under Settings → Language. Vítejte, velkommen, welkom, witajcie!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
