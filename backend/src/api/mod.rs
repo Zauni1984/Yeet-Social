@@ -42,3 +42,4 @@ pub mod ws;
 pub mod push;
 pub mod age_verification;
 pub mod swap;
+pub mod translate;

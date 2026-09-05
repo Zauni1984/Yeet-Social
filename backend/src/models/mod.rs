@@ -92,6 +92,13 @@ pub struct FeedPost {
     /// queries sort pinned posts above everything else until expiry.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pinned_until: Option<DateTime<Utc>>,
+    /// Detected language (ISO 639-1, `und` = undetermined). Lets the client
+    /// decide whether to offer / auto-run a translation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lang: Option<String>,
+    /// `text` or `audio` (Audio Story).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

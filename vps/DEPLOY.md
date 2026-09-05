@@ -56,6 +56,11 @@ SMTP_USER=noreply@justyeet.it
 SMTP_PASS=...
 SMTP_FROM=noreply@justyeet.it
 PUBLIC_BASE_URL=https://justyeet.it
+
+# Post translation via DeepL API Free (500k chars/month). Empty provider = off.
+TRANSLATE_PROVIDER=deepl
+TRANSLATE_URL=https://api-free.deepl.com
+TRANSLATE_API_KEY=...:fx
 ```
 Generate fresh values with `openssl rand -hex 64` and `openssl rand -hex 32`,
 then `chmod 600 /root/yeet-social/.env`. Never commit.

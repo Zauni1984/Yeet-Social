@@ -124,27 +124,46 @@ pub async fn upload_cover(
 /// background services purges any file whose URL no longer appears
 /// in the posts table (matching the 24h ephemeral retention rule).
 const POST_VIDEO_MAX_BYTES: usize = 32 * 1024 * 1024; // 32 MB
+/// Audio stories: 3 min of Opus/AAC is ~3–6 MB; 16 MB leaves headroom for
+/// browsers that only produce PCM-ish containers.
+const POST_AUDIO_MAX_BYTES: usize = 16 * 1024 * 1024; // 16 MB
 
-fn post_media_ext(ct: Option<&str>, filename: Option<&str>) -> Option<(&'static str, bool)> {
-    // Returns (extension, is_video).
-    let ct = ct.unwrap_or("").to_ascii_lowercase();
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MediaKind { Image, Video, Audio }
+
+fn post_media_ext(ct: Option<&str>, filename: Option<&str>) -> Option<(&'static str, MediaKind)> {
+    use MediaKind::*;
+    // MediaRecorder sends parameters ("audio/webm;codecs=opus") — match on the bare type.
+    let ct = ct.unwrap_or("").split(';').next().unwrap_or("").trim().to_ascii_lowercase();
     let name = filename.unwrap_or("").to_ascii_lowercase();
     match ct.as_str() {
-        "image/jpeg" | "image/jpg" => return Some(("jpg", false)),
-        "image/png"                => return Some(("png", false)),
-        "image/webp"               => return Some(("webp", false)),
-        "image/gif"                => return Some(("gif", false)),
-        "video/mp4" | "video/quicktime" => return Some(("mp4", true)),
-        "video/webm"               => return Some(("webm", true)),
+        // Audio uses extensions distinct from video so the client can tell
+        // an audio story from a clip by URL alone (.weba vs .webm).
+        "audio/webm"                        => return Some(("weba", Audio)),
+        "audio/ogg" | "audio/opus"          => return Some(("ogg", Audio)),
+        "audio/mp4" | "audio/x-m4a" | "audio/m4a" | "audio/aac" => return Some(("m4a", Audio)),
+        "audio/mpeg" | "audio/mp3"          => return Some(("mp3", Audio)),
+        "audio/wav" | "audio/x-wav" | "audio/wave" => return Some(("wav", Audio)),
+        "image/jpeg" | "image/jpg" => return Some(("jpg", Image)),
+        "image/png"                => return Some(("png", Image)),
+        "image/webp"               => return Some(("webp", Image)),
+        "image/gif"                => return Some(("gif", Image)),
+        "video/mp4" | "video/quicktime" => return Some(("mp4", Video)),
+        "video/webm"               => return Some(("webm", Video)),
         _ => {}
     }
-    if name.ends_with(".jpg") || name.ends_with(".jpeg") { return Some(("jpg", false)); }
-    if name.ends_with(".png")  { return Some(("png", false)); }
-    if name.ends_with(".webp") { return Some(("webp", false)); }
-    if name.ends_with(".gif")  { return Some(("gif", false)); }
-    if name.ends_with(".mp4")  { return Some(("mp4", true)); }
-    if name.ends_with(".mov")  { return Some(("mp4", true)); } // we accept .mov as mp4 for now
-    if name.ends_with(".webm") { return Some(("webm", true)); }
+    if name.ends_with(".jpg") || name.ends_with(".jpeg") { return Some(("jpg", Image)); }
+    if name.ends_with(".png")  { return Some(("png", Image)); }
+    if name.ends_with(".webp") { return Some(("webp", Image)); }
+    if name.ends_with(".gif")  { return Some(("gif", Image)); }
+    if name.ends_with(".mp4")  { return Some(("mp4", Video)); }
+    if name.ends_with(".mov")  { return Some(("mp4", Video)); } // we accept .mov as mp4 for now
+    if name.ends_with(".webm") { return Some(("webm", Video)); }
+    if name.ends_with(".weba") { return Some(("weba", Audio)); }
+    if name.ends_with(".ogg") || name.ends_with(".oga") || name.ends_with(".opus") { return Some(("ogg", Audio)); }
+    if name.ends_with(".m4a") || name.ends_with(".aac") { return Some(("m4a", Audio)); }
+    if name.ends_with(".mp3")  { return Some(("mp3", Audio)); }
+    if name.ends_with(".wav")  { return Some(("wav", Audio)); }
     None
 }
 
@@ -160,9 +179,9 @@ pub async fn upload_post_media(
         .ok_or_else(|| AppError::Validation("No file field".into()))?;
     let ct = field.content_type().map(|s| s.to_string());
     let name = field.file_name().map(|s| s.to_string());
-    let (ext, is_video) = post_media_ext(ct.as_deref(), name.as_deref())
+    let (ext, kind) = post_media_ext(ct.as_deref(), name.as_deref())
         .ok_or_else(|| AppError::Validation(
-            "Allowed formats: JPG, PNG, WebP, GIF, MP4, MOV, WebM".into()))?;
+            "Allowed formats: JPG, PNG, WebP, GIF, MP4, MOV, WebM, and audio (WebM/Opus, M4A, MP3, OGG, WAV)".into()))?;
 
     let bytes = field.bytes().await
         .map_err(|e| AppError::Validation(format!("Read error: {e}")))?;
@@ -171,12 +190,14 @@ pub async fn upload_post_media(
     }
     // Per-kind size limit. Images keep the existing 8 MB cap; videos
     // get a separate 32 MB cap (~30 s at 720p H.264).
-    let cap = if is_video { POST_VIDEO_MAX_BYTES } else { MAX_BYTES };
+    let (cap, label) = match kind {
+        MediaKind::Video => (POST_VIDEO_MAX_BYTES, "Video"),
+        MediaKind::Audio => (POST_AUDIO_MAX_BYTES, "Audio"),
+        MediaKind::Image => (MAX_BYTES, "Image"),
+    };
     if bytes.len() > cap {
         return Err(AppError::Validation(format!(
-            "{} too large (max {} MB)",
-            if is_video { "Video" } else { "Image" },
-            cap / (1024 * 1024)
+            "{label} too large (max {} MB)", cap / (1024 * 1024)
         )));
     }
 

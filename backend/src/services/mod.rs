@@ -12,3 +12,4 @@ pub mod push;
 pub mod pii_vault;
 pub mod ledger;
 pub mod note_swap;
+pub mod translate;
