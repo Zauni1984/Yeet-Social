@@ -100,6 +100,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-06-05-legal-german",
+      "text": "Imprint, privacy policy, terms, cookie notice and disclaimer are now available in German as well. The legal pages follow your UI language and have a Deutsch / English switch at the top.",
+      "tags": [
+        "#Legal",
+        "#Datenschutz"
+      ]
     }
   ]
 }
