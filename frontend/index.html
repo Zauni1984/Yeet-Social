@@ -17842,14 +17842,18 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 
 <div class="legal-page" id="adminPage" role="region" aria-label="Admin dashboard" style="display:none">
   <div class="legal-page-inner" style="max-width:1024px">
-    <button class="legal-back" onclick="closeAdminPage()" type="button">&larr; Back to YEET Social</button>
+    <button class="legal-back" id="adminBack" onclick="closeAdminPage()" type="button">&larr; Back to YEET Social</button>
     <h1><span class="yi yi-shield"></span> <span data-i18n="admin.title">Admin dashboard</span> <span id="adminWhoami" style="font-size:14px;font-weight:400;color:var(--muted);margin-left:8px"></span></h1>
-    <div id="adminTabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin:14px 0 18px;flex-wrap:wrap">
+    <div id="adminTabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border);margin:14px 0 18px;flex-wrap:wrap;align-items:center">
       <button class="adm-tab" data-tab="overview">Overview</button>
       <button class="adm-tab" data-tab="posts">Posts</button>
       <button class="adm-tab" data-tab="users">Users</button>
       <button class="adm-tab" data-tab="age">18+ Queue</button>
       <button class="adm-tab" data-tab="audit">Audit log</button>
+      <span id="adminLangSw" role="group" aria-label="Language" style="margin-left:auto;display:inline-flex;gap:4px;padding-bottom:6px">
+        <button class="adm-btn adm-lang" data-lang="de" type="button">DE</button>
+        <button class="adm-btn adm-lang" data-lang="en" type="button">EN</button>
+      </span>
     </div>
     <div id="adminContent" style="min-height:200px"></div>
   </div>
@@ -18648,9 +18652,164 @@ info@blocksocial.eu</address>
   var _activeTab = 'overview';
   var _adminPage, _adminContent;
 
+  // Local DE/EN dictionary for the admin dashboard (kept out of DICTS on purpose:
+  // the 18 app languages are parity-checked and admin tooling is DE/EN only).
+  var ADM = {
+    de: {
+      'tab.overview': 'Übersicht', 'tab.posts': 'Beiträge', 'tab.users': 'Nutzer', 'tab.age': '18+ Warteschlange', 'tab.audit': 'Audit-Log',
+      'back': '← Zurück zu YEET Social',
+      'toast.noSecret': 'Bitte zuerst das Admin-Secret in den Einstellungen setzen',
+      'loading': 'Lädt…',
+      'err.callFailed': 'Admin-Aufruf fehlgeschlagen:',
+      'err.status': '(Status {status})',
+      'err.secretHint': 'Das in den Einstellungen eingegebene Secret stimmt nicht mit der ADMIN_SECRET-Umgebungsvariable des Servers überein. Standard ist <code>yeet_admin_2024</code>, sofern in <code>/root/yeet-social/.env</code> auf dem VPS nichts anderes gesetzt ist.',
+      'err.network': 'Netzwerkfehler.',
+      'err.badSecret': 'Ungültiges Admin-Secret.',
+      'ov.totalUsers': 'Nutzer gesamt', 'ov.posts24h': 'Beiträge in 24 h', 'ov.flagged': 'Gemeldet', 'ov.banned': 'Gesperrte Nutzer', 'ov.pendingInvites': 'Offene Einladungen',
+      'ov.tip': '<b>Tipp</b> &mdash; die Moderationsaktionen pro Nutzer (sperren / löschen) sind auch direkt im Profil jedes Nutzers über das <span class="yi yi-shield"></span>-Symbol erreichbar, sobald das Admin-Secret gesetzt ist.',
+      'pf.flagged': 'Gemeldet', 'pf.active': 'Aktiv', 'pf.removed': 'Entfernt', 'pf.all': 'Alle',
+      'btn.prev': '← Zurück', 'btn.next': 'Weiter →',
+      'page': 'Seite {n}', 'pageShown': 'Seite {n} · {count} angezeigt',
+      'posts.empty': 'Keine Beiträge für diesen Filter.',
+      'post.user': 'nutzer',
+      'badge.reports': '{n} Meldungen', 'badge.removed': 'entfernt', 'badge.active': 'aktiv',
+      'post.reason': 'Grund: ',
+      'btn.restore': 'Wiederherstellen', 'btn.hardDelete': 'Endgültig löschen', 'btn.unflag': 'Freigeben', 'btn.remove': 'Entfernen',
+      'toast.unflagged': 'Freigegeben', 'toast.unflagFailed': 'Freigeben fehlgeschlagen',
+      'toast.restored': 'Beitrag wiederhergestellt', 'toast.restoreFailed': 'Wiederherstellen fehlgeschlagen',
+      'prompt.removeReason': 'Grund der Entfernung (für den Autor sichtbar):',
+      'toast.removed': 'Beitrag entfernt', 'toast.removeFailed': 'Entfernen fehlgeschlagen',
+      'confirm.hardDelete': 'Diesen Beitrag unwiderruflich löschen?',
+      'toast.hardDeleted': 'Beitrag endgültig gelöscht', 'toast.hardDeleteFailed': 'Endgültiges Löschen fehlgeschlagen',
+      'users.filterPlaceholder': 'Nach @Nutzername, Name, Wallet oder E-Mail filtern',
+      'uf.all': 'Alle', 'uf.active': 'Aktiv', 'uf.banned': 'Gesperrt',
+      'users.empty': 'Keine Nutzer für diesen Filter.',
+      'user.bannedUntil': 'Gesperrt bis {date}', 'user.active': 'Aktiv',
+      'user.posts': 'Beiträge', 'user.joined': 'Beigetreten {when}', 'user.banReason': 'Sperrgrund: ',
+      'btn.ban12': '12 h sperren', 'btn.ban24': '24 h sperren', 'btn.ban7d': '7 d sperren', 'btn.ban30d': '30 d sperren',
+      'btn.unban': 'Entsperren', 'btn.delete': 'Löschen…',
+      'prompt.banReason': 'Grund (optional):',
+      'toast.suspended': 'Nutzer gesperrt', 'toast.banFailed': 'Sperren fehlgeschlagen: {msg}',
+      'toast.banLifted': 'Sperre aufgehoben', 'toast.unbanFailed': 'Entsperren fehlgeschlagen',
+      'toast.noUsername': 'Kein Nutzername hinterlegt; Löschen kann nicht bestätigt werden',
+      'prompt.confirmDelete': 'Zur Bestätigung den Nutzernamen "{name}" eingeben:',
+      'toast.confirmMismatch': 'Bestätigung stimmt nicht mit dem Nutzernamen überein',
+      'confirm.deleteUser': 'Nutzer "{name}" und alle Inhalte ENDGÜLTIG löschen?',
+      'toast.userDeleted': 'Nutzer gelöscht', 'toast.deleteFailed': 'Löschen fehlgeschlagen: {msg}',
+      'age.pending': 'Ausstehend', 'age.approved': 'Genehmigt', 'age.rejected': 'Abgelehnt', 'age.withdrawn': 'Zurückgezogen', 'age.all': 'Alle',
+      'age.empty': 'Keine Fälle ({status}).',
+      'age.id': 'Ausweis: ', 'age.noId': 'kein Ausweis',
+      'btn.viewFace': 'Gesicht ansehen', 'age.noFace': 'kein Gesichtsbild', 'btn.viewId': 'Ausweis ansehen',
+      'btn.approve': 'Genehmigen', 'btn.reject': 'Ablehnen',
+      'age.submitted': 'Eingereicht {when}', 'age.reviewed': 'Geprüft {when}', 'age.purged': 'PII gelöscht',
+      'prompt.decisionNote': 'Entscheidungsnotiz (optional, wird dem Nutzer angezeigt):',
+      'alert.failed': 'Fehlgeschlagen: {status}', 'alert.network': 'Netzwerkfehler', 'alert.popup': 'Popup blockiert.',
+      'audit.empty': 'Noch keine Admin-Aktionen protokolliert.',
+      'audit.when': 'Wann', 'audit.by': 'Von', 'audit.action': 'Aktion', 'audit.target': 'Ziel', 'audit.duration': 'Dauer', 'audit.reason': 'Grund',
+      'audit.unknown': 'unbekannt'
+    },
+    en: {
+      'tab.overview': 'Overview', 'tab.posts': 'Posts', 'tab.users': 'Users', 'tab.age': '18+ Queue', 'tab.audit': 'Audit log',
+      'back': '← Back to YEET Social',
+      'toast.noSecret': 'Set admin secret in Settings first',
+      'loading': 'Loading...',
+      'err.callFailed': 'Admin call failed:',
+      'err.status': '(status {status})',
+      'err.secretHint': 'The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.',
+      'err.network': 'Network error.',
+      'err.badSecret': 'Bad admin secret.',
+      'ov.totalUsers': 'Total users', 'ov.posts24h': 'Posts in 24 h', 'ov.flagged': 'Flagged', 'ov.banned': 'Banned users', 'ov.pendingInvites': 'Pending invites',
+      'ov.tip': '<b>Tip</b> &mdash; the per-user moderation actions (ban / delete) are also accessible directly from any user&rsquo;s profile via the <span class="yi yi-shield"></span>-icon when the admin secret is set.',
+      'pf.flagged': 'Flagged', 'pf.active': 'Active', 'pf.removed': 'Removed', 'pf.all': 'All',
+      'btn.prev': '← Prev', 'btn.next': 'Next →',
+      'page': 'Page {n}', 'pageShown': 'Page {n} · {count} shown',
+      'posts.empty': 'No posts match this filter.',
+      'post.user': 'user',
+      'badge.reports': '{n} reports', 'badge.removed': 'removed', 'badge.active': 'active',
+      'post.reason': 'Reason: ',
+      'btn.restore': 'Restore', 'btn.hardDelete': 'Hard delete', 'btn.unflag': 'Unflag', 'btn.remove': 'Remove',
+      'toast.unflagged': 'Unflagged', 'toast.unflagFailed': 'Unflag failed',
+      'toast.restored': 'Post restored', 'toast.restoreFailed': 'Restore failed',
+      'prompt.removeReason': 'Removal reason (visible to author):',
+      'toast.removed': 'Post removed', 'toast.removeFailed': 'Remove failed',
+      'confirm.hardDelete': 'Hard-delete this post irreversibly?',
+      'toast.hardDeleted': 'Post hard-deleted', 'toast.hardDeleteFailed': 'Hard delete failed',
+      'users.filterPlaceholder': 'Filter by @username, name, wallet or email',
+      'uf.all': 'All', 'uf.active': 'Active', 'uf.banned': 'Banned',
+      'users.empty': 'No users match this filter.',
+      'user.bannedUntil': 'Banned until {date}', 'user.active': 'Active',
+      'user.posts': 'posts', 'user.joined': 'Joined {when}', 'user.banReason': 'Ban reason: ',
+      'btn.ban12': 'Ban 12 h', 'btn.ban24': 'Ban 24 h', 'btn.ban7d': 'Ban 7 d', 'btn.ban30d': 'Ban 30 d',
+      'btn.unban': 'Unban', 'btn.delete': 'Delete…',
+      'prompt.banReason': 'Reason (optional):',
+      'toast.suspended': 'User suspended', 'toast.banFailed': 'Ban failed: {msg}',
+      'toast.banLifted': 'Ban lifted', 'toast.unbanFailed': 'Unban failed',
+      'toast.noUsername': 'No username on file; cannot confirm delete',
+      'prompt.confirmDelete': 'Type the username "{name}" to confirm deletion:',
+      'toast.confirmMismatch': 'Confirmation does not match username',
+      'confirm.deleteUser': 'PERMANENTLY delete user "{name}" and all their content?',
+      'toast.userDeleted': 'User deleted', 'toast.deleteFailed': 'Delete failed: {msg}',
+      'age.pending': 'Pending', 'age.approved': 'Approved', 'age.rejected': 'Rejected', 'age.withdrawn': 'Withdrawn', 'age.all': 'All',
+      'age.empty': 'No cases ({status}).',
+      'age.id': 'ID: ', 'age.noId': 'no ID',
+      'btn.viewFace': 'View face', 'age.noFace': 'no face blob', 'btn.viewId': 'View ID',
+      'btn.approve': 'Approve', 'btn.reject': 'Reject',
+      'age.submitted': 'Submitted {when}', 'age.reviewed': 'Reviewed {when}', 'age.purged': 'PII purged',
+      'prompt.decisionNote': 'Decision note (optional, shown to the user):',
+      'alert.failed': 'Failed: {status}', 'alert.network': 'Network error', 'alert.popup': 'Popup blocked.',
+      'audit.empty': 'No admin actions logged yet.',
+      'audit.when': 'When', 'audit.by': 'By', 'audit.action': 'Action', 'audit.target': 'Target', 'audit.duration': 'Duration', 'audit.reason': 'Reason',
+      'audit.unknown': 'unknown'
+    }
+  };
+  function admLang(){
+    var o = null;
+    try { o = localStorage.getItem('yeet_admin_lang'); } catch(e){}
+    if(o === 'de' || o === 'en') return o;
+    return (window.getLang && window.getLang() === 'de') ? 'de' : 'en';
+  }
+  function at(k, vars){
+    var lang = admLang();
+    var v = ADM[lang] && ADM[lang][k];
+    if(v == null) v = ADM.en[k];
+    if(v == null) v = k;
+    if(vars) v = v.replace(/\{(\w+)\}/g, function(m, name){ return (name in vars) ? String(vars[name]) : m; });
+    return v;
+  }
+  // Shared error box for failed admin calls (401 gets the secret hint).
+  function errBox(msg, status){
+    return '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
+      + '<b>'+ at('err.callFailed') +'</b> '+ esc(msg) +' '+ at('err.status', {status: status})
+      + (status === 401
+          ? '<div style="margin-top:10px;color:#ffb84d;font-size:12px">'+ at('err.secretHint') +'</div>'
+          : '')
+      + '</div>';
+  }
+  function applyAdmChrome(){
+    var labels = {overview:'tab.overview', posts:'tab.posts', users:'tab.users', age:'tab.age', audit:'tab.audit'};
+    [].forEach.call(document.querySelectorAll('#adminTabs .adm-tab'), function(b){
+      if(labels[b.dataset.tab]) b.textContent = at(labels[b.dataset.tab]);
+    });
+    var back = document.getElementById('adminBack');
+    if(back) back.textContent = at('back');
+    var lang = admLang();
+    [].forEach.call(document.querySelectorAll('#adminLangSw .adm-lang'), function(b){
+      b.classList.toggle('on', b.dataset.lang === lang);
+    });
+  }
+  function setAdmLang(lang){
+    try { localStorage.setItem('yeet_admin_lang', lang); } catch(e){}
+    applyAdmChrome();
+    if(_adminPage && _adminPage.style.display !== 'none') setTab(_activeTab);
+  }
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest && ev.target.closest('#adminLangSw .adm-lang');
+    if(b) setAdmLang(b.dataset.lang);
+  });
+
   window.openAdminPage = async function(){
     if(!secret()){
-      window.showToast('Set admin secret in Settings first','error');
+      window.showToast(at('toast.noSecret'),'error');
       return;
     }
     _adminPage = document.getElementById('adminPage');
@@ -18658,6 +18817,7 @@ info@blocksocial.eu</address>
     if(!_adminPage) return;
     _adminPage.style.display = 'block';
     _adminPage.classList.add('on');
+    applyAdmChrome();
     // Surface the logged-in user next to the heading so the admin
     // knows under which account their audit entries will appear.
     var who = document.getElementById('adminWhoami');
@@ -18697,34 +18857,28 @@ info@blocksocial.eu</address>
 
   // --- Overview ---
   async function renderOverview(){
-    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">'+ at('loading') +'</div>';
     try {
       var r = await fetch('/api/v1/admin/stats?secret=' + encodeURIComponent(secret()));
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
-        _adminContent.innerHTML =
-            '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
-          + '<b>Admin call failed:</b> '+ esc(msg) +' (status '+ r.status +')'
-          + (r.status === 401
-              ? '<div style="margin-top:10px;color:#ffb84d;font-size:12px">The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.</div>'
-              : '')
-          + '</div>';
+        _adminContent.innerHTML = errBox(msg, r.status);
         return;
       }
       var d = await r.json();
       var s = (d && d.data) || {};
       _adminContent.innerHTML =
           '<div class="adm-card-grid">'
-        + '<div class="adm-metric"><div class="v">'+ (s.total_users||0) +'</div><div class="l">Total users</div></div>'
-        + '<div class="adm-metric"><div class="v">'+ (s.posts_24h||0)  +'</div><div class="l">Posts in 24 h</div></div>'
-        + '<div class="adm-metric"><div class="v">'+ (s.flagged_posts||0) +'</div><div class="l">Flagged</div></div>'
-        + '<div class="adm-metric"><div class="v">'+ (s.banned_users||0) +'</div><div class="l">Banned users</div></div>'
-        + '<div class="adm-metric"><div class="v">'+ (s.pending_invitations||0) +'</div><div class="l">Pending invites</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.total_users||0) +'</div><div class="l">'+ at('ov.totalUsers') +'</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.posts_24h||0)  +'</div><div class="l">'+ at('ov.posts24h') +'</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.flagged_posts||0) +'</div><div class="l">'+ at('ov.flagged') +'</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.banned_users||0) +'</div><div class="l">'+ at('ov.banned') +'</div></div>'
+        + '<div class="adm-metric"><div class="v">'+ (s.pending_invitations||0) +'</div><div class="l">'+ at('ov.pendingInvites') +'</div></div>'
         + '</div>'
-        + '<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:14px"><b>Tip</b> &mdash; the per-user moderation actions (ban / delete) are also accessible directly from any user&rsquo;s profile via the <span class="yi yi-shield"></span>-icon when the admin secret is set.</div>';
+        + '<div style="background:var(--bg-2);border:1px solid var(--border);border-radius:10px;padding:14px">'+ at('ov.tip') +'</div>';
     } catch(e){
-      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.network') +'</div>';
     }
   }
 
@@ -18739,23 +18893,23 @@ info@blocksocial.eu</address>
   async function renderPosts(){
     _adminContent.innerHTML =
         '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
-      +   '<button class="adm-btn" data-pf="flagged">Flagged</button>'
-      +   '<button class="adm-btn" data-pf="active">Active</button>'
-      +   '<button class="adm-btn" data-pf="removed">Removed</button>'
-      +   '<button class="adm-btn" data-pf="all">All</button>'
+      +   '<button class="adm-btn" data-pf="flagged">'+ at('pf.flagged') +'</button>'
+      +   '<button class="adm-btn" data-pf="active">'+ at('pf.active') +'</button>'
+      +   '<button class="adm-btn" data-pf="removed">'+ at('pf.removed') +'</button>'
+      +   '<button class="adm-btn" data-pf="all">'+ at('pf.all') +'</button>'
       + '</div>'
       + '<div id="admPostList"></div>'
       + '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;align-items:center">'
-      +   '<button class="adm-btn" onclick="admPostPagePrev()" id="admPostPrev">&larr; Prev</button>'
-      +   '<span id="admPostPageLabel" style="color:var(--muted);font-size:12px">Page '+ _postsPage +'</span>'
-      +   '<button class="adm-btn" onclick="admPostPageNext()">Next &rarr;</button>'
+      +   '<button class="adm-btn" onclick="admPostPagePrev()" id="admPostPrev">'+ at('btn.prev') +'</button>'
+      +   '<span id="admPostPageLabel" style="color:var(--muted);font-size:12px">'+ at('page', {n: _postsPage}) +'</span>'
+      +   '<button class="adm-btn" onclick="admPostPageNext()">'+ at('btn.next') +'</button>'
       + '</div>';
     [].forEach.call(document.querySelectorAll('#adminContent .adm-btn[data-pf]'), function(b){
       if(b.dataset.pf === _postsFilter) b.classList.add('on');
       b.onclick = function(){ _postsFilter = b.dataset.pf; _postsPage = 1; renderPosts(); };
     });
     var list = document.getElementById('admPostList');
-    list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">Loading...</div>';
+    list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">'+ at('loading') +'</div>';
     try {
       var url = '/api/v1/admin/posts?secret=' + encodeURIComponent(secret())
               + '&filter=' + encodeURIComponent(_postsFilter)
@@ -18764,13 +18918,7 @@ info@blocksocial.eu</address>
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
-        list.innerHTML =
-            '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
-          + '<b>Admin call failed:</b> '+ esc(msg) +' (status '+ r.status +')'
-          + (r.status === 401
-              ? '<div style="margin-top:10px;color:#ffb84d;font-size:12px">The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.</div>'
-              : '')
-          + '</div>';
+        list.innerHTML = errBox(msg, r.status);
         return;
       }
       var d = await r.json();
@@ -18778,28 +18926,28 @@ info@blocksocial.eu</address>
       var prev = document.getElementById('admPostPrev');
       if(prev) prev.disabled = _postsPage <= 1;
       var pl = document.getElementById('admPostPageLabel');
-      if(pl) pl.textContent = 'Page '+ _postsPage +' &middot; '+ posts.length +' shown';
+      if(pl) pl.textContent = at('pageShown', {n: _postsPage, count: posts.length});
       if(!posts.length){
-        list.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No posts match this filter.</div>';
+        list.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">'+ at('posts.empty') +'</div>';
         return;
       }
       list.innerHTML = posts.map(function(p){
         var snippet = esc((p.content || '').slice(0, 240));
-        var meta = '@'+ esc(p.author_name||'user') +' &middot; '+ fmtTime(p.created_at);
+        var meta = '@'+ esc(p.author_name||at('post.user')) +' &middot; '+ fmtTime(p.created_at);
         var badges = '';
-        if(p.is_flagged && !p.is_removed) badges += ' <span class="adm-badge flagged">'+ (p.report_count||0) +' reports</span>';
-        if(p.is_removed) badges += ' <span class="adm-badge banned">removed</span>';
-        if(!p.is_flagged && !p.is_removed) badges += ' <span class="adm-badge ok">active</span>';
-        var reason = p.removed_reason ? '<div style="color:#ff7f7f;font-size:11px;margin-top:4px">Reason: '+ esc(p.removed_reason) +'</div>' : '';
+        if(p.is_flagged && !p.is_removed) badges += ' <span class="adm-badge flagged">'+ at('badge.reports', {n: (p.report_count||0)}) +'</span>';
+        if(p.is_removed) badges += ' <span class="adm-badge banned">'+ at('badge.removed') +'</span>';
+        if(!p.is_flagged && !p.is_removed) badges += ' <span class="adm-badge ok">'+ at('badge.active') +'</span>';
+        var reason = p.removed_reason ? '<div style="color:#ff7f7f;font-size:11px;margin-top:4px">'+ at('post.reason') + esc(p.removed_reason) +'</div>' : '';
         // Action set varies by post state.
         var actions = '';
         if(p.is_removed){
-          actions =   '<button class="adm-btn" onclick="adminRestorePost(\''+ p.id +'\')">Restore</button>'
-                   + '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">Hard delete</button>';
+          actions =   '<button class="adm-btn" onclick="adminRestorePost(\''+ p.id +'\')">'+ at('btn.restore') +'</button>'
+                   + '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">'+ at('btn.hardDelete') +'</button>';
         } else {
-          if(p.is_flagged) actions += '<button class="adm-btn" onclick="adminUnflagPost(\''+ p.id +'\')">Unflag</button>';
-          actions +=   '<button class="adm-btn warn" onclick="adminRemovePost(\''+ p.id +'\')">Remove</button>'
-                     + '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">Hard delete</button>';
+          if(p.is_flagged) actions += '<button class="adm-btn" onclick="adminUnflagPost(\''+ p.id +'\')">'+ at('btn.unflag') +'</button>';
+          actions +=   '<button class="adm-btn warn" onclick="adminRemovePost(\''+ p.id +'\')">'+ at('btn.remove') +'</button>'
+                     + '<button class="adm-btn danger" onclick="adminHardDeletePost(\''+ p.id +'\')">'+ at('btn.hardDelete') +'</button>';
         }
         var snippetStyle = p.is_removed ? 'text-decoration:line-through;color:var(--muted)' : 'color:var(--text)';
         return '<div class="adm-card">'
@@ -18812,7 +18960,7 @@ info@blocksocial.eu</address>
           + '</div>';
       }).join('');
     } catch(e){
-      list.innerHTML = '<div style="color:#ff6666;padding:14px">Network error.</div>';
+      list.innerHTML = '<div style="color:#ff6666;padding:14px">'+ at('err.network') +'</div>';
     }
   }
   window.admPostPagePrev = function(){ if(_postsPage > 1){ _postsPage--; renderPosts(); } };
@@ -18828,16 +18976,16 @@ info@blocksocial.eu</address>
   }
   window.adminUnflagPost = async function(id){
     var r = await _postSecret('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/unflag', {});
-    if(r.ok){ window.showToast('Unflagged','success'); renderPosts(); }
-    else window.showToast('Unflag failed','error');
+    if(r.ok){ window.showToast(at('toast.unflagged'),'success'); renderPosts(); }
+    else window.showToast(at('toast.unflagFailed'),'error');
   };
   window.adminRestorePost = async function(id){
     var r = await _postSecret('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/restore', {});
-    if(r.ok){ window.showToast('Post restored','success'); renderPosts(); }
-    else window.showToast('Restore failed','error');
+    if(r.ok){ window.showToast(at('toast.restored'),'success'); renderPosts(); }
+    else window.showToast(at('toast.restoreFailed'),'error');
   };
   window.adminRemovePost = async function(id){
-    var reason = prompt('Removal reason (visible to author):', '');
+    var reason = prompt(at('prompt.removeReason'), '');
     if(reason === null) return;
     // The "remove" route uses DELETE on /api/v1/admin/posts/:id with a
     // JSON body. fetch supports body on DELETE in modern browsers.
@@ -18846,18 +18994,18 @@ info@blocksocial.eu</address>
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ secret: secret(), reason: reason })
     });
-    if(r.ok){ window.showToast('Post removed','success'); renderPosts(); }
-    else window.showToast('Remove failed','error');
+    if(r.ok){ window.showToast(at('toast.removed'),'success'); renderPosts(); }
+    else window.showToast(at('toast.removeFailed'),'error');
   };
   window.adminHardDeletePost = async function(id){
-    if(!confirm('Hard-delete this post irreversibly?')) return;
+    if(!confirm(at('confirm.hardDelete'))) return;
     var r = await fetch('/api/v1/admin/posts/'+ encodeURIComponent(id) +'/hard', {
       method:'DELETE',
       headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ secret: secret(), reason: 'admin hard delete' })
     });
-    if(r.ok){ window.showToast('Post hard-deleted','success'); renderPosts(); }
-    else window.showToast('Hard delete failed','error');
+    if(r.ok){ window.showToast(at('toast.hardDeleted'),'success'); renderPosts(); }
+    else window.showToast(at('toast.hardDeleteFailed'),'error');
   };
 
   // --- Users ---
@@ -18871,18 +19019,18 @@ info@blocksocial.eu</address>
   function renderUsers(){
     _adminContent.innerHTML =
         '<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
-      +   '<input id="admUserQ" class="adm-input" placeholder="Filter by @username, name, wallet or email" style="flex:1;min-width:200px" value="'+ esc(_usersQ) +'">'
+      +   '<input id="admUserQ" class="adm-input" placeholder="'+ esc(at('users.filterPlaceholder')) +'" style="flex:1;min-width:200px" value="'+ esc(_usersQ) +'">'
       + '</div>'
       + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">'
-      +   '<button class="adm-btn" data-uf="all">All</button>'
-      +   '<button class="adm-btn" data-uf="active">Active</button>'
-      +   '<button class="adm-btn" data-uf="banned">Banned</button>'
+      +   '<button class="adm-btn" data-uf="all">'+ at('uf.all') +'</button>'
+      +   '<button class="adm-btn" data-uf="active">'+ at('uf.active') +'</button>'
+      +   '<button class="adm-btn" data-uf="banned">'+ at('uf.banned') +'</button>'
       + '</div>'
       + '<div id="admUserList"></div>'
       + '<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;align-items:center">'
-      +   '<button class="adm-btn" onclick="admUsersPrev()" id="admUsersPrev">&larr; Prev</button>'
-      +   '<span id="admUsersPageLabel" style="color:var(--muted);font-size:12px">Page '+ _usersPage +'</span>'
-      +   '<button class="adm-btn" onclick="admUsersNext()">Next &rarr;</button>'
+      +   '<button class="adm-btn" onclick="admUsersPrev()" id="admUsersPrev">'+ at('btn.prev') +'</button>'
+      +   '<span id="admUsersPageLabel" style="color:var(--muted);font-size:12px">'+ at('page', {n: _usersPage}) +'</span>'
+      +   '<button class="adm-btn" onclick="admUsersNext()">'+ at('btn.next') +'</button>'
       + '</div>';
     [].forEach.call(document.querySelectorAll('#adminContent .adm-btn[data-uf]'), function(b){
       if(b.dataset.uf === _usersFilter) b.classList.add('on');
@@ -18905,7 +19053,7 @@ info@blocksocial.eu</address>
   async function loadUsers(){
     var list = document.getElementById('admUserList');
     if(!list) return;
-    list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">Loading...</div>';
+    list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">'+ at('loading') +'</div>';
     var url = '/api/v1/admin/users?secret=' + encodeURIComponent(secret())
             + '&page=' + _usersPage
             + '&filter=' + encodeURIComponent(_usersFilter)
@@ -18915,13 +19063,7 @@ info@blocksocial.eu</address>
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
-        list.innerHTML =
-            '<div style="color:#ff6666;padding:20px;border:1px solid #5a2a2a;border-radius:10px;background:#1a0a0a">'
-          + '<b>Admin call failed:</b> '+ esc(msg) +' (status '+ r.status +')'
-          + (r.status === 401
-              ? '<div style="margin-top:10px;color:#ffb84d;font-size:12px">The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.</div>'
-              : '')
-          + '</div>';
+        list.innerHTML = errBox(msg, r.status);
         return;
       }
       var d = await r.json();
@@ -18929,16 +19071,16 @@ info@blocksocial.eu</address>
       var prev = document.getElementById('admUsersPrev');
       if(prev) prev.disabled = _usersPage <= 1;
       var pl = document.getElementById('admUsersPageLabel');
-      if(pl) pl.textContent = 'Page '+ _usersPage +' · '+ users.length +' shown';
+      if(pl) pl.textContent = at('pageShown', {n: _usersPage, count: users.length});
       if(!users.length){
-        list.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No users match this filter.</div>';
+        list.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">'+ at('users.empty') +'</div>';
         return;
       }
       list.innerHTML = users.map(function(u){
         var banned = u.posting_banned_until && new Date(u.posting_banned_until) > new Date();
         var badge = banned
-          ? '<span class="adm-badge banned">Banned until '+ new Date(u.posting_banned_until).toLocaleString() +'</span>'
-          : '<span class="adm-badge ok">Active</span>';
+          ? '<span class="adm-badge banned">'+ at('user.bannedUntil', {date: new Date(u.posting_banned_until).toLocaleString()}) +'</span>'
+          : '<span class="adm-badge ok">'+ at('user.active') +'</span>';
         var addr = u.wallet_address || u.id;
         var name = u.display_name || u.username || (u.wallet_address ? u.wallet_address.slice(0,8)+'…' : '?');
         // display_name is user-controlled and can include '<', so the
@@ -18959,62 +19101,62 @@ info@blocksocial.eu</address>
           +   '<div style="text-align:right;flex-shrink:0">'+ badge +'</div>'
           + '</div>'
           + '<div style="display:flex;gap:14px;margin-top:8px;color:var(--muted);font-size:11px;flex-wrap:wrap">'
-          +   '<span><b style="color:var(--text)">'+ (u.post_count||0) +'</b> posts</span>'
-          +   '<span>Joined '+ fmtTime(u.created_at) +'</span>'
+          +   '<span><b style="color:var(--text)">'+ (u.post_count||0) +'</b> '+ at('user.posts') +'</span>'
+          +   '<span>'+ at('user.joined', {when: fmtTime(u.created_at)}) +'</span>'
           + '</div>'
-          + (u.post_ban_reason ? '<div style="color:#ffb84d;margin-top:6px;font-size:11px">Ban reason: '+ esc(u.post_ban_reason) +'</div>' : '')
+          + (u.post_ban_reason ? '<div style="color:#ffb84d;margin-top:6px;font-size:11px">'+ at('user.banReason') + esc(u.post_ban_reason) +'</div>' : '')
           + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 12)">Ban 12 h</button>'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 24)">Ban 24 h</button>'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 168)">Ban 7 d</button>'
-          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 720)">Ban 30 d</button>'
-          +   '<button class="adm-btn" onclick="adminUnbanFromCard(\''+ jsq(addr) +'\')">Unban</button>'
-          +   '<button class="adm-btn danger" onclick="adminDeleteFromCard(\''+ jsq(addr) +'\', \''+ jsq(u.username||'') +'\')">Delete…</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 12)">'+ at('btn.ban12') +'</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 24)">'+ at('btn.ban24') +'</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 168)">'+ at('btn.ban7d') +'</button>'
+          +   '<button class="adm-btn warn" onclick="adminBanFromCard(\''+ jsq(addr) +'\', 720)">'+ at('btn.ban30d') +'</button>'
+          +   '<button class="adm-btn" onclick="adminUnbanFromCard(\''+ jsq(addr) +'\')">'+ at('btn.unban') +'</button>'
+          +   '<button class="adm-btn danger" onclick="adminDeleteFromCard(\''+ jsq(addr) +'\', \''+ jsq(u.username||'') +'\')">'+ at('btn.delete') +'</button>'
           + '</div>'
           + '</div>';
       }).join('');
     } catch(e){
-      list.innerHTML = '<div style="color:#ff6666;padding:14px">Network error.</div>';
+      list.innerHTML = '<div style="color:#ff6666;padding:14px">'+ at('err.network') +'</div>';
     }
   }
   window.admUsersPrev = function(){ if(_usersPage > 1){ _usersPage--; loadUsers(); } };
   window.admUsersNext = function(){ _usersPage++; loadUsers(); };
 
   window.adminBanFromCard = async function(addr, hours){
-    var reason = prompt('Reason (optional):', '');
+    var reason = prompt(at('prompt.banReason'), '');
     if(reason === null) return;
     var r = await _postSecret('/api/v1/admin/users/'+ encodeURIComponent(addr) +'/ban-post',
       { duration_hours: hours, reason: reason || null });
-    if(r.ok){ window.showToast('User suspended','success'); loadUsers(); }
-    else { var d = await r.json().catch(function(){return{};}); window.showToast('Ban failed: '+ ((d.error&&d.error.message)||r.status),'error'); }
+    if(r.ok){ window.showToast(at('toast.suspended'),'success'); loadUsers(); }
+    else { var d = await r.json().catch(function(){return{};}); window.showToast(at('toast.banFailed', {msg: ((d.error&&d.error.message)||r.status)}),'error'); }
   };
   window.adminUnbanFromCard = async function(addr){
     var r = await _postSecret('/api/v1/admin/users/'+ encodeURIComponent(addr) +'/unban-post', { reason: null });
-    if(r.ok){ window.showToast('Ban lifted','success'); loadUsers(); }
-    else window.showToast('Unban failed','error');
+    if(r.ok){ window.showToast(at('toast.banLifted'),'success'); loadUsers(); }
+    else window.showToast(at('toast.unbanFailed'),'error');
   };
   window.adminDeleteFromCard = async function(addr, expectedUsername){
-    if(!expectedUsername){ window.showToast('No username on file; cannot confirm delete','error'); return; }
-    var conf = prompt('Type the username "'+ expectedUsername +'" to confirm deletion:', '');
+    if(!expectedUsername){ window.showToast(at('toast.noUsername'),'error'); return; }
+    var conf = prompt(at('prompt.confirmDelete', {name: expectedUsername}), '');
     if(conf === null) return;
     if(conf.trim().toLowerCase() !== (expectedUsername||'').toLowerCase()){
-      window.showToast('Confirmation does not match username','error'); return;
+      window.showToast(at('toast.confirmMismatch'),'error'); return;
     }
-    if(!confirm('PERMANENTLY delete user "'+ expectedUsername +'" and all their content?')) return;
+    if(!confirm(at('confirm.deleteUser', {name: expectedUsername}))) return;
     var r = await _postSecret('/api/v1/admin/users/'+ encodeURIComponent(addr) +'/delete',
       { confirmation: conf, reason: 'admin dashboard delete' });
-    if(r.ok){ window.showToast('User deleted','success'); loadUsers(); }
-    else { var d = await r.json().catch(function(){return{};}); window.showToast('Delete failed: '+ ((d.error&&d.error.message)||r.status),'error'); }
+    if(r.ok){ window.showToast(at('toast.userDeleted'),'success'); loadUsers(); }
+    else { var d = await r.json().catch(function(){return{};}); window.showToast(at('toast.deleteFailed', {msg: ((d.error&&d.error.message)||r.status)}),'error'); }
   };
 
   // --- 18+ verification queue ---
   async function renderAgeQueue(status){
     status = status || 'pending';
-    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">'+ at('loading') +'</div>';
     try {
       var r = await fetch('/api/v1/admin/age-verification?status='+ encodeURIComponent(status)
         + '&secret=' + encodeURIComponent(secret()));
-      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret.</div>'; return; }
+      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.badSecret') +'</div>'; return; }
       var d = await r.json();
       var rows = (d && d.data) || [];
       var filterBar = '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">'
@@ -19023,33 +19165,33 @@ info@blocksocial.eu</address>
             return '<button onclick="window._adminAgeFilter(\''+ s +'\')" '
               +'style="background:'+ (on?'var(--yeet)':'transparent') +';color:'+ (on?'#000':'#ccc')
               +';border:1px solid '+ (on?'var(--yeet)':'var(--border-3)') +';border-radius:18px;padding:5px 12px;cursor:pointer;font-size:12px;text-transform:uppercase">'
-              + s +'</button>';
+              + esc(at('age.'+ s)) +'</button>';
           }).join('')
         + '</div>';
       if(!rows.length){
         _adminContent.innerHTML = filterBar
-          + '<div style="color:var(--muted);padding:30px;text-align:center">No cases ('+ esc(status) +').</div>';
+          + '<div style="color:var(--muted);padding:30px;text-align:center">'+ at('age.empty', {status: esc(status)}) +'</div>';
         return;
       }
       var body = rows.map(function(c){
         var when = c.submitted_at ? new Date(c.submitted_at).toLocaleString() : '';
         var rwhen = c.reviewed_at ? new Date(c.reviewed_at).toLocaleString() : '';
-        var idType = c.id_document_type ? ' &middot; ID: '+ esc(c.id_document_type) : ' &middot; <i>no ID</i>';
+        var idType = c.id_document_type ? ' &middot; '+ at('age.id') + esc(c.id_document_type) : ' &middot; <i>'+ at('age.noId') +'</i>';
         var hasFace = c.has_face_blob;
         var hasId = c.has_id_blob;
         var faceBtn = hasFace
-          ? '<button onclick="window._adminViewBlob(\''+ c.id +'\',\'face\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">View face</button>'
-          : '<span style="color:var(--muted);font-size:11px">no face blob</span>';
+          ? '<button onclick="window._adminViewBlob(\''+ c.id +'\',\'face\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer">'+ at('btn.viewFace') +'</button>'
+          : '<span style="color:var(--muted);font-size:11px">'+ at('age.noFace') +'</span>';
         var idBtn = hasId
-          ? ' <button onclick="window._adminViewBlob(\''+ c.id +'\',\'id\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;margin-left:4px">View ID</button>'
+          ? ' <button onclick="window._adminViewBlob(\''+ c.id +'\',\'id\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;margin-left:4px">'+ at('btn.viewId') +'</button>'
           : '';
         var actions = (c.status === 'pending')
-          ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="window._adminAgeDecide(\''+ c.id +'\',\'approve\')" style="background:#22c55e;color:var(--on-accent);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Approve</button>'
-            +'<button onclick="window._adminAgeDecide(\''+ c.id +'\',\'reject\')" style="background:#e63946;color:var(--text);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">Reject</button></div>'
+          ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="window._adminAgeDecide(\''+ c.id +'\',\'approve\')" style="background:#22c55e;color:var(--on-accent);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">'+ at('btn.approve') +'</button>'
+            +'<button onclick="window._adminAgeDecide(\''+ c.id +'\',\'reject\')" style="background:#e63946;color:var(--text);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">'+ at('btn.reject') +'</button></div>'
           : '';
         return '<div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:12px;margin-bottom:10px">'
           + '<div style="font-size:13px;color:var(--text)">'+ esc(c.username || c.user_id) +' &middot; <span style="color:var(--muted)">'+ esc(c.status) +'</span>'+ idType +'</div>'
-          + '<div style="font-size:11px;color:var(--muted);margin-top:2px">Submitted '+ esc(when) + (rwhen?' &middot; Reviewed '+ esc(rwhen):'') + (c.blobs_purged_at?' &middot; PII purged':'') +'</div>'
+          + '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+ at('age.submitted', {when: esc(when)}) + (rwhen?' &middot; '+ at('age.reviewed', {when: esc(rwhen)}):'') + (c.blobs_purged_at?' &middot; '+ at('age.purged'):'') +'</div>'
           + (c.decision_note ? '<div style="font-size:12px;color:#bbb;margin-top:6px;white-space:pre-wrap">'+ esc(c.decision_note) +'</div>' : '')
           + '<div style="margin-top:8px">'+ faceBtn + idBtn +'</div>'
           + actions
@@ -19057,12 +19199,12 @@ info@blocksocial.eu</address>
       }).join('');
       _adminContent.innerHTML = filterBar + body;
     } catch(e){
-      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.network') +'</div>';
     }
   }
   window._adminAgeFilter = function(s){ renderAgeQueue(s); };
   window._adminAgeDecide = async function(caseId, decision){
-    var note = prompt('Decision note (optional, shown to the user):', '') || '';
+    var note = prompt(at('prompt.decisionNote'), '') || '';
     var url = '/api/v1/admin/age-verification/'+ encodeURIComponent(caseId) +'/'+ decision;
     var jwt = localStorage.getItem('yeet_jwt');
     try {
@@ -19071,15 +19213,15 @@ info@blocksocial.eu</address>
         headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+ (jwt||'') },
         body: JSON.stringify({ secret: secret(), note: note || null })
       });
-      if(!r.ok){ alert('Failed: '+ r.status); return; }
+      if(!r.ok){ alert(at('alert.failed', {status: r.status})); return; }
       renderAgeQueue('pending');
-    } catch(e){ alert('Network error'); }
+    } catch(e){ alert(at('alert.network')); }
   };
   window._adminViewBlob = async function(caseId, slot){
     var url = '/api/v1/admin/age-verification/'+ encodeURIComponent(caseId) +'/blob?slot='+ slot +'&secret='+ encodeURIComponent(secret());
     try {
       var r = await fetch(url);
-      if(!r.ok){ alert('Failed: '+ r.status); return; }
+      if(!r.ok){ alert(at('alert.failed', {status: r.status})); return; }
       var blob = await r.blob();
       var u = URL.createObjectURL(blob);
       // Open as a sandboxed image in a new tab so the bytes never
@@ -19094,33 +19236,33 @@ info@blocksocial.eu</address>
         w.document.body.appendChild(img);
         w.addEventListener('beforeunload', function(){ URL.revokeObjectURL(u); });
       } else {
-        alert('Popup blocked.');
+        alert(at('alert.popup'));
         URL.revokeObjectURL(u);
       }
-    } catch(e){ alert('Network error'); }
+    } catch(e){ alert(at('alert.network')); }
   };
 
   // --- Audit log ---
   async function renderAudit(){
-    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">Loading...</div>';
+    _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">'+ at('loading') +'</div>';
     try {
       var r = await fetch('/api/v1/admin/actions?secret=' + encodeURIComponent(secret()));
-      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Bad admin secret.</div>'; return; }
+      if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.badSecret') +'</div>'; return; }
       var d = await r.json();
       var rows = (d && d.data) || [];
-      if(!rows.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">No admin actions logged yet.</div>'; return; }
+      if(!rows.length){ _adminContent.innerHTML = '<div class="adm-card" style="justify-content:center;color:var(--muted)">'+ at('audit.empty') +'</div>'; return; }
       _adminContent.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="color:var(--muted);text-align:left">'
-        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">When</th>'
-        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">By</th>'
-        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Action</th>'
-        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Target</th>'
-        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Duration</th>'
-        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">Reason</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+ at('audit.when') +'</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+ at('audit.by') +'</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+ at('audit.action') +'</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+ at('audit.target') +'</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+ at('audit.duration') +'</th>'
+        + '<th style="padding:6px 8px;border-bottom:1px solid var(--border)">'+ at('audit.reason') +'</th>'
         + '</tr></thead><tbody>'
         + rows.map(function(a){
             var by = a.admin_username
               ? '@'+ esc(a.admin_username)
-              : (a.admin_user_id ? esc(a.admin_user_id.slice(0,8)) : '<span style="color:var(--muted)">unknown</span>');
+              : (a.admin_user_id ? esc(a.admin_user_id.slice(0,8)) : '<span style="color:var(--muted)">'+ at('audit.unknown') +'</span>');
             return '<tr style="border-bottom:1px solid var(--border)">'
               + '<td style="padding:6px 8px;color:var(--muted);white-space:nowrap">'+ fmtTime(a.created_at) +'</td>'
               + '<td style="padding:6px 8px;white-space:nowrap">'+ by +'</td>'
@@ -19132,7 +19274,7 @@ info@blocksocial.eu</address>
           }).join('')
         + '</tbody></table>';
     } catch(e){
-      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">Network error.</div>';
+      _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.network') +'</div>';
     }
   }
 

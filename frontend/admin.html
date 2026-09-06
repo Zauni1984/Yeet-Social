@@ -20,6 +20,8 @@ input:focus{border-color:#c6f135}
 .btn.warn{background:#f5a623;color:#000}
 .btn.sm{padding:5px 11px;font-size:12px;border-radius:6px}
 .btn.ghost{background:transparent;border:1px solid #444;color:#fff}
+.btn.ghost.on{border-color:#c6f135;color:#c6f135}
+.langsw{display:inline-flex;gap:4px}
 .panel{display:none;padding:24px;max-width:1200px;margin:0 auto}
 .header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #222}
 .header h1{color:#c6f135;font-size:20px;flex:1}
@@ -122,48 +124,52 @@ input:focus{border-color:#c6f135}
 
 <div class="login" id="loginView">
   <div class="box">
-    <h1><span class="yi yi-bolt"></span> YEET Admin</h1>
-    <p>Moderations-Dashboard</p>
-    <input type="password" id="secretInput" placeholder="Admin Secret" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn" style="width:100%" onclick="doLogin()">Einloggen</button>
+    <h1><span class="yi yi-bolt"></span> <span data-i18n="title">YEET Admin</span></h1>
+    <p data-i18n="login.subtitle">Moderations-Dashboard</p>
+    <input type="password" id="secretInput" data-i18n-placeholder="login.placeholder" placeholder="Admin Secret" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn" style="width:100%" onclick="doLogin()" data-i18n="login.btn">Einloggen</button>
   </div>
 </div>
 
 <div class="panel" id="adminPanel">
   <div class="header">
-    <h1><span class="yi yi-bolt"></span> YEET Admin</h1>
-    <button class="btn sm warn" onclick="loadData()"><span class="yi yi-refresh"></span> Refresh</button>
-    <button class="btn sm ghost" onclick="logout()">Logout</button>
+    <h1><span class="yi yi-bolt"></span> <span data-i18n="title">YEET Admin</span></h1>
+    <span class="langsw" role="group" aria-label="Language">
+      <button class="btn sm ghost" id="langDe" onclick="setAdmLang('de')" type="button">DE</button>
+      <button class="btn sm ghost" id="langEn" onclick="setAdmLang('en')" type="button">EN</button>
+    </span>
+    <button class="btn sm warn" onclick="loadData()"><span class="yi yi-refresh"></span> <span data-i18n="btn.refresh">Aktualisieren</span></button>
+    <button class="btn sm ghost" onclick="logout()" data-i18n="btn.logout">Abmelden</button>
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="num" id="sTotal">—</div><div class="lbl">Posts gesamt</div></div>
-    <div class="stat"><div class="num" id="sFlagged" style="color:#f5a623">—</div><div class="lbl">Gemeldet</div></div>
-    <div class="stat"><div class="num" id="sRemoved" style="color:#ff4444">—</div><div class="lbl">Entfernt</div></div>
-    <div class="stat"><div class="num" id="sActive" style="color:#22c55e">—</div><div class="lbl">Aktiv</div></div>
+    <div class="stat"><div class="num" id="sTotal">—</div><div class="lbl" data-i18n="stat.total">Posts gesamt</div></div>
+    <div class="stat"><div class="num" id="sFlagged" style="color:#f5a623">—</div><div class="lbl" data-i18n="stat.flagged">Gemeldet</div></div>
+    <div class="stat"><div class="num" id="sRemoved" style="color:#ff4444">—</div><div class="lbl" data-i18n="stat.removed">Entfernt</div></div>
+    <div class="stat"><div class="num" id="sActive" style="color:#22c55e">—</div><div class="lbl" data-i18n="stat.active">Aktiv</div></div>
   </div>
 
   <div class="tabs">
-    <div class="tab active" id="tab-reports" onclick="switchTab('reports')"><span class="yi yi-flag"></span> Gemeldet <span class="badge" id="badge">0</span></div>
-    <div class="tab" id="tab-all" onclick="switchTab('all')"><span class="yi yi-copy"></span> Alle Posts</div>
-    <div class="tab" id="tab-payouts" onclick="switchTab('payouts')"><span class="yi yi-wallet"></span> Auszahlungen <span class="badge" id="payoutBadge" style="display:none">0</span></div>
+    <div class="tab active" id="tab-reports" onclick="switchTab('reports')"><span class="yi yi-flag"></span> <span data-i18n="tab.reports">Gemeldet</span> <span class="badge" id="badge">0</span></div>
+    <div class="tab" id="tab-all" onclick="switchTab('all')"><span class="yi yi-copy"></span> <span data-i18n="tab.all">Alle Posts</span></div>
+    <div class="tab" id="tab-payouts" onclick="switchTab('payouts')"><span class="yi yi-wallet"></span> <span data-i18n="tab.payouts">Auszahlungen</span> <span class="badge" id="payoutBadge" style="display:none">0</span></div>
   </div>
 
-  <input class="search" type="text" id="searchInput" placeholder="Suche..." oninput="renderPosts()">
+  <input class="search" type="text" id="searchInput" data-i18n-placeholder="search.placeholder" placeholder="Suche..." oninput="renderPosts()">
   <div id="grid"></div>
 
   <!-- Payout-Freigabe: Points→YEET- und NOTE-Swap-Auszahlungen (manuelles Gate in der Startphase) -->
   <div id="payoutsView" style="display:none">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
       <select id="payoutStatus" class="search" style="width:auto;margin:0" onchange="loadPayouts()">
-        <option value="awaiting_approval">Wartet auf Freigabe</option>
-        <option value="failed">Fehlgeschlagen (Mint)</option>
-        <option value="pending">Freigegeben – wartet auf Mint</option>
-        <option value="minted">Ausgezahlt</option>
-        <option value="rejected">Abgelehnt / erstattet</option>
-        <option value="all">Alle</option>
+        <option value="awaiting_approval" data-i18n="opt.awaiting">Wartet auf Freigabe</option>
+        <option value="failed" data-i18n="opt.failed">Fehlgeschlagen (Mint)</option>
+        <option value="pending" data-i18n="opt.pending">Freigegeben – wartet auf Mint</option>
+        <option value="minted" data-i18n="opt.minted">Ausgezahlt</option>
+        <option value="rejected" data-i18n="opt.rejected">Abgelehnt / erstattet</option>
+        <option value="all" data-i18n="opt.all">Alle</option>
       </select>
-      <button class="btn sm ghost" onclick="loadPayouts()"><span class="yi yi-refresh"></span> Aktualisieren</button>
+      <button class="btn sm ghost" onclick="loadPayouts()"><span class="yi yi-refresh"></span> <span data-i18n="btn.reload">Aktualisieren</span></button>
       <span id="payoutHint" style="font-size:12px;color:#888"></span>
     </div>
     <div id="payoutList"></div>
@@ -173,6 +179,168 @@ input:focus{border-color:#c6f135}
 <div class="toast" id="toast"></div>
 
 <script>
+// ---------- Sprache / Language (DE primary, EN secondary) ----------
+var ADM = {
+  de: {
+    'title': 'YEET Admin',
+    'login.subtitle': 'Moderations-Dashboard',
+    'login.placeholder': 'Admin Secret',
+    'login.btn': 'Einloggen',
+    'btn.refresh': 'Aktualisieren',
+    'btn.logout': 'Abmelden',
+    'btn.reload': 'Aktualisieren',
+    'stat.total': 'Posts gesamt',
+    'stat.flagged': 'Gemeldet',
+    'stat.removed': 'Entfernt',
+    'stat.active': 'Aktiv',
+    'tab.reports': 'Gemeldet',
+    'tab.all': 'Alle Posts',
+    'tab.payouts': 'Auszahlungen',
+    'search.placeholder': 'Suche...',
+    'opt.awaiting': 'Wartet auf Freigabe',
+    'opt.failed': 'Fehlgeschlagen (Mint)',
+    'opt.pending': 'Freigegeben – wartet auf Mint',
+    'opt.minted': 'Ausgezahlt',
+    'opt.rejected': 'Abgelehnt / erstattet',
+    'opt.all': 'Alle',
+    'status.awaiting': 'Wartet auf Freigabe',
+    'status.failed': 'Mint fehlgeschlagen',
+    'status.pending': 'Freigegeben – wartet auf Mint',
+    'status.minted': 'Ausgezahlt',
+    'status.rejected': 'Abgelehnt / erstattet',
+    'toast.wrongPassword': 'Falsches Passwort',
+    'toast.secretInvalid': 'Admin-Secret ungültig',
+    'toast.error': 'Fehler: {msg}',
+    'toast.errorPlain': 'Fehler',
+    'toast.network': 'Netzwerkfehler: {msg}',
+    'toast.payoutApproved': 'Auszahlung freigegeben',
+    'toast.payoutRejected': 'Abgelehnt – Punkte erstattet',
+    'toast.hardDeleted': 'Permanent gelöscht',
+    'toast.postRemoved': 'Post entfernt',
+    'toast.postApproved': 'Post freigegeben',
+    'loading': 'Lade…',
+    'entries': '{n} Einträge',
+    'payouts.empty': 'Keine Auszahlungen in diesem Status.',
+    'payout.wallet': 'Ziel-Wallet:',
+    'payout.noWallet': '— keine verknüpft —',
+    'payout.attempts': 'Mint-Versuche:',
+    'payout.lastError': 'Letzter Fehler:',
+    'btn.approve': 'Freigeben',
+    'btn.rejectRefund': 'Ablehnen & erstatten',
+    'btn.remove': 'Entfernen',
+    'btn.hardDelete': 'Hard Delete',
+    'prompt.rejectReason': 'Grund für Ablehnung (Punkte werden dem User erstattet):',
+    'confirm.approvePayout': 'Auszahlung freigeben? Sie wird beim nächsten Batch-Lauf on-chain gemintet.',
+    'prompt.hardReason': 'Grund für permanentes Löschen:',
+    'prompt.removeReason': 'Grund für Entfernung:',
+    'default.reason': 'Verstoß gegen Nutzungsbedingungen',
+    'posts.emptyReports': 'Keine gemeldeten Posts',
+    'posts.emptyAll': 'Keine Posts gefunden',
+    'post.unknownAuthor': 'unbekannt',
+    'post.reports': '{n} Meldungen',
+    'post.removed': 'Entfernt',
+    'post.flagged': 'Gemeldet',
+    'post.reason': 'Grund: {reason}'
+  },
+  en: {
+    'title': 'YEET Admin',
+    'login.subtitle': 'Moderation dashboard',
+    'login.placeholder': 'Admin secret',
+    'login.btn': 'Log in',
+    'btn.refresh': 'Refresh',
+    'btn.logout': 'Logout',
+    'btn.reload': 'Reload',
+    'stat.total': 'Total posts',
+    'stat.flagged': 'Flagged',
+    'stat.removed': 'Removed',
+    'stat.active': 'Active',
+    'tab.reports': 'Flagged',
+    'tab.all': 'All posts',
+    'tab.payouts': 'Payouts',
+    'search.placeholder': 'Search...',
+    'opt.awaiting': 'Awaiting approval',
+    'opt.failed': 'Failed (mint)',
+    'opt.pending': 'Approved – awaiting mint',
+    'opt.minted': 'Paid out',
+    'opt.rejected': 'Rejected / refunded',
+    'opt.all': 'All',
+    'status.awaiting': 'Awaiting approval',
+    'status.failed': 'Mint failed',
+    'status.pending': 'Approved – awaiting mint',
+    'status.minted': 'Paid out',
+    'status.rejected': 'Rejected / refunded',
+    'toast.wrongPassword': 'Wrong password',
+    'toast.secretInvalid': 'Invalid admin secret',
+    'toast.error': 'Error: {msg}',
+    'toast.errorPlain': 'Error',
+    'toast.network': 'Network error: {msg}',
+    'toast.payoutApproved': 'Payout approved',
+    'toast.payoutRejected': 'Rejected – points refunded',
+    'toast.hardDeleted': 'Permanently deleted',
+    'toast.postRemoved': 'Post removed',
+    'toast.postApproved': 'Post approved',
+    'loading': 'Loading…',
+    'entries': '{n} entries',
+    'payouts.empty': 'No payouts in this status.',
+    'payout.wallet': 'Target wallet:',
+    'payout.noWallet': '— none linked —',
+    'payout.attempts': 'Mint attempts:',
+    'payout.lastError': 'Last error:',
+    'btn.approve': 'Approve',
+    'btn.rejectRefund': 'Reject & refund',
+    'btn.remove': 'Remove',
+    'btn.hardDelete': 'Hard delete',
+    'prompt.rejectReason': 'Reason for rejection (points will be refunded to the user):',
+    'confirm.approvePayout': 'Approve payout? It will be minted on-chain in the next batch run.',
+    'prompt.hardReason': 'Reason for permanent deletion:',
+    'prompt.removeReason': 'Reason for removal:',
+    'default.reason': 'Violation of the terms of service',
+    'posts.emptyReports': 'No flagged posts',
+    'posts.emptyAll': 'No posts found',
+    'post.unknownAuthor': 'unknown',
+    'post.reports': '{n} reports',
+    'post.removed': 'Removed',
+    'post.flagged': 'Flagged',
+    'post.reason': 'Reason: {reason}'
+  }
+};
+function admLang() {
+  var o = null;
+  try { o = localStorage.getItem('yeet_admin_lang'); } catch(e) {}
+  if (o === 'de' || o === 'en') return o;
+  var app = null;
+  try { app = localStorage.getItem('yeet_lang'); } catch(e) {}
+  return app === 'de' ? 'de' : 'en';
+}
+function A(k, vars) {
+  var lang = admLang();
+  var v = (ADM[lang] && ADM[lang][k]);
+  if (v == null) v = ADM.en[k];
+  if (v == null) v = k;
+  if (vars) v = v.replace(/\{(\w+)\}/g, function(m, name){ return (name in vars) ? String(vars[name]) : m; });
+  return v;
+}
+function applyAdm() {
+  var lang = admLang();
+  document.documentElement.lang = lang;
+  var els = document.querySelectorAll('[data-i18n]');
+  for (var i = 0; i < els.length; i++) els[i].textContent = A(els[i].getAttribute('data-i18n'));
+  var ph = document.querySelectorAll('[data-i18n-placeholder]');
+  for (var j = 0; j < ph.length; j++) ph[j].setAttribute('placeholder', A(ph[j].getAttribute('data-i18n-placeholder')));
+  var de = document.getElementById('langDe'), en = document.getElementById('langEn');
+  if (de) de.classList.toggle('on', lang === 'de');
+  if (en) en.classList.toggle('on', lang === 'en');
+  var eh = document.getElementById('payoutHint');
+  if (eh && eh.dataset.n) eh.textContent = A('entries', {n: eh.dataset.n});
+}
+function setAdmLang(lang) {
+  try { localStorage.setItem('yeet_admin_lang', lang); } catch(e) {}
+  applyAdm();
+  if (!SECRET) return;
+  if (currentTab === 'payouts') loadPayouts(); else renderPosts();
+}
+function admLocale() { return admLang() === 'de' ? 'de-DE' : 'en-US'; }
+
 var SECRET = '';
 var allPosts = [];
 var currentTab = 'reports';
@@ -193,16 +361,16 @@ function logout() {
 async function loadData() {
   try {
     var r = await fetch('/api/v1/admin/posts?secret=' + encodeURIComponent(SECRET));
-    if (r.status === 401) { showToast('Falsches Passwort', 'err'); return; }
+    if (r.status === 401) { showToast(A('toast.wrongPassword'), 'err'); return; }
     var d = await r.json();
-    if (!d.success) { showToast('Fehler: ' + (d.error && d.error.message), 'err'); return; }
+    if (!d.success) { showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err'); return; }
     allPosts = d.data || [];
     document.getElementById('loginView').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
     updateStats();
     if (currentTab === 'payouts') loadPayouts(); else renderPosts();
     refreshPayoutBadge();
-  } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
+  } catch(e) { showToast(A('toast.network', {msg: e.message}), 'err'); }
 }
 
 function updateStats() {
@@ -228,7 +396,7 @@ function switchTab(tab) {
 }
 
 // ---------- Payout-Freigabe ----------
-var STATUS_LABEL = {awaiting_approval:['Wartet auf Freigabe','wait'], failed:['Mint fehlgeschlagen','fail'], pending:['Freigegeben – wartet auf Mint','pend'], minted:['Ausgezahlt','done'], rejected:['Abgelehnt / erstattet','rej']};
+var STATUS_LABEL = {awaiting_approval:['status.awaiting','wait'], failed:['status.failed','fail'], pending:['status.pending','pend'], minted:['status.minted','done'], rejected:['status.rejected','rej']};
 function shortAddr(a){ a = a || ''; return a.length > 14 ? a.slice(0,6) + '…' + a.slice(-4) : a; }
 
 async function refreshPayoutBadge() {
@@ -243,42 +411,45 @@ async function refreshPayoutBadge() {
 async function loadPayouts() {
   var status = document.getElementById('payoutStatus').value;
   var list = document.getElementById('payoutList');
-  list.innerHTML = '<div class="empty">Lade…</div>';
+  list.innerHTML = '';
+  var ld = document.createElement('div'); ld.className = 'empty'; ld.textContent = A('loading'); list.appendChild(ld);
   try {
     var r = await fetch('/api/v1/admin/payouts?status=' + encodeURIComponent(status) + '&secret=' + encodeURIComponent(SECRET));
-    if (r.status === 401) { showToast('Admin-Secret ungültig', 'err'); return; }
+    if (r.status === 401) { showToast(A('toast.secretInvalid'), 'err'); return; }
     var d = await r.json();
-    if (!d.success) { showToast('Fehler: ' + (d.error && d.error.message), 'err'); return; }
+    if (!d.success) { showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err'); return; }
     var rows = d.data || [];
-    document.getElementById('payoutHint').textContent = rows.length + ' Einträge';
+    var hint = document.getElementById('payoutHint'); hint.dataset.n = rows.length; hint.textContent = A('entries', {n: rows.length});
     if (status === 'awaiting_approval') { var b = document.getElementById('payoutBadge'); b.textContent = rows.length; b.style.display = rows.length ? '' : 'none'; }
     list.innerHTML = '';
-    if (!rows.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Keine Auszahlungen in diesem Status.'; list.appendChild(e); return; }
+    if (!rows.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = A('payouts.empty'); list.appendChild(e); return; }
     rows.forEach(function(p) {
       var card = document.createElement('div'); card.className = 'card' + (p.status === 'failed' ? ' flagged' : '');
       var meta = document.createElement('div'); meta.className = 'meta';
       var who = document.createElement('span'); who.className = 'author'; who.textContent = '@' + (p.username || (p.user_id || '').slice(0,8)); meta.appendChild(who);
       var age = document.createElement('span'); age.textContent = timeAgo(p.created_at); meta.appendChild(age);
-      var st = STATUS_LABEL[p.status] || [p.status, 'rej'];
-      var pill = document.createElement('span'); pill.className = 'pill ' + st[1]; pill.textContent = st[0]; meta.appendChild(pill);
+      var st = STATUS_LABEL[p.status];
+      var pill = document.createElement('span'); pill.className = 'pill ' + (st ? st[1] : 'rej'); pill.textContent = st ? A(st[0]) : p.status; meta.appendChild(pill);
       card.appendChild(meta);
 
       var amt = document.createElement('div'); amt.className = 'content'; amt.style.fontSize = '20px'; amt.style.fontWeight = '800';
-      amt.textContent = Number(p.amount).toLocaleString('de-DE', {maximumFractionDigits: 8}) + ' YEET'; card.appendChild(amt);
+      amt.textContent = Number(p.amount).toLocaleString(admLocale(), {maximumFractionDigits: 8}) + ' YEET'; card.appendChild(amt);
 
-      var kv1 = document.createElement('div'); kv1.className = 'kv'; kv1.innerHTML = 'Ziel-Wallet: <b></b>'; kv1.querySelector('b').textContent = p.wallet_address || '— keine verknüpft —'; card.appendChild(kv1);
+      var kv1 = document.createElement('div'); kv1.className = 'kv'; kv1.appendChild(document.createTextNode(A('payout.wallet') + ' '));
+      var kv1b = document.createElement('b'); kv1b.textContent = p.wallet_address || A('payout.noWallet'); kv1.appendChild(kv1b); card.appendChild(kv1);
       if (p.mint_attempts > 0 || p.last_error) {
-        var kv2 = document.createElement('div'); kv2.className = 'kv'; kv2.innerHTML = 'Mint-Versuche: <b></b>'; kv2.querySelector('b').textContent = String(p.mint_attempts || 0); card.appendChild(kv2);
-        if (p.last_error) { var kv3 = document.createElement('div'); kv3.className = 'kv'; kv3.style.color = '#ff6666'; kv3.textContent = 'Letzter Fehler: ' + p.last_error; card.appendChild(kv3); }
+        var kv2 = document.createElement('div'); kv2.className = 'kv'; kv2.appendChild(document.createTextNode(A('payout.attempts') + ' '));
+        var kv2b = document.createElement('b'); kv2b.textContent = String(p.mint_attempts || 0); kv2.appendChild(kv2b); card.appendChild(kv2);
+        if (p.last_error) { var kv3 = document.createElement('div'); kv3.className = 'kv'; kv3.style.color = '#ff6666'; kv3.textContent = A('payout.lastError') + ' ' + p.last_error; card.appendChild(kv3); }
       }
 
       var actions = document.createElement('div'); actions.className = 'actions';
       if (p.status === 'awaiting_approval') {
-        var ok = document.createElement('button'); ok.className = 'btn sm ok'; ok.innerHTML = '<span class="yi yi-check"></span> Freigeben';
+        var ok = iconBtn('btn sm ok', 'yi-check', A('btn.approve'));
         ok.onclick = (function(id){ return function(){ decidePayout(id, 'approve'); }; })(p.id); actions.appendChild(ok);
       }
       if (p.status === 'awaiting_approval' || p.status === 'failed') {
-        var no = document.createElement('button'); no.className = 'btn sm danger'; no.innerHTML = '<span class="yi yi-trash"></span> Ablehnen & erstatten';
+        var no = iconBtn('btn sm danger', 'yi-trash', A('btn.rejectRefund'));
         no.onclick = (function(id){ return function(){ decidePayout(id, 'reject'); }; })(p.id); actions.appendChild(no);
       }
       if (actions.childElementCount) card.appendChild(actions);
@@ -286,22 +457,36 @@ async function loadPayouts() {
       var pid = document.createElement('div'); pid.className = 'pid'; pid.textContent = p.id; card.appendChild(pid);
       list.appendChild(card);
     });
-  } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
+  } catch(e) { showToast(A('toast.network', {msg: e.message}), 'err'); }
 }
 
 async function decidePayout(id, action) {
   var note;
-  if (action === 'reject') { note = prompt('Grund für Ablehnung (Punkte werden dem User erstattet):'); if (note === null) return; }
-  else { if (!confirm('Auszahlung freigeben? Sie wird beim nächsten Batch-Lauf on-chain gemintet.')) return; }
+  if (action === 'reject') { note = prompt(A('prompt.rejectReason')); if (note === null) return; }
+  else { if (!confirm(A('confirm.approvePayout'))) return; }
   try {
     var r = await fetch('/api/v1/admin/payouts/' + encodeURIComponent(id) + '/' + action, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({secret: SECRET, note: note || null})
     });
     var d = await r.json();
-    if (d.success) { showToast(action === 'approve' ? 'Auszahlung freigegeben' : 'Abgelehnt – Punkte erstattet', 'ok'); loadPayouts(); }
-    else showToast('Fehler: ' + (d.error && d.error.message), 'err');
-  } catch(e) { showToast('Netzwerkfehler: ' + e.message, 'err'); }
+    if (d.success) { showToast(action === 'approve' ? A('toast.payoutApproved') : A('toast.payoutRejected'), 'ok'); loadPayouts(); }
+    else showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err');
+  } catch(e) { showToast(A('toast.network', {msg: e.message}), 'err'); }
+}
+
+// Button with a leading icon span and a translated text label (icon stays intact).
+function iconBtn(cls, icon, label) {
+  var b = document.createElement('button'); b.className = cls;
+  var i = document.createElement('span'); i.className = 'yi ' + icon; b.appendChild(i);
+  b.appendChild(document.createTextNode(' ' + label));
+  return b;
+}
+function iconText(icon, label, color) {
+  var s = document.createElement('span'); if (color) s.style.color = color;
+  var i = document.createElement('span'); i.className = 'yi ' + icon; s.appendChild(i);
+  s.appendChild(document.createTextNode(' ' + label));
+  return s;
 }
 
 function renderPosts() {
@@ -321,7 +506,8 @@ function renderPosts() {
     grid.innerHTML = '';
     var empty = document.createElement('div');
     empty.className = 'empty';
-    empty.innerHTML = currentTab === 'reports' ? '<span class="yi yi-party"></span> Keine gemeldeten Posts' : 'Keine Posts gefunden';
+    if (currentTab === 'reports') empty.appendChild(iconText('yi-party', A('posts.emptyReports')));
+    else empty.textContent = A('posts.emptyAll');
     grid.appendChild(empty);
     return;
   }
@@ -337,7 +523,7 @@ function renderPosts() {
     meta.className = 'meta';
     var author = document.createElement('span');
     author.className = 'author';
-    author.textContent = '@' + (p.author_name || 'unknown');
+    author.textContent = '@' + (p.author_name || A('post.unknownAuthor'));
     meta.appendChild(author);
     var age = document.createElement('span');
     age.textContent = timeAgo(p.created_at);
@@ -345,19 +531,13 @@ function renderPosts() {
     if (p.report_count > 0) {
       var rpill = document.createElement('span');
       rpill.className = 'rpill';
-      rpill.textContent = p.report_count + ' Meldungen';
+      rpill.textContent = A('post.reports', {n: p.report_count});
       meta.appendChild(rpill);
     }
     if (p.is_removed) {
-      var rs = document.createElement('span');
-      rs.style.color = '#ff4444';
-      rs.innerHTML = '<span class="yi yi-trash"></span> Entfernt';
-      meta.appendChild(rs);
+      meta.appendChild(iconText('yi-trash', A('post.removed'), '#ff4444'));
     } else if (p.is_flagged) {
-      var fs = document.createElement('span');
-      fs.style.color = '#f5a623';
-      fs.innerHTML = '<span class="yi yi-flag"></span> Gemeldet';
-      meta.appendChild(fs);
+      meta.appendChild(iconText('yi-flag', A('post.flagged'), '#f5a623'));
     }
     card.appendChild(meta);
 
@@ -379,7 +559,7 @@ function renderPosts() {
     if (p.removed_reason) {
       var rr = document.createElement('div');
       rr.style.cssText = 'font-size:11px;color:#666;margin-bottom:8px';
-      rr.textContent = 'Grund: ' + p.removed_reason;
+      rr.textContent = A('post.reason', {reason: p.removed_reason});
       card.appendChild(rr);
     }
 
@@ -387,23 +567,17 @@ function renderPosts() {
     var actions = document.createElement('div');
     actions.className = 'actions';
     if (!p.is_removed) {
-      var softBtn = document.createElement('button');
-      softBtn.className = 'btn sm danger';
-      softBtn.innerHTML = '<span class="yi yi-trash"></span> Entfernen';
+      var softBtn = iconBtn('btn sm danger', 'yi-trash', A('btn.remove'));
       softBtn.onclick = (function(pid){ return function(){ removePost(pid, false); }; })(p.id);
       actions.appendChild(softBtn);
 
-      var hardBtn = document.createElement('button');
-      hardBtn.className = 'btn sm danger';
+      var hardBtn = iconBtn('btn sm danger', 'yi-skull', A('btn.hardDelete'));
       hardBtn.style.background = '#880000';
-      hardBtn.innerHTML = '<span class="yi yi-skull"></span> Hard Delete';
       hardBtn.onclick = (function(pid){ return function(){ removePost(pid, true); }; })(p.id);
       actions.appendChild(hardBtn);
     }
     if (p.is_flagged && !p.is_removed) {
-      var okBtn = document.createElement('button');
-      okBtn.className = 'btn sm ok';
-      okBtn.innerHTML = '<span class="yi yi-check"></span> Freigeben';
+      var okBtn = iconBtn('btn sm ok', 'yi-check', A('btn.approve'));
       okBtn.onclick = (function(pid){ return function(){ unflagPost(pid); }; })(p.id);
       actions.appendChild(okBtn);
     }
@@ -419,21 +593,21 @@ function renderPosts() {
 }
 
 async function removePost(id, hard) {
-  var reason = prompt(hard ? 'Grund für permanentes Löschen:' : 'Grund für Entfernung:') || '';
+  var reason = prompt(hard ? A('prompt.hardReason') : A('prompt.removeReason')) || '';
   if (reason === null) return;
   var url = hard ? '/api/v1/admin/posts/' + id + '/hard' : '/api/v1/admin/posts/' + id;
   var r = await fetch(url, {
     method: 'DELETE',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({secret: SECRET, reason: reason || 'Verstoß gegen Nutzungsbedingungen'})
+    body: JSON.stringify({secret: SECRET, reason: reason || A('default.reason')})
   });
   var d = await r.json();
   if (d.success) {
-    showToast(hard ? 'Permanent gelöscht' : 'Post entfernt', 'ok');
+    showToast(hard ? A('toast.hardDeleted') : A('toast.postRemoved'), 'ok');
     if (hard) { allPosts = allPosts.filter(function(p){ return p.id !== id; }); }
     else { var p = allPosts.find(function(p){ return p.id === id; }); if(p){ p.is_removed = true; p.removed_reason = reason; } }
     updateStats(); renderPosts();
-  } else showToast('Fehler: ' + (d.error && d.error.message), 'err');
+  } else showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err');
 }
 
 async function unflagPost(id) {
@@ -444,11 +618,11 @@ async function unflagPost(id) {
   });
   var d = await r.json();
   if (d.success) {
-    showToast('Post freigegeben', 'ok');
+    showToast(A('toast.postApproved'), 'ok');
     var p = allPosts.find(function(p){ return p.id === id; });
     if (p) { p.is_flagged = false; p.report_count = 0; }
     updateStats(); renderPosts();
-  } else showToast('Fehler', 'err');
+  } else showToast(A('toast.errorPlain'), 'err');
 }
 
 function showToast(msg, type) {
@@ -467,6 +641,8 @@ function timeAgo(iso) {
   if (s < 86400) return Math.floor(s/3600) + 'h';
   return Math.floor(s/86400) + 'd';
 }
+
+applyAdm();
 
 setInterval(function(){
   if (SECRET && document.getElementById('adminPanel').style.display !== 'none') loadData();
