@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 18] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv"];
+pub const SUPPORTED: [&str; 22] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -231,7 +231,7 @@ pub async fn detect(cfg: &TranslateConfig, text: &str) -> Option<String> {
     }
 }
 
-/// Cheap stop-word detector for the eighteen UI languages. Deliberately
+/// Cheap stop-word detector for the twenty-two UI languages. Deliberately
 /// conservative: needs a clear winner with at least two hits, otherwise
 /// `None`. Wrong guesses only cost a needless Translate button, missing
 /// guesses only cost auto-translation — so err on the side of `None`.
@@ -256,6 +256,10 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     const SR: &[&str] = &["je","se","na","da","ne","za","su","sam","ali","kako","tako","već","samo","danas","nije","biti","ili","šta","takođe","ko","uvek","lepo","vreme","gde","nedelja","ovde","neko","ceo","svet","hteo"];
     const TR: &[&str] = &["ve","bir","bu","için","ile","çok","ama","gibi","daha","var","yok","ben","sen","biz","bugün","değil","şey","kadar","sonra","olarak","her","hiç","nasıl","neden","şimdi"];
     const LV: &[&str] = &["un","ir","tu","ar","uz","par","kā","ka","bet","arī","tikai","šodien","nav","būt","vai","kad","šis","kas","mēs","jau","ļoti","viss","paldies","labi","tagad"];
+    const EL: &[&str] = &["και","να","το","η","ο","της","του","με","για","που","δεν","είναι","σε","από","τα","οι","στο","στη","αυτό","αλλά","σήμερα","πολύ","μου","σου","θα"];
+    const HU: &[&str] = &["és","az","hogy","nem","egy","van","ma","én","te","meg","csak","már","még","ez","nagyon","volt","itt","minden","köszi","szia","hogyan","miért","mert","vagy","jó"];
+    const RO: &[&str] = &["și","să","nu","este","cu","pe","în","că","pentru","dar","astăzi","foarte","eu","tu","mai","din","ce","sunt","am","acum","mulțumesc","dacă","toți","aici","bine"];
+    const BG: &[&str] = &["и","на","да","не","се","в","с","за","е","това","но","аз","ти","много","днес","само","вече","още","как","какво","има","са","от","съм","благодаря"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -266,7 +270,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     let mut scores = [("en", score(EN)), ("de", score(DE)), ("it", score(IT)), ("fr", score(FR)), ("es", score(ES)), ("pt", score(PT)),
                       ("fi", score(FI)), ("sv", score(SV)), ("nb", score(NB)), ("is", score(IS)),
                       ("cs", score(CS)), ("da", score(DA)), ("nl", score(NL)), ("pl", score(PL)),
-                      ("hr", score(HR)), ("sr", score(SR)), ("tr", score(TR)), ("lv", score(LV))];
+                      ("hr", score(HR)), ("sr", score(SR)), ("tr", score(TR)), ("lv", score(LV)),
+                      ("el", score(EL)), ("hu", score(HU)), ("ro", score(RO)), ("bg", score(BG))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -368,6 +373,10 @@ mod tests {
         assert_eq!(heuristic_detect("Ne znam, ali to je lepo i uvek imamo vreme za sve šta treba.").as_deref(), Some("sr"));
         assert_eq!(heuristic_detect("Bugün çok güzel bir gün ve ben bunu çok seviyorum ama yarın yok.").as_deref(), Some("tr"));
         assert_eq!(heuristic_detect("Nezinu, bet tas ir ļoti labi un mēs šodien varam visu.").as_deref(), Some("lv"));
+        assert_eq!(heuristic_detect("Δεν ξέρω, αλλά είναι πολύ καλό και σήμερα θα πάμε.").as_deref(), Some("el"));
+        assert_eq!(heuristic_detect("Nem tudom, de ez nagyon jó és ma még itt van.").as_deref(), Some("hu"));
+        assert_eq!(heuristic_detect("Nu știu, dar este foarte bine și astăzi mergem cu toții.").as_deref(), Some("ro"));
+        assert_eq!(heuristic_detect("Не знам, но това е много добре и днес ще отидем.").as_deref(), Some("bg"));
     }
 
     #[test]
