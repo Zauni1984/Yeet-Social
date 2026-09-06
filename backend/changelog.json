@@ -92,6 +92,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-06-04-hr-sr-tr-lv",
+      "text": "Hrvatski, Srpski, Türkçe and Latviešu are here – eighteen languages now. Your browser language is picked automatically on first visit, or choose under Settings → Language. Dobrodošli, dobrodošli, hoş geldiniz, laipni lūdzam!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
