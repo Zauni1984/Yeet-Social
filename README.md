@@ -1,107 +1,85 @@
-# YEET Social  Web3 Social Media Platform
+# YEET Social — Web3 Social Media Platform
 
-> Live at **[justyeet.it](https://justyeet.it)**
+> Live at **[justyeet.it](https://justyeet.it)** · Source-available under the [Elastic License 2.0](./LICENSE) (contracts: MIT)
 
-YEET Social is a Web3-native social media platform where users can post, comment, like, and tip each other with YEET tokens. Built with a Rust backend, PostgreSQL, Redis, and a single-file frontend served via nginx.
-
----
-
-## Current Status (April 2026)
-
-- **Live & working**  posts, comments, likes, tipping icon all functional
-- **Email login/registration**  fully working
-- **Wallet login**  MetaMask & WalletConnect UI present
-- **Feed**  global feed with FOR YOU / FOLLOWING / NFT / 18+ tabs
-- **Post composer**  text posts with character counter
-- **Comments**  collapsible comment threads per post
-- **Tipping**  tip button visible on posts (YEET token flow in development)
-- **Mobile responsive**  hamburger menu, mobile auth button, responsive layout
+YEET Social is a Web3-native social network: post, comment, like and tip each other; earn points that convert into the YEET utility token (BEP-20 on BNB Chain, contract pending). Rust backend, PostgreSQL, Redis, and a single-file frontend served by nginx.
 
 ---
 
-## Tech Stack
+## Current status (September 2026)
+
+**Live on justyeet.it**
+
+- Posts (text, image, video, permanent posts, pay-per-view), comments, likes, reposts, tips, trending
+- **Audio Stories** — record in the browser, 24 h or permanent, optional 18+
+- Email login (Argon2id, GDPR double opt-in) and MetaMask login; email users can link a wallet later
+- Points economy: registration bonus (first 100k), posting reward (≥120 chars, daily cap), conversion queue with **manual admin approval**, hash-chained ledger, public explorer
+- **Eighteen UI languages** (EN, DE, IT, FR, ES, PT, FI, SV, NB, IS, CS, DA, NL, PL, HR, SR, TR, LV) with browser auto-detect
+- **Accessibility**: screen-reader mode, high contrast, large text, keyboard shortcuts, built-in audio reader
+- **Post translation** (provider-neutral: Azure / Google / DeepL / LibreTranslate) and **feed filter** by language and country
+- Moods (color themes), user-composable Webboards (RSS), direct messages (E2EE), paper wallets, 18+ gate with age verification
+- Changelog bot **@yeet_updates** posts every shipped change as a permanent post
+- CI (build, clippy, tests) → CD (Docker image + VPS deploy) on every merge to `main`
+
+**Prepared, switched off until the token contract exists**
+
+- NOTE → YEET swap page (`/swap.html`, 100 NOTE = 1 YEET, cap 500 M YEET) — see [`docs/swap-note-to-yeet.md`](./docs/swap-note-to-yeet.md)
+- On-chain payout of approved conversions (batch minter)
+
+**Parked**: live streaming (built end-to-end, see [`README_LIVEKIT.md`](./README_LIVEKIT.md)).
+
+---
+
+## Tech stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Rust (Axum) |
-| Database | PostgreSQL 16 |
-| Cache | Redis 7 |
-| Frontend | Single `index.html` (vanilla JS) |
-| Web server | Nginx (Docker) |
-| Hosting | Hostinger VPS (Ubuntu 24.04) |
-| Container registry | `ghcr.io/zauni1984/yeet-social/backend:main` |
+| Backend | Rust (Axum 0.7, sqlx) |
+| Database | PostgreSQL 16 (migrations in `backend/migrations/`) |
+| Cache / rate limits | Redis 7 |
+| Frontend | Single `frontend/index.html` (vanilla JS), `admin.html`, `swap.html` |
+| Web server | nginx (Docker) |
+| Hosting | Hostinger VPS (Ubuntu 24.04), Docker Compose |
+| Registry | `ghcr.io/zauni1984/yeet-social/backend:main` |
 
 ---
 
-## Infrastructure
-
-All services run as Docker containers in the `yeet-social_yeet-net` network:
-
-- `yeet-nginx`  serves frontend + proxies `/api/` to backend
-- `yeet-backend`  Rust API on port 8080
-- `yeet-postgres`  PostgreSQL database
-- `yeet-redis`  Redis cache
-
-Persistent config files:
-- `/root/nginx.conf`  nginx config (survives reboots)
-- `/root/nginx.conf`  nginx config with SSL, API proxy
-- `/root/start_backend.sh`  backend start script with env vars
-- `/root/yeet-html/index.html`  frontend (live)
-- `/root/yeet-html/index_good.html`  last known good backup
-
----
-
-## Environment Variables (Backend)
+## Repository structure
 
 ```
-DATABASE_URL=postgres://yeet:<password>@yeet-postgres:5432/yeet
-REDIS_URL=redis://yeet-redis:6379
-JWT_SECRET=<min 32 chars>
+backend/        Rust API (src/api = handlers, src/services = jobs & integrations, migrations/)
+backend/changelog.json   release notes posted by the changelog bot
+frontend/       index.html (app), admin.html (admin dashboard), swap.html (NOTE→YEET)
+contracts/      Solidity (MIT)
+docs/           feature docs: translation, feed filter, audio stories, changelog bot, swap, ledger/explorer
+docs/mica/      MiCA dossier: readiness, whitepaper draft, chain assessment, compliance checklist, architecture
+vps/            deploy scripts, .env template, DEPLOY.md
 ```
 
 ---
 
-## Roadmap
+## Configuration
 
-- [ ] Tipping flow  YEET token transfer on-chain
-- [ ] Wallet login (MetaMask / WalletConnect) fully wired
-- [ ] NFT post type
-- [ ] 18+ content gate
-- [ ] CD pipeline (auto-deploy on push)
-- [ ] YEET token smart contract (BNB Chain)
-
-### Parked: Live streaming
-
-A full live-streaming surface (host UI, scheduled lives, viewer
-ranking by YEET tips, paid auto-promo posts, WebRTC ingest via
-self-hosted LiveKit) is **built end-to-end but deactivated** until
-Yeet reaches **several million users**.
-
-Why parked: running a LiveKit cluster only makes sense once there
-are consistently dozens to hundreds of concurrent broadcasts; until
-then an empty Live tab hurts the product more than a parked tab.
-
-Code stays in the repo so re-enabling is a config flip, not a
-re-write. See [`README_LIVEKIT.md`](./README_LIVEKIT.md) for the
-deactivation/re-enable steps.
+See [`.env.example`](./.env.example) (local) and [`vps/.env.example`](./vps/.env.example) / [`vps/DEPLOY.md`](./vps/DEPLOY.md) (production). Feature switches worth knowing: `TRANSLATE_PROVIDER` (post translation), `SWAP_ENABLED` (NOTE swap), `CHANGELOG_BOT_ENABLED`, `YEET_CONVERSION_POOL` / taper settings (points economy).
 
 ---
 
-## Repository Structure
+## Contributing conventions
 
-```
-/
- backend/          # Rust API (Axum)
-    src/
-        main.rs
-        email_auth.rs
-        posts.rs
-        feed.rs
-        ...
- frontend/
-     index.html    # Entire frontend in one file
-```
+- Every PR with a user-visible change adds an entry to `backend/changelog.json` (English, ≤ 420 chars incl. hashtags; `cargo test changelog` enforces it). The bot posts it after deploy.
+- New UI strings go into every language block of `DICTS` in `frontend/index.html`; key parity is checked headlessly.
+- Backend: `cargo clippy --all-targets -- -D warnings` and `cargo test` must pass (CI runs both against a live Postgres).
 
 ---
 
-*Built by Stefan Zauni  Ostern 2026*
+## Roadmap (external / decisions)
+
+- [ ] YEET token smart contract on BNB Chain + audit → enables on-chain payouts and the NOTE swap
+- [ ] Note full node for the swap (fork of note-llc/NoteBlockchain if needed)
+- [ ] Translation provider key on the VPS (Azure AI Translator F0 recommended)
+- [ ] MiCA legal review, trademark, KYC provider
+- [ ] Mobile release
+
+---
+
+*Built by Stefan Zauni · BlockSocial UG (haftungsbeschränkt), Beilngries*

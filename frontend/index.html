@@ -253,6 +253,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 .legal-page{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);color:var(--text);overflow-y:auto;padding:24px;line-height:1.65;font-size:14px}
 .legal-page.on{display:block}
 .legal-page-inner{max-width:780px;margin:0 auto;padding:32px 8px 80px}
+.legal-lang{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.legal-lang button{background:transparent;border:none;color:var(--muted);padding:6px 12px;cursor:pointer;font-size:13px}
+.legal-lang button.on{background:var(--accent);color:var(--on-accent);font-weight:700}
 .legal-page h1{color:var(--yeet);font-size:28px;margin:0 0 8px;font-weight:800}
 .legal-page h2{color:var(--text);font-size:18px;margin:24px 0 8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px}
 .legal-page h3{color:var(--text);font-size:15px;margin:18px 0 6px;font-weight:700}
@@ -875,6 +878,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 (function(){
   var DICTS = {
     en: {
+      'legal.back':'Back to YEET Social',
       // --- feed filter ---
       'ff.title':'Feed filter',
       'ff.hint':'Show only posts in certain languages or from certain countries. Applies to the global feed, Audio and 18+. Following always stays complete.',
@@ -1304,6 +1308,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'No comments yet',
     },
     de: {
+      'legal.back':'Zurück zu YEET Social',
       // --- feed filter ---
       'ff.title':'Feed-Filter',
       'ff.hint':'Zeige nur Posts in bestimmten Sprachen oder aus bestimmten Ländern. Gilt für den globalen Feed, Audio und 18+. „Gefolgt" bleibt immer vollständig.',
@@ -1711,6 +1716,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'Noch keine Kommentare',
     },
     it: {
+      'legal.back':'Torna a YEET Social',
       // --- feed filter ---
       'ff.title':'Filtro del feed',
       'ff.hint':'Mostra solo post in certe lingue o da certi paesi. Vale per il feed globale, Audio e 18+. „Seguiti" resta sempre completo.',
@@ -2393,6 +2399,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portoghese','settings.langFinnish':'Finlandese','settings.langSwedish':'Svedese','settings.langNorwegian':'Norvegese','settings.langIcelandic':'Islandese','settings.langCzech':'Ceco','settings.langDanish':'Danese','settings.langDutch':'Olandese','settings.langPolish':'Polacco','settings.langCroatian':'Croato','settings.langSerbian':'Serbo','settings.langTurkish':'Turco','settings.langLatvian':'Lettone',
     },
     fr: {
+      'legal.back':'Retour à YEET Social',
       // --- feed filter ---
       'ff.title':'Filtre du fil',
       'ff.hint':'Affiche uniquement les posts dans certaines langues ou de certains pays. S\'applique au fil global, à Audio et à 18+. « Abonnements » reste toujours complet.',
@@ -3075,6 +3082,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugais','settings.langFinnish':'Finnois','settings.langSwedish':'Suédois','settings.langNorwegian':'Norvégien','settings.langIcelandic':'Islandais','settings.langCzech':'Tchèque','settings.langDanish':'Danois','settings.langDutch':'Néerlandais','settings.langPolish':'Polonais','settings.langCroatian':'Croate','settings.langSerbian':'Serbe','settings.langTurkish':'Turc','settings.langLatvian':'Letton',
     },
     es: {
+      'legal.back':'Volver a YEET Social',
       // --- feed filter ---
       'ff.title':'Filtro del feed',
       'ff.hint':'Muestra solo posts en ciertos idiomas o de ciertos países. Se aplica al feed global, Audio y 18+. „Siguiendo" siempre se muestra completo.',
@@ -3757,6 +3765,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugués','settings.langFinnish':'Finés','settings.langSwedish':'Sueco','settings.langNorwegian':'Noruego','settings.langIcelandic':'Islandés','settings.langCzech':'Checo','settings.langDanish':'Danés','settings.langDutch':'Neerlandés','settings.langPolish':'Polaco','settings.langCroatian':'Croata','settings.langSerbian':'Serbio','settings.langTurkish':'Turco','settings.langLatvian':'Letón',
     },
     pt: {
+      'legal.back':'Voltar ao YEET Social',
       // --- feed filter ---
       'ff.title':'Filtro do feed',
       'ff.hint':'Mostre só posts em certos idiomas ou de certos países. Vale para o feed global, Áudio e 18+. „Seguindo" continua sempre completo.',
@@ -4439,6 +4448,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Português','settings.langFinnish':'Finlandês','settings.langSwedish':'Sueco','settings.langNorwegian':'Norueguês','settings.langIcelandic':'Islandês','settings.langCzech':'Tcheco','settings.langDanish':'Dinamarquês','settings.langDutch':'Holandês','settings.langPolish':'Polonês','settings.langCroatian':'Croata','settings.langSerbian':'Sérvio','settings.langTurkish':'Turco','settings.langLatvian':'Letão',
     },
     fi: {
+      'legal.back':'Takaisin YEET Socialiin',
       // --- feed filter ---
       'ff.title':'Syötteen suodatin',
       'ff.hint':'Näytä vain tietynkieliset tai tietyistä maista tulevat postaukset. Koskee yleistä syötettä, Ääntä ja 18+. „Seuratut" pysyy aina täydellisenä.',
@@ -5123,6 +5133,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'islanti','settings.langCzech':'tšekki','settings.langDanish':'tanska','settings.langDutch':'hollanti','settings.langPolish':'puola','settings.langCroatian':'kroatia','settings.langSerbian':'serbia','settings.langTurkish':'turkki','settings.langLatvian':'latvia',
     },
     sv: {
+      'legal.back':'Tillbaka till YEET Social',
       // --- feed filter ---
       'ff.title':'Flödesfilter',
       'ff.hint':'Visa bara inlägg på vissa språk eller från vissa länder. Gäller det globala flödet, Ljud och 18+. „Följer" är alltid komplett.',
@@ -5807,6 +5818,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'isländska','settings.langCzech':'tjeckiska','settings.langDanish':'danska','settings.langDutch':'nederländska','settings.langPolish':'polska','settings.langCroatian':'kroatiska','settings.langSerbian':'serbiska','settings.langTurkish':'turkiska','settings.langLatvian':'lettiska',
     },
     nb: {
+      'legal.back':'Tilbake til YEET Social',
       // --- feed filter ---
       'ff.title':'Feedfilter',
       'ff.hint':'Vis bare innlegg på visse språk eller fra visse land. Gjelder den globale feeden, Lyd og 18+. „Følger" er alltid komplett.',
@@ -6491,6 +6503,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'islandsk','settings.langCzech':'tsjekkisk','settings.langDanish':'dansk','settings.langDutch':'nederlandsk','settings.langPolish':'polsk','settings.langCroatian':'kroatisk','settings.langSerbian':'serbisk','settings.langTurkish':'tyrkisk','settings.langLatvian':'latvisk',
     },
     is: {
+      'legal.back':'Til baka á YEET Social',
       // --- feed filter ---
       'ff.title':'Sía fyrir strauminn',
       'ff.hint':'Sýna aðeins færslur á ákveðnum tungumálum eða frá ákveðnum löndum. Gildir um heimsstrauminn, Hljóð og 18+. „Fylgt" er alltaf heilt.',
@@ -7175,6 +7188,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'íslenska','settings.langCzech':'tékkneska','settings.langDanish':'danska','settings.langDutch':'hollenska','settings.langPolish':'pólska','settings.langCroatian':'króatíska','settings.langSerbian':'serbneska','settings.langTurkish':'tyrkneska','settings.langLatvian':'lettneska',
     },
     cs: {
+      'legal.back':'Zpět na YEET Social',
       'ff.title':'Filtr feedu',
       'ff.hint':'Zobrazuj jen příspěvky v určitých jazycích nebo z určitých zemí. Platí pro globální feed, Audio a 18+. Sledovaní zůstávají vždy kompletní.',
       'ff.langTitle':'Jazyky',
@@ -7862,6 +7876,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'polština','settings.langCroatian':'chorvatština','settings.langSerbian':'srbština','settings.langTurkish':'turečtina','settings.langLatvian':'lotyština',
     },
     da: {
+      'legal.back':'Tilbage til YEET Social',
       'ff.title':'Feedfilter',
       'ff.hint':'Vis kun opslag på bestemte sprog eller fra bestemte lande. Gælder for det globale feed, Audio og 18+. Følger forbliver altid komplet.',
       'ff.langTitle':'Sprog',
@@ -8549,6 +8564,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'polsk','settings.langCroatian':'kroatisk','settings.langSerbian':'serbisk','settings.langTurkish':'tyrkisk','settings.langLatvian':'lettisk',
     },
     nl: {
+      'legal.back':'Terug naar YEET Social',
       'ff.title':'Feedfilter',
       'ff.hint':'Toon alleen posts in bepaalde talen of uit bepaalde landen. Geldt voor de globale feed, Audio en 18+. Volgend blijft altijd volledig.',
       'ff.langTitle':'Talen',
@@ -9236,6 +9252,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'Pools','settings.langCroatian':'Kroatisch','settings.langSerbian':'Servisch','settings.langTurkish':'Turks','settings.langLatvian':'Lets',
     },
     pl: {
+      'legal.back':'Wróć do YEET Social',
       'ff.title':'Filtr kanału',
       'ff.hint':'Pokazuj tylko posty w wybranych językach lub z wybranych krajów. Dotyczy kanału globalnego, Audio i 18+. Obserwowani zawsze pozostają w całości.',
       'ff.langTitle':'Języki',
@@ -9923,6 +9940,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'polski','settings.langCroatian':'chorwacki','settings.langSerbian':'serbski','settings.langTurkish':'turecki','settings.langLatvian':'łotewski',
     },
     hr: {
+      'legal.back':'Natrag na YEET Social',
       'ff.title':'Filter feeda',
       'ff.hint':'Prikaži samo objave na određenim jezicima ili iz određenih zemalja. Vrijedi za globalni feed, Audio i 18+. Pratim uvijek ostaje potpun.',
       'ff.langTitle':'Jezici',
@@ -10614,6 +10632,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langLatvian':'latvijski',
     },
     sr: {
+      'legal.back':'Nazad na YEET Social',
       'ff.title':'Filter fida',
       'ff.hint':'Prikaži samo objave na određenim jezicima ili iz određenih zemalja. Važi za globalni fid, Audio i 18+. Fid Pratim uvek ostaje potpun.',
       'ff.langTitle':'Jezici',
@@ -11305,6 +11324,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langLatvian':'letonski',
     },
     tr: {
+      'legal.back':'YEET Social\'a geri dön',
       'ff.title':'Feed filtresi',
       'ff.hint':'Yalnızca belirli dillerdeki veya belirli ülkelerden gelen gönderileri göster. Genel akış, Ses ve 18+ için geçerlidir. Takip akışı her zaman eksiksiz kalır.',
       'ff.langTitle':'Diller',
@@ -11996,6 +12016,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langLatvian':'Letonca',
     },
     lv: {
+      'legal.back':'Atpakaļ uz YEET Social',
       'ff.title':'Plūsmas filtrs',
       'ff.hint':'Rādīt tikai ierakstus noteiktās valodās vai no noteiktām valstīm. Attiecas uz globālo plūsmu, Audio un 18+. „Sekoju” vienmēr paliek pilna.',
       'ff.langTitle':'Valodas',
@@ -17812,7 +17833,10 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 
 <div class="legal-page" id="legalPage" role="region" aria-label="Legal information">
   <div class="legal-page-inner">
-    <button class="legal-back" onclick="closeLegalPage()" type="button">&larr; Back to YEET Social</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <button class="legal-back" onclick="closeLegalPage()" type="button">&larr; <span data-i18n="legal.back">Back to YEET Social</span></button>
+      <div class="legal-lang" role="group" aria-label="Language"><button type="button" data-legal-lang="de" onclick="setLegalLang('de')">Deutsch</button><button type="button" data-legal-lang="en" onclick="setLegalLang('en')">English</button></div>
+    </div>
 
     <article id="legal-imprint">
       <h1>Imprint</h1>
@@ -18168,13 +18192,29 @@ info@blocksocial.eu</address>
 // pushState so URLs are real and shareable.
 (function(){
   var SLUGS = ['imprint','privacy','terms','cookies','disclaimer'];
+  var currentSlug = null;
+  // Legal texts exist in German (binding for the German operator) and
+  // English. Default follows the UI language; the toggle on the page
+  // overrides it (remembered in yeet_legal_lang).
+  function legalLang(){
+    var o = null; try{ o = localStorage.getItem('yeet_legal_lang'); }catch(e){}
+    if(o === 'de' || o === 'en') return o;
+    return (window.getLang && window.getLang() === 'de') ? 'de' : 'en';
+  }
+  function setLegalLang(l){
+    try{ localStorage.setItem('yeet_legal_lang', l); }catch(e){}
+    if(currentSlug) showLegalPage(currentSlug);
+  }
   function showLegalPage(slug){
     if(SLUGS.indexOf(slug) === -1) return false;
     var page = document.getElementById('legalPage');
     if(!page) return false;
     page.classList.add('on');
+    currentSlug = slug;
     page.querySelectorAll('article').forEach(function(a){ a.classList.remove('on'); });
-    var sec = document.getElementById('legal-' + slug);
+    var lang = legalLang();
+    var sec = (lang === 'de' && document.getElementById('legal-' + slug + '-de')) || document.getElementById('legal-' + slug);
+    page.querySelectorAll('[data-legal-lang]').forEach(function(b){ var on = b.dataset.legalLang === lang; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
     if(sec){
       sec.classList.add('on');
       var h = sec.querySelector('h1');
@@ -18186,6 +18226,7 @@ info@blocksocial.eu</address>
   function closeLegalPage(){
     var page = document.getElementById('legalPage');
     if(page) page.classList.remove('on');
+    currentSlug = null;
     if(/^\/legal\//.test(location.pathname)) history.pushState(null,'','/');
     document.title = 'YEET Social';
   }
@@ -18208,6 +18249,7 @@ info@blocksocial.eu</address>
   else document.addEventListener('DOMContentLoaded', routeFromUrl);
   window.showLegalPage = showLegalPage;
   window.closeLegalPage = closeLegalPage;
+  window.setLegalLang = setLegalLang;
 })();
 </script>
 

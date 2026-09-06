@@ -112,8 +112,8 @@ Ausarbeitung + Bewertung + Leitplanken: [05-zielarchitektur-non-custodial.md](05
 
 Falls die Tokenisierungsstrategie einen Verkauf oder ein Listing vorsieht, gilt zusätzlich:
 - **Rechtsträger erforderlich** (Art. 4 Abs. 1: Anbieter muss juristische Person sein).
-  TODO(verify): Rechtsform/Sitz des Betreibers dokumentieren (bestimmt die zuständige NCA,
-  z. B. BaFin bei DE-Sitz, FMA bei AT-Sitz).
+  Dokumentiert: Betreiber ist die BlockSocial UG (haftungsbeschränkt), Sitz Beilngries (DE) →
+  zuständige NCA ist die **BaFin**.
 - Whitepaper-Notifizierung an die NCA **mind. 20 Arbeitstage vor** Veröffentlichung (Art. 8).
 - Veröffentlichung auf der Website, maschinenlesbar; Übermittlung ans ESMA-Register.
 - **Widerrufsrecht** für Kleinanleger: 14 Tage bei Direkterwerb (Art. 13).
