@@ -108,6 +108,22 @@
         "#Legal",
         "#Datenschutz"
       ]
+    },
+    {
+      "id": "2026-09-06-06-detail-comments-translate",
+      "text": "Translate and read-aloud now work everywhere: in the post detail view and on every comment (feed and detail). Tap the speaker to hear a comment, the globe to translate it into your language.",
+      "tags": [
+        "#Translation",
+        "#Accessibility"
+      ]
+    },
+    {
+      "id": "2026-09-06-07-swap-languages",
+      "text": "The NOTE → YEET swap page at justyeet.it/swap.html now speaks all eighteen YEET languages and follows the language you chose in the app. Same fixed rate, same rules: 100 NOTE = 1 YEET, no Yeet fee, swaps stay locked until the contract is live.",
+      "tags": [
+        "#Swap",
+        "#i18n"
+      ]
     }
   ]
 }

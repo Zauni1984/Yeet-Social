@@ -74,7 +74,7 @@ User-NOTE-Wallet ──(NOTE-Tx, Gebühr zahlt User)──▶ persönliche Einza
 
 **Bereits umgesetzt (im Repo):**
 
-- ✅ Öffentliche Swap-Seite `frontend/swap.html` (DE/EN, Rechner, Sperr-Banner,
+- ✅ Öffentliche Swap-Seite `frontend/swap.html` (18 Sprachen über `SWAP_DICTS`, Sprache aus `localStorage.yeet_lang` wie die App, Rechner, Sperr-Banner,
   liest `GET /api/v1/swap/status`; sobald `enabled`, erscheint der Ablauf
   „Einzahladresse anfordern → Adresse + eigene Einzahlungen").
 - ✅ Migration `0044_note_swap.sql`: `swap_addresses` (1 Adresse ↔ 1 User),

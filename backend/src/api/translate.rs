@@ -116,3 +116,53 @@ pub async fn translate_post(
         text: tr.text, source_lang: source, target_lang: target, cached: false, same_language: false,
     })))
 }
+
+/// POST /api/v1/comments/:id/translate — same contract as posts. Comments
+/// carry no stored language, so the free heuristic decides "already in
+/// the target language" before anything is sent to the provider.
+pub async fn translate_comment(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Path(id): Path<Uuid>,
+    Json(req): Json<TranslateRequest>,
+) -> AppResult<Json<ApiResponse<TranslateResponse>>> {
+    let cfg = translate::config();
+    if !cfg.enabled() { return Err(AppError::Forbidden("TRANSLATION_DISABLED".into())); }
+    let target = translate::normalize_lang(&req.target)
+        .filter(|l| translate::is_supported(l))
+        .ok_or_else(|| AppError::Validation("UNSUPPORTED_TARGET".into()))?;
+    match rate_limit::check_two_window(&state.cache, "translate", &auth.address, 60, 20, 3600, 300).await {
+        RateLimitOutcome::Allowed => {}
+        _ => return Err(AppError::RateLimited),
+    }
+    let content: String = sqlx::query_scalar("SELECT content FROM comments WHERE id = $1")
+        .bind(id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
+        .ok_or_else(|| AppError::NotFound("Comment not found".into()))?;
+    let known = translate::heuristic_detect(&content);
+    if known.as_deref() == Some(target.as_str()) {
+        return Ok(Json(ApiResponse::ok(TranslateResponse {
+            text: content, source_lang: known, target_lang: target, cached: true, same_language: true,
+        })));
+    }
+    if let Some((text, source_lang)) = sqlx::query_as::<_, (String, Option<String>)>(
+        "SELECT text, source_lang FROM comment_translations WHERE comment_id = $1 AND target_lang = $2"
+    ).bind(id).bind(&target).fetch_optional(state.db.pool()).await.map_err(AppError::Database)? {
+        return Ok(Json(ApiResponse::ok(TranslateResponse { text, source_lang, target_lang: target, cached: true, same_language: false })));
+    }
+    let tr = translate::translate(&cfg, &content, &target, known.as_deref()).await.map_err(|e| {
+        tracing::warn!("translate: comment {id} → {target}: {e}");
+        AppError::Internal("TRANSLATION_FAILED".into())
+    })?;
+    let source = tr.source_lang.clone().or(known);
+    if source.as_deref() == Some(target.as_str()) {
+        return Ok(Json(ApiResponse::ok(TranslateResponse { text: content, source_lang: source, target_lang: target, cached: false, same_language: true })));
+    }
+    sqlx::query(
+        "INSERT INTO comment_translations (comment_id, target_lang, source_lang, text, provider)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (comment_id, target_lang) DO UPDATE
+           SET text = EXCLUDED.text, source_lang = EXCLUDED.source_lang, provider = EXCLUDED.provider"
+    ).bind(id).bind(&target).bind(&source).bind(&tr.text).bind(cfg.provider_name().unwrap_or("unknown"))
+    .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok(TranslateResponse { text: tr.text, source_lang: source, target_lang: target, cached: false, same_language: false })))
+}
