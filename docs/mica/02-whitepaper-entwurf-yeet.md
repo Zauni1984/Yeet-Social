@@ -47,8 +47,8 @@ als Einleitung zu lesen ist; Kaufentscheidung nur auf Basis des gesamten Whitepa
 
 | Feld | Angabe |
 | --- | --- |
-| Name / Rechtsform | ⟦TODO(verify): Rechtsträger, z. B. GmbH⟧ |
-| Eingetragene Anschrift / Sitz | ⟦…⟧ |
+| Name / Rechtsform | BlockSocial UG (haftungsbeschränkt) |
+| Eingetragene Anschrift / Sitz | Kratzmühlstr. 14, 92339 Beilngries, Deutschland |
 | Registernummer / LEI | ⟦…⟧ |
 | Kontakt (E-Mail, Website) | ⟦…⟧ / https://justyeet.it |
 | Leitungsorgan | ⟦Namen, Funktionen⟧ |

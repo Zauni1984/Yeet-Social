@@ -253,6 +253,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 .legal-page{display:none;position:fixed;inset:0;z-index:300;background:var(--bg);color:var(--text);overflow-y:auto;padding:24px;line-height:1.65;font-size:14px}
 .legal-page.on{display:block}
 .legal-page-inner{max-width:780px;margin:0 auto;padding:32px 8px 80px}
+.legal-lang{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.legal-lang button{background:transparent;border:none;color:var(--muted);padding:6px 12px;cursor:pointer;font-size:13px}
+.legal-lang button.on{background:var(--accent);color:var(--on-accent);font-weight:700}
 .legal-page h1{color:var(--yeet);font-size:28px;margin:0 0 8px;font-weight:800}
 .legal-page h2{color:var(--text);font-size:18px;margin:24px 0 8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:4px}
 .legal-page h3{color:var(--text);font-size:15px;margin:18px 0 6px;font-weight:700}
@@ -875,6 +878,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 (function(){
   var DICTS = {
     en: {
+      'legal.back':'Back to YEET Social',
       // --- feed filter ---
       'ff.title':'Feed filter',
       'ff.hint':'Show only posts in certain languages or from certain countries. Applies to the global feed, Audio and 18+. Following always stays complete.',
@@ -1304,6 +1308,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'No comments yet',
     },
     de: {
+      'legal.back':'Zurück zu YEET Social',
       // --- feed filter ---
       'ff.title':'Feed-Filter',
       'ff.hint':'Zeige nur Posts in bestimmten Sprachen oder aus bestimmten Ländern. Gilt für den globalen Feed, Audio und 18+. „Gefolgt" bleibt immer vollständig.',
@@ -1711,6 +1716,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'comments.empty':'Noch keine Kommentare',
     },
     it: {
+      'legal.back':'Torna a YEET Social',
       // --- feed filter ---
       'ff.title':'Filtro del feed',
       'ff.hint':'Mostra solo post in certe lingue o da certi paesi. Vale per il feed globale, Audio e 18+. „Seguiti" resta sempre completo.',
@@ -2393,6 +2399,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portoghese','settings.langFinnish':'Finlandese','settings.langSwedish':'Svedese','settings.langNorwegian':'Norvegese','settings.langIcelandic':'Islandese','settings.langCzech':'Ceco','settings.langDanish':'Danese','settings.langDutch':'Olandese','settings.langPolish':'Polacco','settings.langCroatian':'Croato','settings.langSerbian':'Serbo','settings.langTurkish':'Turco','settings.langLatvian':'Lettone',
     },
     fr: {
+      'legal.back':'Retour à YEET Social',
       // --- feed filter ---
       'ff.title':'Filtre du fil',
       'ff.hint':'Affiche uniquement les posts dans certaines langues ou de certains pays. S\'applique au fil global, à Audio et à 18+. « Abonnements » reste toujours complet.',
@@ -3075,6 +3082,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugais','settings.langFinnish':'Finnois','settings.langSwedish':'Suédois','settings.langNorwegian':'Norvégien','settings.langIcelandic':'Islandais','settings.langCzech':'Tchèque','settings.langDanish':'Danois','settings.langDutch':'Néerlandais','settings.langPolish':'Polonais','settings.langCroatian':'Croate','settings.langSerbian':'Serbe','settings.langTurkish':'Turc','settings.langLatvian':'Letton',
     },
     es: {
+      'legal.back':'Volver a YEET Social',
       // --- feed filter ---
       'ff.title':'Filtro del feed',
       'ff.hint':'Muestra solo posts en ciertos idiomas o de ciertos países. Se aplica al feed global, Audio y 18+. „Siguiendo" siempre se muestra completo.',
@@ -3757,6 +3765,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Portugués','settings.langFinnish':'Finés','settings.langSwedish':'Sueco','settings.langNorwegian':'Noruego','settings.langIcelandic':'Islandés','settings.langCzech':'Checo','settings.langDanish':'Danés','settings.langDutch':'Neerlandés','settings.langPolish':'Polaco','settings.langCroatian':'Croata','settings.langSerbian':'Serbio','settings.langTurkish':'Turco','settings.langLatvian':'Letón',
     },
     pt: {
+      'legal.back':'Voltar ao YEET Social',
       // --- feed filter ---
       'ff.title':'Filtro do feed',
       'ff.hint':'Mostre só posts em certos idiomas ou de certos países. Vale para o feed global, Áudio e 18+. „Seguindo" continua sempre completo.',
@@ -4439,6 +4448,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPortuguese':'Português','settings.langFinnish':'Finlandês','settings.langSwedish':'Sueco','settings.langNorwegian':'Norueguês','settings.langIcelandic':'Islandês','settings.langCzech':'Tcheco','settings.langDanish':'Dinamarquês','settings.langDutch':'Holandês','settings.langPolish':'Polonês','settings.langCroatian':'Croata','settings.langSerbian':'Sérvio','settings.langTurkish':'Turco','settings.langLatvian':'Letão',
     },
     fi: {
+      'legal.back':'Takaisin YEET Socialiin',
       // --- feed filter ---
       'ff.title':'Syötteen suodatin',
       'ff.hint':'Näytä vain tietynkieliset tai tietyistä maista tulevat postaukset. Koskee yleistä syötettä, Ääntä ja 18+. „Seuratut" pysyy aina täydellisenä.',
@@ -5123,6 +5133,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'islanti','settings.langCzech':'tšekki','settings.langDanish':'tanska','settings.langDutch':'hollanti','settings.langPolish':'puola','settings.langCroatian':'kroatia','settings.langSerbian':'serbia','settings.langTurkish':'turkki','settings.langLatvian':'latvia',
     },
     sv: {
+      'legal.back':'Tillbaka till YEET Social',
       // --- feed filter ---
       'ff.title':'Flödesfilter',
       'ff.hint':'Visa bara inlägg på vissa språk eller från vissa länder. Gäller det globala flödet, Ljud och 18+. „Följer" är alltid komplett.',
@@ -5807,6 +5818,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'isländska','settings.langCzech':'tjeckiska','settings.langDanish':'danska','settings.langDutch':'nederländska','settings.langPolish':'polska','settings.langCroatian':'kroatiska','settings.langSerbian':'serbiska','settings.langTurkish':'turkiska','settings.langLatvian':'lettiska',
     },
     nb: {
+      'legal.back':'Tilbake til YEET Social',
       // --- feed filter ---
       'ff.title':'Feedfilter',
       'ff.hint':'Vis bare innlegg på visse språk eller fra visse land. Gjelder den globale feeden, Lyd og 18+. „Følger" er alltid komplett.',
@@ -6491,6 +6503,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'islandsk','settings.langCzech':'tsjekkisk','settings.langDanish':'dansk','settings.langDutch':'nederlandsk','settings.langPolish':'polsk','settings.langCroatian':'kroatisk','settings.langSerbian':'serbisk','settings.langTurkish':'tyrkisk','settings.langLatvian':'latvisk',
     },
     is: {
+      'legal.back':'Til baka á YEET Social',
       // --- feed filter ---
       'ff.title':'Sía fyrir strauminn',
       'ff.hint':'Sýna aðeins færslur á ákveðnum tungumálum eða frá ákveðnum löndum. Gildir um heimsstrauminn, Hljóð og 18+. „Fylgt" er alltaf heilt.',
@@ -7175,6 +7188,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langIcelandic':'íslenska','settings.langCzech':'tékkneska','settings.langDanish':'danska','settings.langDutch':'hollenska','settings.langPolish':'pólska','settings.langCroatian':'króatíska','settings.langSerbian':'serbneska','settings.langTurkish':'tyrkneska','settings.langLatvian':'lettneska',
     },
     cs: {
+      'legal.back':'Zpět na YEET Social',
       'ff.title':'Filtr feedu',
       'ff.hint':'Zobrazuj jen příspěvky v určitých jazycích nebo z určitých zemí. Platí pro globální feed, Audio a 18+. Sledovaní zůstávají vždy kompletní.',
       'ff.langTitle':'Jazyky',
@@ -7862,6 +7876,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'polština','settings.langCroatian':'chorvatština','settings.langSerbian':'srbština','settings.langTurkish':'turečtina','settings.langLatvian':'lotyština',
     },
     da: {
+      'legal.back':'Tilbage til YEET Social',
       'ff.title':'Feedfilter',
       'ff.hint':'Vis kun opslag på bestemte sprog eller fra bestemte lande. Gælder for det globale feed, Audio og 18+. Følger forbliver altid komplet.',
       'ff.langTitle':'Sprog',
@@ -8549,6 +8564,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'polsk','settings.langCroatian':'kroatisk','settings.langSerbian':'serbisk','settings.langTurkish':'tyrkisk','settings.langLatvian':'lettisk',
     },
     nl: {
+      'legal.back':'Terug naar YEET Social',
       'ff.title':'Feedfilter',
       'ff.hint':'Toon alleen posts in bepaalde talen of uit bepaalde landen. Geldt voor de globale feed, Audio en 18+. Volgend blijft altijd volledig.',
       'ff.langTitle':'Talen',
@@ -9236,6 +9252,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'Pools','settings.langCroatian':'Kroatisch','settings.langSerbian':'Servisch','settings.langTurkish':'Turks','settings.langLatvian':'Lets',
     },
     pl: {
+      'legal.back':'Wróć do YEET Social',
       'ff.title':'Filtr kanału',
       'ff.hint':'Pokazuj tylko posty w wybranych językach lub z wybranych krajów. Dotyczy kanału globalnego, Audio i 18+. Obserwowani zawsze pozostają w całości.',
       'ff.langTitle':'Języki',
@@ -9923,6 +9940,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langPolish':'polski','settings.langCroatian':'chorwacki','settings.langSerbian':'serbski','settings.langTurkish':'turecki','settings.langLatvian':'łotewski',
     },
     hr: {
+      'legal.back':'Natrag na YEET Social',
       'ff.title':'Filter feeda',
       'ff.hint':'Prikaži samo objave na određenim jezicima ili iz određenih zemalja. Vrijedi za globalni feed, Audio i 18+. Pratim uvijek ostaje potpun.',
       'ff.langTitle':'Jezici',
@@ -10614,6 +10632,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langLatvian':'latvijski',
     },
     sr: {
+      'legal.back':'Nazad na YEET Social',
       'ff.title':'Filter fida',
       'ff.hint':'Prikaži samo objave na određenim jezicima ili iz određenih zemalja. Važi za globalni fid, Audio i 18+. Fid Pratim uvek ostaje potpun.',
       'ff.langTitle':'Jezici',
@@ -11305,6 +11324,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langLatvian':'letonski',
     },
     tr: {
+      'legal.back':'YEET Social\'a geri dön',
       'ff.title':'Feed filtresi',
       'ff.hint':'Yalnızca belirli dillerdeki veya belirli ülkelerden gelen gönderileri göster. Genel akış, Ses ve 18+ için geçerlidir. Takip akışı her zaman eksiksiz kalır.',
       'ff.langTitle':'Diller',
@@ -11996,6 +12016,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'settings.langLatvian':'Letonca',
     },
     lv: {
+      'legal.back':'Atpakaļ uz YEET Social',
       'ff.title':'Plūsmas filtrs',
       'ff.hint':'Rādīt tikai ierakstus noteiktās valodās vai no noteiktām valstīm. Attiecas uz globālo plūsmu, Audio un 18+. „Sekoju” vienmēr paliek pilna.',
       'ff.langTitle':'Valodas',
@@ -17812,7 +17833,10 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 
 <div class="legal-page" id="legalPage" role="region" aria-label="Legal information">
   <div class="legal-page-inner">
-    <button class="legal-back" onclick="closeLegalPage()" type="button">&larr; Back to YEET Social</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <button class="legal-back" onclick="closeLegalPage()" type="button">&larr; <span data-i18n="legal.back">Back to YEET Social</span></button>
+      <div class="legal-lang" role="group" aria-label="Language"><button type="button" data-legal-lang="de" onclick="setLegalLang('de')">Deutsch</button><button type="button" data-legal-lang="en" onclick="setLegalLang('en')">English</button></div>
+    </div>
 
     <article id="legal-imprint">
       <h1>Imprint</h1>
@@ -18159,6 +18183,352 @@ Kratzm&uuml;hlstr. 14
 info@blocksocial.eu</address>
     </article>
 
+    <!-- German versions (shown when the UI language is German or the on-page toggle says so) -->
+    <article id="legal-imprint-de" lang="de">
+      <h1>Impressum</h1>
+      <p class="legal-meta">Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz) und § 18 Abs. 2 MStV (Medienstaatsvertrag).</p>
+
+      <h2>Betreiber</h2>
+      <address>BlockSocial UG (haftungsbeschränkt)
+Kratzmühlstr. 14
+92339 Beilngries
+Deutschland
+
+Telefon: +49 176 8327 5353
+E-Mail: info@blocksocial.eu</address>
+
+      <h2>Geschäftsführer</h2>
+      <p>Alexandre Ederer, Stefan Zaunreither</p>
+
+      <h2>Handelsregister</h2>
+      <p>Amtsgericht Ingolstadt, Registernummer HRB 11740.</p>
+
+      <h2>Umsatzsteuer-Identifikationsnummer</h2>
+      <p>Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz: <strong>DE354082556</strong>.</p>
+
+      <h2>Verantwortlich für redaktionelle Inhalte</h2>
+      <p>Verantwortlich für journalistisch-redaktionelle Inhalte gemäß § 18 Abs. 2 MStV: Alexandre Ederer und Stefan Zaunreither, Anschrift wie oben angegeben.</p>
+
+      <h2>Online-Streitbeilegung</h2>
+      <p>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung bereit, die unter <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a> erreichbar ist.</p>
+
+      <h2>Verbraucherstreitbeilegung</h2>
+      <p>Wir sind weder bereit noch verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+
+      <h2>Haftung für Inhalte</h2>
+      <p>Die Inhalte dieser Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt. Eine diesbezügliche Haftung ist jedoch erst ab dem Zeitpunkt der Kenntnis einer konkreten Rechtsverletzung möglich. Bei Bekanntwerden von entsprechenden Rechtsverletzungen werden wir diese Inhalte umgehend entfernen.</p>
+
+      <h2>Haftung für Links</h2>
+      <p>Unsere Website enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Haftung übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft; rechtswidrige Inhalte waren zum Zeitpunkt der Verlinkung nicht erkennbar. Eine permanente inhaltliche Kontrolle der verlinkten Seiten ist jedoch ohne konkrete Anhaltspunkte einer Rechtsverletzung nicht zumutbar. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Links umgehend entfernen.</p>
+
+      <h2>Urheberrecht</h2>
+      <p>Die durch den Betreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet. Soweit die Inhalte auf dieser Seite nicht vom Betreiber erstellt wurden, werden die Urheberrechte Dritter beachtet und als solche gekennzeichnet.</p>
+    </article>
+
+    <article id="legal-privacy-de" lang="de">
+      <h1>Datenschutzerklärung</h1>
+      <p class="legal-meta">Stand: 8. Mai 2026.</p>
+
+      <h2>1. Verantwortlicher</h2>
+      <p>Verantwortlicher im Sinne von Art. 4 Nr. 7 der Datenschutz-Grundverordnung (DSGVO) ist:</p>
+      <address>BlockSocial UG (haftungsbeschränkt)
+Kratzmühlstr. 14
+92339 Beilngries, Deutschland
+E-Mail: info@blocksocial.eu
+Telefon: +49 176 8327 5353</address>
+
+      <h2>2. Datenschutzbeauftragter</h2>
+      <p>Wir haben einen Datenschutzbeauftragten benannt:</p>
+      <address>Stefan Zaunreither
+c/o BlockSocial UG (haftungsbeschränkt), Anschrift wie oben
+E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
+
+      <h2>3. Geltungsbereich</h2>
+      <p>Diese Datenschutzerklärung gilt für die unter justyeet.it erreichbare Plattform YEET Social (der „Dienst“), unsere auf der BNB Smart Chain bereitgestellten Smart Contracts sowie alle zugehörigen Subdomains.</p>
+
+      <h2>4. Kategorien der von uns verarbeiteten personenbezogenen Daten</h2>
+
+      <h3>4.1 Kontodaten</h3>
+      <ul>
+        <li>E-Mail-Adresse (nur, wenn Sie sich per E-Mail registrieren)</li>
+        <li>Benutzername und Anzeigename</li>
+        <li>Passwort-Hash (bcrypt – Ihr Passwort im Klartext ist für uns zu keinem Zeitpunkt einsehbar)</li>
+        <li>Öffentliche Wallet-Adresse im Ethereum-Format (wenn Sie sich mit einer Wallet anmelden)</li>
+        <li>Status der E-Mail-Verifizierung</li>
+      </ul>
+
+      <h3>4.2 Profildaten</h3>
+      <ul>
+        <li>Anzeigename (optional)</li>
+        <li>Biografie (optional)</li>
+        <li>Profilbild (optional, auf unsere Server hochgeladen)</li>
+        <li>Titelbild (optional, auf unsere Server hochgeladen)</li>
+      </ul>
+
+      <h3>4.3 Inhaltsdaten</h3>
+      <ul>
+        <li>Von Ihnen erstellte Beiträge („Yeets“) – Text, angehängte Bilder, Sichtbarkeitseinstellungen, Inhaltskennzeichnungen (z. B. 18+), Pay-per-View-Preis und Zeitstempel</li>
+        <li>Kommentare, Likes und Reshares</li>
+        <li>Von Ihnen eingereichte Meldungen zu fremden Inhalten</li>
+        <li>Vom Dienst empfangene Benachrichtigungen</li>
+        <li>Folgebeziehungen zu anderen Nutzern</li>
+      </ul>
+
+      <h3>4.4 Transaktionsdaten</h3>
+      <ul>
+        <li>Trinkgeld-Datensätze (Absender, Empfänger, Betrag, Währung, Zeitstempel, optionale Beitragsreferenz)</li>
+        <li>Paper-Wallet-Datensätze (Aussteller, Betrag, Status, Hash des Einlösegeheimnisses, Zeitstempel)</li>
+        <li>NFT-Minting-Ereignisse</li>
+        <li>Pay-per-View-Freischaltungen</li>
+      </ul>
+
+      <h3>4.5 Technische Daten</h3>
+      <ul>
+        <li>IP-Adresse (kurzzeitig, zur Ratenbegrenzung und Missbrauchserkennung)</li>
+        <li>Browser-/User-Agent-Metadaten (kurzzeitig, in Serverprotokollen)</li>
+        <li>JSON Web Tokens (JWT), die im localStorage Ihres Browsers gespeichert werden</li>
+        <li>Sprach- und Inhaltseinstellungen</li>
+      </ul>
+
+      <h3>4.6 Daten zur Altersverifikation</h3>
+      <p>Wenn Sie auf 18+-Inhalte zugreifen möchten, verarbeiten wir biometrische Daten (eine einmalige Gesichtsaufnahme, anhand derer Ihr Alter in einem automatisierten Verfahren geschätzt wird). Die Aufnahme wird innerhalb der Sitzung verarbeitet; nur das Ergebnis – eine Kennzeichnung „verifiziert ≥ 18“ in Ihrem Konto – wird gespeichert. Diese Verarbeitung erfordert Ihre ausdrückliche Einwilligung gemäß Art. 9 Abs. 2 lit. a DSGVO.</p>
+
+      <h2>5. Zwecke und Rechtsgrundlagen der Verarbeitung</h2>
+      <ul>
+        <li><strong>Betrieb Ihres Kontos und Bereitstellung des Dienstes.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO – Erfüllung eines Vertrags.</li>
+        <li><strong>E-Mail-Verifizierung, Zurücksetzen des Passworts, transaktionsbezogene Benachrichtigungen.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.</li>
+        <li><strong>Wallet-basierte Authentifizierung.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO. Wir prüfen den Besitz eines privaten Schlüssels, indem wir Sie auffordern, eine einmalige Challenge zu signieren. Ihren privaten Schlüssel erhalten wir zu keinem Zeitpunkt.</li>
+        <li><strong>Altersverifikation für 18+-Inhalte.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. c DSGVO (rechtliche Verpflichtung nach dem Jugendschutzgesetz, JuSchG) in Verbindung mit Art. 9 Abs. 2 lit. a DSGVO (Ihre ausdrückliche Einwilligung in die Verarbeitung biometrischer Daten).</li>
+        <li><strong>Sicherheit, Betrugsprävention, Missbrauchsabwehr.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO – unser berechtigtes Interesse an einem sicheren und stabilen Betrieb des Dienstes.</li>
+        <li><strong>Verbesserung und Analyse des Dienstes.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Wir verwenden ausschließlich minimale, aggregierte Daten und verkaufen Ihre personenbezogenen Daten nicht an Werbetreibende und geben sie nicht an diese weiter.</li>
+      </ul>
+
+      <h2>6. Cookies und ähnliche Technologien</h2>
+      <p>Wir verwenden keine Tracking-Cookies Dritter, keine Werbe-Pixel und keine Analysepakete. Der Dienst nutzt den localStorage und sessionStorage Ihres Browsers für die in unseren <a href="/legal/cookies" data-legal="cookies">Cookie-Hinweisen</a> aufgeführten Einträge. Diese sind für den Betrieb des Dienstes unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 des Telekommunikation-Digitale-Dienste-Datenschutz-Gesetzes, TDDDG, vormals TTDSG) und bedürfen keiner Einwilligung.</p>
+
+      <h2>7. Empfänger und Auftragsverarbeiter</h2>
+      <h3>7.1 Hosting</h3>
+      <p>Der Dienst wird auf einem Server innerhalb der Europäischen Union gehostet (Anbieter: Hostinger International Ltd., EU-Rechenzentrum).</p>
+
+      <h3>7.2 E-Mail-Versand</h3>
+      <p>Für transaktionsbezogene E-Mails (z. B. Verifizierung) nutzen wir einen von uns konfigurierten SMTP-Anbieter. Der derzeitige Anbieter ist innerhalb der EU tätig.</p>
+
+      <h3>7.3 Öffentliche Blockchain (BNB Smart Chain)</h3>
+      <p>Von Ihnen veranlasste On-Chain-Aktionen – Trinkgelder mit On-Chain-Bestätigung, NFT-Minting, Interaktionen mit Smart Contracts – erzeugen Datensätze, die auf der BNB Smart Chain gespeichert werden. <strong>Diese Datensätze sind öffentlich, werden weltweit auf unzähligen Knoten repliziert und können weder von uns noch von einer anderen einzelnen Partei verändert oder gelöscht werden.</strong> Mit der Nutzung von On-Chain-Funktionen akzeptieren Sie, dass Ihre Wallet-Adresse und die zugehörigen Transaktionsdetails dauerhaft öffentlich sind. Dies ist eine unvermeidbare Eigenschaft der Blockchain-Technologie.</p>
+
+      <h3>7.4 Content Delivery Networks</h3>
+      <p>Der Dienst lädt beim ersten Seitenaufruf kleine JavaScript-Bibliotheken von öffentlichen CDNs (derzeit cdnjs.cloudflare.com). Als Nebeneffekt jeder HTTP-Anfrage kann Ihre IP-Adresse für diese Anbieter sichtbar sein. Wir wählen Anbieter mit erklärter DSGVO-Konformität; deren Datenschutzpraktiken im Einzelnen kontrollieren wir nicht.</p>
+
+      <h3>7.5 Strafverfolgungsbehörden</h3>
+      <p>Wir geben Daten nur dann weiter, wenn wir hierzu rechtlich verpflichtet sind (gerichtliche Anordnung, gesetzliche Verpflichtung).</p>
+
+      <h2>8. Internationale Datenübermittlungen</h2>
+      <p>Die von uns gespeicherten personenbezogenen Daten werden innerhalb der Europäischen Union gespeichert. Soweit unvermeidbar (z. B. bei CDNs), stützen wir uns auf die Standardvertragsklauseln der Anbieter oder gleichwertige, nach Kapitel V DSGVO anerkannte Übermittlungsmechanismen.</p>
+
+      <h2>9. Speicherdauer</h2>
+      <ul>
+        <li>Als „flüchtig“ (ephemeral) gekennzeichnete Beiträge (Standardeinstellung): werden 24 Stunden nach der Erstellung automatisch aus der Datenbank gelöscht.</li>
+        <li>Als „dauerhaft“ (permanent) gekennzeichnete Beiträge: werden gespeichert, bis Sie sie oder Ihr Konto löschen.</li>
+        <li>Kommentare / Likes / Reshares: werden zusammen mit dem übergeordneten Beitrag gespeichert; sie werden gelöscht, wenn der übergeordnete Beitrag gelöscht wird oder wenn Sie sie löschen.</li>
+        <li>Kontodaten: werden gespeichert, bis Sie Ihr Konto löschen.</li>
+        <li>Trinkgeld- und Paper-Wallet-Datensätze: werden bis zu zehn Jahre aufbewahrt, um die handels- und steuerrechtlichen Aufbewahrungspflichten (HGB, AO) zu erfüllen.</li>
+        <li>Server-Zugriffsprotokolle: werden rotiert und nach 14 Tagen gelöscht.</li>
+        <li>Ergebniskennzeichnung der Altersverifikation: wird gespeichert, solange Ihr Konto besteht.</li>
+      </ul>
+
+      <h2>10. Ihre Rechte als betroffene Person</h2>
+      <p>Nach der DSGVO stehen Ihnen die folgenden Betroffenenrechte zu:</p>
+      <ul>
+        <li><strong>Auskunft (Art. 15)</strong> – Sie können eine Kopie der personenbezogenen Daten anfordern, die wir über Sie gespeichert haben. Der Dienst bietet unter Einstellungen → Datenschutz → „Meine Daten exportieren“ einen Export per Klick an.</li>
+        <li><strong>Berichtigung (Art. 16)</strong> – Sie können unrichtige Daten über Ihre Profileinstellungen oder durch Kontaktaufnahme mit uns berichtigen lassen.</li>
+        <li><strong>Löschung (Art. 17)</strong> – Sie können die Löschung Ihres Kontos und der zugehörigen Daten unter Einstellungen → Datenschutz → „Konto dauerhaft löschen“ beantragen. <strong>Datensätze auf der öffentlichen Blockchain können nicht gelöscht werden</strong> (siehe § 7.3).</li>
+        <li><strong>Einschränkung der Verarbeitung (Art. 18)</strong>.</li>
+        <li><strong>Datenübertragbarkeit (Art. 20)</strong> – Sie erhalten Ihre Daten in einem strukturierten, maschinenlesbaren Format (JSON).</li>
+        <li><strong>Widerspruch (Art. 21)</strong> – gegen Verarbeitungen, die auf Art. 6 Abs. 1 lit. f beruhen.</li>
+        <li><strong>Widerruf der Einwilligung (Art. 7 Abs. 3)</strong> – jederzeit, ohne dass die Rechtmäßigkeit der bis zum Widerruf erfolgten Verarbeitung berührt wird.</li>
+        <li><strong>Beschwerde bei einer Aufsichtsbehörde (Art. 77)</strong> – für unseren Sitz ist dies das Bayerische Landesamt für Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach, Deutschland, <a href="https://www.lda.bayern.de" target="_blank" rel="noopener">www.lda.bayern.de</a>.</li>
+      </ul>
+      <p>Zur Ausübung dieser Rechte wenden Sie sich bitte per E-Mail an info@blocksocial.eu. Wir antworten innerhalb eines Monats (Art. 12 Abs. 3 DSGVO).</p>
+
+      <h2>11. Automatisierte Entscheidungsfindung</h2>
+      <p>Wir führen keine automatisierte Entscheidungsfindung mit rechtlicher Wirkung oder ähnlich erheblicher Beeinträchtigung durch (Art. 22 DSGVO), mit Ausnahme der optionalen Altersverifikation, die der Einhaltung des deutschen Jugendschutzrechts dient und die Sie ablehnen können (in diesem Fall können Sie nicht auf 18+-Inhalte zugreifen).</p>
+
+      <h2>12. Änderungen dieser Datenschutzerklärung</h2>
+      <p>Wir können diese Datenschutzerklärung überarbeiten. Die jeweils aktuelle Fassung einschließlich des Datums der letzten Aktualisierung ist stets unter dieser URL abrufbar. Wesentliche Änderungen werden in der App hervorgehoben.</p>
+
+      <h2>13. Kontakt</h2>
+      <p>Bei Fragen zum Datenschutz senden Sie bitte eine E-Mail an info@blocksocial.eu (Betreff „Datenschutz“) oder schreiben Sie an die in § 1 genannte Anschrift.</p>
+    </article>
+
+    <article id="legal-terms-de" lang="de">
+      <h1>Nutzungsbedingungen</h1>
+      <p class="legal-meta">Stand: 8. Mai 2026.</p>
+      <p>Diese Nutzungsbedingungen („Bedingungen“) regeln Ihren Zugang zu und Ihre Nutzung der Plattform YEET Social, die von der BlockSocial UG (haftungsbeschränkt) („wir“, „uns“, „BlockSocial“) betrieben wird. Indem Sie ein Konto erstellen, sich mit einer Wallet anmelden oder den Dienst anderweitig nutzen, erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst bitte nicht.</p>
+
+      <h2>1. Der Dienst</h2>
+      <p>YEET Social ist eine Web3-native Social-Media-Plattform, die Kurzbeiträge, On-Chain-Trinkgelder für Creator, NFT-Minting, Paper Wallets und weitere blockchainbezogene Funktionen vereint. Einige Inhalte sind flüchtig und werden standardmäßig nach 24 Stunden automatisch gelöscht; andere können als „dauerhaft“ gekennzeichnet werden. Tokenbezogene Funktionen nutzen den auf der BNB Smart Chain bereitgestellten YEET-Token oder ein von uns geführtes, verwahrendes Off-Chain-Kontobuch.</p>
+
+      <h2>2. Nutzungsvoraussetzungen</h2>
+      <p>Für die Erstellung eines Kontos müssen Sie mindestens 16 Jahre alt sein. Für den Zugriff auf als 18+ gekennzeichnete Inhalte müssen Sie mindestens 18 Jahre alt sein und unsere Altersverifikation durchlaufen. Mit der Nutzung des Dienstes versichern Sie, dass Sie diese Voraussetzungen erfüllen und dass Ihre Nutzung des Dienstes an Ihrem Wohnsitz rechtmäßig ist.</p>
+
+      <h2>3. Registrierung und Kontosicherheit</h2>
+      <ul>
+        <li>Sie können sich mit einer E-Mail-Adresse und einem Passwort registrieren oder sich anmelden, indem Sie eine Challenge mit einer von Ihnen kontrollierten, selbstverwahrten Kryptowährungs-Wallet signieren.</li>
+        <li>Sie sind dafür verantwortlich, Ihre Zugangsdaten, Ihr Passwort und die privaten Schlüssel Ihrer Wallet geheim zu halten. Wir haben keine Möglichkeit, verlorene private Schlüssel, verlorene Seed-Phrasen oder verlorene Paper-Wallet-Einlösecodes wiederherzustellen.</li>
+        <li>Sie müssen bei der Registrierung zutreffende Angaben machen und diese aktuell halten.</li>
+        <li>Sie dürfen nicht mehrere Konten unterhalten, um Sperrungen zu umgehen, Trinkgelder/Reaktionen zu manipulieren oder diese Bedingungen anderweitig zu umgehen.</li>
+      </ul>
+
+      <h2>4. Ihre Inhalte</h2>
+      <p>Sie behalten alle Rechte an den von Ihnen veröffentlichten Inhalten (die „Nutzerinhalte“). Mit der Veröffentlichung räumen Sie BlockSocial ein weltweites, nicht ausschließliches, unentgeltliches, unterlizenzierbares und übertragbares Recht ein, die Nutzerinhalte zu hosten, zu speichern, zu vervielfältigen, zu bearbeiten (z. B. Größenanpassung/Transkodierung), zu veröffentlichen, öffentlich wiederzugeben und öffentlich zugänglich zu machen, ausschließlich zu den begrenzten Zwecken des Betriebs, der Darstellung und der Verbesserung des Dienstes. Diese Lizenz endet innerhalb einer angemessenen Frist nach Löschung der Nutzerinhalte durch Sie, soweit sie nicht erforderlich ist, um (i) gesetzliche Vorgaben zu erfüllen, (ii) Sicherungskopien vorzuhalten oder (iii) On-Chain-Datensätze zu erhalten, die nicht entfernt werden können.</p>
+      <p>Sie versichern und gewährleisten, dass Sie über alle Rechte verfügen, die zur Einräumung der vorstehenden Lizenz erforderlich sind.</p>
+
+      <h2>5. Zulässige Nutzung</h2>
+      <p>Sie verpflichten sich, Folgendes zu unterlassen:</p>
+      <ul>
+        <li>Inhalte zu veröffentlichen, die rechtswidrig, verleumderisch, belästigend oder im Rechtssinne obszön sind, Minderjährige ausbeuten, geistiges Eigentum verletzen oder Persönlichkeitsrechte Dritter verletzen;</li>
+        <li>sich als eine andere Person oder Organisation auszugeben oder Ihre Zugehörigkeit falsch darzustellen;</li>
+        <li>den Dienst zum Versand von Spam, Schadsoftware oder betrügerischen Mitteilungen zu nutzen;</li>
+        <li>zu versuchen, auf Konten, Daten oder Smart-Contract-Berechtigungen zuzugreifen, die nicht Ihnen gehören;</li>
+        <li>Ratenbegrenzungen, Anti-Missbrauchs-Maßnahmen oder Sicherheitsfunktionen zu stören oder zu umgehen;</li>
+        <li>den Dienst in einer Weise zu scrapen oder zu crawlen, die mit diesen Bedingungen oder unserer <code>robots.txt</code> unvereinbar ist;</li>
+        <li>entgeltliche Leistungen anzubieten oder nachzufragen, die im Rechtsraum einer der beteiligten Parteien rechtswidrig sind;</li>
+        <li>den Dienst zur Geldwäsche, Terrorismusfinanzierung oder Umgehung von Sanktionen zu nutzen.</li>
+      </ul>
+      <p>Wir können nach eigenem Ermessen Inhalte entfernen, Funktionen einschränken sowie Konten sperren oder kündigen, die gegen diese Regeln verstoßen.</p>
+
+      <h2>6. Trinkgelder, Paper Wallets und On-Chain-Funktionen</h2>
+      <ul>
+        <li>Der YEET-Token ist ein Utility-Token, der innerhalb des Dienstes verwendet wird. Trinkgelder, Paper Wallets, NFT-Minting und Pay-per-View-Freischaltungen können off-chain (über unser internes Kontobuch) oder on-chain (über Smart Contracts auf der BNB Smart Chain) durchgeführt werden. Off-Chain-Guthaben stellen eine Verwahrverbindlichkeit der BlockSocial UG dar.</li>
+        <li><strong>Plattformgebühr:</strong> Zur Finanzierung des Betriebs des Dienstes wird eine Plattformgebühr von bis zu 10 % jedes Trinkgelds erhoben. Der genaue Satz wird Ihnen angezeigt, bevor Sie eine Transaktion bestätigen.</li>
+        <li><strong>Keine Finanzberatung:</strong> Nichts auf dem Dienst stellt eine Anlageberatung, eine Empfehlung zum Kauf oder Verkauf eines Tokens oder ein Angebot von Wertpapieren dar.</li>
+        <li><strong>Keine Wertgarantie:</strong> Token können ihren gesamten Wert verlieren. Die Wertentwicklung in der Vergangenheit ist kein Indikator für zukünftige Erträge.</li>
+        <li><strong>Unumkehrbarkeit:</strong> On-Chain-Transaktionen können von uns nach ihrer Übermittlung nicht rückgängig gemacht werden. Fehler – falsche Adressen, falsche Beträge, verlorene Schlüssel – sind endgültig.</li>
+        <li><strong>Paper Wallets sind Inhaberpapiere.</strong> Wer den ausgedruckten Einlösecode besitzt, kann die Token einlösen. Behandeln Sie sie wie Bargeld. Nicht eingelöste Paper Wallets können vom Aussteller für ungültig erklärt werden, um das gesperrte Guthaben zu erstatten; nach der Einlösung ist der Vorgang endgültig.</li>
+      </ul>
+
+      <h2>7. NFTs</h2>
+      <p>Über den Dienst geprägte NFTs bestehen auf der BNB Smart Chain. Das Eigentum an einem NFT überträgt für sich genommen kein Urheberrecht an den zugrunde liegenden Medien; es vermittelt nur das, was der jeweilige Smart Contract vorsieht. Wir sind nicht der Betreiber der BNB Smart Chain und haben keine Befugnis, den On-Chain-Zustand zu ändern, einzufrieren oder zurückzusetzen.</p>
+
+      <h2>8. 18+-Inhalte</h2>
+      <p>Der Dienst kann Inhalte anzeigen, die nur für Erwachsene geeignet sind. Solche Inhalte sind hinter einer ausdrücklichen Einstellung und einer Altersverifikation gesperrt (siehe Datenschutzerklärung § 4.6 und § 5). Es liegt in Ihrer Verantwortung, solche Inhalte nicht dort anzuzeigen, wo dies rechtswidrig ist oder wo Minderjährige sie sehen könnten.</p>
+
+      <h2>9. Meldung und Moderation</h2>
+      <p>Inhalte, die Ihrer Ansicht nach gegen diese Bedingungen oder geltendes Recht verstoßen, können Sie über die Meldefunktion in der App melden. Wir prüfen Meldungen nach Treu und Glauben, übernehmen jedoch keine Zusage hinsichtlich der Bearbeitungszeit. Wir handeln als Hosting-Anbieter im Sinne der §§ 7–10 DDG und werden auf Meldungen hin tätig, soweit dies gesetzlich vorgeschrieben ist.</p>
+
+      <h2>10. Beendigung</h2>
+      <p>Sie können Ihr Konto jederzeit löschen. Wir können Ihren Zugang mit sofortiger Wirkung sperren oder kündigen, wenn wir begründeten Anlass zu der Annahme haben, dass Sie gegen diese Bedingungen oder geltendes Recht verstoßen haben, oder wenn die weitere Bereitstellung des Dienstes für Sie uns einem rechtlichen Risiko aussetzen würde. Bestimmungen, die ihrer Natur nach fortgelten (z. B. die Lizenz an bereits veröffentlichten Inhalten, Haftungsbeschränkungen, anwendbares Recht), bleiben nach der Beendigung in Kraft.</p>
+
+      <h2>11. Gewährleistungsausschluss</h2>
+      <p>Der Dienst wird „wie besehen“ und „wie verfügbar“ ohne jegliche ausdrückliche oder stillschweigende Gewährleistung bereitgestellt, insbesondere ohne Gewährleistung der Marktgängigkeit, der Eignung für einen bestimmten Zweck, der Nichtverletzung von Rechten Dritter oder dafür, dass der Dienst ununterbrochen oder fehlerfrei verfügbar ist. Soweit wir Gewährleistungen nach geltendem Recht nicht ausschließen können, ist die Dauer jeder stillschweigenden Gewährleistung auf den gesetzlich zulässigen Mindestzeitraum beschränkt.</p>
+
+      <h2>12. Haftungsbeschränkung</h2>
+      <ul>
+        <li>BlockSocial haftet unbeschränkt für Schäden, die vorsätzlich oder grob fahrlässig verursacht wurden, für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit sowie in den Fällen, in denen eine Haftung nach dem Produkthaftungsgesetz zwingend vorgeschrieben ist.</li>
+        <li>In allen übrigen Fällen haftet BlockSocial nur bei Verletzung wesentlicher Vertragspflichten („Kardinalpflichten“), und diese Haftung ist auf den vorhersehbaren, vertragstypischen Schaden begrenzt.</li>
+        <li>BlockSocial haftet nicht für: (i) Verlust oder Diebstahl Ihrer privaten Schlüssel oder Paper-Wallet-Codes; (ii) Rückabwicklungen von On-Chain-Transaktionen oder Ausfälle von Gegenparteien; (iii) Volatilität oder Verlust des Marktwerts eines Tokens; (iv) Dienste oder Inhalte Dritter; (v) Ereignisse höherer Gewalt einschließlich Ausfällen von Blockchain-Netzwerken, Ausfällen von Handelsplätzen oder behördlichen Maßnahmen.</li>
+      </ul>
+
+      <h2>13. Freistellung</h2>
+      <p>Sie verpflichten sich, BlockSocial von allen Ansprüchen Dritter freizustellen und schadlos zu halten, die aus (i) Ihren Nutzerinhalten, (ii) Ihrem Verstoß gegen diese Bedingungen oder (iii) Ihrem Verstoß gegen Gesetze oder Rechte Dritter entstehen.</p>
+
+      <h2>14. Anwendbares Recht und Gerichtsstand</h2>
+      <p>Diese Bedingungen unterliegen dem Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts (CISG). Zwingende verbraucherschützende Bestimmungen des Staates, in dem Sie Ihren gewöhnlichen Aufenthalt haben, bleiben unberührt.</p>
+      <p>Für Nutzer, die Kaufleute im Sinne des Handelsgesetzbuchs (HGB), juristische Personen des öffentlichen Rechts oder öffentlich-rechtliche Sondervermögen sind, ist ausschließlicher Gerichtsstand Ingolstadt, Deutschland.</p>
+
+      <h2>15. Änderungen dieser Bedingungen</h2>
+      <p>Wir können diese Bedingungen aktualisieren. Wesentliche Änderungen werden mindestens 30 Tage vor ihrem Inkrafttreten in der App angekündigt. Die fortgesetzte Nutzung des Dienstes nach dem Inkrafttreten gilt als Zustimmung zu den aktualisierten Bedingungen.</p>
+
+      <h2>16. Salvatorische Klausel</h2>
+      <p>Sollte eine Bestimmung dieser Bedingungen unwirksam oder undurchsetzbar sein, bleiben die übrigen Bestimmungen davon unberührt in Kraft.</p>
+
+      <h2>17. Kontakt</h2>
+      <p>info@blocksocial.eu · BlockSocial UG (haftungsbeschränkt), Kratzmühlstr. 14, 92339 Beilngries, Deutschland.</p>
+    </article>
+
+    <article id="legal-cookies-de" lang="de">
+      <h1>Cookie-Hinweise</h1>
+      <p class="legal-meta">Stand: 8. Mai 2026.</p>
+
+      <p>Diese Cookie-Hinweise beschreiben die kleinen Datenelemente, die die Plattform YEET Social in Ihrem Browser speichert, warum wir sie verwenden und wie Sie sie kontrollieren können.</p>
+
+      <h2>Was wir verwenden</h2>
+      <p>Wir verwenden keine HTTP-Cookies für Tracking, Werbung oder Analysen durch Dritte. Stattdessen nutzen wir den localStorage und sessionStorage des Browsers für die folgenden Einträge:</p>
+
+      <table>
+        <thead><tr><th>Schlüssel</th><th>Speicher</th><th>Zweck</th><th>Speicherdauer</th></tr></thead>
+        <tbody>
+          <tr><td><code>yeet_jwt</code></td><td>localStorage</td><td>Hält Sie angemeldet (JSON Web Token, ausgestellt von unserer Authentifizierungs-API).</td><td>Bis Sie sich abmelden oder das Token abläuft.</td></tr>
+          <tr><td><code>yeet_address</code></td><td>localStorage</td><td>Ihre Wallet-Adresse, wenn Sie sich mit einer Wallet angemeldet haben.</td><td>Bis Sie sich abmelden.</td></tr>
+          <tr><td><code>yeet_lang</code></td><td>localStorage</td><td>Ihre gewählte Sprache (18 Codes: en/de/it/fr/es/pt/fi/sv/nb/is/cs/da/nl/pl/hr/sr/tr/lv).</td><td>Bis Sie den Eintrag löschen.</td></tr>
+          <tr><td><code>yeetUser</code> / <code>yeetWallet</code> / <code>yeetToken</code> / <code>yt</code></td><td>localStorage</td><td>Interne Sitzungsmetadaten (aus Kompatibilitätsgründen beibehaltene Alt-Schlüssel).</td><td>Bis Sie sich abmelden.</td></tr>
+          <tr><td><code>yeet_pending_redeem</code></td><td>sessionStorage</td><td>Hält vorübergehend einen Paper-Wallet-Einlösecode vor, während Sie sich zum Einlösen anmelden.</td><td>Bis der Browser-Tab geschlossen wird.</td></tr>
+        </tbody>
+      </table>
+
+      <p>Diese Einträge sind für den Betrieb des Dienstes <strong>unbedingt erforderlich</strong> (§ 25 Abs. 2 Nr. 2 TDDDG, vormals TTDSG). Ohne sie können Sie weder angemeldet bleiben noch Ihre Einstellungen zwischen den Besuchen beibehalten; eine Einwilligung ist gesetzlich nicht erforderlich.</p>
+
+      <h2>Inhalte Dritter</h2>
+      <p>Beim ersten Seitenaufruf laden wir eine geringe Anzahl von JavaScript-Bibliotheken von öffentlichen Content Delivery Networks (derzeit <code>cdnjs.cloudflare.com</code>). Diese Anfragen können als technischer Nebeneffekt Ihre IP-Adresse gegenüber dem CDN-Anbieter offenlegen. Die Praktiken dieser Anbieter im Einzelnen kontrollieren wir nicht.</p>
+
+      <h2>So löschen oder blockieren Sie unsere Speicherung</h2>
+      <p>Sie können den localStorage jederzeit über die Entwicklerwerkzeuge Ihres Browsers oder über die Option „Websitedaten löschen“ Ihres Browsers löschen. Beachten Sie, dass das Löschen des localStorage Sie abmeldet und Ihre Einstellungen zurücksetzt. Sie können die Speicherung auch vollständig über Ihre Browsereinstellungen blockieren; der Dienst funktioniert dann jedoch nicht ordnungsgemäß.</p>
+
+      <h2>Änderungen</h2>
+      <p>Wir aktualisieren diese Cookie-Hinweise, sobald sich ändert, was wir speichern, und legen alle neuen Verbindungen zu Dritten offen, über die personenbezogene Daten übermittelt werden könnten.</p>
+
+      <h2>Kontakt</h2>
+      <p>info@blocksocial.eu</p>
+    </article>
+
+    <article id="legal-disclaimer-de" lang="de">
+      <h1>Haftungsausschluss</h1>
+      <p class="legal-meta">Stand: 8. Mai 2026.</p>
+
+      <p>Die über YEET Social bereitgestellten Informationen und Funktionen werden zu Informations- und Unterhaltungszwecken angeboten. Wir bemühen uns nach Kräften, den Dienst funktionsfähig und zutreffend zu halten; gleichwohl gelten die folgenden Vorbehalte.</p>
+
+      <h2>1. Keine Finanz-, Anlage-, Steuer- oder Rechtsberatung</h2>
+      <p>Nichts auf dem Dienst stellt eine Anlageberatung, Finanzberatung, Rechtsberatung, Steuerberatung oder eine Empfehlung zum Kauf oder Verkauf eines Tokens, NFT oder sonstigen digitalen Vermögenswerts dar. Führen Sie stets eigene Recherchen durch und ziehen Sie vor Entscheidungen eine qualifizierte Fachperson zurate.</p>
+
+      <h2>2. Risiken von Kryptowährungen</h2>
+      <ul>
+        <li>Kryptowährungen und Token (einschließlich des YEET-Tokens) sind hochvolatil. Ihr Wert kann auf null fallen und sich möglicherweise nicht erholen.</li>
+        <li>On-Chain-Transaktionen sind unumkehrbar. Wir können eine bestätigte Transaktion nicht rückgängig machen, irrtümlich gesendete Beträge nicht zurückholen und verlorene private Schlüssel nicht wiederherstellen.</li>
+        <li>Smart Contracts können Fehler enthalten, die wir nicht entdeckt haben. Wir prüfen unsere Verträge nach einem angemessenen Standard, können jedoch keine völlige Fehlerfreiheit garantieren.</li>
+        <li>Die regulatorischen Rahmenbedingungen für Kryptowerte befinden sich in der Entwicklung. Die in Ihrem Rechtsraum geltenden Gesetze können sich in einer Weise ändern, die Ihre Möglichkeit beeinträchtigt, Token zu nutzen, zu übertragen oder zu halten.</li>
+      </ul>
+
+      <h2>3. Paper Wallets sind Inhaberpapiere</h2>
+      <p>Eine YEET-Paper-Wallet ist ein ausdruckbarer Schein, den jede Person einlösen kann, die im Besitz des QR-Codes oder des Einlösetextes ist. Behandeln Sie sie wie physisches Bargeld: Bewahren Sie sie sicher auf, fotografieren Sie sie nicht unbedacht und geben Sie den Einlösecode nicht über unsichere Kanäle weiter. Wir können den Wert einer Paper Wallet, deren Code von einem Dritten eingesehen wurde, nicht wiederherstellen.</p>
+
+      <h2>4. 18+-Inhalte</h2>
+      <p>Als 18+ gekennzeichnete Inhalte sind ausschließlich für erwachsene Betrachter bestimmt. Der Zugang ist hinter einer Opt-in-Einstellung und einer Altersverifikation gesperrt. Es liegt in Ihrer Verantwortung sicherzustellen, dass der Konsum solcher Inhalte an Ihrem Aufenthaltsort rechtmäßig ist und dass Minderjährige keinen Zugriff auf Ihr Gerät haben, während Sie diese Inhalte betrachten.</p>
+
+      <h2>5. Nutzergenerierte Inhalte</h2>
+      <p>Der Dienst zeigt Inhalte an, die von anderen Nutzern erstellt wurden. Solche Inhalte geben ausschließlich die Meinungen, Überzeugungen und Aussagen ihrer Urheber wieder. Sie spiegeln nicht unsere Auffassung wider. Wir prüfen Nutzerinhalte nicht vorab; wir werden auf Meldungen hin tätig.</p>
+
+      <h2>6. Externe Links</h2>
+      <p>Seiten des Dienstes können auf Websites Dritter verlinken. Wir haben keine Kontrolle über diese Websites und übernehmen keine Verantwortung für deren Inhalte, Datenschutzpraktiken oder Verfügbarkeit.</p>
+
+      <h2>7. Keine Verfügbarkeitsgarantie</h2>
+      <p>Der Dienst kann aufgrund von Wartungsarbeiten, Angriffen oder Ereignissen außerhalb unserer Kontrolle (einschließlich Überlastungen oder Ausfällen der BNB Smart Chain) vorübergehend nicht verfügbar sein. Wir garantieren keinen ununterbrochenen Zugang.</p>
+
+      <h2>8. Zukunftsgerichtete Aussagen</h2>
+      <p>Sämtliche Roadmap-Punkte, geplanten Funktionen oder Beschreibungen der Token-Ökonomie auf dem Dienst sind Absichtserklärungen. Sie stellen keine Zusagen dar und können sich ändern.</p>
+
+      <h2>9. Marken</h2>
+      <p>Namen, Logos und Marken Dritter, die auf dem Dienst erscheinen, sind Eigentum ihrer jeweiligen Inhaber und werden ausschließlich zu Identifikationszwecken verwendet.</p>
+
+      <h2>10. Urheberrechtsbeschwerden</h2>
+      <p>Wenn Sie der Ansicht sind, dass Inhalte auf dem Dienst Ihr Urheberrecht verletzen, wenden Sie sich an info@blocksocial.eu mit einer Beschreibung des Werks, der URL des rechtsverletzenden Beitrags und einer Erklärung an Eides statt, dass Sie der rechtmäßige Rechteinhaber sind.</p>
+
+      <h2>Kontakt</h2>
+      <address>BlockSocial UG (haftungsbeschränkt)
+Kratzmühlstr. 14
+92339 Beilngries, Deutschland
+info@blocksocial.eu</address>
+    </article>
+
   </div>
 </div>
 
@@ -18168,13 +18538,29 @@ info@blocksocial.eu</address>
 // pushState so URLs are real and shareable.
 (function(){
   var SLUGS = ['imprint','privacy','terms','cookies','disclaimer'];
+  var currentSlug = null;
+  // Legal texts exist in German (binding for the German operator) and
+  // English. Default follows the UI language; the toggle on the page
+  // overrides it (remembered in yeet_legal_lang).
+  function legalLang(){
+    var o = null; try{ o = localStorage.getItem('yeet_legal_lang'); }catch(e){}
+    if(o === 'de' || o === 'en') return o;
+    return (window.getLang && window.getLang() === 'de') ? 'de' : 'en';
+  }
+  function setLegalLang(l){
+    try{ localStorage.setItem('yeet_legal_lang', l); }catch(e){}
+    if(currentSlug) showLegalPage(currentSlug);
+  }
   function showLegalPage(slug){
     if(SLUGS.indexOf(slug) === -1) return false;
     var page = document.getElementById('legalPage');
     if(!page) return false;
     page.classList.add('on');
+    currentSlug = slug;
     page.querySelectorAll('article').forEach(function(a){ a.classList.remove('on'); });
-    var sec = document.getElementById('legal-' + slug);
+    var lang = legalLang();
+    var sec = (lang === 'de' && document.getElementById('legal-' + slug + '-de')) || document.getElementById('legal-' + slug);
+    page.querySelectorAll('[data-legal-lang]').forEach(function(b){ var on = b.dataset.legalLang === lang; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
     if(sec){
       sec.classList.add('on');
       var h = sec.querySelector('h1');
@@ -18186,6 +18572,7 @@ info@blocksocial.eu</address>
   function closeLegalPage(){
     var page = document.getElementById('legalPage');
     if(page) page.classList.remove('on');
+    currentSlug = null;
     if(/^\/legal\//.test(location.pathname)) history.pushState(null,'','/');
     document.title = 'YEET Social';
   }
@@ -18208,6 +18595,7 @@ info@blocksocial.eu</address>
   else document.addEventListener('DOMContentLoaded', routeFromUrl);
   window.showLegalPage = showLegalPage;
   window.closeLegalPage = closeLegalPage;
+  window.setLegalLang = setLegalLang;
 })();
 </script>
 

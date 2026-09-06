@@ -60,9 +60,9 @@ Whitepaper Teil I übernehmen (Momentaufnahme + Aktualisierungsprozess definiere
 | --- | --- |
 | Contract-Redeploy (BEP-20 → ERC-20 auf Ziel-Chain) | niedrig (Standard) |
 | Backend: RPC-URL, Chain-ID 56 → Ziel, `YEET_TOKEN_ADDRESS` | niedrig (`batch_rewards.rs`, env) |
-| Frontend: `wallet_switchEthereumChain` (aktuell 0x61 Testnet-Hinweis!), Anzeige | niedrig |
+| Frontend: `wallet_switchEthereumChain` (zentrales Chain-Objekt, aktuell 0x38 Mainnet), Anzeige | niedrig |
 | Bestandsmigration (Snapshot der On-Chain-Holder + interner Ledger) | mittel |
 | Kommunikation/Anleitung für Nutzer-Wallets | mittel |
 
-TODO(verify): Frontend nutzt beim MetaMask-Login Chain-ID `0x61` (BSC **Testnet**),
-das Reward-Minting läuft gegen Chain-ID 56 (**Mainnet**) — Inkonsistenz klären.
+Geklärt (Sept. 2026): Frontend und Reward-Minting nutzen beide Chain-ID 56 (`0x38`, BSC **Mainnet**);
+die Chain-Konfiguration liegt im Frontend in einem einzigen Objekt (Umschalten auf Testnet = ein Flip).
