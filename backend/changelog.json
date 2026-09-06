@@ -108,6 +108,14 @@
         "#Legal",
         "#Datenschutz"
       ]
+    },
+    {
+      "id": "2026-09-06-06-detail-comments-translate",
+      "text": "Translate and read-aloud now work everywhere: in the post detail view and on every comment (feed and detail). Tap the speaker to hear a comment, the globe to translate it into your language.",
+      "tags": [
+        "#Translation",
+        "#Accessibility"
+      ]
     }
   ]
 }
