@@ -124,6 +124,14 @@
         "#Swap",
         "#i18n"
       ]
+    },
+    {
+      "id": "2026-09-06-08-el-hu-ro-bg",
+      "text": "Ελληνικά, Magyar, Română and Български join YEET – twenty-two languages now, including the swap page. Your browser language is picked automatically on first visit, or choose under Settings → Language. Καλώς ήρθατε, üdvözlünk, bine ați venit, добре дошли!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
