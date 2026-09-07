@@ -7,7 +7,7 @@ jederzeit änderbar unter **Einstellungen → Feed-Filter**.
 
 - **Sprachen:** „Alle Sprachen", „Nur meine Sprache" (folgt der UI-Sprache, auch
   wenn sie später gewechselt wird) oder „Ausgewählte Sprachen" (Mehrfachauswahl
-  aus den zehn UI-Sprachen). Posts mit unbekannter Sprache (`und`/NULL, z. B.
+  aus den 26 UI-Sprachen). Posts mit unbekannter Sprache (`und`/NULL, z. B.
   reine Emoji-Posts) bleiben sichtbar.
 - **Länder:** „Mein Land" setzt das eigene Land (ISO 3166-1 alpha-2, Namen über
   `Intl.DisplayNames` in der UI-Sprache). „Nur Posts aus diesen Ländern" filtert

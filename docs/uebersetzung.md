@@ -32,7 +32,8 @@ trotzdem (kostenlose Stoppwort-Heuristik), damit jeder Post ein `lang` trägt.
   - Cache je Post+Zielsprache in `post_translations` (Provider wird nur einmal
     pro Kombination befragt).
   - Rate-Limit je Account: 20/Minute, 300/Stunde → `429 RATE_LIMITED`.
-  - Ziel muss eine der sechs UI-Sprachen sein (`en de it fr es pt`), sonst
+  - Ziel muss eine der 26 UI-Sprachen sein (`en de it fr es pt fi sv nb is cs
+    da nl pl hr sr tr lv el hu ro bg sk sl lt et`), sonst
     `UNSUPPORTED_TARGET`; ohne Provider `403 TRANSLATION_DISABLED`.
 
 **Spracherkennung**

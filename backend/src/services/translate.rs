@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 22] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg"];
+pub const SUPPORTED: [&str; 26] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -260,6 +260,18 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     const HU: &[&str] = &["és","az","hogy","nem","egy","van","ma","én","te","meg","csak","már","még","ez","nagyon","volt","itt","minden","köszi","szia","hogyan","miért","mert","vagy","jó"];
     const RO: &[&str] = &["și","să","nu","este","cu","pe","în","că","pentru","dar","astăzi","foarte","eu","tu","mai","din","ce","sunt","am","acum","mulțumesc","dacă","toți","aici","bine"];
     const BG: &[&str] = &["и","на","да","не","се","в","с","за","е","това","но","аз","ти","много","днес","само","вече","още","как","какво","има","са","от","съм","благодаря"];
+    // Slovak and Czech share a large part of their function words; the
+    // sa/se, som/jsem, čo/co, len/jen, ešte/ještě pairs carry the signal.
+    const SK: &[&str] = &["a","je","sa","na","to","že","som","ale","ako","čo","tak","už","len","aj","dnes","nie","byť","pre","alebo","keď","ešte","veľmi","ďakujem","všetko","prečo","teraz","dobre","viac","tiež","naozaj"];
+    // Slovenian against Croatian/Serbian: in/i, sem/sam, kaj/što, zdaj/sada,
+    // tudi/također, še/još, tukaj/ovdje, ampak/ali.
+    const SL: &[&str] = &["in","je","se","na","za","ne","da","pa","sem","bo","tudi","samo","danes","ni","biti","ali","kaj","kako","zdaj","zelo","hvala","lahko","kot","še","vse","tukaj","dobro","kje","ker","ampak","nič","res"];
+    // Lithuanian and Latvian overlap in ir/bet/jau/kad/tu, so the list leans
+    // on the Lithuanian-only words (yra, ką, ačiū, šiandien, dabar, …).
+    const LT: &[&str] = &["ir","yra","kad","bet","tai","su","kaip","ką","tik","jau","dar","labai","šiandien","ne","aš","tu","mes","ačiū","gerai","dabar","taip","nes","arba","kur","kada","viskas","daugiau","man","buvo","būti"];
+    // Estonian shares ja/on/ei/olen/oli with Finnish; see, aga, kui, täna,
+    // kõik, aitäh and väga are the Estonian side of the tie.
+    const ET: &[&str] = &["ja","on","ei","see","ta","aga","nii","kui","ka","ainult","nüüd","või","mis","täna","kõik","aitäh","hea","väga","siin","seda","ma","sa","me","ning","et","kas","olen","oli","kuid","palun"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -271,7 +283,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
                       ("fi", score(FI)), ("sv", score(SV)), ("nb", score(NB)), ("is", score(IS)),
                       ("cs", score(CS)), ("da", score(DA)), ("nl", score(NL)), ("pl", score(PL)),
                       ("hr", score(HR)), ("sr", score(SR)), ("tr", score(TR)), ("lv", score(LV)),
-                      ("el", score(EL)), ("hu", score(HU)), ("ro", score(RO)), ("bg", score(BG))];
+                      ("el", score(EL)), ("hu", score(HU)), ("ro", score(RO)), ("bg", score(BG)),
+                      ("sk", score(SK)), ("sl", score(SL)), ("lt", score(LT)), ("et", score(ET))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -377,6 +390,10 @@ mod tests {
         assert_eq!(heuristic_detect("Nem tudom, de ez nagyon jó és ma még itt van.").as_deref(), Some("hu"));
         assert_eq!(heuristic_detect("Nu știu, dar este foarte bine și astăzi mergem cu toții.").as_deref(), Some("ro"));
         assert_eq!(heuristic_detect("Не знам, но това е много добре и днес ще отидем.").as_deref(), Some("bg"));
+        assert_eq!(heuristic_detect("Neviem, ale to je veľmi dobré a dnes už mám všetko.").as_deref(), Some("sk"));
+        assert_eq!(heuristic_detect("Ne vem, ampak to je zelo dobro in danes je vse tukaj.").as_deref(), Some("sl"));
+        assert_eq!(heuristic_detect("Nežinau, bet tai labai gerai ir šiandien jau viskas yra.").as_deref(), Some("lt"));
+        assert_eq!(heuristic_detect("Ma ei tea, aga see on väga hea ja täna on kõik siin.").as_deref(), Some("et"));
     }
 
     #[test]
