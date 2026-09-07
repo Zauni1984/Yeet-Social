@@ -132,6 +132,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-07-09-sk-sl-lt-et",
+      "text": "Slovenčina, Slovenščina, Lietuvių and Eesti are live – twenty-six languages now, and every EU official language except Irish and Maltese. Your browser language is picked on first visit, or switch under Settings → Language. Vitajte, dobrodošli, sveiki atvykę, tere tulemast!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
