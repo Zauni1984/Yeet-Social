@@ -16,9 +16,12 @@ auf Yeet veröffentlicht – englisch, maximal 420 Zeichen, mit Hashtags.
   Lauf angelegt: kein Wallet, keine E-Mail, kein Passwort → niemand kann sich
   als Bot anmelden. `users.is_bot = TRUE` blendet im Frontend ein **BOT**-Badge
   ein; Posts des Bots erhalten keine Punkte.
-- Posts: `is_permanent = TRUE` (24 h im Feed, dauerhaft unter „Permanente
-  Posts" und im Bot-Profil), `lang = 'en'`, Standard-Hashtag `#YeetUpdate` plus
-  die Tags des Eintrags.
+- Posts: `is_permanent = TRUE`, `lang = 'en'`, Standard-Hashtag `#YeetUpdate`
+  plus die Tags des Eintrags. Anders als permanente Posts normaler Nutzer
+  (24 h im globalen Feed, danach nur noch im Profil) bleiben Bot-Posts
+  **dauerhaft im globalen Feed** – chronologisch einsortiert, sie rutschen
+  also mit der Zeit nach unten – und werden vom Sprach-/Länderfilter des
+  Betrachters nicht ausgeblendet. Zusätzlich stehen sie im Bot-Profil.
 
 ## Einen Eintrag hinzufügen (Konvention für jeden PR mit sichtbaren Änderungen)
 

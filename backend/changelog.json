@@ -140,6 +140,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-11-10-bot-posts-stay-in-feed",
+      "text": "Fix: release notes from this account no longer vanish from the global feed after 24 hours. Regular permanent posts keep their 24h feed window and then live on the author's profile; official update posts stay in the feed for good and are never hidden by a language or country filter.",
+      "tags": [
+        "#Fix",
+        "#Feed"
+      ]
     }
   ]
 }

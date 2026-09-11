@@ -72,6 +72,11 @@ pub async fn get_feed(
     };
     let (f_langs, f_countries) = viewer_filters(&state, viewer_id).await;
 
+    // Permanent posts stay in the global feed for 24 h, then live on the
+    // author's profile only — except posts by bot accounts (the changelog
+    // bot's release notes), which stay in the feed for good and are not
+    // subject to the viewer's language/country filter: they are the
+    // platform's own announcements, not user content.
     let rows = sqlx::query_as::<_, FeedRow>(
         "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
             p.like_count, p.reshare_count, p.comment_count,
@@ -87,10 +92,10 @@ pub async fn get_feed(
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
-          AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $4::text IS NOT NULL)
+          AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $4::text IS NOT NULL OR u.is_bot)
           AND ($4::text IS NULL OR p.kind = $4)
-          AND (cardinality($5::text[]) = 0 OR p.lang = ANY($5) OR p.lang IS NULL OR p.lang = 'und')
-          AND (cardinality($6::text[]) = 0 OR u.country_code = ANY($6))
+          AND (u.is_bot OR cardinality($5::text[]) = 0 OR p.lang = ANY($5) OR p.lang IS NULL OR p.lang = 'und')
+          AND (u.is_bot OR cardinality($6::text[]) = 0 OR u.country_code = ANY($6))
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                            WHERE (ub.blocker_id = $3 AND ub.blocked_id = u.id)
                               OR (ub.blocker_id = u.id AND ub.blocked_id = $3))
@@ -105,10 +110,10 @@ pub async fn get_feed(
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
           WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
-            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $2::text IS NOT NULL)
+            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $2::text IS NOT NULL OR u.is_bot)
             AND ($2::text IS NULL OR p.kind = $2)
-            AND (cardinality($3::text[]) = 0 OR p.lang = ANY($3) OR p.lang IS NULL OR p.lang = 'und')
-            AND (cardinality($4::text[]) = 0 OR u.country_code = ANY($4))
+            AND (u.is_bot OR cardinality($3::text[]) = 0 OR p.lang = ANY($3) OR p.lang IS NULL OR p.lang = 'und')
+            AND (u.is_bot OR cardinality($4::text[]) = 0 OR u.country_code = ANY($4))
             AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                              WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
                                 OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"
@@ -187,6 +192,7 @@ pub async fn get_following_feed(
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN follows f ON f.following_id = p.author_id
         WHERE f.follower_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL
+          AND p.is_adult = FALSE AND p.is_removed = FALSE
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                            WHERE (ub.blocker_id = $1 AND ub.blocked_id = p.author_id)
                               OR (ub.blocker_id = p.author_id AND ub.blocked_id = $1))"

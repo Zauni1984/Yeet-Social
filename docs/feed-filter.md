@@ -14,7 +14,9 @@ jederzeit änderbar unter **Einstellungen → Feed-Filter**.
   nach dem Land des Autors; Autoren ohne gesetztes Land werden dann ausgeblendet.
 - **Gilt für:** globaler Feed (inkl. Trending, das daraus ableitet), Tab AUDIO
   und der 18+-Feed. **„Gefolgt" bleibt immer vollständig** (bewusst gefolgte
-  Accounts). Permanente Posts und Profile sind nicht betroffen.
+  Accounts). Permanente Posts und Profile sind nicht betroffen, ebenso wenig
+  die Posts von Bot-Konten (Changelog-Bot `@yeet_updates`) – Plattform-
+  Ankündigungen erscheinen unabhängig vom Filter.
 - Ein Chip im Feed-Kopf („Filter: Deutsch · DE, AT") zeigt den aktiven Filter
   und führt per Klick in die Einstellungen.
 
