@@ -172,6 +172,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-15-14-eu-gl-cy-lb",
+      "text": "Euskara, Galego, Cymraeg and Lëtzebuergesch are live – thirty-eight languages now, including the swap page. Your browser language is picked on first visit, or switch under Settings → Language. Ongi etorri, benvidos, croeso, wëllkomm!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
