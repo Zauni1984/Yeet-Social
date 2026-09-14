@@ -148,6 +148,22 @@
         "#Fix",
         "#Feed"
       ]
+    },
+    {
+      "id": "2026-09-14-11-ga-mt-uk-ru",
+      "text": "Gaeilge, Malti, Українська and Русский are live – thirty languages, and with Irish and Maltese every EU official language is now on board. Your browser language is picked on first visit, or switch under Settings → Language. Fáilte, merħba, ласкаво просимо, добро пожаловать!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
+    },
+    {
+      "id": "2026-09-14-12-infinite-scroll",
+      "text": "The feed now scrolls on forever: For You, Following, Audio, NFT and profile timelines load the next posts automatically as you reach the end – no more 20-post cutoff. The NFT tab also shows every NFT post, not just the last 24 hours.",
+      "tags": [
+        "#NewFeature",
+        "#Feed"
+      ]
     }
   ]
 }
