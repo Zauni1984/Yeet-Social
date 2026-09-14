@@ -122,6 +122,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 .nav-link:hover,.nav-link.active{background:#161616;border-left-color:var(--yeet);color:var(--yeet)}
 .badge{margin-left:auto;background:var(--yeet);color:var(--on-accent);font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px}
 .main{border-right:1px solid var(--border)}
+.feed-sentinel{display:flex;justify-content:center;align-items:center;padding:18px;min-height:1px}
+.feed-sentinel-spin{width:22px;height:22px;border:3px solid var(--card-2);border-top-color:var(--yeet);border-radius:50%;animation:spin .8s linear infinite;opacity:0;transition:opacity .2s}
+.feed-sentinel.on .feed-sentinel-spin{opacity:1}
+.feed-sentinel.err .feed-sentinel-spin{display:none}
+.feed-sentinel-retry{display:none;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+.feed-sentinel.err .feed-sentinel-retry{display:inline-block}
 .feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .feed-header h2{font-size:18px;font-weight:800}
 .btn-sm{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
@@ -21549,7 +21555,8 @@ async function loadFeed(){
       }
       const c=document.querySelector('.composer');
       if(c)c.after(wrap);
-    }else{if(empty)empty.style.display='';}
+      if(window.YeetPager) window.YeetPager.attach({url:'/api/v1/feed',wrap:wrap,items:d.data,total:d.total});
+    }else{if(empty)empty.style.display='';if(window.YeetPager) window.YeetPager.reset();}
   }catch(e){console.error('Feed:',e);}
 }
 
@@ -22680,7 +22687,9 @@ function loadFeedFiltered(filter){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){ showLoginGate(); return; }
   const headers={'Content-Type':'application/json','Authorization':'Bearer '+jwt};
-  var url=filter==='adult'?'/api/v1/feed/adult':filter==='audio'?'/api/v1/feed?kind=audio':filter==='nft'?'/api/v1/feed?filter=nft':'/api/v1/feed?filter='+filter;
+  // NFT tab is filtered server-side (?nft=true) so paging stays dense —
+  // and, like Audio Stories, shows every NFT post regardless of age.
+  var url=filter==='adult'?'/api/v1/feed/adult':filter==='audio'?'/api/v1/feed?kind=audio':filter==='nft'?'/api/v1/feed?nft=true':'/api/v1/feed?filter='+filter;
   // Toggle is a composer-only hint  never force it from tab switches.
   var atl=document.getElementById('adultToggleLabel');
   if(atl)atl.style.display='flex';
@@ -22688,10 +22697,6 @@ function loadFeedFiltered(filter){
     .then(r=>{ if(r.status===401){ showLoginGate(); return null; } return r.json(); })
     .then(d=>{
       if(!d)return;
-      // The backend feed endpoint ignores ?filter=… (FeedQuery has no such
-      // field), so the NFT tab used to silently show the unfiltered global
-      // feed. Filter client-side on the is_nft flag the API already returns.
-      if(d.success&&d.data&&filter==='nft'){ d.data=d.data.filter(function(p){return !!p.is_nft;}); }
       const old=document.getElementById('feed-posts');if(old)old.remove();
       const empty=document.querySelector('.empty');
       if(d.success&&d.data&&d.data.length>0){
@@ -22699,7 +22704,8 @@ function loadFeedFiltered(filter){
         const wrap=document.createElement('div');wrap.id='feed-posts';
         for(const p of d.data){ wrap.appendChild(window._buildFeedPostEl(p)); }
         const anchor=document.getElementById('audioCta')||document.querySelector('.composer');if(anchor)anchor.after(wrap);
-      }else{if(empty)empty.style.display=filter==='audio'?'none':'';}
+        if(window.YeetPager) window.YeetPager.attach({url:url,wrap:wrap,items:d.data,total:d.total});
+      }else{if(empty)empty.style.display=filter==='audio'?'none':'';if(window.YeetPager) window.YeetPager.reset();}
       if(filter==='audio'&&window.YeetAudio) window.YeetAudio.setEmpty(!(d.success&&d.data&&d.data.length>0));
     }).catch(e=>console.error('loadFeedFiltered:',e));
 }
@@ -23054,11 +23060,13 @@ async function loadUserPosts(address){
       return;
     }
     wrap.innerHTML = '';
+    var cardOpts = {showRepost:false, showTip:!isOwnProfile};
     d.data.forEach(function(p){
       // Shared feed-card renderer: identical markup/behaviour to the main feed,
       // minus the reshare button, and no tip button on the user's own profile.
-      wrap.appendChild(window._buildFeedPostEl(p, {showRepost:false, showTip:!isOwnProfile}));
+      wrap.appendChild(window._buildFeedPostEl(p, cardOpts));
     });
+    if(window.YeetPager) window.YeetPager.attach({url:'/api/v1/users/'+encodeURIComponent(address)+'/posts', wrap:wrap, items:d.data, total:d.total, opts:cardOpts});
   }catch(e){
     console.error('loadUserPosts:', e);
     wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px">'+window.t('profile.loadError')+'</div>';
@@ -23593,6 +23601,7 @@ async function loadFollowingFeed() {
     }
     var c = document.querySelector('.composer');
     if (c) c.after(wrap); else document.querySelector('.feed-container, main, .main').prepend(wrap);
+    if (window.YeetPager) window.YeetPager.attach({url:'/api/v1/feed/following', wrap:wrap, items:d.data, total:d.total});
   } catch(e) { console.error('Following feed:', e); }
 }
 
@@ -31646,5 +31655,73 @@ window.YeetFeedFilter={load:load,save:save,renderChip:renderChip,state:state};
 })();
 </script>
 
+<script>
+// Infinite scroll for post lists (feed tabs + profile timeline).
+// A loader renders page 1, then calls YeetPager.attach({url, wrap, items,
+// total, opts}); the pager appends a sentinel, watches it with an
+// IntersectionObserver and fetches ?page=N+1 of the same URL as the reader
+// approaches the end. Posts are deduped by id (new posts shift offsets
+// between pages), and paging stops when a page comes back short or
+// page*per_page reaches the server's total.
+(function(){
+  var st=null, io=null;
+  function t(k){ return (window.t&&window.t(k))||k; }
+  function sentinel(){
+    var s=document.createElement('div'); s.className='feed-sentinel';
+    s.innerHTML='<div class="feed-sentinel-spin"></div><button type="button" class="feed-sentinel-retry"></button>';
+    s.querySelector('.feed-sentinel-retry').textContent='↻ '+t('feed.refresh');
+    return s;
+  }
+  function withPage(url,page,per){ return url+(url.indexOf('?')>=0?'&':'?')+'page='+page+'&per_page='+per; }
+  function reset(){ if(io){ io.disconnect(); io=null; } if(st&&st.sent&&st.sent.parentNode) st.sent.parentNode.removeChild(st.sent); st=null; }
+  function finish(){ reset(); }
+  function attach(cfg){
+    reset();
+    if(!cfg||!cfg.url||!cfg.wrap||typeof window._buildFeedPostEl!=='function') return;
+    var items=cfg.items||[], per=cfg.perPage||20;
+    var total=(typeof cfg.total==='number')?cfg.total:null;
+    var s={url:cfg.url,wrap:cfg.wrap,page:cfg.page||1,per:per,total:total,opts:cfg.opts||null,seen:{},loading:false,sent:null};
+    items.forEach(function(p){ if(p&&p.id) s.seen[p.id]=1; });
+    if(items.length<per||(total!==null&&s.page*per>=total)) return; // page 1 was the whole list
+    s.sent=sentinel(); s.wrap.appendChild(s.sent);
+    s.sent.querySelector('.feed-sentinel-retry').onclick=function(){ s.sent.classList.remove('err'); more(); };
+    st=s;
+    if(!('IntersectionObserver' in window)) return; // old browsers: page 1 only, retry button still works
+    io=new IntersectionObserver(function(es){ for(var i=0;i<es.length;i++){ if(es[i].isIntersecting){ more(); break; } } },{root:null,rootMargin:'600px 0px'});
+    io.observe(s.sent);
+  }
+  function more(){
+    var s=st; if(!s||s.loading) return;
+    if(!s.wrap.isConnected){ finish(); return; } // list was re-rendered/removed
+    s.loading=true; s.sent.classList.add('on');
+    var next=s.page+1, h={};
+    var jwt=null; try{ jwt=localStorage.getItem('yeet_jwt'); }catch(e){}
+    if(jwt) h.Authorization='Bearer '+jwt;
+    fetch(withPage(s.url,next,s.per),{headers:h,cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(d){
+        if(st!==s) return; // superseded by a fresh attach()
+        var list=(d&&d.success!==false&&d.data)||[], raw=list.length;
+        if(d&&typeof d.total==='number') s.total=d.total;
+        s.page=next;
+        list.forEach(function(p){
+          if(!p||!p.id||s.seen[p.id]) return; s.seen[p.id]=1;
+          s.wrap.insertBefore(window._buildFeedPostEl(p,s.opts||undefined),s.sent);
+        });
+        s.loading=false; s.sent.classList.remove('on');
+        if(raw<s.per||(s.total!==null&&s.page*s.per>=s.total)){ finish(); return; }
+        // observe() delivers a fresh record, so a page that left the
+        // sentinel on screen (short viewport, tiny cards) keeps loading.
+        if(io){ io.unobserve(s.sent); io.observe(s.sent); }
+      })
+      .catch(function(e){
+        console.error('pager:',e);
+        if(st!==s) return;
+        s.loading=false; s.sent.classList.remove('on'); s.sent.classList.add('err');
+      });
+  }
+  window.YeetPager={attach:attach,reset:reset,more:more,state:function(){ return st?{url:st.url,page:st.page,total:st.total,loading:st.loading}:null; }};
+})();
+</script>
 </body>
 </html>

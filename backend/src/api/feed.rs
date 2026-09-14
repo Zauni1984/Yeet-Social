@@ -13,6 +13,8 @@ pub struct FeedQuery {
     pub adult: Option<bool>,
     /// Restrict the global feed to one post kind (`audio` = Audio Stories tab).
     pub kind: Option<String>,
+    /// NFT tab: only NFT posts, regardless of age (they are permanent).
+    pub nft: Option<bool>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -71,6 +73,7 @@ pub async fn get_feed(
         _ => None,
     };
     let (f_langs, f_countries) = viewer_filters(&state, viewer_id).await;
+    let nft_only = q.nft.unwrap_or(false);
 
     // Permanent posts stay in the global feed for 24 h, then live on the
     // author's profile only — except posts by bot accounts (the changelog
@@ -92,8 +95,9 @@ pub async fn get_feed(
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
-          AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $4::text IS NOT NULL OR u.is_bot)
+          AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $4::text IS NOT NULL OR $7::bool OR u.is_bot)
           AND ($4::text IS NULL OR p.kind = $4)
+          AND ($7::bool = FALSE OR p.is_nft = TRUE)
           AND (u.is_bot OR cardinality($5::text[]) = 0 OR p.lang = ANY($5) OR p.lang IS NULL OR p.lang = 'und')
           AND (u.is_bot OR cardinality($6::text[]) = 0 OR u.country_code = ANY($6))
           AND NOT EXISTS (SELECT 1 FROM user_blocks ub
@@ -104,21 +108,22 @@ pub async fn get_feed(
                  p.created_at DESC
         LIMIT $1 OFFSET $2"
     )
-    .bind(per_page).bind(offset).bind(viewer_id).bind(&kind).bind(&f_langs).bind(&f_countries)
+    .bind(per_page).bind(offset).bind(viewer_id).bind(&kind).bind(&f_langs).bind(&f_countries).bind(nft_only)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let total: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
           WHERE p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_adult = FALSE AND p.is_removed = FALSE
-            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $2::text IS NOT NULL OR u.is_bot)
+            AND (p.is_permanent = FALSE OR p.created_at > NOW() - INTERVAL '24 hours' OR $2::text IS NOT NULL OR $5::bool OR u.is_bot)
             AND ($2::text IS NULL OR p.kind = $2)
+            AND ($5::bool = FALSE OR p.is_nft = TRUE)
             AND (u.is_bot OR cardinality($3::text[]) = 0 OR p.lang = ANY($3) OR p.lang IS NULL OR p.lang = 'und')
             AND (u.is_bot OR cardinality($4::text[]) = 0 OR u.country_code = ANY($4))
             AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                              WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
                                 OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"
     )
-    .bind(viewer_id).bind(&kind).bind(&f_langs).bind(&f_countries)
+    .bind(viewer_id).bind(&kind).bind(&f_langs).bind(&f_countries).bind(nft_only)
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let posts = rows.into_iter().map(row_to_feed_post).collect();
