@@ -148,6 +148,14 @@
         "#Fix",
         "#Feed"
       ]
+    },
+    {
+      "id": "2026-09-14-11-ga-mt-uk-ru",
+      "text": "Gaeilge, Malti, Українська and Русский are live – thirty languages, and with Irish and Maltese every EU official language is now on board. Your browser language is picked on first visit, or switch under Settings → Language. Fáilte, merħba, ласкаво просимо, добро пожаловать!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }

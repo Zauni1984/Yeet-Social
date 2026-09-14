@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 26] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et"];
+pub const SUPPORTED: [&str; 30] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -272,6 +272,16 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     // Estonian shares ja/on/ei/olen/oli with Finnish; see, aga, kui, täna,
     // kõik, aitäh and väga are the Estonian side of the tie.
     const ET: &[&str] = &["ja","on","ei","see","ta","aga","nii","kui","ka","ainult","nüüd","või","mis","täna","kõik","aitäh","hea","väga","siin","seda","ma","sa","me","ning","et","kas","olen","oli","kuid","palun"];
+    // Irish shares almost nothing with English at the function-word level;
+    // the list avoids the few look-alikes (do, i, a).
+    const GA: &[&str] = &["agus","an","na","is","tá","ní","níl","mé","tú","sé","sí","muid","sibh","siad","ar","le","go","ach","inniu","freisin","anois","anseo","mar","nó","má","cad","conas","atá","bhí","gach","chun","seo","sin","maith"];
+    // Maltese: `il`/`ma`/`le` also occur in Italian and French, so the list
+    // leans on the unmistakable forms (imma, illum, ħafna, grazzi, għax …).
+    const MT: &[&str] = &["u","li","il","ma","ta'","hu","hi","jien","int","aħna","huma","imma","illum","ħafna","biss","diġà","grazzi","kif","għal","fuq","minn","issa","hawn","kollox","tajjeb","jekk","jew","għax","iva","hemm","kien","dan","din","mhux","ukoll"];
+    // Ukrainian and Russian share the alphabet with Bulgarian; і/та/це/що
+    // vs. и/что/это and сьогодні/дуже vs. сегодня/очень carry the signal.
+    const UK: &[&str] = &["і","та","це","не","що","як","але","вже","дуже","сьогодні","тільки","дякую","він","вона","ми","ви","є","був","була","також","тут","коли","або","для","у","до","бо","чи","ще","добре"];
+    const RU: &[&str] = &["и","в","не","что","это","как","но","уже","очень","сегодня","только","спасибо","он","она","мы","вы","есть","был","была","также","здесь","когда","или","для","к","потому","ли","я","ты","ещё"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -284,7 +294,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
                       ("cs", score(CS)), ("da", score(DA)), ("nl", score(NL)), ("pl", score(PL)),
                       ("hr", score(HR)), ("sr", score(SR)), ("tr", score(TR)), ("lv", score(LV)),
                       ("el", score(EL)), ("hu", score(HU)), ("ro", score(RO)), ("bg", score(BG)),
-                      ("sk", score(SK)), ("sl", score(SL)), ("lt", score(LT)), ("et", score(ET))];
+                      ("sk", score(SK)), ("sl", score(SL)), ("lt", score(LT)), ("et", score(ET)),
+                      ("ga", score(GA)), ("mt", score(MT)), ("uk", score(UK)), ("ru", score(RU))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -394,6 +405,10 @@ mod tests {
         assert_eq!(heuristic_detect("Ne vem, ampak to je zelo dobro in danes je vse tukaj.").as_deref(), Some("sl"));
         assert_eq!(heuristic_detect("Nežinau, bet tai labai gerai ir šiandien jau viskas yra.").as_deref(), Some("lt"));
         assert_eq!(heuristic_detect("Ma ei tea, aga see on väga hea ja täna on kõik siin.").as_deref(), Some("et"));
+        assert_eq!(heuristic_detect("Níl a fhios agam, ach tá sé go maith agus inniu tá gach rud anseo.").as_deref(), Some("ga"));
+        assert_eq!(heuristic_detect("Ma nafx, imma dan tajjeb ħafna u illum kollox hawn.").as_deref(), Some("mt"));
+        assert_eq!(heuristic_detect("Не знаю, але це дуже добре і сьогодні ми вже все маємо.").as_deref(), Some("uk"));
+        assert_eq!(heuristic_detect("Не знаю, но это очень хорошо и сегодня мы уже всё имеем.").as_deref(), Some("ru"));
     }
 
     #[test]
