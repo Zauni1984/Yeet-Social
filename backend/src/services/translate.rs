@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 30] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru"];
+pub const SUPPORTED: [&str; 34] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru", "ca", "sq", "bs", "mk"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -282,6 +282,16 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     // vs. и/что/это and сьогодні/дуже vs. сегодня/очень carry the signal.
     const UK: &[&str] = &["і","та","це","не","що","як","але","вже","дуже","сьогодні","тільки","дякую","він","вона","ми","ви","є","був","була","також","тут","коли","або","для","у","до","бо","чи","ще","добре"];
     const RU: &[&str] = &["и","в","не","что","это","как","но","уже","очень","сегодня","только","спасибо","он","она","мы","вы","есть","был","была","также","здесь","когда","или","для","к","потому","ли","я","ты","ещё"];
+    // Catalan overlaps with Spanish/French/Italian on que/una/el/la; the
+    // signal is in i/és/amb/això/però/molt/avui/també/aquí.
+    const CA: &[&str] = &["i","el","la","els","les","que","és","no","amb","per","una","un","això","però","molt","avui","només","gràcies","també","aquí","ara","quan","hi","ha","tot","bé","què","perquè","són","fins"];
+    const SQ: &[&str] = &["dhe","në","për","me","një","është","nuk","po","që","të","e","si","por","shumë","sot","vetëm","faleminderit","unë","ti","ju","ka","ishte","gjithashtu","këtu","kur","ose","tani","mirë","çfarë","pse","edhe","gjithçka"];
+    // Bosnian sits between Croatian (ijekavian) and Serbian (šta/ko); a text
+    // that combines both — plus sedmica/kahva — scores higher here than in
+    // either neighbour, anything less stays a tie and falls back to None.
+    const BS: &[&str] = &["je","se","na","da","ne","za","su","sam","ali","kako","tako","već","samo","danas","nije","biti","ili","šta","također","ko","uvijek","lijepo","gdje","sedmica","ovdje","neko","cijeli","svijet","htio","kahva","hvala"];
+    // Macedonian against Bulgarian: во/со/ова/јас/многу/денес/веќе/уште/сум/од.
+    const MK: &[&str] = &["и","на","да","не","се","во","со","за","е","ова","но","јас","ти","многу","денес","само","веќе","уште","како","што","има","сум","од","благодарам","фала","сега","тука","може","ќе","сите","затоа","нешто"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -295,7 +305,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
                       ("hr", score(HR)), ("sr", score(SR)), ("tr", score(TR)), ("lv", score(LV)),
                       ("el", score(EL)), ("hu", score(HU)), ("ro", score(RO)), ("bg", score(BG)),
                       ("sk", score(SK)), ("sl", score(SL)), ("lt", score(LT)), ("et", score(ET)),
-                      ("ga", score(GA)), ("mt", score(MT)), ("uk", score(UK)), ("ru", score(RU))];
+                      ("ga", score(GA)), ("mt", score(MT)), ("uk", score(UK)), ("ru", score(RU)),
+                      ("ca", score(CA)), ("sq", score(SQ)), ("bs", score(BS)), ("mk", score(MK))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -409,6 +420,10 @@ mod tests {
         assert_eq!(heuristic_detect("Ma nafx, imma dan tajjeb ħafna u illum kollox hawn.").as_deref(), Some("mt"));
         assert_eq!(heuristic_detect("Не знаю, але це дуже добре і сьогодні ми вже все маємо.").as_deref(), Some("uk"));
         assert_eq!(heuristic_detect("Не знаю, но это очень хорошо и сегодня мы уже всё имеем.").as_deref(), Some("ru"));
+        assert_eq!(heuristic_detect("No ho sé, però això és molt bé i avui ja tenim tot aquí.").as_deref(), Some("ca"));
+        assert_eq!(heuristic_detect("Nuk e di, por kjo është shumë mirë dhe sot kemi gjithçka këtu.").as_deref(), Some("sq"));
+        assert_eq!(heuristic_detect("Ne znam, ali to je lijepo i uvijek imamo vremena za sve šta treba, sedmica je duga.").as_deref(), Some("bs"));
+        assert_eq!(heuristic_detect("Не знам, но ова е многу добро и денес веќе имаме сè.").as_deref(), Some("mk"));
     }
 
     #[test]

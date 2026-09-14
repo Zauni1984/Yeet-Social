@@ -164,6 +164,14 @@
         "#NewFeature",
         "#Feed"
       ]
+    },
+    {
+      "id": "2026-09-15-13-ca-sq-bs-mk",
+      "text": "Català, Shqip, Bosanski and Македонски are live – thirty-four languages now, including the swap page. Your browser language is picked on first visit, or switch under Settings → Language. Benvinguts, mirësevini, dobrodošli, добредојдовте!",
+      "tags": [
+        "#i18n",
+        "#NewFeature"
+      ]
     }
   ]
 }
