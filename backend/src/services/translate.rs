@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 34] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru", "ca", "sq", "bs", "mk"];
+pub const SUPPORTED: [&str; 38] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru", "ca", "sq", "bs", "mk", "eu", "gl", "cy", "lb"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -292,6 +292,15 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
     const BS: &[&str] = &["je","se","na","da","ne","za","su","sam","ali","kako","tako","već","samo","danas","nije","biti","ili","šta","također","ko","uvijek","lijepo","gdje","sedmica","ovdje","neko","cijeli","svijet","htio","kahva","hvala"];
     // Macedonian against Bulgarian: во/со/ова/јас/многу/денес/веќе/уште/сум/од.
     const MK: &[&str] = &["и","на","да","не","се","во","со","за","е","ова","но","јас","ти","многу","денес","само","веќе","уште","како","што","има","сум","од","благодарам","фала","сега","тука","може","ќе","сите","затоа","нешто"];
+    // Basque is an isolate; none of these overlap with the Romance lists.
+    const EU: &[&str] = &["eta","da","ez","bai","baina","ere","gaur","bakarrik","eskerrik","asko","ni","zu","gu","dago","daude","zen","hemen","noiz","edo","orain","ondo","zer","zergatik","dut","dugu","nahi","oso","dena","gero","hau","hori","du"];
+    // Galician against Portuguese/Spanish: non/unha/moi/hoxe/só/grazas/
+    // tamén/aquí/agora/xa/polo/onde carry the signal.
+    const GL: &[&str] = &["e","o","a","non","que","unha","un","con","para","pero","moi","hoxe","só","grazas","eu","ti","nós","é","son","tamén","aquí","cando","ou","agora","ben","porque","todo","xa","polo","pola","onde","está"];
+    const CY: &[&str] = &["a","ac","y","yr","yn","i","o","mae","ond","hefyd","heddiw","dim","diolch","fi","ti","ni","chi","nhw","yma","pryd","neu","nawr","beth","pam","gyda","wedi","bod","ar","am","iawn","hwn","hon","roedd","oedd"];
+    // Luxembourgish shares den/noch/dat/wat with German and Dutch; ech/ass/
+    // net/mee/och/haut/elo/gutt/mat/fir/hunn/sinn/schonn/ganz are its own.
+    const LB: &[&str] = &["an","den","de","ech","du","mir","dir","si","ass","net","mee","och","haut","nëmmen","merci","hei","wéini","oder","elo","gutt","wat","firwat","mat","fir","hunn","hu","sinn","war","ginn","nach","schonn","ganz","alles","eng","wéi","dat"];
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !(c.is_alphabetic() || c == '\''))
@@ -306,7 +315,8 @@ pub fn heuristic_detect(text: &str) -> Option<String> {
                       ("el", score(EL)), ("hu", score(HU)), ("ro", score(RO)), ("bg", score(BG)),
                       ("sk", score(SK)), ("sl", score(SL)), ("lt", score(LT)), ("et", score(ET)),
                       ("ga", score(GA)), ("mt", score(MT)), ("uk", score(UK)), ("ru", score(RU)),
-                      ("ca", score(CA)), ("sq", score(SQ)), ("bs", score(BS)), ("mk", score(MK))];
+                      ("ca", score(CA)), ("sq", score(SQ)), ("bs", score(BS)), ("mk", score(MK)),
+                      ("eu", score(EU)), ("gl", score(GL)), ("cy", score(CY)), ("lb", score(LB))];
     scores.sort_by_key(|a| std::cmp::Reverse(a.1));
     let (best, top) = scores[0];
     let second = scores[1].1;
@@ -424,6 +434,10 @@ mod tests {
         assert_eq!(heuristic_detect("Nuk e di, por kjo është shumë mirë dhe sot kemi gjithçka këtu.").as_deref(), Some("sq"));
         assert_eq!(heuristic_detect("Ne znam, ali to je lijepo i uvijek imamo vremena za sve šta treba, sedmica je duga.").as_deref(), Some("bs"));
         assert_eq!(heuristic_detect("Не знам, но ова е многу добро и денес веќе имаме сè.").as_deref(), Some("mk"));
+        assert_eq!(heuristic_detect("Ez dakit, baina hau oso ondo dago eta gaur dena hemen dugu.").as_deref(), Some("eu"));
+        assert_eq!(heuristic_detect("Non sei, pero isto é moi ben e hoxe xa temos todo aquí.").as_deref(), Some("gl"));
+        assert_eq!(heuristic_detect("Dw i ddim yn gwybod, ond mae hyn yn dda iawn ac heddiw mae popeth yma.").as_deref(), Some("cy"));
+        assert_eq!(heuristic_detect("Ech weess et net, mee dat ass ganz gutt an haut hu mir alles hei.").as_deref(), Some("lb"));
     }
 
     #[test]
