@@ -180,6 +180,14 @@
         "#i18n",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-09-16-15-permanent-archive",
+      "text": "Permanent Posts is now the platform's archive: 'All' shows every public permanent post – these release notes included – with infinite scroll, 'Mine' shows your own. Also fixed: permanent posts from the early days that the expiry sweep had hidden are back, and the sweep never touches permanent posts again.",
+      "tags": [
+        "#Fix",
+        "#Feed"
+      ]
     }
   ]
 }

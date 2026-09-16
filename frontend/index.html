@@ -128,6 +128,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
 .feed-sentinel.err .feed-sentinel-spin{display:none}
 .feed-sentinel-retry{display:none;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
 .feed-sentinel.err .feed-sentinel-retry{display:inline-block}
+.perm-segs{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.perm-seg{background:transparent;border:none;color:var(--muted);padding:4px 10px;font-size:12px;cursor:pointer}
+.perm-seg.on{background:var(--card-2);color:var(--text);font-weight:600}
 .feed-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .feed-header h2{font-size:18px;font-weight:800}
 .btn-sm{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer}
@@ -1055,7 +1058,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.loading':'Loading...','common.error':'Error','common.networkError':'Network error',
       'webboard.subtitle':'Compose your own board of RSS feeds','webboard.phUrl':'RSS/Atom feed URL','webboard.phTitle':'Name (optional)','webboard.add':'Add','webboard.loginToAdd':'Log in to save your own feeds.','webboard.myFeeds':'Your feeds','webboard.suggestions':'Suggestions','webboard.empty':'No feeds yet — add one above.','webboard.added':'Feed added','webboard.removed':'Feed removed','webboard.remove':'Remove',
       'common.notLoggedIn':'Not logged in','common.pleaseLogin':'Please log in','common.unknown':'unknown',
-      'permanent.title':'Permanent Posts','permanent.backToFeed':'Back to feed',
+      'permanent.title':'Permanent Posts','permanent.backToFeed':'Back to feed','permanent.all':'All','permanent.mine':'Mine',
       'permanent.empty':'You have no permanent posts yet. Mark a post permanent with the 📌 button in the composer.',
       'common.aborted':'Cancelled','common.open':'Open',// nav
       // post composer
@@ -1485,7 +1488,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.loading':'Lädt...','common.error':'Fehler','common.networkError':'Netzwerkfehler',
       'webboard.subtitle':'Stelle dir dein eigenes Board aus RSS-Feeds zusammen','webboard.phUrl':'RSS/Atom-Feed-URL','webboard.phTitle':'Name (optional)','webboard.add':'Hinzufügen','webboard.loginToAdd':'Melde dich an, um eigene Feeds zu speichern.','webboard.myFeeds':'Deine Feeds','webboard.suggestions':'Vorschläge','webboard.empty':'Noch keine Feeds — füge oben einen hinzu.','webboard.added':'Feed hinzugefügt','webboard.removed':'Feed entfernt','webboard.remove':'Entfernen',
       'common.notLoggedIn':'Nicht eingeloggt','common.pleaseLogin':'Bitte einloggen','common.unknown':'unbekannt',
-      'permanent.title':'Permanente Posts','permanent.backToFeed':'Zurück zum Feed',
+      'permanent.title':'Permanente Posts','permanent.backToFeed':'Zurück zum Feed','permanent.all':'Alle','permanent.mine':'Meine',
       'permanent.empty':'Du hast noch keine permanenten Posts. Markiere einen Post mit dem 📌-Button im Composer als permanent.',
       'common.aborted':'Abgebrochen','common.open':'Öffnen','composer.placeholder':'Was yeetst du? Verschwindet in 24h...',
       'composer.addPhoto':'Foto hinzufügen','composer.addVideo':'Video hinzufügen','composer.markPermanent':'Als permanenten Post markieren',
@@ -1995,7 +1998,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Accedi, per favore',
       'common.unknown':'sconosciuto',
       'permanent.title':'Post permanenti',
-      'permanent.backToFeed':'Torna al feed',
+      'permanent.backToFeed':'Torna al feed','permanent.all':'Tutti','permanent.mine':'I miei',
       'permanent.empty':'Non hai ancora post permanenti. Rendi permanente un post con il pulsante 📌 nel composer.',
       'common.aborted':'Annullato',
       'common.open':'Apri',
@@ -2679,7 +2682,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Connecte-toi',
       'common.unknown':'inconnu',
       'permanent.title':'Posts permanents',
-      'permanent.backToFeed':'Retour au fil',
+      'permanent.backToFeed':'Retour au fil','permanent.all':'Tous','permanent.mine':'Les miens',
       'permanent.empty':'Tu n\'as pas encore de post permanent. Marque un post comme permanent avec le bouton 📌 dans l\'éditeur.',
       'common.aborted':'Annulé',
       'common.open':'Ouvrir',
@@ -3363,7 +3366,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Inicia sesión',
       'common.unknown':'desconocido',
       'permanent.title':'Posts permanentes',
-      'permanent.backToFeed':'Volver al feed',
+      'permanent.backToFeed':'Volver al feed','permanent.all':'Todos','permanent.mine':'Míos',
       'permanent.empty':'Aún no tienes posts permanentes. Marca un post como permanente con el botón 📌 del editor.',
       'common.aborted':'Cancelado',
       'common.open':'Abrir',
@@ -4047,7 +4050,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Faça login',
       'common.unknown':'desconhecido',
       'permanent.title':'Posts Permanentes',
-      'permanent.backToFeed':'Voltar ao feed',
+      'permanent.backToFeed':'Voltar ao feed','permanent.all':'Todos','permanent.mine':'Meus',
       'permanent.empty':'Você ainda não tem posts permanentes. Marque um post como permanente com o botão 📌 no editor.',
       'common.aborted':'Cancelado',
       'common.open':'Abrir',
@@ -4729,7 +4732,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Kirjaudu sisään',
       'common.unknown':'tuntematon',
       'permanent.title':'Pysyvät postaukset',
-      'permanent.backToFeed':'Takaisin syötteeseen',
+      'permanent.backToFeed':'Takaisin syötteeseen','permanent.all':'Kaikki','permanent.mine':'Omat',
       'permanent.empty':'Sinulla ei ole vielä pysyviä postauksia. Merkitse postaus pysyväksi kirjoitusikkunan 📌-painikkeella.',
       'common.aborted':'Peruutettu',
       'common.open':'Avaa',
@@ -5415,7 +5418,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Logga in',
       'common.unknown':'okänd',
       'permanent.title':'Permanenta inlägg',
-      'permanent.backToFeed':'Tillbaka till flödet',
+      'permanent.backToFeed':'Tillbaka till flödet','permanent.all':'Alla','permanent.mine':'Mina',
       'permanent.empty':'Du har inga permanenta inlägg än. Markera ett inlägg som permanent med 📌-knappen i editorn.',
       'common.aborted':'Avbrutet',
       'common.open':'Öppna',
@@ -6101,7 +6104,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Logg inn',
       'common.unknown':'ukjent',
       'permanent.title':'Permanente innlegg',
-      'permanent.backToFeed':'Tilbake til feeden',
+      'permanent.backToFeed':'Tilbake til feeden','permanent.all':'Alle','permanent.mine':'Mine',
       'permanent.empty':'Du har ingen permanente innlegg ennå. Merk et innlegg som permanent med 📌-knappen i skrivefeltet.',
       'common.aborted':'Avbrutt',
       'common.open':'Åpne',
@@ -6787,7 +6790,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Skráðu þig inn',
       'common.unknown':'óþekkt',
       'permanent.title':'Varanlegar færslur',
-      'permanent.backToFeed':'Aftur í straum',
+      'permanent.backToFeed':'Aftur í straum','permanent.all':'Allar','permanent.mine':'Mínar',
       'permanent.empty':'Þú átt engar varanlegar færslur enn. Merktu færslu sem varanlega með 📌 hnappinum í ritlinum.',
       'common.aborted':'Hætt við',
       'common.open':'Opna',
@@ -7472,7 +7475,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Přihlas se prosím',
       'common.unknown':'neznámé',
       'permanent.title':'Trvalé příspěvky',
-      'permanent.backToFeed':'Zpět na feed',
+      'permanent.backToFeed':'Zpět na feed','permanent.all':'Všechny','permanent.mine':'Moje',
       'permanent.empty':'Zatím nemáš žádné trvalé příspěvky. Označ příspěvek jako trvalý tlačítkem 📌 v editoru.',
       'common.aborted':'Zrušeno',
       'common.open':'Otevřít',
@@ -8161,7 +8164,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Log venligst ind',
       'common.unknown':'ukendt',
       'permanent.title':'Permanente opslag',
-      'permanent.backToFeed':'Tilbage til feedet',
+      'permanent.backToFeed':'Tilbage til feedet','permanent.all':'Alle','permanent.mine':'Mine',
       'permanent.empty':'Du har ingen permanente opslag endnu. Markér et opslag som permanent med 📌-knappen i editoren.',
       'common.aborted':'Annulleret',
       'common.open':'Åbn',
@@ -8850,7 +8853,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Log in',
       'common.unknown':'onbekend',
       'permanent.title':'Permanente posts',
-      'permanent.backToFeed':'Terug naar feed',
+      'permanent.backToFeed':'Terug naar feed','permanent.all':'Alle','permanent.mine':'Mijn',
       'permanent.empty':'Je hebt nog geen permanente posts. Markeer een post als permanent met de 📌-knop in de composer.',
       'common.aborted':'Geannuleerd',
       'common.open':'Openen',
@@ -9539,7 +9542,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Zaloguj się',
       'common.unknown':'nieznany',
       'permanent.title':'Posty stałe',
-      'permanent.backToFeed':'Wróć do kanału',
+      'permanent.backToFeed':'Wróć do kanału','permanent.all':'Wszystkie','permanent.mine':'Moje',
       'permanent.empty':'Nie masz jeszcze postów stałych. Oznacz post jako stały przyciskiem 📌 w edytorze.',
       'common.aborted':'Anulowano',
       'common.open':'Otwórz',
@@ -10228,7 +10231,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Prijavi se',
       'common.unknown':'nepoznato',
       'permanent.title':'Trajne objave',
-      'permanent.backToFeed':'Natrag na feed',
+      'permanent.backToFeed':'Natrag na feed','permanent.all':'Sve','permanent.mine':'Moje',
       'permanent.empty':'Još nemaš trajnih objava. Označi objavu kao trajnu gumbom 📌 u sastavljaču.',
       'common.aborted':'Otkazano',
       'common.open':'Otvori',
@@ -10921,7 +10924,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Prijavi se',
       'common.unknown':'nepoznato',
       'permanent.title':'Trajne objave',
-      'permanent.backToFeed':'Nazad na fid',
+      'permanent.backToFeed':'Nazad na fid','permanent.all':'Sve','permanent.mine':'Moje',
       'permanent.empty':'Još nemaš trajnih objava. Označi objavu kao trajnu dugmetom 📌 u editoru.',
       'common.aborted':'Otkazano',
       'common.open':'Otvori',
@@ -11614,7 +11617,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Lütfen giriş yap',
       'common.unknown':'bilinmiyor',
       'permanent.title':'Kalıcı Gönderiler',
-      'permanent.backToFeed':'Akışa dön',
+      'permanent.backToFeed':'Akışa dön','permanent.all':'Tümü','permanent.mine':'Benimkiler',
       'permanent.empty':'Henüz kalıcı gönderin yok. Düzenleyicideki 📌 butonuyla bir gönderiyi kalıcı olarak işaretle.',
       'common.aborted':'İptal edildi',
       'common.open':'Aç',
@@ -12307,7 +12310,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Lūdzu, pieslēdzies',
       'common.unknown':'nezināms',
       'permanent.title':'Pastāvīgie ieraksti',
-      'permanent.backToFeed':'Atpakaļ uz plūsmu',
+      'permanent.backToFeed':'Atpakaļ uz plūsmu','permanent.all':'Visi','permanent.mine':'Mani',
       'permanent.empty':'Tev vēl nav pastāvīgu ierakstu. Atzīmē ierakstu kā pastāvīgu ar 📌 pogu redaktorā.',
       'common.aborted':'Atcelts',
       'common.open':'Atvērt',
@@ -13001,7 +13004,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Συνδέσου',
       'common.unknown':'άγνωστο',
       'permanent.title':'Μόνιμες αναρτήσεις',
-      'permanent.backToFeed':'Πίσω στη ροή',
+      'permanent.backToFeed':'Πίσω στη ροή','permanent.all':'Όλα','permanent.mine':'Δικά μου',
       'permanent.empty':'Δεν έχεις ακόμη μόνιμες αναρτήσεις. Σημείωσε μια ανάρτηση ως μόνιμη με το κουμπί 📌 στον συντάκτη.',
       'common.aborted':'Ακυρώθηκε',
       'common.open':'Άνοιγμα',
@@ -13699,7 +13702,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Kérlek, jelentkezz be',
       'common.unknown':'ismeretlen',
       'permanent.title':'Állandó posztok',
-      'permanent.backToFeed':'Vissza a hírfolyamhoz',
+      'permanent.backToFeed':'Vissza a hírfolyamhoz','permanent.all':'Összes','permanent.mine':'Sajátjaim',
       'permanent.empty':'Még nincs állandó posztod. Jelölj meg egy posztot állandóként a 📌 gombbal a szerkesztőben.',
       'common.aborted':'Megszakítva',
       'common.open':'Megnyitás',
@@ -14397,7 +14400,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Te rugăm să te conectezi',
       'common.unknown':'necunoscut',
       'permanent.title':'Postări permanente',
-      'permanent.backToFeed':'Înapoi la feed',
+      'permanent.backToFeed':'Înapoi la feed','permanent.all':'Toate','permanent.mine':'Ale mele',
       'permanent.empty':'Nu ai încă postări permanente. Marchează o postare ca permanentă cu butonul 📌 din editor.',
       'common.aborted':'Anulat',
       'common.open':'Deschide',
@@ -15095,7 +15098,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Моля, влез',
       'common.unknown':'неизвестно',
       'permanent.title':'Постоянни постове',
-      'permanent.backToFeed':'Обратно към потока',
+      'permanent.backToFeed':'Обратно към потока','permanent.all':'Всички','permanent.mine':'Моите',
       'permanent.empty':'Още нямаш постоянни постове. Отбележи пост като постоянен с бутона 📌 в редактора.',
       'common.aborted':'Отказано',
       'common.open':'Отвори',
@@ -15793,7 +15796,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Prihlás sa, prosím',
       'common.unknown':'neznáme',
       'permanent.title':'Trvalé príspevky',
-      'permanent.backToFeed':'Späť na feed',
+      'permanent.backToFeed':'Späť na feed','permanent.all':'Všetky','permanent.mine':'Moje',
       'permanent.empty':'Zatiaľ nemáš žiadne trvalé príspevky. Príspevok označíš ako trvalý tlačidlom 📌 v editore.',
       'common.aborted':'Zrušené',
       'common.open':'Otvoriť',
@@ -16495,7 +16498,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Prijavi se',
       'common.unknown':'neznano',
       'permanent.title':'Trajne objave',
-      'permanent.backToFeed':'Nazaj na vir',
+      'permanent.backToFeed':'Nazaj na vir','permanent.all':'Vse','permanent.mine':'Moje',
       'permanent.empty':'Trajnih objav še nimaš. Objavo označi kot trajno z gumbom 📌 v urejevalniku.',
       'common.aborted':'Preklicano',
       'common.open':'Odpri',
@@ -17197,7 +17200,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Prisijunk',
       'common.unknown':'nežinoma',
       'permanent.title':'Nuolatiniai įrašai',
-      'permanent.backToFeed':'Atgal į srautą',
+      'permanent.backToFeed':'Atgal į srautą','permanent.all':'Visi','permanent.mine':'Mano',
       'permanent.empty':'Nuolatinių įrašų dar neturi. Pažymėk įrašą kaip nuolatinį 📌 mygtuku redaktoriuje.',
       'common.aborted':'Atšaukta',
       'common.open':'Atidaryti',
@@ -17899,7 +17902,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Palun logi sisse',
       'common.unknown':'teadmata',
       'permanent.title':'Püsipostitused',
-      'permanent.backToFeed':'Tagasi voogu',
+      'permanent.backToFeed':'Tagasi voogu','permanent.all':'Kõik','permanent.mine':'Minu',
       'permanent.empty':'Sul pole veel püsipostitusi. Märgi postitus püsivaks koostamisaknas oleva 📌 nupuga.',
       'common.aborted':'Katkestatud',
       'common.open':'Ava',
@@ -18601,7 +18604,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Logáil isteach, le do thoil',
       'common.unknown':'anaithnid',
       'permanent.title':'Postálacha buana',
-      'permanent.backToFeed':'Ar ais chuig an bhfotha',
+      'permanent.backToFeed':'Ar ais chuig an bhfotha','permanent.all':'Uile','permanent.mine':'Mo chuid',
       'permanent.empty':'Níl aon phostáil bhuan agat fós. Marcáil postáil mar bhuan leis an gcnaipe 📌 sa chumadóir.',
       'common.aborted':'Cealaithe',
       'common.open':'Oscail',
@@ -19307,7 +19310,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Jekk jogħġbok idħol',
       'common.unknown':'mhux magħruf',
       'permanent.title':'Posts Permanenti',
-      'permanent.backToFeed':'Lura għall-feed',
+      'permanent.backToFeed':'Lura għall-feed','permanent.all':'Kollha','permanent.mine':'Tiegħi',
       'permanent.empty':'Għad m\'għandekx posts permanenti. Immarka post bħala permanenti bil-buttuna 📌 fil-composer.',
       'common.aborted':'Ikkanċellat',
       'common.open':'Iftaħ',
@@ -20013,7 +20016,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Будь ласка, увійди',
       'common.unknown':'невідомо',
       'permanent.title':'Постійні пости',
-      'permanent.backToFeed':'Назад до стрічки',
+      'permanent.backToFeed':'Назад до стрічки','permanent.all':'Усі','permanent.mine':'Мої',
       'permanent.empty':'У тебе поки немає постійних постів. Познач пост як постійний кнопкою 📌 у редакторі.',
       'common.aborted':'Скасовано',
       'common.open':'Відкрити',
@@ -20719,7 +20722,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Войди в аккаунт',
       'common.unknown':'неизвестно',
       'permanent.title':'Постоянные посты',
-      'permanent.backToFeed':'Назад к ленте',
+      'permanent.backToFeed':'Назад к ленте','permanent.all':'Все','permanent.mine':'Мои',
       'permanent.empty':'У тебя пока нет постоянных постов. Отметь пост как постоянный кнопкой 📌 в редакторе.',
       'common.aborted':'Отменено',
       'common.open':'Открыть',
@@ -21425,7 +21428,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Inicia la sessió',
       'common.unknown':'desconegut',
       'permanent.title':'Publicacions permanents',
-      'permanent.backToFeed':'Torna al feed',
+      'permanent.backToFeed':'Torna al feed','permanent.all':'Totes','permanent.mine':'Meves',
       'permanent.empty':'Encara no tens publicacions permanents. Marca una publicació com a permanent amb el botó 📌 de l\'editor.',
       'common.aborted':'Cancel·lat',
       'common.open':'Obre',
@@ -22135,7 +22138,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Të lutem hyr',
       'common.unknown':'e panjohur',
       'permanent.title':'Postime të përhershme',
-      'permanent.backToFeed':'Kthehu te feed-i',
+      'permanent.backToFeed':'Kthehu te feed-i','permanent.all':'Të gjitha','permanent.mine':'Të miat',
       'permanent.empty':'Nuk ke ende postime të përhershme. Shëno një postim si të përhershëm me butonin 📌 në kompozues.',
       'common.aborted':'U anulua',
       'common.open':'Hap',
@@ -22845,7 +22848,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Prijavi se',
       'common.unknown':'nepoznato',
       'permanent.title':'Trajne objave',
-      'permanent.backToFeed':'Nazad na feed',
+      'permanent.backToFeed':'Nazad na feed','permanent.all':'Sve','permanent.mine':'Moje',
       'permanent.empty':'Još nemaš trajnih objava. Označi objavu kao trajnu dugmetom 📌 dok pišeš objavu.',
       'common.aborted':'Otkazano',
       'common.open':'Otvori',
@@ -23555,7 +23558,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Најави се',
       'common.unknown':'непознато',
       'permanent.title':'Трајни објави',
-      'permanent.backToFeed':'Назад кон фидот',
+      'permanent.backToFeed':'Назад кон фидот','permanent.all':'Сите','permanent.mine':'Мои',
       'permanent.empty':'Сè уште немаш трајни објави. Означи објава како трајна со копчето 📌 во композерот.',
       'common.aborted':'Откажано',
       'common.open':'Отвори',
@@ -24265,7 +24268,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Hasi saioa, mesedez',
       'common.unknown':'ezezaguna',
       'permanent.title':'Argitalpen iraunkorrak',
-      'permanent.backToFeed':'Itzuli jariora',
+      'permanent.backToFeed':'Itzuli jariora','permanent.all':'Guztiak','permanent.mine':'Nireak',
       'permanent.empty':'Oraindik ez duzu argitalpen iraunkorrik. Markatu argitalpen bat iraunkor gisa editorearen 📌 botoiarekin.',
       'common.aborted':'Bertan behera utzita',
       'common.open':'Ireki',
@@ -24979,7 +24982,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Inicia sesión',
       'common.unknown':'descoñecido',
       'permanent.title':'Publicacións permanentes',
-      'permanent.backToFeed':'Volver ao feed',
+      'permanent.backToFeed':'Volver ao feed','permanent.all':'Todas','permanent.mine':'Miñas',
       'permanent.empty':'Aínda non tes publicacións permanentes. Marca unha publicación como permanente co botón 📌 do compositor.',
       'common.aborted':'Cancelado',
       'common.open':'Abrir',
@@ -25693,7 +25696,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Mewngofnoda',
       'common.unknown':'anhysbys',
       'permanent.title':'Postiadau Parhaol',
-      'permanent.backToFeed':'Yn ôl i\'r ffrwd',
+      'permanent.backToFeed':'Yn ôl i\'r ffrwd','permanent.all':'Pob un','permanent.mine':'Fy rhai i',
       'permanent.empty':'Does gen ti ddim postiadau parhaol eto. Marcia bostiad yn barhaol gyda\'r botwm 📌 yn y cyfansoddwr.',
       'common.aborted':'Wedi canslo',
       'common.open':'Agor',
@@ -26407,7 +26410,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(var(--bg-rgb),.95);backdro
       'common.pleaseLogin':'Logg dech w.e.g. an',
       'common.unknown':'onbekannt',
       'permanent.title':'Permanent Posts',
-      'permanent.backToFeed':'Zréck zum Feed',
+      'permanent.backToFeed':'Zréck zum Feed','permanent.all':'All','permanent.mine':'Meng',
       'permanent.empty':'Du hues nach keng permanent Posts. Markéier e Post mam 📌-Knäppchen am Composer als permanent.',
       'common.aborted':'Ofgebrach',
       'common.open':'Opmaachen',
@@ -27264,16 +27267,20 @@ async function loadFeed(){
   }catch(e){console.error('Feed:',e);}
 }
 
-// Permanent Posts view (sidebar nav link). Shows the current user's
-// own permanent posts (the ones excluded from the 24h-expiry feed).
-// The backend route is per-user; we resolve the caller's id from the
-// cached yeet_user_id (populated by loadProfile) and fall back to a
-// /users/me fetch if it isn't there yet.
-async function loadPermanentPosts(){
+// Permanent Posts view (sidebar nav link). "All" is the platform's permanent
+// archive — every public permanent post from anybody, the changelog bot's
+// release notes included, newest first with infinite scroll. "Mine" lists
+// the caller's own via /me/permanent, which derives the owner from the auth
+// header so a stale yeet_user_id can't mask the user's posts. The choice is
+// remembered in localStorage (yeet_perm_mode).
+async function loadPermanentPosts(mode){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){ showLoginGate(); return; }
   // Leaving any open profile view so the feed column is the target.
   if(typeof _exitProfileView==='function'){ try{ _exitProfileView(); }catch(e){} }
+  if(!mode){ try{ mode=localStorage.getItem('yeet_perm_mode')||'all'; }catch(e){ mode='all'; } }
+  if(mode!=='mine') mode='all';
+  try{ localStorage.setItem('yeet_perm_mode',mode); }catch(e){}
   const empty=document.querySelector('.empty');
   const old=document.getElementById('feed-posts');
   if(old)old.remove();
@@ -27281,10 +27288,8 @@ async function loadPermanentPosts(){
   if(typeof showFeedSpinner==='function') showFeedSpinner();
 
   try{
-    // /me/permanent derives the owner from the auth header, so a stale
-    // or missing yeet_user_id in localStorage can't silently mask the
-    // user's own posts behind a uid that doesn't match author_id.
-    const r=await fetch('/api/v1/me/permanent',{cache:'no-store',headers:{'Authorization':'Bearer '+jwt}});
+    const url=mode==='mine'?'/api/v1/me/permanent':'/api/v1/feed/permanent';
+    const r=await fetch(url,{cache:'no-store',headers:{'Authorization':'Bearer '+jwt}});
     if(typeof hideFeedSpinner==='function') hideFeedSpinner();
     if(r.status===401){ showLoginGate(); return; }
     const d=await r.json();
@@ -27294,36 +27299,45 @@ async function loadPermanentPosts(){
     }
     const wrap=document.createElement('div');
     wrap.id='feed-posts';
-    // Header so the user knows they switched views (and can get back).
+    // Header: title, All | Mine switch, back to feed.
     const head=document.createElement('div');
-    head.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)';
+    head.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--border)';
+    const seg=function(m,key){ return '<button type="button" class="perm-seg'+(mode===m?' on':'')+'" data-mode="'+m+'" aria-pressed="'+(mode===m?'true':'false')+'">'+window.t(key)+'</button>'; };
     head.innerHTML='<b style="font-size:15px"><span class="yi yi-pin"></span> '+window.t('permanent.title')+'</b>'
-      +'<button onclick="loadFeed()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer">'+window.t('permanent.backToFeed')+'</button>';
+      +'<div style="display:flex;gap:8px;align-items:center"><div class="perm-segs" role="group">'+seg('all','permanent.all')+seg('mine','permanent.mine')+'</div>'
+      +'<button onclick="loadFeed()" style="background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer">'+window.t('permanent.backToFeed')+'</button></div>';
+    head.querySelectorAll('.perm-seg').forEach(function(b){ b.addEventListener('click',function(){ loadPermanentPosts(b.dataset.mode); }); });
     wrap.appendChild(head);
     const posts=(d&&d.data)||[];
     if(!posts.length){
       const none=document.createElement('div');
       none.style.cssText='padding:40px 20px;text-align:center;color:var(--muted);font-size:14px';
-      none.textContent=window.t('permanent.empty');
+      none.textContent=window.t(mode==='mine'?'permanent.empty':'feed.emptyTitle');
       wrap.appendChild(none);
     }else{
       for(const p of posts){
-        // Normalise: the permanent endpoint returns a flatter shape
-        // than the feed (no nested author / expires_at). Synthesize the
-        // fields _buildFeedPostEl expects so rendering stays identical.
         p.is_permanent=true;
-        if(!p.author){
-          p.author={ id: uid,
-            wallet_address: localStorage.getItem('yeet_address')||null,
-            display_name: localStorage.getItem('yeet_display_name')||null,
-            username: localStorage.getItem('yeet_username')||null };
+        if(mode==='mine'){
+          // /me/permanent returns a flatter shape than the feed (no nested
+          // author / expires_at). Synthesize the fields _buildFeedPostEl
+          // expects so rendering stays identical.
+          if(!p.author){
+            p.author={ id: uid,
+              wallet_address: localStorage.getItem('yeet_address')||null,
+              display_name: localStorage.getItem('yeet_display_name')||null,
+              username: localStorage.getItem('yeet_username')||null };
+          }
+          if(!p.expires_at) p.expires_at=new Date(Date.now()+3650*24*3600*1000).toISOString();
         }
-        if(!p.expires_at) p.expires_at=new Date(Date.now()+3650*24*3600*1000).toISOString();
         wrap.appendChild(_buildFeedPostEl(p));
       }
     }
     const c=document.querySelector('.composer');
     if(c)c.after(wrap); else { const m=document.querySelector('main') || document.body; m.appendChild(wrap); }
+    if(window.YeetPager){
+      if(mode==='all') window.YeetPager.attach({url:url,wrap:wrap,items:posts,total:d.total});
+      else window.YeetPager.reset();
+    }
   }catch(e){
     if(typeof hideFeedSpinner==='function') hideFeedSpinner();
     console.error('Permanent:',e);

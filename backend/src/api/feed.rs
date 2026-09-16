@@ -130,6 +130,69 @@ pub async fn get_feed(
     Ok(Json(PagedResponse { success: true, data: posts, total, page, per_page }))
 }
 
+/// GET /api/v1/feed/permanent — every permanent post the viewer may see,
+/// newest first: public ones from anybody (incl. the changelog bot's release
+/// notes), followers-only ones from accounts the viewer follows, and the
+/// viewer's own. Unlike the global feed there is no 24-hour cutoff; this is
+/// the platform's permanent archive and backs the "Permanent Posts" view.
+/// Honors block lists and the viewer's language/country filter (bots exempt).
+pub async fn get_permanent_feed(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Query(q): Query<FeedQuery>,
+) -> AppResult<Json<PagedResponse<FeedPost>>> {
+    let page = q.page.unwrap_or(1).max(1);
+    let per_page = q.per_page.unwrap_or(20).clamp(1, 50);
+    let offset = (page - 1) * per_page;
+    let viewer_id = resolve_viewer_id(&state, &auth).await?;
+    let (f_langs, f_countries) = viewer_filters(&state, viewer_id).await;
+
+    let rows = sqlx::query_as::<_, FeedRow>(
+        "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
+            p.like_count, p.reshare_count, p.comment_count,
+            p.expires_at, p.created_at,
+            u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
+            COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            p.reposted_from,
+            (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
+            (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
+            p.promoted_live_id, p.pinned_until, p.lang, p.kind, u.is_bot AS author_is_bot,
+            (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $3
+              OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $3 AND pu.post_id = p.id)) AS is_unlocked
+        FROM posts p JOIN users u ON p.author_id = u.id
+        WHERE p.is_permanent = TRUE AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
+          AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $3
+               OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $3 AND f.following_id = p.author_id))
+          AND (u.is_bot OR cardinality($4::text[]) = 0 OR p.lang = ANY($4) OR p.lang IS NULL OR p.lang = 'und')
+          AND (u.is_bot OR cardinality($5::text[]) = 0 OR u.country_code = ANY($5))
+          AND NOT EXISTS (SELECT 1 FROM user_blocks ub
+                           WHERE (ub.blocker_id = $3 AND ub.blocked_id = u.id)
+                              OR (ub.blocker_id = u.id AND ub.blocked_id = $3))
+        ORDER BY p.created_at DESC
+        LIMIT $1 OFFSET $2"
+    )
+    .bind(per_page).bind(offset).bind(viewer_id).bind(&f_langs).bind(&f_countries)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let total: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM posts p JOIN users u ON p.author_id = u.id
+          WHERE p.is_permanent = TRUE AND p.is_removed = FALSE AND p.deleted_at IS NULL AND p.is_adult = FALSE
+            AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $1
+                 OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $1 AND f.following_id = p.author_id))
+            AND (u.is_bot OR cardinality($2::text[]) = 0 OR p.lang = ANY($2) OR p.lang IS NULL OR p.lang = 'und')
+            AND (u.is_bot OR cardinality($3::text[]) = 0 OR u.country_code = ANY($3))
+            AND NOT EXISTS (SELECT 1 FROM user_blocks ub
+                             WHERE (ub.blocker_id = $1 AND ub.blocked_id = u.id)
+                                OR (ub.blocker_id = u.id AND ub.blocked_id = $1))"
+    )
+    .bind(viewer_id).bind(&f_langs).bind(&f_countries)
+    .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+
+    let posts = rows.into_iter().map(row_to_feed_post).collect();
+    Ok(Json(PagedResponse { success: true, data: posts, total, page, per_page }))
+}
+
 /// Resolve the caller's UUID from the JWT subject (wallet address or
 /// `email:<uuid>` for the email-auth path).
 /// The viewer's feed filters (languages, countries); empty = no filter.
