@@ -108,6 +108,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/comments/:id/translate", post(api::translate::translate_comment))
         .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
         .route("/api/v1/me/permanent",     get(api::permanent::get_my_permanent_posts))
+        .route("/api/v1/feed/permanent",   get(api::feed::get_permanent_feed))
         // Tips received — private per-user overview + CSV export
         .route("/api/v1/me/tips-received",        get(api::tips_received::list_mine))
         .route("/api/v1/me/tips-received/export", get(api::tips_received::export_csv))

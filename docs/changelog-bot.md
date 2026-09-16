@@ -21,7 +21,9 @@ auf Yeet veröffentlicht – englisch, maximal 420 Zeichen, mit Hashtags.
   (24 h im globalen Feed, danach nur noch im Profil) bleiben Bot-Posts
   **dauerhaft im globalen Feed** – chronologisch einsortiert, sie rutschen
   also mit der Zeit nach unten – und werden vom Sprach-/Länderfilter des
-  Betrachters nicht ausgeblendet. Zusätzlich stehen sie im Bot-Profil.
+  Betrachters nicht ausgeblendet. Zusätzlich stehen sie im Bot-Profil und in
+  der Ansicht „Permanente Posts“ (Schalter „Alle“), dem permanenten Archiv
+  der Plattform.
 
 ## Einen Eintrag hinzufügen (Konvention für jeden PR mit sichtbaren Änderungen)
 
