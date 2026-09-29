@@ -27010,13 +27010,8 @@ function showTrendingFeed(){
 }
 async function loadTrendingFeedPosts(){
   try{
-    var jwt=localStorage.getItem('yeet_jwt');
-    if(!jwt){ showLoginGate(); return; }
-    var resp=await fetch('/api/v1/feed',{headers:{'Authorization':'Bearer '+jwt}});
-    if(resp.status===401){ showLoginGate(); return; }
-    var data=await resp.json();
-    if(!data.success||!data.data){return;}
-    var trending=data.data.filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;}).sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);});
+    var trending=await fetchTrendingPosts();
+    if(trending===null){ showLoginGate(); return; }
     var empty=document.querySelector('.empty');
     var old=document.getElementById('feed-posts');
     if(old)old.remove();
@@ -27109,20 +27104,54 @@ async function loadTrendingFeedPosts(){
   }catch(e){console.error('Trending:',e);}
 }
 
-async function loadTrendingTags(){
-  try{
-    var jwt=localStorage.getItem('yeet_jwt');
-    if(!jwt)return;
-    var tp=new Promise((_,rej)=>setTimeout(()=>rej(new Error('t')),3000));
-    const r=await Promise.race([fetch('/api/v1/feed',{headers:{'Authorization':'Bearer '+jwt}}),tp]);
-    const d=await r.json();
-    var el=document.getElementById('trendingTags');
-    if(!el||!d.success||!d.data)return;
-    var posts=d.data.filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;}).sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);}).slice(0,5);
-    if(posts.length===0){el.innerHTML='<span style="color:var(--muted);font-size:12px">'+window.t('feed.noTrending')+'</span>';return;}
-    el.innerHTML=posts.map(function(p){var preview=(p.content||''). substring(0,45)+((p.content||'').length>45?'...':'')+' <span style="color:#f5a623"><span class="yi yi-cash"></span> '+(p.tip_total_yeet||0).toFixed(0)+' YEET</span>';return '<div style="margin:4px 0;padding:5px 8px;border-radius:5px;background:rgba(255,255,255,0.04);font-size:12px;color:var(--text)">'+preview+'</div>';}).join('');
-  }catch(e){}
+// Trending = the most-tipped posts (≥ 1 YEET) among the newest 50 in the
+// global feed. One source for the Trending view and the sidebar widget, so
+// they always agree. Resolves to null when not logged in.
+async function fetchTrendingPosts(){
+  var jwt=localStorage.getItem('yeet_jwt');
+  if(!jwt) return null;
+  var r=await fetch('/api/v1/feed?per_page=50',{cache:'no-store',headers:{'Authorization':'Bearer '+jwt}});
+  if(r.status===401) return null;
+  var d=await r.json();
+  if(!d||!d.success||!d.data) throw new Error('feed');
+  return d.data.filter(function(p){return p.tip_total_yeet&&p.tip_total_yeet>=1;})
+               .sort(function(a,b){return (b.tip_total_yeet||0)-(a.tip_total_yeet||0);});
 }
+window.fetchTrendingPosts = fetchTrendingPosts;
+
+// Sidebar widget. Never leaves "Loading…" standing: logged out → login hint,
+// no tipped posts → "no trending", fetch error → load error (a later call,
+// e.g. after login or a tip, replaces it). Re-run from _setLoggedIn and
+// after a successful tip.
+async function loadTrendingTags(){
+  var el=document.getElementById('trendingTags');
+  if(!el) return;
+  var muted=function(key){ el.innerHTML='<span style="color:var(--muted);font-size:12px">'+window.t(key)+'</span>'; };
+  try{
+    var posts=await fetchTrendingPosts();
+    if(posts===null){ muted('common.pleaseLogin'); return; }
+    posts=posts.slice(0,5);
+    if(posts.length===0){ muted('feed.noTrending'); return; }
+    el.innerHTML='';
+    posts.forEach(function(p){
+      var row=document.createElement('div');
+      row.className='trend-row';
+      row.style.cssText='margin:4px 0;padding:5px 8px;border-radius:5px;background:rgba(255,255,255,0.04);font-size:12px;color:var(--text);cursor:pointer';
+      var text=String(p.content||'').replace(/\s+/g,' ').trim();
+      var preview=text.substring(0,45)+(text.length>45?'…':'');
+      row.appendChild(document.createTextNode(preview+' '));
+      var amt=document.createElement('span'); amt.style.color='#f5a623';
+      amt.innerHTML='<span class="yi yi-cash"></span> '+(p.tip_total_yeet||0).toFixed(0)+' YEET';
+      row.appendChild(amt);
+      row.setAttribute('role','link'); row.tabIndex=0;
+      var open=function(){ if(typeof window.showPostDetail==='function') window.showPostDetail(p.id); };
+      row.addEventListener('click',open);
+      row.addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); open(); } });
+      el.appendChild(row);
+    });
+  }catch(e){ console.error('Trending widget:',e); muted('common.loadError'); }
+}
+window.loadTrendingTags = loadTrendingTags;
 
 async function loadProfile(){
   const jwt=localStorage.getItem('yeet_jwt');
@@ -31023,6 +31052,7 @@ function showExternalLinkWarning(e,url){
     else if(typeof window.loadFeed === 'function') window.loadFeed();
     if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
     if(typeof window.refreshNavAvatar === 'function') window.refreshNavAvatar();
+    if(typeof window.loadTrendingTags === 'function') window.loadTrendingTags();
   }
 
   function _updateAuthUI(user,wallet){
@@ -31439,7 +31469,7 @@ function openTipModal(postId,toAddr){
   document.body.appendChild(ov);
 }
 
-async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast(window.t('tip.notLogged'),'error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast(window.t('tip.selectAmount'),'error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent=window.t('tip.sending');}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast(window.t('tip.sentAmount',{amount:amt}),'success');if(ov)ov.remove();window._tipSelected=0;if(typeof window.refreshTokenBalance==='function')window.refreshTokenBalance();}else{showToast(window.t('common.error')+': '+(res.d.error&&res.d.error.message||res.d.message||window.t('tip.failed')),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}}}).catch(function(){showToast(window.t('common.networkError'),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}});}
+async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if(!jwt){showToast(window.t('tip.notLogged'),'error');return;}var amt=window._tipSelected||parseFloat((document.getElementById('_tipCustom')||{}).value)||0;if(!amt||amt<=0){showToast(window.t('tip.selectAmount'),'error');return;}var ov=document.getElementById('_tipOv');var btn=document.getElementById('_tipSendBtn');if(btn){btn.disabled=true;btn.textContent=window.t('tip.sending');}fetch('/api/v1/tips',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({to_address:toAddr,post_id:postId,amount:String(amt),currency:'YEET'})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});}).then(function(res){if(res.ok){showToast(window.t('tip.sentAmount',{amount:amt}),'success');if(ov)ov.remove();window._tipSelected=0;if(typeof window.refreshTokenBalance==='function')window.refreshTokenBalance();if(typeof window.loadTrendingTags==='function')window.loadTrendingTags();}else{showToast(window.t('common.error')+': '+(res.d.error&&res.d.error.message||res.d.message||window.t('tip.failed')),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}}}).catch(function(){showToast(window.t('common.networkError'),'error');if(btn){btn.disabled=false;btn.textContent=window.t('tip.send');}});}
 </script>
 
 <!-- Paper-wallet PDF + QR libs (loaded async; UI gracefully waits) -->

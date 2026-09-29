@@ -188,6 +188,14 @@
         "#Fix",
         "#Feed"
       ]
+    },
+    {
+      "id": "2026-09-29-16-trending-widget",
+      "text": "Fix: the Trending widget in the sidebar no longer gets stuck on 'Loading…'. It now fills in after you log in, waits for slow connections instead of giving up after three seconds, says so when nothing is trending yet, and its entries open the post. Trending looks at the newest 50 posts instead of 20.",
+      "tags": [
+        "#Fix",
+        "#UI"
+      ]
     }
   ]
 }
