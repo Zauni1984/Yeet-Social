@@ -13,6 +13,19 @@
 > Note: BNB Smart Chain was formerly known as Binance Smart Chain (BSC).
 > The Chain IDs (56/97), EVM compatibility, and tooling are unchanged.
 
+## Build & test
+
+```bash
+cd contracts
+forge install foundry-rs/forge-std OpenZeppelin/openzeppelin-contracts@v5.1.0
+forge build
+forge test
+```
+
+Pinned: solc 0.8.24, OpenZeppelin **5.1.0** (≥ 5.2 uses `mcopy` and needs
+`evm_version = "cancun"`), remappings in `remappings.txt`. Last full run:
+40/40 tests green.
+
 ## Contracts
 
 | Contract | Description |
@@ -20,6 +33,8 @@
 | `YeetToken.sol` | BEP-20, 1B max supply, burnable, owner-mintable |
 | `YeetTipping.sol` | Wallet-to-wallet YEET tips, 10% platform fee, pausable |
 | `YeetNFT.sol` | ERC-721, posts as NFTs, 10% creator royalties |
+| `YeetPayments.sol` | Non-custodial tips / PPV / promotion, atomic fee split, never holds funds (docs/mica/07) |
+| `PaperWalletEscrow.sol` | Bearer vouchers as on-chain escrow, signature-bound claim (front-running safe), no admin sweep |
 
 ## Deployed Addresses (Testnet)
 

@@ -81,16 +81,22 @@ contract PaperWalletEscrowTest is Test {
 
     function test_DoubleClaimReverts() public {
         _create(100 ether);
-        escrow.claim(claimAddr, bob, _sign(claimPk, bob));
+        bytes memory sig = _sign(claimPk, bob);
+        escrow.claim(claimAddr, bob, sig);
+        // Build the signature BEFORE expectRevert: _sign() calls the escrow's
+        // claimDigest() view, and expectRevert binds to the next external
+        // call — which must be claim(), not claimDigest().
+        bytes memory again = _sign(claimPk, bob);
         vm.expectRevert(PaperWalletEscrow.AlreadyRedeemed.selector);
-        escrow.claim(claimAddr, bob, _sign(claimPk, bob));
+        escrow.claim(claimAddr, bob, again);
     }
 
     function test_ClaimAfterExpiryReverts() public {
         uint64 expiry = _create(100 ether);
         vm.warp(expiry + 1);
+        bytes memory sig = _sign(claimPk, bob); // see test_DoubleClaimReverts
         vm.expectRevert(PaperWalletEscrow.Expired.selector);
-        escrow.claim(claimAddr, bob, _sign(claimPk, bob));
+        escrow.claim(claimAddr, bob, sig);
     }
 
     function test_RefundOnlyAfterExpiryToIssuer() public {
@@ -108,10 +114,17 @@ contract PaperWalletEscrowTest is Test {
         // There is no function on the contract that lets the owner move
         // escrowed funds. This asserts the invariant explicitly: even the
         // owner cannot drain before expiry/claim.
+        // No expectRevert here: with expectRevert armed, Foundry reports a
+        // reverting low-level call as ok=true. The invariant is simply that
+        // the call fails and the escrow balance is untouched.
+        uint256 before = token.balanceOf(address(escrow));
         vm.prank(owner);
-        vm.expectRevert(); // no such selector; low-level call must fail
         (bool ok, ) = address(escrow).call(abi.encodeWithSignature("rescue(address,uint256)", owner, 100 ether));
         assertTrue(!ok);
+        vm.prank(owner);
+        (bool ok2, ) = address(escrow).call(abi.encodeWithSignature("withdraw(uint256)", 100 ether));
+        assertTrue(!ok2);
+        assertEq(token.balanceOf(address(escrow)), before);
     }
 
     function test_AboveMaxRejected() public {
