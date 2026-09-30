@@ -196,6 +196,14 @@
         "#Fix",
         "#UI"
       ]
+    },
+    {
+      "id": "2026-09-30-17-sanctions-screening",
+      "text": "Compliance: every YEET payout address is now screened against the OFAC sanctions list before anything moves on-chain – when you link a wallet, when you convert points and again in the payout batch. Clean addresses notice nothing; a listed address is refused with a clear message. The list refreshes daily.",
+      "tags": [
+        "#Compliance",
+        "#Security"
+      ]
     }
   ]
 }
