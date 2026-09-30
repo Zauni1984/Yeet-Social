@@ -92,8 +92,22 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     let mut included_ids: Vec<uuid::Uuid> = Vec::with_capacity(rows.len());
     // (payout_id, user_id, wallet, yeet_amount) for ledger entries after mint.
     let mut ledger_rows: Vec<(uuid::Uuid, uuid::Uuid, String, f64)> = Vec::with_capacity(rows.len());
+    // F6 — sanctions screening (docs/mica/04 §B): a hit parks the row as
+    // 'failed' with the reason (admin queue → reject/refund); no loaded list
+    // holds the whole batch for the next run rather than paying out blind.
+    let mut sanctioned_ids: Vec<uuid::Uuid> = Vec::new();
+    let mut screening_unavailable = false;
     for r in &rows {
         let Some(wallet) = r.wallet_address.as_ref() else { continue; };
+        match crate::services::sanctions::check(wallet) {
+            crate::services::sanctions::Verdict::Clear => {}
+            crate::services::sanctions::Verdict::Sanctioned => {
+                warn!("batch-rewards: reward {} — payout address {wallet} is on the sanctions list, parking as failed", r.id);
+                sanctioned_ids.push(r.id);
+                continue;
+            }
+            crate::services::sanctions::Verdict::Unknown => { screening_unavailable = true; break; }
+        }
         let addr = match wallet.parse::<Address>() {
             Ok(a) => a,
             Err(e) => { warn!("batch-rewards: skip reward {} — bad wallet {wallet}: {e}", r.id); continue; }
@@ -109,6 +123,21 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         actions.push(r.action.clone().unwrap_or_default());
         included_ids.push(r.id);
         ledger_rows.push((r.id, r.user_id, wallet.clone(), yeet));
+    }
+
+    if screening_unavailable {
+        warn!("batch-rewards: sanctions list not loaded yet — holding {} pending payouts until the next run", rows.len());
+        return Ok(());
+    }
+    if !sanctioned_ids.is_empty() {
+        sqlx::query(
+            "UPDATE token_rewards
+                SET status = 'failed',
+                    last_error = 'SANCTIONED_ADDRESS: payout address is on the sanctions list (F6 screening)'
+              WHERE id = ANY($1) AND status = 'pending'"
+        )
+        .bind(&sanctioned_ids)
+        .execute(&state.db.pool).await?;
     }
 
     if recipients.is_empty() {

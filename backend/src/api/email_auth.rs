@@ -469,6 +469,11 @@ pub async fn link_wallet_verify(
         return Err(AppError::Unauthorised("Signature does not match address".into()));
     }
 
+    // F6 — a sanctioned address can't become a payout target at all.
+    if crate::services::sanctions::check(&address) == crate::services::sanctions::Verdict::Sanctioned {
+        return Err(AppError::Forbidden("SANCTIONED_ADDRESS".into()));
+    }
+
     let taken: Option<Uuid> = sqlx::query_scalar(
         "SELECT id FROM users WHERE wallet_address = $1 AND id <> $2"
     )

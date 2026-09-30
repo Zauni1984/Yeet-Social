@@ -22,9 +22,9 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | Token-Marketing-Regeln: fair, klar, nicht irreführend; keine Rendite-Versprechen; Kennzeichnung als Werbung | Marketing | offen |
 | ☑ | **F4** — fiktiven YEET-Kurs (hartcodiert) aus dem Header entfernt; „Utility-Token · kein Marktpreis" statt Fake-Preis | Dev | erledigt (dieser PR) |
 | ☑ | **F5** — irreführenden Fake-NFT-Mint (Junk-Tx + „NFT Minted!") deaktiviert; „NFT/verkaufen"-Wording entschärft | Dev | erledigt (dieser PR) |
-| ☐ | Chain-ID-Inkonsistenz klären (Login/Mint 0x61 Testnet vs. Reward-Minting Chain 56) | Dev | offen |
+| ☑ | Chain-ID-Inkonsistenz klären (Login/Mint 0x61 Testnet vs. Reward-Minting Chain 56) | Dev | erledigt — Frontend `window.YEET_CHAIN` (0x38) + Backend `YEET_CHAIN_ID` (Default 56); `contracts/.env.example` bleibt bewusst auf 97 für Testnet-Deploys |
 | ☐ | **F8** — Token-Contract-Härtung: Supply-Cap, Mint nur Multisig, Owner-Funktionen minimiert; Audit | Dev | offen |
-| ☐ | **F6** — Sanktions-Screening der Zieladressen vor jedem Batch-Mint | Dev | offen |
+| ☑ | **F6** — Sanktions-Screening der Zieladressen vor jedem Batch-Mint | Dev | erledigt — `services/sanctions.rs`: OFAC-SDN-Kryptoadressen (täglich), Prüfung beim Wallet-Verknüpfen, bei Punkte→YEET und im Batch-Mint (Treffer → `failed` + Grund, Admin-Queue); fail-closed bis Liste geladen. Doku: `docs/sanktions-screening.md` |
 | ☐ | Dokumentation Off-Chain-Ledger ↔ On-Chain-Token (Anspruch, Umtausch, Auszahlung) | Dev + Anwalt | offen |
 
 ## B2. Umsetzung Non-Custodial-Modell (nach Strategie-/Rechtsfreigabe — F1–F3, F7)
@@ -38,11 +38,11 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | **F3** — Paper Wallets als On-Chain-Escrow (kein Admin-Sweep, nicht upgradeable) + Betrags-/Rate-Limits; Alt-Ledger einfrieren | Dev | offen |
 | ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
 | ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | **Design + Contract-Sourcen + Tests erstellt** (`contracts/src`, Doc 07); Compile/Audit offen |
-| ☐ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) — in dieser Umgebung nicht möglich (forge/OZ fehlen) | Dev | offen |
+| ◐ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) | Dev | Compile erledigt: alle fünf Contracts bauen mit `solc 0.8.24` + OpenZeppelin **5.1.0** (OZ ≥ 5.2 braucht `evm_version = cancun` wegen `mcopy` — Foundry entsprechend pinnen). `forge test` offen: Foundry-Binaries sind in der Build-Umgebung nicht erreichbar, Quellbau braucht Rust ≥ 1.98 |
 | ☑ | `Deploy.s.sol` um `YeetPayments` + `PaperWalletEscrow` erweitern | Dev | erledigt (dieser PR) |
 | ☐ | Nach Deploy: Ownership → Multisig übertragen (Ownable2Step, transferOwnership + acceptOwnership) | Dev | offen |
 | ☑ | Backend-Indexer geplant + Migration 0037 (idempotente Event-Verarbeitung); Rust-Skeleton in Doc 08 | Dev | Design erledigt; Wiring nach Contract-Deploy |
-| ☐ | Chain-ID-Inkonsistenz behoben (Frontend `window.YEET_CHAIN` + Backend `YEET_CHAIN_ID`, Default Mainnet) | Dev | erledigt (dieser PR) |
+| ☑ | Chain-ID-Inkonsistenz behoben (Frontend `window.YEET_CHAIN` + Backend `YEET_CHAIN_ID`, Default Mainnet) | Dev | erledigt |
 | ☐ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | offen |
 | ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
 

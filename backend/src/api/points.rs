@@ -90,6 +90,12 @@ pub async fn convert(
         AppError::Forbidden("NO_WALLET_LINKED".into())
     })?;
 
+    // F6 — refuse up front rather than debiting points for a payout the
+    // batch minter would park as failed anyway (screened again at mint time).
+    if crate::services::sanctions::check(&wallet) == crate::services::sanctions::Verdict::Sanctioned {
+        return Err(AppError::Forbidden("SANCTIONED_ADDRESS".into()));
+    }
+
     if balance < req.points as f64 {
         return Err(AppError::Validation("Insufficient points".into()));
     }

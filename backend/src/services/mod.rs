@@ -14,3 +14,4 @@ pub mod ledger;
 pub mod note_swap;
 pub mod translate;
 pub mod changelog_bot;
+pub mod sanctions;
