@@ -25,7 +25,7 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☑ | Chain-ID-Inkonsistenz klären (Login/Mint 0x61 Testnet vs. Reward-Minting Chain 56) | Dev | erledigt — Frontend `window.YEET_CHAIN` (0x38) + Backend `YEET_CHAIN_ID` (Default 56); `contracts/.env.example` bleibt bewusst auf 97 für Testnet-Deploys |
 | ☐ | **F8** — Token-Contract-Härtung: Supply-Cap, Mint nur Multisig, Owner-Funktionen minimiert; Audit | Dev | offen |
 | ☑ | **F6** — Sanktions-Screening der Zieladressen vor jedem Batch-Mint | Dev | erledigt — `services/sanctions.rs`: OFAC-SDN-Kryptoadressen (täglich), Prüfung beim Wallet-Verknüpfen, bei Punkte→YEET und im Batch-Mint (Treffer → `failed` + Grund, Admin-Queue); fail-closed bis Liste geladen. Doku: `docs/sanktions-screening.md` |
-| ◐ | Dokumentation Off-Chain-Ledger ↔ On-Chain-Token (Anspruch, Umtausch, Auszahlung) | Dev + Anwalt | Dev erledigt: [09-ledger-und-auszahlung.md](09-ledger-und-auszahlung.md) (Buchungsebenen, Gutschrifts-/Verwendungspfade, Zustandsautomat der Umwandlung, Batch-Mint, Ledger-Abstimmung, Dev-Lücken D1–D7). **Anwalt:** Prüfpunkte A1–A9, prioritär A1 (AGB §6 „custodial liability“ widerspricht dem Punkte-Modell) |
+| ◐ | Dokumentation Off-Chain-Ledger ↔ On-Chain-Token (Anspruch, Umtausch, Auszahlung) | Dev + Anwalt | Dev erledigt: [09-ledger-und-auszahlung.md](09-ledger-und-auszahlung.md) (Buchungsebenen, Gutschrifts-/Verwendungspfade, Zustandsautomat der Umwandlung, Batch-Mint, Ledger-Abstimmung, Dev-Lücken D1–D7). **Anwalt:** Prüfpunkte A1–A9, A1 (AGB §1/§6 am 2. Okt. 2026 auf das Punkte-Modell umgeschrieben, Wortlaut prüfen) |
 
 ## B2. Umsetzung Non-Custodial-Modell (nach Strategie-/Rechtsfreigabe — F1–F3, F7)
 

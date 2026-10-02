@@ -68,15 +68,15 @@ Der Nutzer hat gegen BlockSocial UG einen **vertraglichen Leistungsanspruch** au
 den AGB beschriebenen Nutzungen (Tips, PPV, Gutscheine) und auf die Umwandlung
 *nach Maßgabe der AGB und der genannten Vorbehalte* — keine Geldforderung.
 
-**⚠️ Inkonsistenz im aktuellen AGB-Text (Anwalt, prioritär):** AGB §6 (EN und DE) sagt
-weiterhin: *„Off-chain balances reflect a custodial liability of BlockSocial UG"* /
+**⚠️ Inkonsistenz im AGB-Text (behoben am 2. Okt. 2026, Anwaltsprüfung offen):** AGB §6 (EN und DE) sagte
+bis dahin: *„Off-chain balances reflect a custodial liability of BlockSocial UG"* /
 „… können off-chain (über unseren internen Ledger) oder on-chain … durchgeführt werden".
 Diese Formulierung stammt aus der Zeit vor dem Punkte-Modell und beschreibt genau die
 **custody-nahe Konstruktion, die Doc 01 §4 als Kernrisiko identifiziert**. Sie widerspricht
-§3 derselben AGB („Points have no cash value"). Empfehlung: §6 auf das Punkte-Modell
-umschreiben (Punkte = Plattform-Punkte ohne Geldwert; YEET nur on-chain in der Nutzer-Wallet;
-Umwandlung einseitig, unter Vorbehalt). Das ist eine **Rechtstext-Änderung → Freigabe durch
-den Anwalt**, deshalb hier nur dokumentiert, nicht eigenmächtig geändert.
+§3 derselben AGB („Points have no cash value"). §1 und §6 sind inzwischen auf das Punkte-Modell
+umgeschrieben (Punkte = Plattform-Punkte ohne Geldwert; YEET nur on-chain in der Nutzer-Wallet;
+Umwandlung einseitig, unter Vorbehalt) — Details und Prüfbitte in `docs/rechtstexte.md`. Der
+neue Wortlaut ist eine **Rechtstext-Änderung**; die Freigabe durch den Anwalt steht aus (A1).
 
 ---
 
@@ -272,7 +272,7 @@ vor Migration 0039 und der Live-Promotion-Pfad (§9) erzeugen erklärbare Differ
 
 | # | Frage | Bezug |
 | --- | --- | --- |
-| A1 | **AGB §6 „custodial liability"** — Formulierung streichen/ersetzen; §6 auf Punkte-Modell umschreiben (Punkte ohne Geldwert, YEET nur in Nutzer-Wallet, Umwandlung einseitig + Vorbehalte) | §3 dieses Dokuments, Doc 01 §4 |
+| A1 | **AGB §6 „custodial liability"** — **Dev erledigt (Stand 2. Okt. 2026):** §1 und §6 (EN/DE) auf das Punkte-Modell umgeschrieben: Punkte = Plattform-Punkte (kein Kryptowert, kein E-Geld, keine Einlage, nicht käuflich, kein Geldwert, nicht übertragbar); YEET nie in Plattformhand; Umwandlung einseitig, min. 100 P, 1:1 mit prospektivem Änderungsvorbehalt, Prüfung/Batch/Sanktions-/Pool-Vorbehalt, Rückbuchung bei Ablehnung, kein Geldanspruch. **Anwalt:** Wortlaut prüfen (AGB-Kontrolle § 307 BGB, Transparenz, Änderungsvorbehalt) | §3 dieses Dokuments, Doc 01 §4, `docs/rechtstexte.md` |
 | A2 | Rechtsnatur des Punkteguthabens: Leistungsanspruch ohne Geldwert tragfähig? Verjährung/Verfall von Punkten regeln? (derzeit **kein** Verfall implementiert) | §3 |
 | A3 | Umwandlung als „Ausschüttung eigener Token ohne Gegenleistung" vs. Tausch: hält die Einordnung „kein CASP-Dienst" (Doc 05 §2) angesichts Admin-Freigabe und Pool-Vorbehalt? | §6–7 |
 | A4 | Zulässigkeit der Vorbehalte (Pool, Freigabe, Verhältnisänderung, Sanktion) als AGB-Klauseln gegenüber Verbrauchern (§ 307 ff. BGB), Transparenzgebot | §3 Nr. 3, L7 |

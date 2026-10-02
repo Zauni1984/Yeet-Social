@@ -228,6 +228,14 @@
         "#NewFeature",
         "#Wallet"
       ]
+    },
+    {
+      "id": "2026-10-02-21-terms-points-model",
+      "text": "Terms of Service updated (section 6): points are platform points, not a crypto-asset, not purchasable, no cash value, not transferable. YEET only ever sits in your own wallet; we never hold it for you. Points-to-YEET conversion is one-way, min. 100 points, reviewed before release, with points returned if a request is refused.",
+      "tags": [
+        "#Terms",
+        "#Legal"
+      ]
     }
   ]
 }
