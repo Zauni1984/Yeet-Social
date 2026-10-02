@@ -1,8 +1,9 @@
 # 07 — Contract-Design: YeetPayments & PaperWalletEscrow
 
-**Status: ENTWURF** · Solidity 0.8.24, OpenZeppelin v5, Foundry.
+**Status: ENTWURF** · Solidity 0.8.24, OpenZeppelin v5.1.0, Foundry.
 Quellen: `contracts/src/YeetPayments.sol`, `contracts/src/PaperWalletEscrow.sol`,
-Tests: `contracts/test/*.t.sol`. **Externes Audit vor Deploy erforderlich (F8).**
+Tests: `contracts/test/*.t.sol` — **`forge test`: 40/40 grün** (Stand 2026-09-30,
+Forge 1.8.4). **Externes Audit vor Deploy erforderlich (F8).**
 
 Diese Contracts setzen die Funktionsanpassungen **F1/F2** (Zahlungen strikt
 Wallet↔Wallet) und **F3** (Paper Wallets als On-Chain-Escrow) aus
@@ -130,13 +131,36 @@ neue Signatur erzeugen. → Test `test_FrontRunWithSwappedRecipientReverts`.
 5. `Deploy.s.sol` um beide erweitern. TODO(dev).
 6. Verifizieren (bscscan), Adressen in Backend-Env + Frontend eintragen.
 
+## 6a. Stand der lokalen Prüfung (2026-09-30)
+
+- `forge build` + `forge test`: alle fünf Contracts kompilieren, 40/40 Tests grün
+  (Token 10, NFT 6, Tipping 6, Payments 8 inkl. Fuzz `testFuzz_SplitConserves`,
+  Escrow 10). Drei Escrow-Tests waren zuvor fehlerhaft formuliert
+  (`vm.expectRevert` band sich an den vorgelagerten `claimDigest()`-View-Call
+  statt an `claim()`; beim No-Admin-Sweep-Test liefert ein Low-Level-Call
+  unter `expectRevert` `ok = true`) — die Contracts selbst verhielten sich
+  korrekt.
+- Toolchain-Hinweis: OpenZeppelin ≥ 5.2 nutzt `mcopy` (Cancun); mit
+  solc 0.8.24 ohne `evm_version = "cancun"` bricht der Build. Pin: OZ 5.1.0
+  (`forge install OpenZeppelin/openzeppelin-contracts@v5.1.0`), Remappings in
+  `contracts/remappings.txt`.
+- `forge lint` (Forge 1.8.4), als Input fürs Audit — keiner der Befunde ist ein
+  bekannter Fehler, alle sind bewusst oder durch Guards abgedeckt:
+  | Regel | Wo | Einordnung |
+  | --- | --- | --- |
+  | `block-timestamp` (5×) | PaperWalletEscrow `create`/`claim`/`refund`/`claimDigest` | Ablauflogik braucht die Blockzeit; Miner-Spielraum (Sekunden) ist gegenüber Tages-Gültigkeiten unerheblich |
+  | `unsafe-typecast` (1×) | PaperWalletEscrow `uint96(amount)` | durch `AmountOverflow`-Check davor abgesichert |
+  | `missing-events-arithmetic` (3×) | Escrow `setLimits`, Tipping `setPlatformFee`, Payments Fee-Setter | Events vorhanden bzw. Config-only; für Off-Chain-Monitoring beim Audit prüfen |
+  | `require-revert-in-loop` (1×) | YeetToken `batchMintRewards` | ein ungültiger Empfänger revertet den ganzen Batch — gewollt (Batch ist atomar; Backend validiert vorab, F6-Screening) |
+  | `reentrancy-events` (1×) | YeetNFT `mintPost` (Event nach `_safeMint`-Callback) | nur Log-Reihenfolge; keine Zustandsänderung nach dem Callback |
+
 ## 6. Sicherheits-Checkliste vor Mainnet (F8)
 
 - [ ] Externes Audit beider Contracts
 - [ ] Slither/Mythril clean
-- [ ] Fuzz-/Invariant-Tests (Contract hält nie Fremdmittel außer aktivem Escrow)
+- [x] Fuzz-/Invariant-Tests (Contract hält nie Fremdmittel außer aktivem Escrow) — `testFuzz_SplitConserves`, `test_ContractNeverHoldsFunds`, `test_NoAdminSweep` grün
 - [ ] Reentrancy-Review (SafeERC20 + Guards vorhanden)
-- [ ] Front-Running-Review Paper Wallet (Signatur-Bindung)
+- [x] Front-Running-Review Paper Wallet (Signatur-Bindung) — `test_FrontRunWithSwappedRecipientReverts`, `test_AttackerWithoutKeyCannotForge` grün; externe Bestätigung im Audit
 - [ ] Ownership auf Multisig, Owner-Funktionen minimiert
 - [ ] Kein Proxy / kein `delegatecall` / kein `selfdestruct`
 - [ ] YEET ist kein Fee-on-Transfer/rebasing Token (Split-Annahme bestätigen)

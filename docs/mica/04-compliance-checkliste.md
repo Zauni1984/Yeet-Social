@@ -37,8 +37,8 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | **F1/F2** — On-Chain-YEET-Zahlungen strikt Wallet↔Wallet (nach Contract-Deploy) | Dev + Anwalt | offen |
 | ☐ | **F3** — Paper Wallets als On-Chain-Escrow (kein Admin-Sweep, nicht upgradeable) + Betrags-/Rate-Limits; Alt-Ledger einfrieren | Dev | offen |
 | ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
-| ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | **Design + Contract-Sourcen + Tests erstellt** (`contracts/src`, Doc 07); Compile/Audit offen |
-| ◐ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) | Dev | Compile erledigt: alle fünf Contracts bauen mit `solc 0.8.24` + OpenZeppelin **5.1.0** (OZ ≥ 5.2 braucht `evm_version = cancun` wegen `mcopy` — Foundry entsprechend pinnen). `forge test` offen: Foundry-Binaries sind in der Build-Umgebung nicht erreichbar, Quellbau braucht Rust ≥ 1.98 |
+| ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | Design + Sourcen + Tests erstellt und **grün** (`contracts/src`, Doc 07); externes Audit offen |
+| ☑ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) | Dev | erledigt — `forge build` + `forge test`: **40/40 Tests grün** (Forge 1.8.4, solc 0.8.24, OpenZeppelin 5.1.0, forge-std). Drei Tests in `PaperWalletEscrow.t.sol` waren fehlerhaft geschrieben (nicht die Contracts), korrigiert. Lint-Befunde für das Audit in Doc 07 §6a. OZ ≥ 5.2 braucht `evm_version = cancun` (`mcopy`) — in `foundry.toml` vermerkt |
 | ☑ | `Deploy.s.sol` um `YeetPayments` + `PaperWalletEscrow` erweitern | Dev | erledigt (dieser PR) |
 | ☐ | Nach Deploy: Ownership → Multisig übertragen (Ownable2Step, transferOwnership + acceptOwnership) | Dev | offen |
 | ☑ | Backend-Indexer geplant + Migration 0037 (idempotente Event-Verarbeitung); Rust-Skeleton in Doc 08 | Dev | Design erledigt; Wiring nach Contract-Deploy |
