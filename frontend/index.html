@@ -27403,10 +27403,13 @@ window.YEET_CHAIN = window.YEET_CHAIN || {
   // backend YEET_TOKEN_ADDRESS). Empty → on-chain token transfers disabled.
   token: ''
 };
+// WalletConnect Cloud project id. Filled from GET /api/v1/config
+// (WALLETCONNECT_PROJECT_ID on the server); may also be preset here.
+window.YEET_WC_PROJECT_ID = window.YEET_WC_PROJECT_ID || '';
 
 // Ensure the connected wallet is on YEET_CHAIN; adds it if unknown.
 async function ensureYeetChain(provider){
-  provider = provider || window.ethereum;
+  provider = provider || (window.YeetWallet && window.YeetWallet.providerSync()) || window.ethereum;
   if(!provider) throw new Error('No wallet provider');
   var c = window.YEET_CHAIN;
   var current = await provider.request({ method:'eth_chainId' });
@@ -28007,7 +28010,7 @@ async function linkWalletToEmailUser(){
   if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
   // Same async-detection wait as the main connect flow — MetaMask may
   // inject after the page renders.
-  const eth = await waitForEthereum(2500);
+  const eth = window.YeetWallet ? await window.YeetWallet.getProvider({interactive:true}) : await waitForEthereum(2500);
   if(!eth){showToast(window.t('toast.walletNotFound'));return;}
   try{
     const [addr]=await eth.request({method:'eth_requestAccounts'});
@@ -28017,7 +28020,7 @@ async function linkWalletToEmailUser(){
       body:JSON.stringify({address:addr})});
     const nd=await nr.json();
     if(!nd.success){showToast(window.t('common.error')+': '+(nd.error&&nd.error.message||'nonce'));return;}
-    const sig=await window.ethereum.request({method:'personal_sign',params:[nd.data.message,addr]});
+    const sig=await eth.request({method:'personal_sign',params:[nd.data.message,addr]});
     const vr=await fetch('/api/v1/auth/link-wallet/verify',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},
       body:JSON.stringify({address:addr,signature:sig,nonce:nd.data.nonce})});
@@ -28156,8 +28159,9 @@ async function disconnectWallet(){
   //    no token and bail at the new submitPost gate.
   ['yeet_jwt','yeetToken','yt','yeet_refresh','yeetUser','yeet_address',
    'yeet_adult','yeet_18plus_verified','yeet_user_id','yeet_display_name',
-   'yeet_username','yeet_device_id','yeet_admin_secret','yeet_settings'
+   'yeet_username','yeet_device_id','yeet_admin_secret','yeet_settings','yeet_wallet_kind'
   ].forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+  if(window.YeetWallet){ try{ window.YeetWallet.disconnect(); }catch(e){} }
   try {
     var drop = [];
     for(var i=0;i<localStorage.length;i++){
@@ -30920,7 +30924,7 @@ function showExternalLinkWarning(e,url){
     <button class="atab" id="atReg" onclick="switchAuthTab('register')" data-i18n="auth.register">Register</button>
   </div>
   <button class="wbtn" onclick="connectMetaMaskAuth()"><span class="yi yi-wallet"></span> MetaMask</button>
-  <button class="wbtn" onclick="window.showToast(window.t('wallet.comingSoon'))"><span class="yi yi-link"></span> WalletConnect</button>
+  <button class="wbtn" onclick="connectWalletConnectAuth()"><span class="yi yi-link"></span> WalletConnect</button>
   <div class="or-div" data-i18n="auth.orEmail">or use email</div>
   <div id="mErr" class="merr"></div>
   <div id="mOk" class="mok"></div>
@@ -31255,31 +31259,53 @@ function showExternalLinkWarning(e,url){
     location.replace('/?_=' + Date.now());
   };
   window.copyAuthAddr = function(){navigator.clipboard?.writeText(localStorage.getItem('yeetWallet')||'');_toast(window.t('auth.addressCopied'))};
+  // Signature login for any EIP-1193 provider — the injected wallet
+  // (MetaMask & co.) or a WalletConnect v2 session. `kind` is remembered so
+  // later signing (link wallet, E2EE identity, on-chain actions) reaches
+  // the same wallet via YeetWallet.getProvider().
+  async function _walletAuth(provider, kind){
+    var acc=await provider.request({method:'eth_requestAccounts'});
+    var addr=(acc[0]||'').toLowerCase();
+    if(!addr) throw new Error(window.t('toast.noWalletSelected'));
+    // Login only needs a signature (no tx), but keep the wallet on the
+    // single configured chain so any follow-up on-chain action is correct.
+    try{await ensureYeetChain(provider);}catch(e){}
+    var nr=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
+    var nd=await nr.json();
+    if(!nr.ok)throw new Error((nd.error&&nd.error.message)||window.t('auth.nonceFailed'));
+    var nonce=(nd.data&&nd.data.nonce)||nd.nonce;
+    var msg=(nd.data&&nd.data.message)||nd.message;
+    var sig=await provider.request({method:'personal_sign',params:[msg,addr]});
+    var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,nonce:nonce})});
+    var vd=await vr.json();
+    if(!vr.ok)throw new Error((vd.error&&vd.error.message)||window.t('auth.failed'));
+    var payload=vd.data||vd;
+    var tok=payload.access_token||payload.token||'';
+    if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
+    try{ localStorage.setItem('yeet_wallet_kind', kind); }catch(e){}
+    window.yeetActiveProvider = provider;
+    _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
+    window.closeAuthModal();
+    _toast(window.t('auth.connected',{addr:addr.slice(0,6)+'...'+addr.slice(-4)}));
+    if(payload.needs_email===true)_showOnboarding(addr);
+  }
   window.connectMetaMaskAuth = async function(){
     if(!window.ethereum){_showErr(window.t('toast.walletNotFound'));return}
+    try{ await _walletAuth(window.ethereum,'injected'); }catch(e){_showErr(e.message||String(e))}
+  };
+  // WalletConnect v2: QR / deep link to Trust Wallet, Rainbow, MetaMask
+  // Mobile, … The library is loaded on first use only; without a project id
+  // (WALLETCONNECT_PROJECT_ID) the option stays "coming soon".
+  window.connectWalletConnectAuth = async function(){
+    if(!window.YeetWallet || !window.YeetWallet.configured()){ window.showToast(window.t('wallet.comingSoon')); return; }
     try{
-      var acc=await window.ethereum.request({method:'eth_requestAccounts'});
-      var addr=(acc[0]||'').toLowerCase();
-      // Login only needs a signature (no tx), but keep the wallet on the
-      // single configured chain so any follow-up on-chain action is correct.
-      try{await ensureYeetChain(window.ethereum);}catch(e){}
-      var nr=await fetch('/api/v1/auth/nonce',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
-      var nd=await nr.json();
-      if(!nr.ok)throw new Error((nd.error&&nd.error.message)||window.t('auth.nonceFailed'));
-      var nonce=(nd.data&&nd.data.nonce)||nd.nonce;
-      var msg=(nd.data&&nd.data.message)||nd.message;
-      var sig=await window.ethereum.request({method:'personal_sign',params:[msg,addr]});
-      var vr=await fetch('/api/v1/auth/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:addr,signature:sig,nonce:nonce})});
-      var vd=await vr.json();
-      if(!vr.ok)throw new Error((vd.error&&vd.error.message)||window.t('auth.failed'));
-      var payload=vd.data||vd;
-      var tok=payload.access_token||payload.token||'';
-      if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
-      _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
-      window.closeAuthModal();
-      _toast(window.t('auth.connected',{addr:addr.slice(0,6)+'...'+addr.slice(-4)}));
-      if(payload.needs_email===true)_showOnboarding(addr);
-    }catch(e){_showErr(e.message||String(e))}
+      var p = await window.YeetWallet.walletConnectProvider();
+      if(!(p.session || (p.accounts && p.accounts.length))) await p.connect();
+      await _walletAuth(p,'walletconnect');
+    }catch(e){
+      var m = (e && e.message) || String(e);
+      if(!/rejected|cancel|closed|User disapproved/i.test(m)) _showErr(m);
+    }
   };
   window.doEmailLogin = async function(){
     var email=document.getElementById('lEmail').value.trim();
@@ -32438,7 +32464,8 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
       <p>These items are <strong>strictly necessary</strong> for the operation of the Service (Section 25 (2) (2) of the German TTDSG). Without them, you cannot stay signed in or carry your settings between visits, and consent is not legally required.</p>
 
       <h2>Third-party content</h2>
-      <p>On initial page load we fetch a small number of JavaScript libraries from public content delivery networks (currently <code>cdnjs.cloudflare.com</code>). These requests may, as a technical side-effect, expose your IP address to the CDN provider. We do not control these providers&rsquo; practices in detail.</p>
+      <p>On initial page load we fetch a small number of JavaScript libraries from public content delivery networks (currently <code>cdnjs.cloudflare.com</code> and <code>cdn.jsdelivr.net</code>). These requests may, as a technical side-effect, expose your IP address to the CDN provider. We do not control these providers&rsquo; practices in detail.</p>
+      <p><strong>WalletConnect (optional):</strong> only if you choose &ldquo;WalletConnect&rdquo; to sign in with a mobile wallet, the WalletConnect library is loaded from <code>cdn.jsdelivr.net</code> and your browser connects to the WalletConnect relay service (operated by the WalletConnect Foundation / Reown, <code>relay.walletconnect.com</code>) to pair with your wallet app. The relay sees your IP address and encrypted session messages; it cannot read their content. Using MetaMask or email login does not involve this service.</p>
 
       <h2>How to clear or block our storage</h2>
       <p>You can clear localStorage at any time through your browser&rsquo;s developer tools or your browser&rsquo;s &ldquo;Clear site data&rdquo; option. Note that clearing localStorage will sign you out and reset your settings. You can also block storage entirely via your browser settings, but the Service will then not function correctly.</p>
@@ -32787,7 +32814,8 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
       <p>Diese Einträge sind für den Betrieb des Dienstes <strong>unbedingt erforderlich</strong> (§ 25 Abs. 2 Nr. 2 TDDDG, vormals TTDSG). Ohne sie können Sie weder angemeldet bleiben noch Ihre Einstellungen zwischen den Besuchen beibehalten; eine Einwilligung ist gesetzlich nicht erforderlich.</p>
 
       <h2>Inhalte Dritter</h2>
-      <p>Beim ersten Seitenaufruf laden wir eine geringe Anzahl von JavaScript-Bibliotheken von öffentlichen Content Delivery Networks (derzeit <code>cdnjs.cloudflare.com</code>). Diese Anfragen können als technischer Nebeneffekt Ihre IP-Adresse gegenüber dem CDN-Anbieter offenlegen. Die Praktiken dieser Anbieter im Einzelnen kontrollieren wir nicht.</p>
+      <p>Beim ersten Seitenaufruf laden wir eine geringe Anzahl von JavaScript-Bibliotheken von öffentlichen Content Delivery Networks (derzeit <code>cdnjs.cloudflare.com</code> und <code>cdn.jsdelivr.net</code>). Diese Anfragen können als technischer Nebeneffekt Ihre IP-Adresse gegenüber dem CDN-Anbieter offenlegen. Die Praktiken dieser Anbieter im Einzelnen kontrollieren wir nicht.</p>
+      <p><strong>WalletConnect (optional):</strong> Nur wenn Sie zur Anmeldung mit einer mobilen Wallet „WalletConnect“ wählen, wird die WalletConnect-Bibliothek von <code>cdn.jsdelivr.net</code> geladen und Ihr Browser verbindet sich mit dem WalletConnect-Relay-Dienst (betrieben von der WalletConnect Foundation / Reown, <code>relay.walletconnect.com</code>), um die Kopplung mit Ihrer Wallet-App herzustellen. Der Relay sieht Ihre IP-Adresse und verschlüsselte Sitzungsnachrichten, deren Inhalt er nicht lesen kann. Bei Anmeldung per MetaMask oder E-Mail wird dieser Dienst nicht genutzt.</p>
 
       <h2>So löschen oder blockieren Sie unsere Speicherung</h2>
       <p>Sie können den localStorage jederzeit über die Entwicklerwerkzeuge Ihres Browsers oder über die Option „Websitedaten löschen“ Ihres Browsers löschen. Beachten Sie, dass das Löschen des localStorage Sie abmeldet und Ihre Einstellungen zurücksetzt. Sie können die Speicherung auch vollständig über Ihre Browsereinstellungen blockieren; der Dienst funktioniert dann jedoch nicht ordnungsgemäß.</p>
@@ -33637,7 +33665,7 @@ info@blocksocial.eu</address>
   // Ask MetaMask (or any injected provider) to sign the deterministic
   // identity message. Returns the raw signature as bytes.
   async function signIdentityMessage(){
-    var prov = window.ethereum;
+    var prov = (window.YeetWallet && window.YeetWallet.providerSync()) || window.ethereum;
     if(!prov || !prov.request) throw new Error('no_wallet');
     var accounts = await prov.request({ method:'eth_accounts' });
     if(!accounts || !accounts.length){
@@ -33677,7 +33705,8 @@ info@blocksocial.eu</address>
       km, { name:'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
   }
   function hasInjectedWallet(){
-    return !!(window.ethereum && window.ethereum.request);
+    var prov = (window.YeetWallet && window.YeetWallet.providerSync()) || window.ethereum;
+    return !!(prov && prov.request);
   }
   function promptPassword(message){
     // Lightweight UI: a fixed overlay with a password input. Resolves
@@ -34552,12 +34581,13 @@ info@blocksocial.eu</address>
     //   - password: we PBKDF2 the user's account password
     // Either way we can let the modal open here; ensureIdentity() will
     // prompt for the right thing at the moment a chat actually needs a key.
-    if(window.ethereum && window.ethereum.request){
+    var _wprov = (window.YeetWallet && window.YeetWallet.providerSync()) || window.ethereum;
+    if(_wprov && _wprov.request){
       // Opportunistically backfill yeet_address for older wallet-login
       // sessions so own-message detection keeps working.
       if(!localStorage.getItem('yeet_address')){
         try {
-          var accs = await window.ethereum.request({ method:'eth_accounts' });
+          var accs = await _wprov.request({ method:'eth_accounts' });
           if(accs && accs[0]) localStorage.setItem('yeet_address', accs[0].toLowerCase());
         } catch(e){ /* non-fatal */ }
       }
@@ -37566,6 +37596,78 @@ window.YeetFeedFilter={load:load,save:save,renderChip:renderChip,state:state};
       });
   }
   window.YeetPager={attach:attach,reset:reset,more:more,state:function(){ return st?{url:st.url,page:st.page,total:st.total,loading:st.loading}:null; }};
+})();
+</script>
+<script>
+// Wallet provider broker: injected wallets (MetaMask & co.) and WalletConnect v2.
+// The WalletConnect library (~1.4 MB) is loaded from jsDelivr on first use
+// only, as an ES module; nothing is fetched for users who never pick it.
+(function(){
+  var WC_ESM = 'https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.25.0/+esm';
+  var wc = null, loading = null;
+  function projectId(){ return String(window.YEET_WC_PROJECT_ID || '').trim(); }
+  function configured(){ return !!projectId(); }
+  function kind(){ try{ return localStorage.getItem('yeet_wallet_kind') || ''; }catch(e){ return ''; } }
+  function loadLib(){
+    if(window.WalletConnectEthereumProvider && window.WalletConnectEthereumProvider.EthereumProvider) return Promise.resolve(window.WalletConnectEthereumProvider);
+    if(!loading){
+      loading = import(WC_ESM).then(function(m){ window.WalletConnectEthereumProvider = m; return m; })
+        .catch(function(e){ loading = null; throw e; });
+    }
+    return loading;
+  }
+  async function walletConnectProvider(){
+    if(wc) return wc;
+    if(!configured()) throw new Error('WalletConnect is not configured');
+    var m = await loadLib();
+    var c = window.YEET_CHAIN || {};
+    var chainId = parseInt(c.idHex || '0x38', 16);
+    var rpcMap = {}; rpcMap[chainId] = c.rpc || 'https://bsc-dataseed.binance.org/';
+    wc = await m.EthereumProvider.init({
+      projectId: projectId(),
+      chains: [chainId],
+      optionalChains: [chainId],
+      showQrModal: true,
+      rpcMap: rpcMap,
+      metadata: { name: 'YEET Social', description: 'Web3 social network · justyeet.it', url: location.origin, icons: [location.origin + '/icon-192.png'] }
+    });
+    wc.on('disconnect', function(){
+      if(kind() === 'walletconnect'){ try{ localStorage.removeItem('yeet_wallet_kind'); }catch(e){} }
+      if(window.yeetActiveProvider === wc) window.yeetActiveProvider = null;
+    });
+    return wc;
+  }
+  // The EIP-1193 provider to sign with: the WalletConnect session when that
+  // is how the user signed in (restored from the library's own storage, QR
+  // only if asked to be interactive), otherwise the injected wallet.
+  async function getProvider(opts){
+    opts = opts || {};
+    if(window.yeetActiveProvider) return window.yeetActiveProvider;
+    if(kind() === 'walletconnect' && configured()){
+      try{
+        var p = await walletConnectProvider();
+        if(p.session || (p.accounts && p.accounts.length)){ window.yeetActiveProvider = p; return p; }
+        if(opts.interactive){ await p.connect(); window.yeetActiveProvider = p; return p; }
+      }catch(e){ console.warn('walletconnect:', e); }
+    }
+    var eth = (typeof waitForEthereum === 'function') ? await waitForEthereum(opts.timeoutMs || 2500) : (window.ethereum || null);
+    if(eth) window.yeetActiveProvider = eth;
+    return eth;
+  }
+  function providerSync(){ return window.yeetActiveProvider || window.ethereum || null; }
+  async function disconnect(){
+    if(wc){ try{ await wc.disconnect(); }catch(e){} }
+    window.yeetActiveProvider = null;
+    try{ localStorage.removeItem('yeet_wallet_kind'); }catch(e){}
+  }
+  window.YeetWallet = { configured: configured, kind: kind, walletConnectProvider: walletConnectProvider, getProvider: getProvider, providerSync: providerSync, disconnect: disconnect };
+  // Deploy-specific values from the backend env (no index.html edits needed):
+  // WalletConnect project id and the deployed YEET token address.
+  fetch('/api/v1/config', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(d){
+    var c = d && d.data; if(!c) return;
+    if(c.walletconnect_project_id && !window.YEET_WC_PROJECT_ID) window.YEET_WC_PROJECT_ID = c.walletconnect_project_id;
+    if(c.yeet_token_address && window.YEET_CHAIN && !window.YEET_CHAIN.token) window.YEET_CHAIN.token = c.yeet_token_address;
+  }).catch(function(){});
 })();
 </script>
 </body>

@@ -22,6 +22,7 @@ pub mod link_preview;
 pub mod report;
 pub mod ledger;
 pub mod explorer;
+pub mod public_config;
 pub mod permanent;
 pub mod settings;
 pub mod uploads;

@@ -43,7 +43,7 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | Nach Deploy: Ownership → Multisig übertragen (Ownable2Step, transferOwnership + acceptOwnership) | Dev | offen |
 | ☑ | Backend-Indexer geplant + Migration 0037 (idempotente Event-Verarbeitung); Rust-Skeleton in Doc 08 | Dev | Design erledigt; Wiring nach Contract-Deploy |
 | ☑ | Chain-ID-Inkonsistenz behoben (Frontend `window.YEET_CHAIN` + Backend `YEET_CHAIN_ID`, Default Mainnet) | Dev | erledigt |
-| ☐ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | offen |
+| ☑ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | erledigt — Provider-Broker `window.YeetWallet`, WalletConnect-Login (QR/Deep Link), alle Signatur-Pfade (Login, Wallet verknüpfen, E2EE) laufen über den aktiven Provider; Konfiguration per `WALLETCONNECT_PROJECT_ID` (`docs/walletconnect.md`). On-Chain-Tips selbst folgen mit dem Contract-Deploy (F1/F2) |
 | ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
 
 ## C. Bei Angebot/Listing (auslösende Ereignisse: Sale, CEX/DEX-Listing, Pool)

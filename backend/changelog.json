@@ -220,6 +220,14 @@
         "#Fix",
         "#UI"
       ]
+    },
+    {
+      "id": "2026-10-02-20-walletconnect",
+      "text": "WalletConnect v2 is here: sign in with Trust Wallet, MetaMask Mobile, Rainbow and other mobile wallets – scan the QR code on desktop or tap through on your phone. The same wallet is then used for linking, encrypted messages and future on-chain actions. Nothing is loaded unless you pick it.",
+      "tags": [
+        "#NewFeature",
+        "#Wallet"
+      ]
     }
   ]
 }
