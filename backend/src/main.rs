@@ -114,6 +114,7 @@ fn build_router(state: AppState) -> Router {
         // Tips received — private per-user overview + CSV export
         .route("/api/v1/me/tips-received",        get(api::tips_received::list_mine))
         .route("/api/v1/me/tips-received/export", get(api::tips_received::export_csv))
+        .route("/api/v1/me/ppv-unlocks",          get(api::posts::list_my_ppv_unlocks))
         // Users
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))

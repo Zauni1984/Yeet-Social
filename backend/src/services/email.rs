@@ -81,3 +81,55 @@ pub async fn send_verification_email(
     mailer.send(email).await?;
     Ok(())
 }
+
+/// F7 — confirmation of a pay-per-view purchase on a durable medium
+/// (§ 312f BGB): restates the consent the buyer gave (immediate performance,
+/// loss of the right of withdrawal), the price and the time.
+pub async fn send_ppv_confirmation(
+    cfg: &EmailConfig,
+    to_email: &str,
+    lang: &str,
+    post_id: uuid::Uuid,
+    price_yeet: f64,
+    consent_at: chrono::DateTime<chrono::Utc>,
+) -> anyhow::Result<()> {
+    let from: Mailbox = format!("YEET Social <{}>", cfg.from).parse()?;
+    let to: Mailbox = to_email.parse()?;
+    let when = consent_at.format("%Y-%m-%d %H:%M UTC").to_string();
+    let base = cfg.public_base_url.trim_end_matches('/');
+    let (subject, title, intro, consent, details, footer) = if lang == "de" {
+        ("Bestätigung Ihrer Pay-per-View-Freischaltung – YEET Social",
+         "Bestätigung Ihrer Pay-per-View-Freischaltung",
+         "Sie haben soeben einen Pay-per-View-Inhalt auf YEET Social freigeschaltet. Diese E-Mail bestätigt Ihren Kauf und die von Ihnen erteilte Zustimmung auf einem dauerhaften Datenträger.",
+         "Sie haben ausdrücklich verlangt, dass wir sofort – vor Ablauf der 14-tägigen Widerrufsfrist – mit der Bereitstellung des digitalen Inhalts beginnen, und zur Kenntnis genommen, dass Ihr Widerrufsrecht damit erlischt, sobald der Inhalt bereitgestellt wurde (§ 356 Abs. 5 BGB).",
+         "Preis: {price} YEET (davon 90 % an den Creator, 10 % Plattformgebühr), abgebucht von Ihrem Punkteguthaben. Zeitpunkt der Zustimmung: {when}. Post-ID: {post}.",
+         "Diesen Beleg finden Sie auch in Ihrem Konto unter „Token Tips → Pay-per-View-Käufe“. Fragen: info@blocksocial.eu. Nutzungsbedingungen: {base}/legal/terms")
+    } else {
+        ("Confirmation of your pay-per-view unlock – YEET Social",
+         "Confirmation of your pay-per-view unlock",
+         "You have just unlocked pay-per-view content on YEET Social. This email confirms your purchase and the consent you gave, on a durable medium.",
+         "You expressly requested that we begin supplying the digital content immediately, before the 14-day withdrawal period has expired, and acknowledged that you thereby lose your right of withdrawal once the content has been made available (§ 356 (5) BGB / Art. 16 (m) Directive 2011/83/EU).",
+         "Price: {price} YEET (90 % to the creator, 10 % platform fee), debited from your points balance. Time of consent: {when}. Post ID: {post}.",
+         "You can also find this receipt in your account under “Token Tips → Pay-per-View purchases”. Questions: info@blocksocial.eu. Terms of Service: {base}/legal/terms")
+    };
+    let details = details.replace("{price}", &format!("{price_yeet}")).replace("{when}", &when).replace("{post}", &post_id.to_string());
+    let footer = footer.replace("{base}", base);
+    let html = format!(
+        r#"<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:24px">
+<div style="max-width:560px;margin:0 auto;background:#16181c;border:1px solid #2a2a2a;border-radius:16px;padding:32px">
+<h1 style="color:#c6f135;margin:0 0 16px;font-size:20px">{title}</h1>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px">{intro}</p>
+<p style="color:#e0e0e0;line-height:1.6;font-size:14px;border-left:3px solid #c6f135;padding-left:12px">{consent}</p>
+<p style="color:#e0e0e0;line-height:1.6;font-size:14px">{details}</p>
+<p style="color:#888;font-size:12px;margin-top:24px">{footer}</p>
+</div></body></html>"#
+    );
+    let msg = Message::builder()
+        .from(from)
+        .to(to)
+        .subject(subject)
+        .header(ContentType::TEXT_HTML)
+        .body(html)?;
+    transport(cfg)?.send(msg).await?;
+    Ok(())
+}

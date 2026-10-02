@@ -204,6 +204,22 @@
         "#Compliance",
         "#Security"
       ]
+    },
+    {
+      "id": "2026-10-02-18-ppv-consent",
+      "text": "Pay-per-View now asks for your express consent before a purchase: you confirm that the content is delivered immediately and that the 14-day right of withdrawal is waived, as EU consumer law requires for digital content. Price and the 90/10 creator/platform split are shown up front, you get a confirmation email, and every purchase is listed under Token Tips.",
+      "tags": [
+        "#Compliance",
+        "#PayPerView"
+      ]
+    },
+    {
+      "id": "2026-10-02-19-login-18plus-detail-fixes",
+      "text": "Fixes: your 18+ setting now stays on after logging in again (it was only restored on a full page reload); opening a post from the Trending widget no longer claims it doesn't exist when your session just needed a refresh; and the Pay-per-View unlock button works in the main feed, not only in the Trending view.",
+      "tags": [
+        "#Fix",
+        "#UI"
+      ]
     }
   ]
 }
