@@ -24,7 +24,7 @@ forge test
 
 Pinned: solc 0.8.24, OpenZeppelin **5.1.0** (≥ 5.2 uses `mcopy` and needs
 `evm_version = "cancun"`), remappings in `remappings.txt`. Last full run:
-40/40 tests green.
+45/45 tests green.
 
 ## Contracts
 
