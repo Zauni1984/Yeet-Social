@@ -23,9 +23,9 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☑ | **F4** — fiktiven YEET-Kurs (hartcodiert) aus dem Header entfernt; „Utility-Token · kein Marktpreis" statt Fake-Preis | Dev | erledigt (dieser PR) |
 | ☑ | **F5** — irreführenden Fake-NFT-Mint (Junk-Tx + „NFT Minted!") deaktiviert; „NFT/verkaufen"-Wording entschärft | Dev | erledigt (dieser PR) |
 | ☑ | Chain-ID-Inkonsistenz klären (Login/Mint 0x61 Testnet vs. Reward-Minting Chain 56) | Dev | erledigt — Frontend `window.YEET_CHAIN` (0x38) + Backend `YEET_CHAIN_ID` (Default 56); `contracts/.env.example` bleibt bewusst auf 97 für Testnet-Deploys |
-| ☐ | **F8** — Token-Contract-Härtung: Supply-Cap, Mint nur Multisig, Owner-Funktionen minimiert; Audit | Dev | offen |
+| ◐ | **F8** — Token-Contract-Härtung: Supply-Cap, Mint nur Multisig, Owner-Funktionen minimiert; Audit | Dev | Teilweise: `YeetToken` auf 21-Mrd.-Cap und Whitepaper-Tranchen umgestellt, 75 %-Reward-Reserve nur per `batchMintRewards` (kumulativer Deckel), generisches `mint()`/`setRewardPool()` entfernt, `Ownable2Step`. Offen: Ownership → Multisig, externes Audit |
 | ☑ | **F6** — Sanktions-Screening der Zieladressen vor jedem Batch-Mint | Dev | erledigt — `services/sanctions.rs`: OFAC-SDN-Kryptoadressen (täglich), Prüfung beim Wallet-Verknüpfen, bei Punkte→YEET und im Batch-Mint (Treffer → `failed` + Grund, Admin-Queue); fail-closed bis Liste geladen. Doku: `docs/sanktions-screening.md` |
-| ☐ | Dokumentation Off-Chain-Ledger ↔ On-Chain-Token (Anspruch, Umtausch, Auszahlung) | Dev + Anwalt | offen |
+| ◐ | Dokumentation Off-Chain-Ledger ↔ On-Chain-Token (Anspruch, Umtausch, Auszahlung) | Dev + Anwalt | Dev erledigt: [09-ledger-und-auszahlung.md](09-ledger-und-auszahlung.md) (Buchungsebenen, Gutschrifts-/Verwendungspfade, Zustandsautomat der Umwandlung, Batch-Mint, Ledger-Abstimmung, Dev-Lücken D1–D7). **Anwalt:** Prüfpunkte A1–A9, A1 (AGB §1/§6 am 2. Okt. 2026 auf das Punkte-Modell umgeschrieben, Wortlaut prüfen) |
 
 ## B2. Umsetzung Non-Custodial-Modell (nach Strategie-/Rechtsfreigabe — F1–F3, F7)
 
@@ -36,14 +36,14 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☑ | **Eigene Wallets raus** — Frontend generiert keine Wallet/Seed mehr bei Registrierung; Backend ignoriert `wallet_address` beim Register; Wallet nur noch via Link-Flow | Dev | erledigt (dieser PR) |
 | ☐ | **F1/F2** — On-Chain-YEET-Zahlungen strikt Wallet↔Wallet (nach Contract-Deploy) | Dev + Anwalt | offen |
 | ☐ | **F3** — Paper Wallets als On-Chain-Escrow (kein Admin-Sweep, nicht upgradeable) + Betrags-/Rate-Limits; Alt-Ledger einfrieren | Dev | offen |
-| ☐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | offen |
+| ◐ | **F7** — PPV-Verbraucher-Consent (Widerrufsrecht) + AGB (Account-/Punkteübertragungsverbot) | Dev + Anwalt | Dev erledigt: Consent-Dialog vor jedem PPV-Kauf (ausdrückliches Verlangen + Kenntnisnahme Erlöschen, § 356 Abs. 5 BGB; DE/EN wie die AGB), Version/Zeit/Sprache auf `ppv_unlocks` (Migration 0051), Server lehnt ohne Consent ab (`CONSENT_REQUIRED`), Bestätigung auf dauerhaftem Datenträger per E-Mail + Beleg unter „Token Tips → Pay-per-View-Käufe“ (`GET /api/v1/me/ppv-unlocks`); AGB §3 Übertragungsverbot, §6 PPV-Kauf + Widerrufsbelehrung (DE/EN). **Anwalt:** Texte prüfen (Muster-Widerrufsbelehrung, Widerrufsformular) |
 | ◐ | `YeetPayments`- und `PaperWalletEscrow`-Contracts entwickeln + externes Audit | Dev | Design + Sourcen + Tests erstellt und **grün** (`contracts/src`, Doc 07); externes Audit offen |
-| ☑ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) | Dev | erledigt — `forge build` + `forge test`: **40/40 Tests grün** (Forge 1.8.4, solc 0.8.24, OpenZeppelin 5.1.0, forge-std). Drei Tests in `PaperWalletEscrow.t.sol` waren fehlerhaft geschrieben (nicht die Contracts), korrigiert. Lint-Befunde für das Audit in Doc 07 §6a. OZ ≥ 5.2 braucht `evm_version = cancun` (`mcopy`) — in `foundry.toml` vermerkt |
+| ☑ | Contracts kompilieren (`forge build`) + Tests grün (`forge test`) | Dev | erledigt — `forge build` + `forge test`: **45/45 Tests grün** (nach Umstellung von `YeetToken` auf 21 Mrd./Reward-Reserve, 15 Token-Tests) (Forge 1.8.4, solc 0.8.24, OpenZeppelin 5.1.0, forge-std). Drei Tests in `PaperWalletEscrow.t.sol` waren fehlerhaft geschrieben (nicht die Contracts), korrigiert. Lint-Befunde für das Audit in Doc 07 §6a. OZ ≥ 5.2 braucht `evm_version = cancun` (`mcopy`) — in `foundry.toml` vermerkt |
 | ☑ | `Deploy.s.sol` um `YeetPayments` + `PaperWalletEscrow` erweitern | Dev | erledigt (dieser PR) |
 | ☐ | Nach Deploy: Ownership → Multisig übertragen (Ownable2Step, transferOwnership + acceptOwnership) | Dev | offen |
 | ☑ | Backend-Indexer geplant + Migration 0037 (idempotente Event-Verarbeitung); Rust-Skeleton in Doc 08 | Dev | Design erledigt; Wiring nach Contract-Deploy |
 | ☑ | Chain-ID-Inkonsistenz behoben (Frontend `window.YEET_CHAIN` + Backend `YEET_CHAIN_ID`, Default Mainnet) | Dev | erledigt |
-| ☐ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | offen |
+| ☑ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | erledigt — Provider-Broker `window.YeetWallet`, WalletConnect-Login (QR/Deep Link), alle Signatur-Pfade (Login, Wallet verknüpfen, E2EE) laufen über den aktiven Provider; Konfiguration per `WALLETCONNECT_PROJECT_ID` (`docs/walletconnect.md`). On-Chain-Tips selbst folgen mit dem Contract-Deploy (F1/F2) |
 | ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
 
 ## C. Bei Angebot/Listing (auslösende Ereignisse: Sale, CEX/DEX-Listing, Pool)

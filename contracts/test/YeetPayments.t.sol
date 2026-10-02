@@ -10,7 +10,6 @@ contract YeetPaymentsTest is Test {
     YeetPayments pay;
 
     address owner    = address(0x1);
-    address pool     = address(0x2);
     address platform = address(0x3);
     address alice    = address(0x4);
     address bob      = address(0x5);
@@ -19,7 +18,7 @@ contract YeetPaymentsTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        token = new YeetToken(owner, pool);
+        token = new YeetToken(owner);
         pay   = new YeetPayments(address(token), platform, owner);
         token.transfer(alice, 1000 ether);
         vm.stopPrank();

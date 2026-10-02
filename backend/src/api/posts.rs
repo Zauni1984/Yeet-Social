@@ -292,17 +292,86 @@ pub struct UnlockResponse {
     pub already_unlocked: bool,
 }
 
+/// Version of the pay-per-view consent notice the client must show before
+/// an unlock (F7). Bump when the wording changes; the accepted version is
+/// stored on the unlock row.
+pub const PPV_CONSENT_VERSION: &str = "2026-10-01";
+
+/// Optional JSON body of POST /posts/:id/unlock. Older clients send no body
+/// at all, so this is parsed by hand rather than via the Json extractor.
+#[derive(Debug, Default, Deserialize)]
+pub struct UnlockRequest {
+    #[serde(default)]
+    pub consent: bool,
+    #[serde(default)]
+    pub consent_version: Option<String>,
+    #[serde(default)]
+    pub lang: Option<String>,
+}
+
+pub fn parse_unlock_body(body: &[u8]) -> Result<UnlockRequest, AppError> {
+    if body.iter().all(|b| b.is_ascii_whitespace()) { return Ok(UnlockRequest::default()); }
+    serde_json::from_slice(body).map_err(|_| AppError::Validation("Malformed JSON body".into()))
+}
+
+/// One row of GET /api/v1/me/ppv-unlocks — the buyer's durable record of a
+/// pay-per-view purchase incl. the consent they gave (F7).
+#[derive(Debug, Serialize)]
+pub struct PpvUnlockReceipt {
+    pub post_id: Uuid,
+    pub author_name: Option<String>,
+    pub author_username: Option<String>,
+    pub content_preview: Option<String>,
+    pub price_paid: f64,
+    pub unlocked_at: DateTime<Utc>,
+    pub consent_version: Option<String>,
+    pub consent_at: Option<DateTime<Utc>>,
+    pub consent_lang: Option<String>,
+}
+
+pub async fn list_my_ppv_unlocks(
+    State(state): State<AppState>,
+    auth: AuthUser,
+) -> AppResult<Json<ApiResponse<Vec<PpvUnlockReceipt>>>> {
+    let uid = crate::api::conversations::caller_user_id(&state, &auth).await?;
+    let rows: Vec<(Uuid, Option<String>, Option<String>, Option<String>, f64, DateTime<Utc>, Option<String>, Option<DateTime<Utc>>, Option<String>)> = sqlx::query_as(
+        "SELECT pu.post_id, u.display_name, u.username, LEFT(p.content, 80),
+                CAST(pu.price_paid AS DOUBLE PRECISION), pu.unlocked_at,
+                pu.consent_version, pu.consent_at, pu.consent_lang
+           FROM ppv_unlocks pu
+           JOIN posts p ON p.id = pu.post_id
+           JOIN users u ON u.id = p.author_id
+          WHERE pu.user_id = $1
+          ORDER BY pu.unlocked_at DESC
+          LIMIT 200"
+    )
+    .bind(uid)
+    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    let out = rows.into_iter().map(|r| PpvUnlockReceipt {
+        post_id: r.0, author_name: r.1, author_username: r.2, content_preview: r.3,
+        price_paid: r.4, unlocked_at: r.5, consent_version: r.6, consent_at: r.7, consent_lang: r.8,
+    }).collect();
+    Ok(Json(ApiResponse::ok(out)))
+}
+
 /// Pay-per-view unlock. The post author sets `ppv_price_yeet`; another
 /// authenticated viewer calls this endpoint to debit the price from
 /// their balance (10% platform cut, 90% to the author via the standard
 /// tips ledger), and a `ppv_unlocks` row records the entitlement so the
 /// viewer never gets re-charged. Idempotent.
+///
+/// F7: a NEW purchase requires the buyer's express consent to immediate
+/// performance (and acknowledgement of the lost right of withdrawal) for
+/// the current `PPV_CONSENT_VERSION`; the consent is stored on the unlock
+/// row and confirmed by email on a durable medium where an address exists.
 pub async fn unlock_post(
     State(state): State<AppState>,
     auth: AuthUser,
     Path(id): Path<Uuid>,
+    body: axum::body::Bytes,
 ) -> AppResult<Json<ApiResponse<UnlockResponse>>> {
     let caller_id = crate::api::conversations::caller_user_id(&state, &auth).await?;
+    let req = parse_unlock_body(&body)?;
 
     // Resolve post + price + author in one shot.
     let row: Option<(Uuid, Option<f64>, bool, Option<DateTime<Utc>>)> = sqlx::query_as(
@@ -350,6 +419,15 @@ pub async fn unlock_post(
         })));
     }
 
+    // F7 — no consent, no purchase. The client shows the notice and sends
+    // consent=true with the version it displayed; an outdated version means
+    // the user saw stale wording, so it is treated like no consent.
+    if !req.consent || req.consent_version.as_deref() != Some(PPV_CONSENT_VERSION) {
+        return Err(AppError::Validation("CONSENT_REQUIRED".into()));
+    }
+    let consent_lang = match req.lang.as_deref().map(str::trim) { Some("de") => "de", _ => "en" };
+    let consent_at = Utc::now();
+
     // Atomic charge + record. Fee accounting reuses the tips path so the
     // creator's 90% / platform 10% split is consistent with other tips.
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
@@ -358,12 +436,27 @@ pub async fn unlock_post(
         &price.to_string(), "YEET", None,
     ).await?;
     sqlx::query(
-        "INSERT INTO ppv_unlocks (user_id, post_id, price_paid, tip_id)
-         VALUES ($1, $2, $3, $4)"
+        "INSERT INTO ppv_unlocks (user_id, post_id, price_paid, tip_id, consent_version, consent_at, consent_lang)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)"
     )
     .bind(caller_id).bind(id).bind(price).bind(tip_id)
+    .bind(PPV_CONSENT_VERSION).bind(consent_at).bind(consent_lang)
     .execute(&mut *tx).await.map_err(AppError::Database)?;
     tx.commit().await.map_err(AppError::Database)?;
+
+    // Durable-medium confirmation (§ 312f BGB): email where we have one.
+    // Best-effort and off the request path; wallet-only users keep the
+    // in-app record under Token Tips → Pay-per-View purchases.
+    let email: Option<String> = sqlx::query_scalar("SELECT email FROM users WHERE id = $1")
+        .bind(caller_id).fetch_optional(state.db.pool()).await.ok().flatten();
+    if let (Some(addr), Some(cfg)) = (email, crate::services::email::EmailConfig::from_env()) {
+        let lang = consent_lang.to_string();
+        tokio::spawn(async move {
+            if let Err(e) = crate::services::email::send_ppv_confirmation(&cfg, &addr, &lang, id, price, consent_at).await {
+                tracing::warn!("ppv: confirmation email to {addr} failed: {e}");
+            }
+        });
+    }
 
     Ok(Json(ApiResponse::ok(UnlockResponse {
         unlocked: true,
@@ -464,4 +557,26 @@ pub async fn mint_nft(
     Path(_id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<String>>> {
     Err(AppError::Internal("NFT minting not yet available".into()))
+}
+
+#[cfg(test)]
+mod ppv_consent_tests {
+    use super::*;
+
+    #[test]
+    fn empty_body_means_no_consent() {
+        let r = parse_unlock_body(b"").unwrap();
+        assert!(!r.consent && r.consent_version.is_none());
+        let r = parse_unlock_body(b"  \n").unwrap();
+        assert!(!r.consent);
+    }
+
+    #[test]
+    fn json_body_is_parsed_and_junk_rejected() {
+        let r = parse_unlock_body(br#"{"consent":true,"consent_version":"2026-10-01","lang":"de"}"#).unwrap();
+        assert!(r.consent);
+        assert_eq!(r.consent_version.as_deref(), Some(PPV_CONSENT_VERSION));
+        assert_eq!(r.lang.as_deref(), Some("de"));
+        assert!(parse_unlock_body(b"{not json").is_err());
+    }
 }

@@ -10,7 +10,6 @@ contract YeetTippingTest is Test {
     YeetTipping tipping;
 
     address owner    = address(0x1);
-    address pool     = address(0x2);
     address platform = address(0x3);
     address alice    = address(0x4);
     address bob      = address(0x5);
@@ -19,7 +18,7 @@ contract YeetTippingTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        token   = new YeetToken(owner, pool);
+        token   = new YeetToken(owner);
         tipping = new YeetTipping(address(token), platform, owner);
 
         // Fund alice with 1000 YEET

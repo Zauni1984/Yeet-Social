@@ -204,6 +204,38 @@
         "#Compliance",
         "#Security"
       ]
+    },
+    {
+      "id": "2026-10-02-18-ppv-consent",
+      "text": "Pay-per-View now asks for your express consent before a purchase: you confirm that the content is delivered immediately and that the 14-day right of withdrawal is waived, as EU consumer law requires for digital content. Price and the 90/10 creator/platform split are shown up front, you get a confirmation email, and every purchase is listed under Token Tips.",
+      "tags": [
+        "#Compliance",
+        "#PayPerView"
+      ]
+    },
+    {
+      "id": "2026-10-02-19-login-18plus-detail-fixes",
+      "text": "Fixes: your 18+ setting now stays on after logging in again (it was only restored on a full page reload); opening a post from the Trending widget no longer claims it doesn't exist when your session just needed a refresh; and the Pay-per-View unlock button works in the main feed, not only in the Trending view.",
+      "tags": [
+        "#Fix",
+        "#UI"
+      ]
+    },
+    {
+      "id": "2026-10-02-20-walletconnect",
+      "text": "WalletConnect v2 is here: sign in with Trust Wallet, MetaMask Mobile, Rainbow and other mobile wallets – scan the QR code on desktop or tap through on your phone. The same wallet is then used for linking, encrypted messages and future on-chain actions. Nothing is loaded unless you pick it.",
+      "tags": [
+        "#NewFeature",
+        "#Wallet"
+      ]
+    },
+    {
+      "id": "2026-10-02-21-terms-points-model",
+      "text": "Terms of Service updated (section 6): points are platform points, not a crypto-asset, not purchasable, no cash value, not transferable. YEET only ever sits in your own wallet; we never hold it for you. Points-to-YEET conversion is one-way, min. 100 points, reviewed before release, with points returned if a request is refused.",
+      "tags": [
+        "#Terms",
+        "#Legal"
+      ]
     }
   ]
 }

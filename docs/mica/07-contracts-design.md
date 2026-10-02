@@ -118,8 +118,10 @@ neue Signatur erzeugen. → Test `test_FrontRunWithSwappedRecipientReverts`.
   - `PaperWalletEscrow.VoucherClaimed/Refunded` → Gutschein-Status.
 - **Bestätigungen abwarten** (BSC: z. B. 15 Blocks) bevor Freischaltung.
 - **Kein Server-Key mit Zugriff auf Nutzer-/Escrow-Mittel.** Der bestehende
-  Reward-Minter-Key (`batchMintRewards`) bleibt getrennt und mintet nur den
-  Reward-Pool; Multisig empfohlen (F8).
+  Reward-Minter-Key (`batchMintRewards`) bleibt getrennt und mintet nur aus der
+  75 %-Reward-Reserve (`REWARD_RESERVE`, 15,75 Mrd. — on-chain gedeckelt über
+  `rewardsMinted`); eine generische `mint()`-Funktion gibt es nicht mehr. Multisig
+  empfohlen (F8; Token ist `Ownable2Step`).
 - Migration: Alt-Guthaben-Ledger einfrieren; siehe Doc 05 §4.5.
 
 ## 5. Deploy-Reihenfolge

@@ -60,7 +60,7 @@ vps/            deploy scripts, .env template, DEPLOY.md
 
 ## Configuration
 
-See [`.env.example`](./.env.example) (local) and [`vps/.env.example`](./vps/.env.example) / [`vps/DEPLOY.md`](./vps/DEPLOY.md) (production). Feature switches worth knowing: `TRANSLATE_PROVIDER` (post translation), `SWAP_ENABLED` (NOTE swap), `CHANGELOG_BOT_ENABLED`, `YEET_CONVERSION_POOL` / taper settings (points economy), `SANCTIONS_SCREENING` (OFAC screening of payout addresses, see [`docs/sanktions-screening.md`](./docs/sanktions-screening.md)).
+See [`.env.example`](./.env.example) (local) and [`vps/.env.example`](./vps/.env.example) / [`vps/DEPLOY.md`](./vps/DEPLOY.md) (production). Feature switches worth knowing: `TRANSLATE_PROVIDER` (post translation), `SWAP_ENABLED` (NOTE swap), `CHANGELOG_BOT_ENABLED`, `YEET_CONVERSION_POOL` / taper settings (points economy), `SANCTIONS_SCREENING` (OFAC screening of payout addresses, see [`docs/sanktions-screening.md`](./docs/sanktions-screening.md)), `WALLETCONNECT_PROJECT_ID` (enables WalletConnect v2 login, see [`docs/walletconnect.md`](./docs/walletconnect.md)).
 
 ---
 

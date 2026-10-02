@@ -14,7 +14,6 @@ import "../src/PaperWalletEscrow.sol";
 ///
 /// Env:
 ///   PRIVATE_KEY        deployer key
-///   REWARD_POOL        reward pool address (default: deployer)
 ///   PLATFORM_WALLET    fee recipient for payments (default: deployer)
 ///   VOUCHER_MAX        max YEET per paper-wallet voucher, in whole YEET
 ///                      (default 150). 0 = unlimited.
@@ -22,7 +21,6 @@ contract Deploy is Script {
     function run() external {
         uint256 deployerKey    = vm.envUint("PRIVATE_KEY");
         address deployer       = vm.addr(deployerKey);
-        address rewardPool     = vm.envOr("REWARD_POOL", deployer);
         address platformWallet = vm.envOr("PLATFORM_WALLET", deployer);
         uint256 voucherMaxYeet = vm.envOr("VOUCHER_MAX", uint256(150));
 
@@ -35,13 +33,13 @@ contract Deploy is Script {
         console.log("Network:     ", block.chainid == 97  ? "BNB Smart Chain Testnet"
                                    : block.chainid == 56  ? "BNB Smart Chain Mainnet"
                                    : "Unknown");
-        console.log("Reward pool: ", rewardPool);
         console.log("Platform:    ", platformWallet);
 
         vm.startBroadcast(deployerKey);
 
-        // 1. YEET BEP-20 Token
-        YeetToken token = new YeetToken(deployer, rewardPool);
+        // 1. YEET BEP-20 Token — 21 B cap; 25 % minted to the deployer now, the 75 %
+        //    reward reserve is minted only through batchMintRewards (points→YEET).
+        YeetToken token = new YeetToken(deployer);
         console.log("YeetToken:        ", address(token));
 
         // 2. Legacy tipping (kept for compatibility; superseded by YeetPayments).

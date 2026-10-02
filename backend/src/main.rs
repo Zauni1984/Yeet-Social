@@ -107,6 +107,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/posts/:id/report",  post(api::report::report_post))
         .route("/api/v1/posts/:id/translate", post(api::translate::translate_post))
         .route("/api/v1/translate/status", get(api::translate::status))
+        .route("/api/v1/config",           get(api::public_config::get))
         .route("/api/v1/comments/:id/translate", post(api::translate::translate_comment))
         .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
         .route("/api/v1/me/permanent",     get(api::permanent::get_my_permanent_posts))
@@ -114,6 +115,7 @@ fn build_router(state: AppState) -> Router {
         // Tips received — private per-user overview + CSV export
         .route("/api/v1/me/tips-received",        get(api::tips_received::list_mine))
         .route("/api/v1/me/tips-received/export", get(api::tips_received::export_csv))
+        .route("/api/v1/me/ppv-unlocks",          get(api::posts::list_my_ppv_unlocks))
         // Users
         .route("/api/v1/users/me",         get(api::users::get_my_profile))
         .route("/api/v1/users/me",         patch(api::users::update_profile))

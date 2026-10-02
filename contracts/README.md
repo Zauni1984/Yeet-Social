@@ -24,13 +24,13 @@ forge test
 
 Pinned: solc 0.8.24, OpenZeppelin **5.1.0** (≥ 5.2 uses `mcopy` and needs
 `evm_version = "cancun"`), remappings in `remappings.txt`. Last full run:
-40/40 tests green.
+45/45 tests green.
 
 ## Contracts
 
 | Contract | Description |
 |---|---|
-| `YeetToken.sol` | BEP-20, 1B max supply, burnable, owner-mintable |
+| `YeetToken.sol` | BEP-20, fixed 21 B cap, burnable, Ownable2Step; 25 % minted at deploy, 75 % reward reserve mintable only via `batchMintRewards` (points→YEET) |
 | `YeetTipping.sol` | Wallet-to-wallet YEET tips, 10% platform fee, pausable |
 | `YeetNFT.sol` | ERC-721, posts as NFTs, 10% creator royalties |
 | `YeetPayments.sol` | Non-custodial tips / PPV / promotion, atomic fee split, never holds funds (docs/mica/07) |
@@ -48,12 +48,16 @@ Pinned: solc 0.8.24, OpenZeppelin **5.1.0** (≥ 5.2 uses `mcopy` and needs
 
 ## Token Distribution
 
-| Allocation | % | Amount |
-|---|---|---|
-| Community / Airdrop | 40% | 400M YEET |
-| Reward Pool | 30% | 300M YEET |
-| Team & Dev | 20% | 200M YEET |
-| Liquidity | 10% | 100M YEET |
+Fixed maximum supply **21,000,000,000 YEET** (`MAX_SUPPLY`, docs/mica/02 Teil J).
+
+| Allocation | % | Amount | Issued |
+|---|---|---|---|
+| Developer | 10% | 2.1B YEET | at deploy → `initialOwner` (vesting: separate contract/multisig policy) |
+| Team | 10% | 2.1B YEET | at deploy → `initialOwner` (vesting: separate contract/multisig policy) |
+| Reserve (liquidity, listings) | 5% | 1.05B YEET | at deploy → `initialOwner` |
+| Rewards / community (`REWARD_RESERVE`) | 75% | 15.75B YEET | gradually, only via `batchMintRewards` — bounded by `rewardsMinted`, so burns never re-open it; there is no other mint function |
+
+The backend's conversion pool (`YEET_CONVERSION_POOL`, default 15.75B) mirrors `REWARD_RESERVE`; `rewardsRemaining()` exposes the on-chain remainder.
 
 ## Setup
 
