@@ -175,11 +175,12 @@ remaining      = max(effective_pool − converted, 0)
 Basispools, werden neue Engagement-Rewards halbiert (Taper), damit nicht dauerhaft mehr
 Punkte entstehen, als je ausgezahlt werden können. Der Registrierungsbonus ist davon ausgenommen.
 
-`TODO(verify)`: Der Default-Pool im Backend ist als „75 % einer 21-Mrd.-Supply" kommentiert,
-`YeetToken.sol` hat aber `MAX_SUPPLY = 1 000 000 000` (davon 30 % „rewardShare"). Vor dem
-Mainnet-Deploy muss `YEET_CONVERSION_POOL` auf die tatsächliche Reward-Tranche des
-deployten Contracts gesetzt werden, sonst verspricht der Pool mehr, als der Contract je
-minten kann (Mint schlägt dann mit „Exceeds max supply" fehl → `failed`).
+Der Basispool entspricht `YeetToken.REWARD_RESERVE` (75 % von 21 Mrd. = 15,75 Mrd.), der
+einzigen nach dem Deploy mintbaren Menge. Der **effektive** Pool (Basis + recycelte Gebühren)
+ist zusätzlich auf diese Reserve gedeckelt (`YEET_REWARD_RESERVE`), damit Gebühren-Recycling
+nie mehr zusagt, als der Contract minten kann. Nach einem Redeploy mit anderer Tranche beide
+Werte per Env nachziehen. (Bis 2. Okt. 2026 stand der Contract auf 1 Mrd. und mintete beim
+Deploy 100 % — `batchMintRewards` hätte nie etwas auszahlen können; behoben, D2.)
 
 ---
 
@@ -191,7 +192,7 @@ minten kann (Mint schlägt dann mit „Exceeds max supply" fehl → `failed`).
 | Auswahl | `kind='conversion' AND status='pending' AND tx_hash IS NULL`, Wallet aus `users.wallet_address` |
 | Screening | F6 vor jedem Batch: Treffer → `failed` (+Grund); Liste nicht geladen → **gesamter Batch wird zurückgehalten** (fail-closed) |
 | Chain / Contract | `YEET_CHAIN_ID` (Default 56), `BSC_RPC_URL`, `YEET_TOKEN_ADDRESS`; Aufruf `YeetToken.batchMintRewards(recipients, amounts, actions)` |
-| Berechtigung | `batchMintRewards` ist `onlyOwner`, gekappt durch `MAX_SUPPLY`. Der Minter-Key ist derzeit der Contract-Owner (Hot Key auf dem Server) → **F8 / Checkliste: Ownership → Multisig** noch offen |
+| Berechtigung | `batchMintRewards` ist `onlyOwner`, gekappt durch `REWARD_RESERVE` (75 % = 15,75 Mrd., kumulativ über `rewardsMinted`, Burns öffnen nichts). Keine andere Mint-Funktion. Der Minter-Key ist derzeit der Contract-Owner (Hot Key auf dem Server) → **F8 / Checkliste: Ownership → Multisig** (Ownable2Step) noch offen |
 | Betrag | 1 Punkt = 1 YEET (× 10¹⁸ wei) |
 | Nachweis | `token_rewards.tx_hash`, Ledger `onchain_payout` je Umwandlung (Asset `YEET`, `onchain_tx_hash`), Event `RewardMinted(recipient, amount, action)` on-chain |
 | Fehlerfall | Tx-Fehler: `mint_attempts++`, `last_error`; nach 5 Versuchen `failed`; Punkte bleiben abgebucht bis Admin-Reject |
@@ -259,7 +260,7 @@ vor Migration 0039 und der Live-Promotion-Pfad (§9) erzeugen erklärbare Differ
 | # | Lücke | Wirkung | Maßnahme |
 | --- | --- | --- | --- |
 | D1 | Live-Promotion: Abbuchung und Erstattung ohne Journaleintrag (`api/lives.rs`, Sweep-Job); Erstattung korrigiert `fee_ledger` nicht | Gleichung (1) bricht um den Promotion-Betrag; Pool zählt erstattete Gebühren weiter mit | `tx_type` `live_promotion` / `live_promotion_refund` ergänzen, `record_in_tx` einbauen; Refund in `fee_ledger` gegenbuchen |
-| D2 | Pool-Default vs. `MAX_SUPPLY` (§6.3) | Pool kann mehr zusagen, als der Contract minten kann | `YEET_CONVERSION_POOL` beim Deploy auf die Reward-Tranche setzen; Kommentar korrigieren |
+| D2 | ~~Pool-Default vs. `MAX_SUPPLY`~~ **behoben (2. Okt. 2026):** Contract auf 21 Mrd./Tranchen des Whitepapers umgestellt, 75 % nur via `batchMintRewards` mintbar (`rewardsMinted`-Deckel, kein generisches `mint()`), effektiver Pool im Backend auf `REWARD_RESERVE` gedeckelt | — | Nach Deploy: `rewardsRemaining()` gegen Pool-Status abgleichen (D6) |
 | D3 | Minter-Key = Contract-Owner (Hot Key) | Single Point of Failure; F8 | Ownership → Multisig (Ownable2Step); Minter nur mit begrenzter Minter-Rolle |
 | D4 | Umwandlungsverhältnis ist Code-Konstante (1:1) ohne Versionierung | L7 „nur prospektiv änderbar" ist nicht nachweisbar | Verhältnis + Gültig-ab in Konfig/Tabelle, im Ledger-Eintrag `points_conversion` mitschreiben |
 | D5 | `pending` kann vom Admin nicht zurückgezogen werden | Einmal freigegeben, nur über Mint-Fehler → `failed` wieder stornierbar | Bewusst so (Race mit Minter); ggf. „Approve zurücknehmen" nur zwischen Batches mit Lock |
@@ -301,7 +302,8 @@ vor Migration 0039 und der Live-Promotion-Pfad (§9) erzeugen erklärbare Differ
 
 | Variable | Default | Bedeutung |
 | --- | --- | --- |
-| `YEET_CONVERSION_POOL` | 15 750 000 000 | Basispool in YEET (§6.3, **D2**) |
+| `YEET_CONVERSION_POOL` | 15 750 000 000 | Basispool in YEET = `REWARD_RESERVE` (§6.3) |
+| `YEET_REWARD_RESERVE` | 15 750 000 000 | Harter Deckel des effektiven Pools (Basis + Gebühren) = On-Chain-Mint-Reserve |
 | `YEET_TAPER_THRESHOLD_PCT` / `YEET_TAPER_FACTOR` | 10 / 0,5 | Reward-Taper |
 | `YEET_DAILY_POINTS_CAP`, `YEET_POST_REWARD`, `YEET_POST_MIN_CHARS` | 1 000 / 10 / 120 | Reward-Regeln |
 | `YEET_REGISTRATION_BONUS`, `YEET_REGISTRATION_BONUS_MAX` | 1 000 / 100 000 | Bonus |

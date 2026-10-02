@@ -55,9 +55,16 @@ fn env_f64_clamped(key: &str, default: f64, min: f64, max: f64) -> f64 {
 
 /// Conversion-pool (drain-prevention) parameters.
 pub mod pool {
-    /// Default YEET earmarked for point→YEET conversions — the rewards/community
-    /// share (75 %) of the fixed 21B supply. Override: `YEET_CONVERSION_POOL`.
+    /// Default YEET earmarked for point→YEET conversions: the 75 % rewards/community
+    /// tranche of the fixed 21 B supply = `YeetToken.REWARD_RESERVE`
+    /// (`contracts/src/YeetToken.sol`). The contract can never mint more than this
+    /// through `batchMintRewards`, so the off-chain pool must mirror it.
+    /// Override: `YEET_CONVERSION_POOL` (≤ the contract's `rewardsRemaining()`).
     pub const DEFAULT_CONVERSION_POOL: f64 = 15_750_000_000.0;
+    /// Hard ceiling for the *effective* pool (base + recycled fees). Recycled
+    /// platform fees may top the pool back up, but never beyond what the token
+    /// contract is able to mint. Override: `YEET_REWARD_RESERVE`.
+    pub const DEFAULT_REWARD_RESERVE: f64 = 15_750_000_000.0;
 }
 
 /// Base conversion pool in YEET. Override: `YEET_CONVERSION_POOL`.
@@ -66,6 +73,14 @@ pub fn conversion_pool_base() -> f64 {
         .and_then(|v| v.trim().parse::<f64>().ok())
         .filter(|n| n.is_finite() && *n >= 0.0)
         .unwrap_or(pool::DEFAULT_CONVERSION_POOL)
+}
+/// On-chain mint ceiling for conversions (`YeetToken.REWARD_RESERVE`). Override:
+/// `YEET_REWARD_RESERVE` (e.g. after a redeploy with a different tranche).
+pub fn reward_reserve() -> f64 {
+    std::env::var("YEET_REWARD_RESERVE").ok()
+        .and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|n| n.is_finite() && *n >= 0.0)
+        .unwrap_or(pool::DEFAULT_REWARD_RESERVE)
 }
 /// Remaining-pool percentage (of the base pool) below which engagement-reward
 /// emission is tapered. Override: `YEET_TAPER_THRESHOLD_PCT` (0–100). Default 10.
@@ -107,7 +122,9 @@ pub async fn pool_status(db: &Database) -> AppResult<PoolStatus> {
     ).fetch_one(db.pool()).await.map_err(AppError::Database)?;
 
     let base = conversion_pool_base();
-    let effective = base + fees_recycled;
+    // Fee recycling tops the pool up, but the token contract can only ever mint
+    // REWARD_RESERVE for conversions — never promise more than that on-chain cap.
+    let effective = (base + fees_recycled).min(reward_reserve());
     let remaining = (effective - converted).max(0.0);
     let remaining_pct = if base > 0.0 { remaining / base * 100.0 } else { 0.0 };
     let tapered = remaining_pct < taper_threshold_pct();

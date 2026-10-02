@@ -34,8 +34,10 @@ irreführend sind und keine wesentlichen Auslassungen enthalten.⟧
 als Einleitung zu lesen ist; Kaufentscheidung nur auf Basis des gesamten Whitepapers.⟧
 - Token: **YEET** (Ticker `YEET`, Contract-Adresse ⟦0x… nach Deployment⟧), Utility-Token
   der Social-Plattform Yeet (justyeet.it), auf der **BNB Smart Chain (BEP-20)**.
-- **Feste Höchstmenge: 21.000.000.000 YEET (21 Mrd.)** — kein weiteres Minting nach
-  Initial-Supply (fixe Obergrenze, kein „Uncapped").
+- **Feste Höchstmenge: 21.000.000.000 YEET (21 Mrd.)** — im Contract als `MAX_SUPPLY`
+  fixiert (kein „Uncapped"). 25 % (Developer/Team/Reserve) werden beim Deploy ausgegeben;
+  die 75 %-Rewards-Tranche wird ausschließlich bei Punkte→YEET-Umwandlungen bis zur
+  Obergrenze gemintet; eine andere Mint-Funktion existiert nicht.
 - Funktionen: Trinkgelder (Tips), Pay-per-View-Freischaltungen, Promotionen, Rewards,
   Einweg-Umtausch von Plattform-Punkten in YEET.
 - Angebotstyp: **keine öffentliche Emission/Sale** — YEET wird ausschließlich als
@@ -78,7 +80,7 @@ die Plattform via `batchMintRewards`; Emittent = Betreiber-Rechtsträger.⟧
 | Feld | Angabe |
 | --- | --- |
 | Art | Kein öffentliches Angebot / kein Sale — Zuteilung nur als Reward bzw. Punkte-Auszahlung (Whitepaper freiwillig; Einstufung als Utility-Token angestrebt) |
-| Emissionsvolumen / Höchstmenge | **21.000.000.000 YEET, fix** (kein weiteres Minting). Aufteilung: 10 % Developer (2,1 Mrd.), 10 % Team (2,1 Mrd.), 5 % Reserve (1,05 Mrd.), Rest 75 % (15,75 Mrd.) Rewards-/Community-Pool inkl. Registrierungs-Bonus, Posting-Rewards und Note-Swap-Pool. Details: Teil J. |
+| Emissionsvolumen / Höchstmenge | **21.000.000.000 YEET, fix** (Contract-Obergrenze; Rewards-Tranche wird schrittweise bis zur Obergrenze gemintet, darüber hinaus kein Minting). Aufteilung: 10 % Developer (2,1 Mrd.), 10 % Team (2,1 Mrd.), 5 % Reserve (1,05 Mrd.), Rest 75 % (15,75 Mrd.) Rewards-/Community-Pool inkl. Registrierungs-Bonus, Posting-Rewards und Note-Swap-Pool. Details: Teil J. |
 | Preis / Preisermittlung | Keine Zeichnung/kein Ausgabepreis; unentgeltliche Zuteilung als Reward. Marktpreis ergibt sich ausschließlich aus Angebot/Nachfrage an externen Handelsplätzen — Yeet hat keinen Einfluss. |
 | Zeichnungsfrist, Zielgruppe, Mitgliedstaaten | ⟦…⟧ |
 | Widerrufsrecht (Art. 13) | 14 Tage für Kleinanleger bei Direkterwerb ⟦anpassen⟧ |
@@ -150,7 +152,7 @@ Energieintensität je Transaktion, THG-Emissionen.
 | Name / Ticker | Yeet Token / `YEET` |
 | Chain / Standard | BNB Smart Chain, BEP-20 |
 | Dezimalstellen | 18 (BEP-20-Standard) |
-| **Höchstmenge** | **21.000.000.000 YEET — FIX**, kein weiteres Minting nach Initial-Supply |
+| **Höchstmenge** | **21.000.000.000 YEET — FIX** (`MAX_SUPPLY`); 25 % beim Deploy, 75 % Rewards-Tranche nur per `batchMintRewards` bis zur Obergrenze (`REWARD_RESERVE`), keine weitere Mint-Funktion |
 | Verwahrung | non-custodial — Yeet hält niemals Wallets/Token für Kunden |
 
 ### Verteilung des Initial-Supply (21 Mrd.)
@@ -210,7 +212,7 @@ Alle Parameter sind per Env konfigurierbar (`YEET_CONVERSION_POOL`,
 
 ### Offene Punkte (nicht Teil dieses Whitepapers)
 
-- Smart Contract (BEP-20, feste 21-Mrd.-Obergrenze, Vesting-Verträge) — **wird später geschrieben, wenn alles final ist**.
+- Smart Contract: `contracts/src/YeetToken.sol` bildet die 21-Mrd.-Obergrenze und die Tranchen ab (Tests grün); Vesting-Verträge für Developer/Team **fehlen noch**. TODO(strategie): Alternativ könnte die 75 %-Tranche beim Deploy an eine Multisig vorgemintet und per Transfer ausgezahlt werden — dann wäre „kein Minting nach Deploy" wörtlich wahr, dafür läge der gesamte Pool als Hot-Bestand in einer Wallet.
 - Rechtliche MiCA-Prüfung + NCA-Notifizierung; Einstufung als Utility-Token ist **angestrebt, nicht bestätigt** — kein „fully compliant"-Claim vor Rechtsgutachten.
 - Etwaige Auszahlungs-/Fee-Anpassungen (Points → YEET) noch nicht festgelegt.
 
