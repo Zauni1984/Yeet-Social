@@ -4,8 +4,8 @@ use axum::{extract::{Path, State}, Json};
 use chrono::{Duration as ChronoDuration, Utc, DateTime};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::{AppError, AppResult, AppState, models::{ApiResponse, Comment, FeedPost, FeedPostAuthor}};
-use crate::api::middleware::AuthUser;
+use crate::{AppError, AppResult, AppState, models::{ApiResponse, Comment, FeedPost}};
+use crate::api::middleware::{AuthUser, OptionalAuth};
 use crate::services::tokens::{self, rewards, RewardAction};
 
 #[derive(Debug, Deserialize)]
@@ -24,59 +24,6 @@ pub struct CreatePostRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct AddCommentRequest { pub content: String }
-
-#[derive(sqlx::FromRow)]
-struct PostRow {
-    id: Uuid,
-    content: String,
-    media_urls: Option<Vec<String>>,
-    is_nft: bool,
-    nft_token_id: Option<String>,
-    like_count: i64,
-    reshare_count: i64,
-    comment_count: i64,
-    expires_at: DateTime<Utc>,
-    created_at: DateTime<Utc>,
-    author_id: Uuid,
-    wallet_address: String,
-    display_name: Option<String>,
-    avatar_url: Option<String>,
-    #[sqlx(default)]
-    lang: Option<String>,
-    #[sqlx(default)]
-    kind: Option<String>,
-    #[sqlx(default)]
-    author_is_bot: Option<bool>,
-}
-
-fn row_to_feed_post(r: PostRow) -> FeedPost {
-    let media_url = r.media_urls.and_then(|v| v.into_iter().next());
-    FeedPost {
-        id: r.id, content: r.content, media_url, is_adult: false,
-        is_nft: r.is_nft,
-        like_count: r.like_count as i32,
-        reshare_count: r.reshare_count as i32,
-        comment_count: r.comment_count as i32,
-        is_liked: false, expires_at: r.expires_at, created_at: r.created_at,
-        author: FeedPostAuthor {
-            id: r.author_id, wallet_address: Some(r.wallet_address),
-            display_name: r.display_name, avatar_url: r.avatar_url,
-            is_bot: r.author_is_bot.unwrap_or(false),
-        },
-        tip_total_yeet: None,
-        nft_price_yeet: None,
-        is_permanent: false,
-        ppv_price_yeet: None,
-        is_unlocked: false,
-        reposted_from: None,
-        reposted_from_author_name: None,
-        reposted_from_author_username: None,
-        promoted_live_id: None,
-        pinned_until: None,
-        lang: r.lang,
-        kind: r.kind,
-    }
-}
 
 pub async fn create_post(
     State(state): State<AppState>,
@@ -164,21 +111,21 @@ pub async fn create_post(
     Ok(Json(ApiResponse::ok(post_id)))
 }
 
+/// GET /api/v1/posts/:id — one post, same shape as a feed card. Anonymous
+/// callers are allowed (public links); PPV unlock state is resolved for the
+/// signed-in viewer when there is one.
 pub async fn get_post(
     State(state): State<AppState>,
+    OptionalAuth(auth): OptionalAuth,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<FeedPost>>> {
-    let r = sqlx::query_as::<_, PostRow>(
-        "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
-                p.like_count, p.reshare_count, p.comment_count, p.expires_at, p.created_at,
-                u.id as author_id, u.wallet_address, u.display_name, u.avatar_url, p.lang, p.kind, u.is_bot AS author_is_bot
-         FROM posts p JOIN users u ON p.author_id = u.id
-         WHERE p.id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL"
-    )
-    .bind(id)
-    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
-    .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
-    Ok(Json(ApiResponse::ok(row_to_feed_post(r))))
+    let viewer_id = match auth.as_ref() {
+        Some(a) => crate::api::feed::resolve_viewer_id(&state, a).await.ok(),
+        None => None,
+    };
+    let post = crate::api::feed::fetch_post(&state, id, viewer_id).await?
+        .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
+    Ok(Json(ApiResponse::ok(post)))
 }
 
 pub async fn delete_post(

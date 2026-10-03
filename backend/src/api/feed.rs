@@ -202,7 +202,7 @@ async fn viewer_filters(state: &AppState, viewer_id: Uuid) -> (Vec<String>, Vec<
     ).bind(viewer_id).fetch_optional(state.db.pool()).await.ok().flatten().unwrap_or_default()
 }
 
-async fn resolve_viewer_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid> {
+pub(crate) async fn resolve_viewer_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid> {
     if let Some(rest) = auth.address.strip_prefix("email:") {
         return rest.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
     }
@@ -210,6 +210,36 @@ async fn resolve_viewer_id(state: &AppState, auth: &AuthUser) -> AppResult<Uuid>
         .bind(&auth.address)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
         .ok_or_else(|| AppError::NotFound("User not found".into()))
+}
+
+/// One post by id, with exactly the shape and enrichment the feeds deliver
+/// (media_url fallback, tip total, PPV price + unlock state for the viewer,
+/// repost/promo metadata, bot flag). Used by GET /api/v1/posts/:id.
+///
+/// `viewer_id` is `None` for anonymous callers; PPV content then counts as
+/// locked unless the post is free. Nullable author columns (a bot or an
+/// email-only user has no wallet) are read as options — the old handler
+/// decoded `wallet_address` as NOT NULL and answered 500 for every bot post.
+pub async fn fetch_post(state: &AppState, post_id: Uuid, viewer_id: Option<Uuid>) -> AppResult<Option<FeedPost>> {
+    let row = sqlx::query_as::<_, FeedRow>(
+        "SELECT p.id, p.content, p.media_urls, p.is_nft, p.nft_token_id,
+            p.like_count, p.reshare_count, p.comment_count,
+            p.expires_at, p.created_at,
+            u.id as author_id, u.wallet_address, u.display_name, u.avatar_url,
+            COALESCE(p.tip_total_yeet, 0.0) as tip_total_yeet,
+            p.media_url, CAST(p.nft_price_yeet AS DOUBLE PRECISION), p.is_permanent, CAST(p.ppv_price_yeet AS DOUBLE PRECISION),
+            p.reposted_from,
+            (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
+            (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
+            p.promoted_live_id, p.pinned_until, p.lang, p.kind, u.is_bot AS author_is_bot,
+            (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $2::uuid
+              OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $2::uuid AND pu.post_id = p.id)) AS is_unlocked
+        FROM posts p JOIN users u ON p.author_id = u.id
+        WHERE p.id = $1 AND p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL"
+    )
+    .bind(post_id).bind(viewer_id)
+    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(row.map(row_to_feed_post))
 }
 
 pub async fn get_following_feed(

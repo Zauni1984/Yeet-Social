@@ -236,6 +236,14 @@
         "#Terms",
         "#Legal"
       ]
+    },
+    {
+      "id": "2026-10-03-22-post-detail-bot-500",
+      "text": "Fixed: opening a post from the Trending widget (or any direct post link) failed with \"Database error\" when the author was the YEET Updates bot or an email-only account. The post detail now loads with the same data as a feed card, including media, tip total and pay-per-view state.",
+      "tags": [
+        "#Fix",
+        "#Trending"
+      ]
     }
   ]
 }
