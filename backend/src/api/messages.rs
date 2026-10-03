@@ -209,7 +209,7 @@ pub async fn send(
         let amount = req.tip_amount.as_deref()
             .ok_or_else(|| AppError::Validation("tip_amount required for kind=tip".into()))?;
         let id = crate::api::tips::send_tip_tx(
-            &mut tx, me, recipient, None, amount, "YEET", None
+            &mut tx, me, recipient, None, amount, "YEET", None, crate::api::tips::TipKind::Tip,
         ).await?;
         Some(id)
     } else {

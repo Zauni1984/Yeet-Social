@@ -91,11 +91,11 @@ müssen laut L1+ (Doc 06) einen Compliance-Check durchlaufen, bevor sie live geh
 | Engagement-Reward | Artikel ≥ 120 Zeichen (10 P), Like (1), Reshare (2), Kommentar (1), Daily-Login (2), NFT-Mint (10) | Tageskappe **1 000 P/Nutzer** (`YEET_DAILY_POINTS_CAP`); bei niedrigem Pool (< 10 % Rest) **Taper** ×0,5 | `reward_grant` | `services/tokens.rs::grant_reward` |
 | Registrierungsbonus | E-Mail-Double-Opt-in **und** Alters-/KYC-Verifizierung abgeschlossen | **1 000 P**, einmalig je Identität, nur für die ersten 100 000 Nutzer (`YEET_REGISTRATION_BONUS*`) | `registration_bonus` | `services/tokens.rs::maybe_grant_registration_bonus` |
 | Tip empfangen | Anderer Nutzer tippt in Punkten | 90 % des Tips (10 % Plattformgebühr → `fee_ledger`) | `tip_received` (+ `platform_fee`) | `api/tips.rs` |
-| PPV-Erlös | Käufer schaltet Post frei | 90 % des Preises | `tip_received` (PPV läuft technisch über den Tip-Pfad; `ppv_unlocks.tip_id` verweist auf den Tip) | `api/posts.rs::unlock_post` → `api/tips.rs::send_tip_tx` |
+| PPV-Erlös | Käufer schaltet Post frei | 90 % des Preises | `ppv_earning` (Tip-Pfad mit `TipKind::PayPerView`; `ppv_unlocks.tip_id` verweist auf den Tip) | `api/posts.rs::unlock_post` → `api/tips.rs::send_tip_tx` |
 | Gutschein eingelöst | Paper-Wallet-Claim-Code eingelöst | gesperrter Betrag | `paper_wallet_claim` | `api/paper_wallets.rs` |
 | Gutschein storniert | Aussteller annulliert uneingelösten Gutschein | gesperrter Betrag zurück | `paper_wallet_refund` | `api/paper_wallets.rs` |
 | Auszahlung abgelehnt | Admin lehnt Umwandlung ab (oder Mint endgültig gescheitert + Admin-Reject) | abgebuchte Punkte zurück | `payout_refund` | `api/payouts.rs::admin_reject` |
-| Live-Promotion erstattet | Live abgesagt / nie gestartet | Promotion-Preis zurück | **kein Journaleintrag** (`fee_ledger` wird auch nicht korrigiert; `TODO(dev)` D1) | `services/batch_rewards.rs::start_lives_sweep_job` |
+| Live-Promotion erstattet | Live abgesagt / nie gestartet | Promotion-Preis zurück (+ negative `fee_ledger`-Zeile) | `live_promotion_refund` | `api/lives.rs::refund_promotion_in_tx` (auch vom Sweep-Job genutzt) |
 
 Zur Historie: Migration 0038 hat alle damals noch nicht gemintet Engagement-Rewards
 einmalig in Punkte überführt (`status='folded'`) und das automatische On-Chain-Minting von
@@ -108,9 +108,9 @@ Rewards abgeschaltet. Seitdem wird **nur noch auf ausdrückliche Umwandlung** ge
 | Verwendung | Abbuchung | Gegenbuchung | Gebühr | Ledger |
 | --- | --- | --- | --- | --- |
 | Tip an Creator | Sender −X | Creator +0,9 X | 0,1 X → `fee_ledger` (Quelle `tip`) | `tip_sent` / `tip_received` / `platform_fee` |
-| Pay-per-View | Käufer −Preis (nur nach F7-Consent, `ppv_unlocks` mit `consent_version/at/lang`) | Autor +0,9 Preis | 0,1 Preis → `fee_ledger` (`tip`, da Tip-Pfad) | `tip_sent` / `tip_received` / `platform_fee` (die reservierten Typen `ppv_purchase`/`ppv_earning` sind noch **ungenutzt**, D7) |
+| Pay-per-View | Käufer −Preis (nur nach F7-Consent, `ppv_unlocks` mit `consent_version/at/lang`) | Autor +0,9 Preis | 0,1 Preis → `fee_ledger` (`ppv`) | `ppv_purchase` / `ppv_earning` / `platform_fee` (seit 3. Okt. 2026; ältere Einträge als `tip_*`) |
 | Paper-Wallet-Gutschein | Aussteller −Betrag (gesperrt) | Einlöser +Betrag bei Claim | — | `paper_wallet_issue` / `_claim` / `_refund` |
-| Live-Promotion | Nutzer −Preis | — (Plattformleistung) | 100 % → `fee_ledger` (`live_promo`), fließt dem Pool zu | **kein Journaleintrag** (D1) |
+| Live-Promotion | Nutzer −Preis | — (Plattformleistung) | 100 % → `fee_ledger` (`live_promo`), fließt dem Pool zu | `live_promotion` (Erstattung: `live_promotion_refund`) |
 
 Die **Plattformgebühr** wird nicht als Punkte einem Konto gutgeschrieben, sondern in
 `fee_ledger` erfasst und fließt rechnerisch dem Conversion-Pool zu (§6.3). Sie erhöht also
@@ -222,8 +222,9 @@ entsteht die Umwandlungs-Zeile nicht aus Punkten, sondern aus einer bestätigten
 
 Vollständige `tx_type`-Liste: `reward_grant`, `registration_bonus`, `tip_sent`, `tip_received`,
 `ppv_purchase`, `ppv_earning`, `platform_fee`, `paper_wallet_issue/claim/refund`,
-`points_conversion`, `payout_refund`, `onchain_payout`, `note_swap_in`, `onchain_tip`,
-`onchain_ppv` (die letzten beiden erst mit dem Indexer, Doc 08).
+`points_conversion`, `payout_refund`, `onchain_payout`, `note_swap_in`, `live_promotion`,
+`live_promotion_refund`, `opening_balance`, `onchain_tip`, `onchain_ppv` (die letzten beiden
+erst mit dem Indexer, Doc 08).
 
 ### 8.1 Abstimmung (Reconciliation)
 
@@ -249,9 +250,12 @@ SELECT status, COUNT(*), SUM(amount) FROM token_rewards
  GROUP BY status;
 ```
 
-Gleichung (1) gilt ab dem Zeitpunkt, ab dem alle Pfade im Ledger erfasst sind; Altbestände
-vor Migration 0039 und der Live-Promotion-Pfad (§9) erzeugen erklärbare Differenzen.
-`TODO(dev)`: Abstimmung (1)–(3) als Admin-Endpoint/Cron mit Alarm automatisieren.
+Alle drei Gleichungen plus die Kettenprüfung liefert `GET /api/v1/admin/ledger/reconcile`
+in einem Aufruf; ein täglicher Job (2 min nach Start, dann alle 24 h) schreibt bei jeder
+Abweichung eine Warnung ins Log. Altbestände aus der Zeit vor Migration 0039 erscheinen in
+Gleichung (1) als Differenz; dafür schreibt `POST /api/v1/admin/ledger/baseline` **einmalig**
+je Nutzer einen `opening_balance`-Eintrag über die Differenz (Eröffnungsbilanz) — vorher die
+Reconcile-Liste prüfen, danach muss (1) dauerhaft aufgehen.
 
 ---
 
@@ -259,13 +263,13 @@ vor Migration 0039 und der Live-Promotion-Pfad (§9) erzeugen erklärbare Differ
 
 | # | Lücke | Wirkung | Maßnahme |
 | --- | --- | --- | --- |
-| D1 | Live-Promotion: Abbuchung und Erstattung ohne Journaleintrag (`api/lives.rs`, Sweep-Job); Erstattung korrigiert `fee_ledger` nicht | Gleichung (1) bricht um den Promotion-Betrag; Pool zählt erstattete Gebühren weiter mit | `tx_type` `live_promotion` / `live_promotion_refund` ergänzen, `record_in_tx` einbauen; Refund in `fee_ledger` gegenbuchen |
+| D1 | ~~Live-Promotion ohne Journaleintrag~~ **behoben (3. Okt. 2026):** `live_promotion` bei Buchung, `live_promotion_refund` bei Erstattung; Sweep-Job nutzt dieselbe Funktion wie `cancel_live` (die `fee_ledger`-Gegenbuchung gab es bereits) | — | — |
 | D2 | ~~Pool-Default vs. `MAX_SUPPLY`~~ **behoben (2. Okt. 2026):** Contract auf 21 Mrd./Tranchen des Whitepapers umgestellt, 75 % nur via `batchMintRewards` mintbar (`rewardsMinted`-Deckel, kein generisches `mint()`), effektiver Pool im Backend auf `REWARD_RESERVE` gedeckelt | — | Nach Deploy: `rewardsRemaining()` gegen Pool-Status abgleichen (D6) |
 | D3 | Minter-Key = Contract-Owner (Hot Key) | Single Point of Failure; F8 | Ownership → Multisig (Ownable2Step); Minter nur mit begrenzter Minter-Rolle |
 | D4 | Umwandlungsverhältnis ist Code-Konstante (1:1) ohne Versionierung | L7 „nur prospektiv änderbar" ist nicht nachweisbar | Verhältnis + Gültig-ab in Konfig/Tabelle, im Ledger-Eintrag `points_conversion` mitschreiben |
 | D5 | `pending` kann vom Admin nicht zurückgezogen werden | Einmal freigegeben, nur über Mint-Fehler → `failed` wieder stornierbar | Bewusst so (Race mit Minter); ggf. „Approve zurücknehmen" nur zwischen Batches mit Lock |
-| D6 | Abstimmung §8.1 ist manuell | Abweichungen fallen spät auf | Endpoint `/admin/ledger/reconcile` + täglicher Cron |
-| D7 | PPV-Käufe erscheinen im Journal als `tip_sent`/`tip_received`, nicht als `ppv_purchase`/`ppv_earning` | PPV-Umsätze (F7-relevant, Verbraucherkauf) sind im Export nicht von Trinkgeldern unterscheidbar | `send_tip_tx` um einen `kind`-Parameter erweitern und für PPV die reservierten Typen schreiben |
+| D6 | ~~Abstimmung manuell~~ **behoben (3. Okt. 2026):** `GET /api/v1/admin/ledger/reconcile` (Gleichungen 1–3 + Kettenprüfung), täglicher Job mit Warnung im Log; `POST /api/v1/admin/ledger/baseline` schreibt einmalig `opening_balance`-Einträge für Guthaben aus der Zeit vor dem Journal | — | Baseline **einmal** nach Review der Reconcile-Liste ausführen |
+| D7 | ~~PPV als Tip journaliert~~ **behoben (3. Okt. 2026):** `send_tip_tx(…, TipKind)`; PPV schreibt `ppv_purchase`/`ppv_earning` und `fee_ledger.source_type = 'ppv'`. Ältere Einträge bleiben `tip_*` (append-only) | — | — |
 
 ---
 
@@ -296,6 +300,7 @@ vor Migration 0039 und der Live-Promotion-Pfad (§9) erzeugen erklärbare Differ
 | GET | `/api/v1/admin/payouts?status=` | Freigabe-Queue |
 | POST | `/api/v1/admin/payouts/:id/approve` · `/reject` | Freigabe / Ablehnung (+Rückbuchung) |
 | GET | `/api/v1/admin/ledger` · `/export` · `/summary` · `/verify` | Journal, CSV, Aggregat, Kettenprüfung |
+| GET / POST | `/api/v1/admin/ledger/reconcile` · `/baseline` | Abstimmung §8.1 · einmalige Eröffnungsbilanz |
 | GET | `/api/v1/users/me/export` | Selbstauskunft des Nutzers |
 
 ## Anhang B — Konfiguration

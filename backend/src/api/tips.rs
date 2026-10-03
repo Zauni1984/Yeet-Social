@@ -20,6 +20,13 @@ pub struct SendTipRequest {
     pub tx_hash: Option<String>,
 }
 
+/// Economic kind of a points transfer made through `send_tip_tx`. The 90/10
+/// split is identical for both kinds. The journal and `fee_ledger` record the
+/// kind so a pay-per-view purchase, a consumer purchase of digital content
+/// (F7), stays distinguishable from a voluntary tip in every export.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TipKind { Tip, PayPerView }
+
 /// Inserts the tip + fee ledger entry and adjusts the sender / fee
 /// wallet balances *inside the caller's transaction*. Returns the new
 /// tip's id.
@@ -28,6 +35,7 @@ pub struct SendTipRequest {
 /// - sender has enough YEET
 /// - sender != recipient
 /// - currency is BNB or YEET
+#[allow(clippy::too_many_arguments)]
 pub(crate) async fn send_tip_tx(
     tx: &mut Transaction<'_, Postgres>,
     from_id: Uuid,
@@ -36,6 +44,7 @@ pub(crate) async fn send_tip_tx(
     amount_str: &str,
     currency: &str,
     tx_hash: Option<&str>,
+    kind: TipKind,
 ) -> AppResult<Uuid> {
     if !["BNB", "YEET"].contains(&currency) {
         return Err(AppError::Validation("Currency must be BNB or YEET".into()));
@@ -74,11 +83,12 @@ pub(crate) async fn send_tip_tx(
     .await
     .map_err(AppError::Database)?;
 
+    let fee_source = match kind { TipKind::Tip => "tip", TipKind::PayPerView => "ppv" };
     sqlx::query(
         "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
-         VALUES ('tip', $1, $2, $3, $4)"
+         VALUES ($5, $1, $2, $3, $4)"
     )
-    .bind(tip_id).bind(amount_val).bind(platform_cut).bind(creator_amount)
+    .bind(tip_id).bind(amount_val).bind(platform_cut).bind(creator_amount).bind(fee_source)
     .execute(&mut **tx).await.map_err(AppError::Database)?;
 
     sqlx::query(
@@ -105,20 +115,25 @@ pub(crate) async fn send_tip_tx(
     // Append to the transaction ledger (atomic with the balance moves).
     use crate::services::ledger::{self, NewEntry, tx_type, asset};
     let rid = post_id.map(|p| p.to_string());
+    let (t_sent, t_recv, what, fee_desc) = match kind {
+        TipKind::Tip => (tx_type::TIP_SENT, tx_type::TIP_RECEIVED, "tip", "platform fee (10%)"),
+        TipKind::PayPerView => (tx_type::PPV_PURCHASE, tx_type::PPV_EARNING, "pay-per-view unlock", "platform fee (10%, pay-per-view)"),
+    };
+    let desc = rid.as_ref().map(|p| format!("{what} on post {p}"));
     ledger::record_in_tx(tx, NewEntry {
-        tx_type: tx_type::TIP_SENT.into(), asset: asset::POINTS.into(),
+        tx_type: t_sent.into(), asset: asset::POINTS.into(),
         amount: -amount_val, fee_amount: platform_cut,
         user_id: Some(from_id), counterparty_id: Some(to_id),
         reference_type: Some("tip".into()), reference_id: Some(tip_id.to_string()),
-        description: rid.as_ref().map(|p| format!("tip on post {p}")),
+        description: desc.clone(),
         ..Default::default()
     }).await?;
     ledger::record_in_tx(tx, NewEntry {
-        tx_type: tx_type::TIP_RECEIVED.into(), asset: asset::POINTS.into(),
+        tx_type: t_recv.into(), asset: asset::POINTS.into(),
         amount: creator_amount, fee_amount: 0.0,
         user_id: Some(to_id), counterparty_id: Some(from_id),
         reference_type: Some("tip".into()), reference_id: Some(tip_id.to_string()),
-        description: rid.as_ref().map(|p| format!("tip on post {p}")),
+        description: desc,
         ..Default::default()
     }).await?;
     ledger::record_in_tx(tx, NewEntry {
@@ -126,7 +141,7 @@ pub(crate) async fn send_tip_tx(
         amount: platform_cut, fee_amount: 0.0,
         user_id: None, counterparty_id: Some(from_id),
         reference_type: Some("tip".into()), reference_id: Some(tip_id.to_string()),
-        description: Some("platform fee (10%)".into()),
+        description: Some(fee_desc.into()),
         ..Default::default()
     }).await?;
 
@@ -171,7 +186,7 @@ pub async fn send_tip(
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     let tip_id = send_tip_tx(
         &mut tx, from_id, to_id, req.post_id,
-        &req.amount, &req.currency, req.tx_hash.as_deref(),
+        &req.amount, &req.currency, req.tx_hash.as_deref(), TipKind::Tip,
     ).await?;
     tx.commit().await.map_err(AppError::Database)?;
 

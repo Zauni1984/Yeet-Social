@@ -574,27 +574,9 @@ pub async fn start_lives_sweep_job(state: AppState) {
                         warn!("lives sweep (cancel {live_id}): {e}");
                         continue;
                     }
-                    // Inline refund — same logic as the API path, but
-                    // we can't call refund_promotion_in_tx from here
-                    // without leaking a circular import, so we duplicate
-                    // the SQL. Keep it identical to api::lives.
-                    let promo: Option<(uuid::Uuid, uuid::Uuid, f64)> = sqlx::query_as(
-                        "SELECT id, user_id, cost_yeet::float8
-                           FROM live_promotions
-                          WHERE live_id = $1 AND status = 'booked'
-                          FOR UPDATE"
-                    ).bind(live_id).fetch_optional(&mut *tx).await.ok().flatten();
-                    if let Some((promo_id, user_id, cost)) = promo {
-                        let _ = sqlx::query("UPDATE users SET yeet_token_balance = yeet_token_balance + $1 WHERE id = $2")
-                            .bind(cost).bind(user_id).execute(&mut *tx).await;
-                        let _ = sqlx::query("UPDATE fee_wallet_balance SET total_yeet = total_yeet - $1 WHERE id = 1")
-                            .bind(cost).execute(&mut *tx).await;
-                        let _ = sqlx::query(
-                            "INSERT INTO fee_ledger (source_type, source_id, gross_amount, fee_amount, creator_amount)
-                             VALUES ('live_promo_refund', $1, $2, $2, 0)"
-                        ).bind(promo_id).bind(-cost).execute(&mut *tx).await;
-                        let _ = sqlx::query("UPDATE live_promotions SET status = 'refunded', refunded_at = NOW() WHERE id = $1")
-                            .bind(promo_id).execute(&mut *tx).await;
+                    // Same refund as cancel_live (balance, fee_ledger, journal entry).
+                    if let Err(e) = crate::api::lives::refund_promotion_in_tx(&mut tx, *live_id).await {
+                        warn!("lives sweep (refund promo of {live_id}): {e}");
                     }
                 }
                 if let Err(e) = tx.commit().await {

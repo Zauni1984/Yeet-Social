@@ -541,7 +541,8 @@ pub async fn tip_live(
 
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     let tip_id = crate::api::tips::send_tip_tx(
-        &mut tx, from_id, host_id, None, &req.amount, "YEET", req.tx_hash.as_deref()
+        &mut tx, from_id, host_id, None, &req.amount, "YEET", req.tx_hash.as_deref(),
+        crate::api::tips::TipKind::Tip,
     ).await?;
     // Attach this tip to the live so the ranking query sees it. We can't
     // pass live_id into `send_tip_tx` without changing its signature, so
@@ -669,6 +670,16 @@ pub async fn book_promotion(
     )
     .bind(promo_id).bind(cost)
     .execute(&mut *tx).await.map_err(AppError::Database)?;
+    // Journal: the whole price is a platform fee (no creator side).
+    crate::services::ledger::record_in_tx(&mut tx, crate::services::ledger::NewEntry {
+        tx_type: crate::services::ledger::tx_type::LIVE_PROMOTION.into(),
+        asset: crate::services::ledger::asset::POINTS.into(),
+        amount: -cost, fee_amount: cost,
+        user_id: Some(user_id),
+        reference_type: Some("live_promotion".into()), reference_id: Some(promo_id.to_string()),
+        description: Some(format!("live promotion '{}' for live {live_id}", req.tier)),
+        ..Default::default()
+    }).await?;
 
     // If the live is already live, apply the promotion now so the
     // auto-post hits the feed immediately. Otherwise it'll be applied
@@ -752,7 +763,7 @@ async fn apply_promotion_in_tx(
 /// Refund a booked-but-not-yet-applied promotion. Called from
 /// `cancel_live`. Best-effort: if there's no booked promo, this is a
 /// no-op so callers don't have to check first.
-async fn refund_promotion_in_tx(
+pub(crate) async fn refund_promotion_in_tx(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     live_id: Uuid,
 ) -> AppResult<()> {
@@ -780,6 +791,15 @@ async fn refund_promotion_in_tx(
     sqlx::query("UPDATE live_promotions SET status = 'refunded', refunded_at = NOW() WHERE id = $1")
         .bind(promo_id)
         .execute(&mut **tx).await.map_err(AppError::Database)?;
+    crate::services::ledger::record_in_tx(tx, crate::services::ledger::NewEntry {
+        tx_type: crate::services::ledger::tx_type::LIVE_PROMOTION_REFUND.into(),
+        asset: crate::services::ledger::asset::POINTS.into(),
+        amount: cost, fee_amount: -cost,
+        user_id: Some(user_id),
+        reference_type: Some("live_promotion".into()), reference_id: Some(promo_id.to_string()),
+        description: Some(format!("live promotion refund (live {live_id} cancelled before it started)")),
+        ..Default::default()
+    }).await?;
     Ok(())
 }
 

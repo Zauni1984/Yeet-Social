@@ -380,7 +380,7 @@ pub async fn unlock_post(
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     let tip_id = crate::api::tips::send_tip_tx(
         &mut tx, caller_id, author_id, Some(id),
-        &price.to_string(), "YEET", None,
+        &price.to_string(), "YEET", None, crate::api::tips::TipKind::PayPerView,
     ).await?;
     sqlx::query(
         "INSERT INTO ppv_unlocks (user_id, post_id, price_paid, tip_id, consent_version, consent_at, consent_lang)
