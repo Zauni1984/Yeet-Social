@@ -18,7 +18,7 @@ use uuid::Uuid;
 use crate::AppState;
 
 /// Languages the UI ships; also the whitelist for translation targets.
-pub const SUPPORTED: [&str; 38] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru", "ca", "sq", "bs", "mk", "eu", "gl", "cy", "lb"];
+pub const SUPPORTED: [&str; 42] = ["en", "de", "it", "fr", "es", "pt", "fi", "sv", "nb", "is", "cs", "da", "nl", "pl", "hr", "sr", "tr", "lv", "el", "hu", "ro", "bg", "sk", "sl", "lt", "et", "ga", "mt", "uk", "ru", "ca", "sq", "bs", "mk", "eu", "gl", "cy", "lb", "zh", "ja", "ko", "hi"];
 /// Sentinel for "detection ran, no confident result".
 pub const UNDETERMINED: &str = "und";
 
@@ -236,6 +236,29 @@ pub async fn detect(cfg: &TranslateConfig, text: &str) -> Option<String> {
 /// `None`. Wrong guesses only cost a needless Translate button, missing
 /// guesses only cost auto-translation — so err on the side of `None`.
 pub fn heuristic_detect(text: &str) -> Option<String> {
+    // Script first: Han, Kana, Hangul and Devanagari identify Chinese,
+    // Japanese, Korean and Hindi among the UI languages on their own (these
+    // scripts carry no space-separated stop words for the counter below).
+    // Japanese text always contains kana next to kanji, which separates it
+    // from Chinese. A majority of the letters must be in one of these scripts
+    // so a Latin post quoting a few characters is not misclassified.
+    let (mut han, mut kana, mut hangul, mut deva, mut letters) = (0usize, 0usize, 0usize, 0usize, 0usize);
+    for c in text.chars() {
+        if c.is_alphabetic() { letters += 1; }
+        match c as u32 {
+            0x3040..=0x30FF | 0x31F0..=0x31FF => kana += 1,
+            0x3400..=0x4DBF | 0x4E00..=0x9FFF | 0xF900..=0xFAFF => han += 1,
+            0x1100..=0x11FF | 0x3130..=0x318F | 0xAC00..=0xD7AF => hangul += 1,
+            0x0900..=0x097F => deva += 1,
+            _ => {}
+        }
+    }
+    if letters >= 2 && (han + kana + hangul + deva) * 2 >= letters {
+        if kana > 0 { return Some("ja".into()); }
+        if hangul > 0 { return Some("ko".into()); }
+        if deva > 0 { return Some("hi".into()); }
+        if han > 0 { return Some("zh".into()); }
+    }
     const EN: &[&str] = &["the","and","is","are","you","that","this","with","for","have","not","but","was","from","they","what","your","just","about","it's","i'm","don't","will","can","my"];
     const DE: &[&str] = &["und","der","die","das","ist","nicht","ich","ein","eine","mit","auf","für","sich","wir","ihr","auch","dem","den","noch","aber","wie","schon","mal","heute","kein","keine","habe","bin","sind","wird"];
     const IT: &[&str] = &["che","non","per","una","con","sono","questo","della","del","gli","anche","come","più","nel","alla","ho","hai","ma","cosa","oggi","è","il","lo","la","di","tutti"];
@@ -438,6 +461,13 @@ mod tests {
         assert_eq!(heuristic_detect("Non sei, pero isto é moi ben e hoxe xa temos todo aquí.").as_deref(), Some("gl"));
         assert_eq!(heuristic_detect("Dw i ddim yn gwybod, ond mae hyn yn dda iawn ac heddiw mae popeth yma.").as_deref(), Some("cy"));
         assert_eq!(heuristic_detect("Ech weess et net, mee dat ass ganz gutt an haut hu mir alles hei.").as_deref(), Some("lb"));
+        // Script-based: Chinese (Han only), Japanese (kana), Korean (Hangul), Hindi (Devanagari).
+        assert_eq!(heuristic_detect("今天天气很好，我们一起去公园散步吧。").as_deref(), Some("zh"));
+        assert_eq!(heuristic_detect("今日はいい天気ですね。公園に行きましょう。").as_deref(), Some("ja"));
+        assert_eq!(heuristic_detect("오늘 날씨가 정말 좋네요. 같이 공원에 갈까요?").as_deref(), Some("ko"));
+        assert_eq!(heuristic_detect("आज मौसम बहुत अच्छा है, चलो पार्क चलते हैं।").as_deref(), Some("hi"));
+        // A Latin post quoting a couple of characters is not CJK.
+        assert_eq!(heuristic_detect("This is the best day and I'm not even joking about it 你好").as_deref(), Some("en"));
     }
 
     #[test]
