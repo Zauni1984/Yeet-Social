@@ -32,9 +32,9 @@ trotzdem (kostenlose Stoppwort-Heuristik), damit jeder Post ein `lang` trägt.
   - Cache je Post+Zielsprache in `post_translations` (Provider wird nur einmal
     pro Kombination befragt).
   - Rate-Limit je Account: 20/Minute, 300/Stunde → `429 RATE_LIMITED`.
-  - Ziel muss eine der 38 UI-Sprachen sein (`en de it fr es pt fi sv nb is cs
+  - Ziel muss eine der 42 UI-Sprachen sein (`en de it fr es pt fi sv nb is cs
     da nl pl hr sr tr lv el hu ro bg sk sl lt et ga mt uk ru ca sq bs mk eu gl
-    cy lb`), sonst
+    cy lb zh ja ko hi`), sonst
     `UNSUPPORTED_TARGET`; ohne Provider `403 TRANSLATION_DISABLED`.
 
 **Spracherkennung**
@@ -104,3 +104,13 @@ Alternative Google: Cloud-Projekt → „Cloud Translation API" aktivieren → A
 Empfehlung für den Start: **DeepL Free** (Qualität, kein zusätzlicher
 RAM-Bedarf, in Minuten aktiviert). Bei wachsendem Volumen auf LibreTranslate
 oder DeepL Pro wechseln — der Code ist provider-neutral, Cache bleibt gültig.
+
+## Schrifterkennung (zh/ja/ko/hi)
+
+Für Chinesisch, Japanisch, Koreanisch und Hindi arbeitet `heuristic_detect` nicht mit
+Stoppwörtern, sondern mit der Schrift: Han-Zeichen → `zh`, Kana → `ja` (japanische Texte
+enthalten neben Kanji immer Kana), Hangul → `ko`, Devanagari → `hi`. Es muss die Mehrheit
+der Buchstaben in einer dieser Schriften stehen, damit ein lateinischer Post mit ein paar
+zitierten Zeichen nicht falsch erkannt wird. Hinweis: DeepL unterstützt Hindi nicht als
+Zielsprache — mit `TRANSLATE_PROVIDER=deepl` schlägt die Übersetzung nach `hi` fehl
+(Azure/Google/LibreTranslate können es).

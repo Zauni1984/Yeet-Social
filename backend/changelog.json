@@ -244,6 +244,14 @@
         "#Fix",
         "#Trending"
       ]
+    },
+    {
+      "id": "2026-10-03-23-languages-zh-ja-ko-hi",
+      "text": "New languages: YEET now speaks Chinese (简体中文), Japanese (日本語), Korean (한국어) and Hindi (हिन्दी) — 42 languages in total. Pick yours in Settings → Language; posts in these languages are detected automatically for the Translate button and the feed filter.",
+      "tags": [
+        "#Languages",
+        "#i18n"
+      ]
     }
   ]
 }
