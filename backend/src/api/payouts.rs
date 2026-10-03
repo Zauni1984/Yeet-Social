@@ -24,7 +24,13 @@ pub struct PayoutRow {
     pub user_id: Uuid,
     pub username: Option<String>,
     pub wallet_address: Option<String>,
+    /// YEET to mint.
     pub amount: f64,
+    /// Points debited for this conversion (refunded on reject); equals
+    /// `amount` for rows created before the rate was versioned.
+    pub points_debited: Option<f64>,
+    /// YEET per point applied.
+    pub rate: Option<f64>,
     pub status: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     /// How often the on-chain mint has been attempted (see batch_rewards).
@@ -34,7 +40,8 @@ pub struct PayoutRow {
 }
 
 const SELECT: &str =
-    "SELECT r.id, r.user_id, u.username, u.wallet_address, r.amount::float8 AS amount, r.status, r.created_at,
+    "SELECT r.id, r.user_id, u.username, u.wallet_address, r.amount::float8 AS amount,
+            r.points_debited::float8 AS points_debited, r.rate::float8 AS rate, r.status, r.created_at,
             r.mint_attempts, r.last_error
        FROM token_rewards r JOIN users u ON u.id = r.user_id
       WHERE r.kind = 'conversion'";
@@ -119,7 +126,7 @@ pub async fn admin_reject(
     // minter may be paying it out right now — and never a 'minted' one); grab
     // the amount + user so we can refund exactly and atomically.
     let row: Option<(Uuid, f64)> = sqlx::query_as(
-        "SELECT user_id, amount::float8 FROM token_rewards
+        "SELECT user_id, COALESCE(points_debited, amount)::float8 FROM token_rewards
           WHERE id = $1 AND kind = 'conversion' AND status IN ('awaiting_approval', 'failed') FOR UPDATE"
     )
     .bind(id)

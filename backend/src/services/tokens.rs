@@ -53,6 +53,96 @@ fn env_f64_clamped(key: &str, default: f64, min: f64, max: f64) -> f64 {
         .unwrap_or(default)
 }
 
+/// Minimum notice (days) between announcing a new points→YEET rate and the
+/// moment it applies (Terms §6: prospective only, announced in advance).
+/// Override: `YEET_RATE_NOTICE_DAYS`.
+pub fn rate_notice_days() -> i64 { env_i64("YEET_RATE_NOTICE_DAYS", 14) }
+
+/// One row of `conversion_rates` (migration 0052): YEET per point from
+/// `valid_from` on.
+#[derive(Debug, Clone, serde::Serialize, sqlx::FromRow)]
+pub struct ConversionRate {
+    pub rate: f64,
+    pub valid_from: chrono::DateTime<chrono::Utc>,
+    pub announced_at: chrono::DateTime<chrono::Utc>,
+    pub note: Option<String>,
+}
+
+const RATE_COLS: &str = "rate::float8 AS rate, valid_from, announced_at, note";
+
+/// The rate in force right now (latest `valid_from <= now()`); 1:1 if the
+/// table is empty.
+pub async fn current_conversion_rate(db: &Database) -> AppResult<ConversionRate> {
+    let row: Option<ConversionRate> = sqlx::query_as(&format!(
+        "SELECT {RATE_COLS} FROM conversion_rates WHERE valid_from <= NOW() ORDER BY valid_from DESC LIMIT 1"
+    )).fetch_optional(db.pool()).await.map_err(AppError::Database)?;
+    Ok(row.unwrap_or(ConversionRate {
+        rate: 1.0,
+        valid_from: chrono::DateTime::<chrono::Utc>::UNIX_EPOCH,
+        announced_at: chrono::DateTime::<chrono::Utc>::UNIX_EPOCH,
+        note: Some("default 1:1 (no conversion_rates row)".into()),
+    }))
+}
+
+/// Announced future rates, soonest first.
+pub async fn upcoming_conversion_rates(db: &Database) -> AppResult<Vec<ConversionRate>> {
+    sqlx::query_as(&format!(
+        "SELECT {RATE_COLS} FROM conversion_rates WHERE valid_from > NOW() ORDER BY valid_from ASC"
+    )).fetch_all(db.pool()).await.map_err(AppError::Database)
+}
+
+/// Full history (admin), newest first.
+pub async fn conversion_rate_history(db: &Database) -> AppResult<Vec<ConversionRate>> {
+    sqlx::query_as(&format!(
+        "SELECT {RATE_COLS} FROM conversion_rates ORDER BY valid_from DESC LIMIT 200"
+    )).fetch_all(db.pool()).await.map_err(AppError::Database)
+}
+
+/// Pure validation of a rate change: positive finite rate, and it must not
+/// apply sooner than `notice_days` after `now` (prospective + announced).
+pub fn validate_rate_schedule(
+    rate: f64,
+    valid_from: chrono::DateTime<chrono::Utc>,
+    now: chrono::DateTime<chrono::Utc>,
+    notice_days: i64,
+) -> Result<(), String> {
+    if !rate.is_finite() || rate <= 0.0 {
+        return Err("rate must be a positive number (YEET per point)".into());
+    }
+    let earliest = now + chrono::Duration::days(notice_days);
+    if valid_from < earliest {
+        return Err(format!(
+            "a rate change must be announced at least {notice_days} days ahead (earliest valid_from: {})",
+            earliest.format("%Y-%m-%dT%H:%M:%SZ")
+        ));
+    }
+    Ok(())
+}
+
+/// Schedule a future rate (admin). Enforces the notice period; refuses a
+/// second change for the same instant.
+pub async fn schedule_conversion_rate(
+    db: &Database,
+    rate: f64,
+    valid_from: chrono::DateTime<chrono::Utc>,
+    note: Option<&str>,
+    created_by: &str,
+) -> AppResult<ConversionRate> {
+    validate_rate_schedule(rate, valid_from, chrono::Utc::now(), rate_notice_days())
+        .map_err(AppError::Validation)?;
+    sqlx::query_as(&format!(
+        "INSERT INTO conversion_rates (rate, valid_from, note, created_by)
+         VALUES ($1, $2, $3, $4) RETURNING {RATE_COLS}"
+    ))
+    .bind(rate).bind(valid_from).bind(note).bind(created_by)
+    .fetch_one(db.pool()).await
+    .map_err(|e| match e {
+        sqlx::Error::Database(ref d) if d.is_unique_violation() =>
+            AppError::Conflict("a rate change is already scheduled for that instant".into()),
+        other => AppError::Database(other),
+    })
+}
+
 /// Conversion-pool (drain-prevention) parameters.
 pub mod pool {
     /// Default YEET earmarked for point→YEET conversions: the 75 % rewards/community
@@ -276,10 +366,35 @@ pub async fn maybe_grant_registration_bonus(db: &Database, user_id: Uuid) -> App
 /// are no longer pending mints.
 pub async fn get_pending_payout(db: &Database, user_id: Uuid) -> AppResult<i64> {
     let b: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards
+        "SELECT COALESCE(SUM(COALESCE(points_debited, amount)), 0)::bigint FROM token_rewards
          WHERE user_id = $1 AND kind = 'conversion'
            AND status IN ('awaiting_approval', 'pending') AND tx_hash IS NULL"
     )
     .bind(user_id).fetch_one(db.pool()).await.map_err(AppError::Database)?;
     Ok(b)
+}
+
+#[cfg(test)]
+mod rate_tests {
+    use super::validate_rate_schedule;
+    use chrono::{TimeZone, Utc};
+
+    #[test]
+    fn rejects_non_positive_or_nan_rate() {
+        let now = Utc.with_ymd_and_hms(2026, 10, 3, 12, 0, 0).unwrap();
+        let later = now + chrono::Duration::days(30);
+        assert!(validate_rate_schedule(0.0, later, now, 14).is_err());
+        assert!(validate_rate_schedule(-1.0, later, now, 14).is_err());
+        assert!(validate_rate_schedule(f64::NAN, later, now, 14).is_err());
+    }
+
+    #[test]
+    fn enforces_notice_period() {
+        let now = Utc.with_ymd_and_hms(2026, 10, 3, 12, 0, 0).unwrap();
+        assert!(validate_rate_schedule(0.5, now + chrono::Duration::days(13), now, 14).is_err());
+        assert!(validate_rate_schedule(0.5, now + chrono::Duration::days(14), now, 14).is_ok());
+        assert!(validate_rate_schedule(2.0, now + chrono::Duration::days(90), now, 14).is_ok());
+        // past dates are never acceptable
+        assert!(validate_rate_schedule(1.0, now - chrono::Duration::days(1), now, 0).is_err());
+    }
 }
