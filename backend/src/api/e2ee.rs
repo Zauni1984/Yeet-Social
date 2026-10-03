@@ -67,6 +67,11 @@ pub async fn upload_keys(
     auth: AuthUser,
     Json(req): Json<UploadKeysRequest>,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
+    // Replacing the identity key re-keys every peer towards this account;
+    // cap how often a (possibly stolen) token can do that (audit MSG-H4).
+    if !crate::services::rate_limit::check_one_window(&state.cache, "e2ee_keys", &auth.address, 3600, 5).await {
+        return Err(AppError::RateLimited);
+    }
     if req.public_key.is_empty() || req.encrypted_private_key.is_empty() {
         return Err(AppError::Validation("Both keys are required".into()));
     }

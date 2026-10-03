@@ -82,12 +82,10 @@ pub async fn report_post(
     Ok(Json(ApiResponse::ok(())))
 }
 
+/// Same fail-closed, constant-time check as every other admin route
+/// (`admin_mod::check_admin_secret`): no hard-coded fallback secret.
 fn check_admin(secret: &str) -> AppResult<()> {
-    let admin_secret = std::env::var("ADMIN_SECRET").unwrap_or_else(|_| "yeet_admin_2024".to_string());
-    if secret != admin_secret {
-        return Err(AppError::Unauthorised("Invalid admin secret".into()));
-    }
-    Ok(())
+    crate::api::admin_mod::check_admin_secret(secret)
 }
 
 /// GET /api/v1/admin/posts?secret=X&page=1&filter=all|flagged|removed|active

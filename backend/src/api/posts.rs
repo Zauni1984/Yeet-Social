@@ -25,11 +25,64 @@ pub struct CreatePostRequest {
 #[derive(Debug, Deserialize)]
 pub struct AddCommentRequest { pub content: String }
 
+/// Server-side guard for user-supplied media/avatar URLs. They are rendered
+/// into `src="…"` attributes by the SPA, so anything but a plain same-origin
+/// upload path or an https URL without quote/space/angle characters is
+/// refused (stored-XSS vector found in the 2026-10 audit).
+pub(crate) fn validate_media_url(url: &str) -> AppResult<()> {
+    let u = url.trim();
+    if u.len() > 512 {
+        return Err(AppError::Validation("media_url too long".into()));
+    }
+    if !(u.starts_with("/uploads/") || u.starts_with("https://")) {
+        return Err(AppError::Validation("media_url must be an /uploads/ path or an https URL".into()));
+    }
+    if u.chars().any(|c| c.is_whitespace() || c.is_control() || matches!(c, '"' | '\'' | '<' | '>' | '\\' | '`')) {
+        return Err(AppError::Validation("media_url contains invalid characters".into()));
+    }
+    Ok(())
+}
+
+/// Posting suspension check shared by create_post and scheduled posts.
+pub(crate) async fn ensure_not_posting_banned(pool: &sqlx::PgPool, user_id: Uuid) -> AppResult<()> {
+    let ban: Option<(Option<chrono::DateTime<Utc>>, Option<String>)> = sqlx::query_as(
+        "SELECT posting_banned_until, post_ban_reason FROM users WHERE id = $1"
+    )
+    .bind(user_id)
+    .fetch_optional(pool).await.map_err(AppError::Database)?;
+    if let Some((Some(until), reason)) = ban {
+        if until > Utc::now() {
+            let hours_left = (until - Utc::now()).num_hours();
+            let msg = match reason {
+                Some(r) if !r.is_empty() =>
+                    format!("Posting is suspended for ~{} more hour(s): {}", hours_left, r),
+                _ => format!("Posting is suspended for ~{} more hour(s).", hours_left),
+            };
+            return Err(AppError::Forbidden(msg));
+        }
+    }
+    Ok(())
+}
+
+/// Visibility rule shared by every single-post read path: public, or the
+/// viewer is the author, or the viewer follows the author. `$v` is the
+/// viewer uuid parameter (nil uuid for anonymous callers).
+pub(crate) fn visibility_sql(viewer_param: &str) -> String {
+    format!("(COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = {v}::uuid \
+             OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = {v}::uuid AND f.following_id = p.author_id))", v = viewer_param)
+}
+
 pub async fn create_post(
     State(state): State<AppState>,
     auth: AuthUser,
     Json(req): Json<CreatePostRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
+    if let Some(m) = req.media_url.as_deref() { validate_media_url(m)?; }
+    for f in [req.ppv_price_yeet, req.nft_price_yeet].into_iter().flatten() {
+        if !f.is_finite() || f < 0.0 || f > 1e9 {
+            return Err(AppError::Validation("price must be a finite non-negative number".into()));
+        }
+    }
     let kind = match req.kind.as_deref().map(|k| k.trim()) {
         None | Some("") | Some("text") => "text",
         Some("audio") => "audio",
@@ -213,7 +266,7 @@ pub async fn unlike_post(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
-    sqlx::query(
+    let removed = sqlx::query(
         "DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2"
     )
     .bind(id)
@@ -222,10 +275,14 @@ pub async fn unlike_post(
     .await
     .map_err(AppError::Database)?;
 
-    let _ = sqlx::query("UPDATE posts SET like_count = GREATEST(0, like_count - 1) WHERE id = $1")
-        .bind(id)
-        .execute(state.db.pool())
-        .await;
+    // Only decrement when this user actually had a like — otherwise a loop of
+    // unlikes could zero any post's count (audit C-M2).
+    if removed.rows_affected() > 0 {
+        let _ = sqlx::query("UPDATE posts SET like_count = GREATEST(0, like_count - 1) WHERE id = $1")
+            .bind(id)
+            .execute(state.db.pool())
+            .await;
+    }
 
     Ok(Json(ApiResponse::ok(id)))
 }
@@ -428,6 +485,21 @@ pub async fn reshare_post(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
+    // One reshare per user and post, only for live posts that are not the
+    // caller's own (audit C-M1: unbounded reshares could keep any post alive
+    // forever and farm rewards).
+    let inserted = sqlx::query(
+        "INSERT INTO post_reshares (post_id, user_id)
+         SELECT p.id, $2 FROM posts p
+          WHERE p.id = $1 AND p.deleted_at IS NULL AND p.is_removed = FALSE
+            AND p.expires_at > NOW() AND p.author_id <> $2
+         ON CONFLICT DO NOTHING"
+    )
+    .bind(id).bind(user_id)
+    .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    if inserted.rows_affected() == 0 {
+        return Err(AppError::Conflict("Already reshared, or post not available".into()));
+    }
     let new_expiry = Utc::now() + ChronoDuration::hours(24);
     sqlx::query(
         "UPDATE posts SET reshare_count = reshare_count + 1, expires_at = GREATEST(expires_at, $1) WHERE id = $2"
@@ -441,13 +513,27 @@ pub async fn reshare_post(
 
 pub async fn get_comments(
     State(state): State<AppState>,
+    OptionalAuth(auth): OptionalAuth,
     Path(id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<Vec<Comment>>>> {
-    let comments = sqlx::query_as::<_, Comment>(
-        "SELECT id, post_id, author_id, content, created_at FROM comments WHERE post_id = $1 ORDER BY created_at ASC"
-    )
-    .bind(id)
-    .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    // Comments follow the post: removed/deleted posts have no readable
+    // comments, followers-only and adult posts only for eligible viewers.
+    let viewer = match auth.as_ref() {
+        Some(a) => crate::api::feed::resolve_viewer_id(&state, a).await.ok(),
+        None => None,
+    }.unwrap_or(Uuid::nil());
+    let sql = format!(
+        "SELECT c.id, c.post_id, c.author_id, c.content, c.created_at
+           FROM comments c JOIN posts p ON p.id = c.post_id
+          WHERE c.post_id = $1 AND p.deleted_at IS NULL AND p.is_removed = FALSE
+            AND {vis}
+            AND (p.is_adult = FALSE OR p.author_id = $2::uuid
+                 OR EXISTS (SELECT 1 FROM users v WHERE v.id = $2::uuid AND v.age_verified_at IS NOT NULL))
+          ORDER BY c.created_at ASC",
+        vis = visibility_sql("$2"));
+    let comments = sqlx::query_as::<_, Comment>(&sql)
+        .bind(id).bind(viewer)
+        .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(comments)))
 }
 
@@ -470,6 +556,16 @@ pub async fn add_comment(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
+    let target: Option<(Uuid,)> = sqlx::query_as(&format!(
+        "SELECT p.author_id FROM posts p
+          WHERE p.id = $1 AND p.deleted_at IS NULL AND p.is_removed = FALSE AND p.expires_at > NOW()
+            AND {vis}", vis = visibility_sql("$2")))
+        .bind(id).bind(user_id)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let (post_author,) = target.ok_or_else(|| AppError::NotFound("Post not found".into()))?;
+    if post_author != user_id && crate::api::blocks::either_blocks(state.db.pool(), user_id, post_author).await? {
+        return Err(AppError::Forbidden("You cannot comment on this post".into()));
+    }
     let comment_id: Uuid = sqlx::query_scalar(
         "INSERT INTO comments (post_id, author_id, content) VALUES ($1, $2, $3) RETURNING id"
     )

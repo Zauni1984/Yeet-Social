@@ -132,6 +132,8 @@ pub async fn search(
                 AND NOT EXISTS (SELECT 1 FROM user_blocks ub
                                  WHERE (ub.blocker_id = $2 AND ub.blocked_id = u.id)
                                     OR (ub.blocker_id = u.id AND ub.blocked_id = $2))
+                AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $2
+                     OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2 AND f.following_id = p.author_id))
                 {}
               ORDER BY p.created_at DESC
               LIMIT 12",

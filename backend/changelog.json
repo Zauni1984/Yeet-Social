@@ -252,6 +252,14 @@
         "#Languages",
         "#i18n"
       ]
+    },
+    {
+      "id": "2026-10-03-24-security-audit",
+      "text": "Security update after a full code audit: pay-per-view media is now withheld by the server until you unlock it, user-supplied media links are validated, followers-only and 18+ posts stay private on every page, login and admin endpoints are rate-limited, and tips reject invalid amounts. Nothing to do on your side.",
+      "tags": [
+        "#Security",
+        "#Audit"
+      ]
     }
   ]
 }

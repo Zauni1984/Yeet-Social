@@ -12,6 +12,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks: [yeet-net]
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U yeet -h 127.0.0.1"]
       interval: 5s
@@ -63,12 +66,49 @@ services:
       SANCTIONS_EXTRA_ADDRESSES: ${SANCTIONS_EXTRA_ADDRESSES:-}
       SANCTIONS_REFRESH_HOURS: ${SANCTIONS_REFRESH_HOURS:-24}
       WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}
+      # Admin API: required (the backend refuses admin calls without a
+      # >= 24-char secret; there is no default any more).
+      ADMIN_SECRET: ${ADMIN_SECRET:?ADMIN_SECRET missing in .env (openssl rand -hex 32)}
+      # Chain: 97 = BSC Testnet while testing, 56 = Mainnet. The frontend
+      # follows this value via GET /api/v1/config.
+      YEET_CHAIN_ID: ${YEET_CHAIN_ID:-97}
+      BSC_RPC_URL: ${BSC_RPC_URL:-https://bsc-testnet-dataseed.bnbchain.org}
+      YEET_TOKEN_ADDRESS: ${YEET_TOKEN_ADDRESS:-}
+      YEET_NFT_ADDRESS: ${YEET_NFT_ADDRESS:-}
+      REWARDS_MINTER_PRIVKEY: ${REWARDS_MINTER_PRIVKEY:-}
+      YEET_MINT_MAX_ATTEMPTS: ${YEET_MINT_MAX_ATTEMPTS:-5}
+      YEET_CONVERSION_POOL: ${YEET_CONVERSION_POOL:-}
+      YEET_REWARD_RESERVE: ${YEET_REWARD_RESERVE:-}
+      YEET_RATE_NOTICE_DAYS: ${YEET_RATE_NOTICE_DAYS:-14}
+      # Age verification vault (encrypted ID/face blobs): key + persistent dir.
+      AGE_VERIFY_KEY: ${AGE_VERIFY_KEY:-}
+      PRIVATE_DIR: /app/private
+      # Web push (VAPID) and live streaming (LiveKit): optional features.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      LIVES_FEATURE_ENABLED: ${LIVES_FEATURE_ENABLED:-false}
+      LIVEKIT_WS_URL: ${LIVEKIT_WS_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      # NOTE->YEET swap watcher (inert unless enabled)
+      SWAP_ENABLED: ${SWAP_ENABLED:-false}
+      SWAP_CONFIRMATIONS: ${SWAP_CONFIRMATIONS:-120}
+      NOTE_RPC_URL: ${NOTE_RPC_URL:-}
+      NOTE_RPC_USER: ${NOTE_RPC_USER:-}
+      NOTE_RPC_PASS: ${NOTE_RPC_PASS:-}
+      CHANGELOG_BOT_ENABLED: ${CHANGELOG_BOT_ENABLED:-true}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-}
       UPLOADS_DIR: /app/uploads
     volumes:
       - yeet_uploads:/app/uploads
+      - yeet_private:/app/private
     networks: [yeet-net]
     ports:
       - "127.0.0.1:8080:8080"
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
 
   nginx:
     image: nginx:alpine
@@ -82,6 +122,9 @@ services:
       - "80:80"
       - "443:443"
     networks: [yeet-net]
+    logging:
+      driver: json-file
+      options: { max-size: "50m", max-file: "5" }
 
 networks:
   yeet-net:
@@ -91,3 +134,4 @@ volumes:
   postgres_data:
   redis_data:
   yeet_uploads:
+  yeet_private:

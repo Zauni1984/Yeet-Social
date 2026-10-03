@@ -98,20 +98,41 @@ pub async fn subscribe(
     if !req.endpoint.starts_with("https://") {
         return Err(AppError::Validation("endpoint must be https".into()));
     }
+    // Push endpoints are fetched by the server on every tickle: refuse
+    // hosts that are IP literals or local names so a subscription cannot be
+    // turned into an internal-network probe (audit MSG-M5).
+    {
+        let host = req.endpoint.trim_start_matches("https://")
+            .split(['/', '?', '#']).next().unwrap_or("")
+            .rsplit('@').next().unwrap_or("")
+            .trim_start_matches('[').split([']', ':']).next().unwrap_or("").to_ascii_lowercase();
+        if host.is_empty() || host.parse::<std::net::IpAddr>().is_ok()
+            || host == "localhost" || host.ends_with(".local") || host.ends_with(".internal") || !host.contains('.') {
+            return Err(AppError::Validation("endpoint host not allowed".into()));
+        }
+    }
     let me = caller_user_id(&state, &auth).await?;
+    let n: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $1 AND expired_at IS NULL AND endpoint <> $2"
+    ).bind(me).bind(&req.endpoint).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+    if n >= 10 {
+        return Err(AppError::Validation("too many push subscriptions for this account".into()));
+    }
     let ua = req.user_agent.as_deref().map(|s| s.chars().take(200).collect::<String>());
 
-    sqlx::query(
+    // An endpoint belongs to the account that registered it; another account
+    // learning the URL must not be able to re-own it (audit MSG-L3).
+    let res = sqlx::query(
         "INSERT INTO push_subscriptions
             (user_id, endpoint, p256dh_key, auth_key, user_agent)
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (endpoint) DO UPDATE SET
-             user_id      = EXCLUDED.user_id,
              p256dh_key   = EXCLUDED.p256dh_key,
              auth_key     = EXCLUDED.auth_key,
              user_agent   = EXCLUDED.user_agent,
              expired_at   = NULL,
-             last_seen_at = NOW()"
+             last_seen_at = NOW()
+         WHERE push_subscriptions.user_id = EXCLUDED.user_id"
     )
     .bind(me)
     .bind(&req.endpoint)
@@ -119,6 +140,9 @@ pub async fn subscribe(
     .bind(&req.auth_key)
     .bind(ua)
     .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    if res.rows_affected() == 0 {
+        return Err(AppError::Conflict("endpoint is registered to another account".into()));
+    }
 
     Ok(Json(ApiResponse::ok("subscribed")))
 }

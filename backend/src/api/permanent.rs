@@ -104,26 +104,36 @@ pub async fn repost_post(
     }
 
     // Get original post content
-    let orig = sqlx::query_as::<_, (Uuid, String, Option<String>)>(
-        "SELECT id, content, media_url FROM posts WHERE id = $1 AND is_removed = FALSE"
+    // Only live, public, free posts can be reposted; the copy keeps the
+    // adult flag. Previously any id (followers-only, PPV, adult, expired,
+    // deleted) was copied into a public free post (audit C-H1).
+    let orig = sqlx::query_as::<_, (Uuid, String, Option<String>, bool, Uuid)>(
+        "SELECT id, content, media_url, is_adult, author_id FROM posts p
+          WHERE id = $1 AND is_removed = FALSE AND deleted_at IS NULL AND expires_at > NOW()
+            AND COALESCE(visibility::text, 'public') = 'public'
+            AND (ppv_price_yeet IS NULL OR ppv_price_yeet = 0)"
     )
     .bind(post_id)
     .fetch_optional(state.db.pool())
     .await
     .map_err(AppError::Database)?
     .ok_or_else(|| AppError::NotFound("Post not found".into()))?;
+    if orig.4 != user_id && crate::api::blocks::either_blocks(state.db.pool(), user_id, orig.4).await? {
+        return Err(AppError::Forbidden("You cannot repost this post".into()));
+    }
 
     let expires_at = chrono::Utc::now() + chrono::Duration::hours(24);
 
     sqlx::query(
-        "INSERT INTO posts (author_id, content, media_url, reposted_from, expires_at)
-         VALUES ($1, $2, $3, $4, $5)"
+        "INSERT INTO posts (author_id, content, media_url, reposted_from, expires_at, is_adult)
+         VALUES ($1, $2, $3, $4, $5, $6)"
     )
     .bind(user_id)
     .bind(&orig.1)
     .bind(&orig.2)
     .bind(orig.0)
     .bind(expires_at)
+    .bind(orig.3)
     .execute(state.db.pool())
     .await
     .map_err(AppError::Database)?;

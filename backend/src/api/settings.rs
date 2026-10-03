@@ -85,8 +85,9 @@ pub async fn get_settings(
     let user_id = resolve_user_id(&state, &auth.address).await?;
     let settings = sqlx::query_as::<_, UserSettings>(
         "SELECT currency, language, show_nsfw, email_notifications,
-                push_notifications, auto_play_media, compact_mode
-         FROM user_settings WHERE user_id = $1, feed_langs, feed_countries"
+                push_notifications, auto_play_media, compact_mode,
+                feed_langs, feed_countries
+         FROM user_settings WHERE user_id = $1"
     )
     .bind(user_id)
     .fetch_optional(state.db.pool())

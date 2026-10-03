@@ -30080,7 +30080,7 @@ async function loadProfile(){
       var avStyle='width:36px;height:36px;border-radius:50%;background:var(--yeet);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--on-accent,#000);overflow:hidden;flex:none';
       var avInner=initial;
       if(u.avatar_url){
-        avStyle+=';background-image:url(\''+String(u.avatar_url).replace(/['"<>\\]/g,'')+'\');background-size:cover;background-position:center';
+        if(/^(\/uploads\/|https:\/\/)[\w.\/?=&%:#@~+-]{1,512}$/.test(String(u.avatar_url))) avStyle+=';background-image:url(\''+String(u.avatar_url)+'\');background-size:cover;background-position:center';
         avInner='';
       }
       pi.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
@@ -30294,9 +30294,14 @@ let connectedWallet=null,connectedAddress=null;
 // is the ONE switch. Default = BSC Mainnet, matching the backend
 // (batch_rewards uses chain 56, .env uses the mainnet RPC).
 //
-// To move everything to testnet, flip this single object to the 0x61 values
-// and set `token` to the testnet YEET address. Keep it in sync with the
-// backend YEET_CHAIN_ID / YEET_TOKEN_ADDRESS env vars.
+// The backend is the source of truth at runtime: GET /api/v1/config returns
+// YEET_CHAIN_ID (56 mainnet / 97 testnet) and YEET_TOKEN_ADDRESS, and the
+// bootstrap below switches this object accordingly — so "stay on testnet"
+// is one env var on the server (YEET_CHAIN_ID=97), no index.html edit.
+window.YEET_CHAIN_PRESETS = {
+  56: { idHex: '0x38', name: 'BNB Smart Chain', rpc: 'https://bsc-dataseed.binance.org/', explorer: 'https://bscscan.com' },
+  97: { idHex: '0x61', name: 'BNB Smart Chain Testnet', rpc: 'https://bsc-testnet-dataseed.bnbchain.org', explorer: 'https://testnet.bscscan.com' }
+};
 window.YEET_CHAIN = window.YEET_CHAIN || {
   idHex: '0x38',            // 56 = BSC Mainnet
   name: 'BNB Smart Chain',
@@ -30774,7 +30779,7 @@ async function loadRSS(url,name){
     }
     const d2=await r2.json();
     if(d2.status && d2.status !== 'ok'){
-      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">'+ String(d2.message||window.t('webboard.parseError')) +'</p>';
+      document.getElementById('wbFeedItems').innerHTML='<p style="color:#ff6666">'+ _esc(String(d2.message||window.t('webboard.parseError'))) +'</p>';
       _wbBackButton(); return;
     }
     document.getElementById('wbFeedTitle').textContent=(d2.feed&&d2.feed.title)||name;
@@ -30786,11 +30791,11 @@ async function loadRSS(url,name){
       items.forEach(function(item){
         var el=document.createElement('div');
         el.style.cssText='padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer';
-        el.dataset.url=String(item.link);
-        var title=String(item.title).replace(/</g,'&lt;');
+        el.dataset.url=/^https?:\/\//i.test(String(item.link||'')) ? String(item.link) : '';
+        var title=_esc(String(item.title||''));
         var dt=new Date(item.pubDate).toLocaleDateString();
         el.innerHTML='<div style="font-weight:700;font-size:13px;margin-bottom:4px">'+title+'</div><div style="font-size:11px;color:var(--muted)">'+dt+'</div>';
-        el.addEventListener('click',function(){window.open(this.dataset.url,'_blank');});
+        el.addEventListener('click',function(){ if(this.dataset.url) window.open(this.dataset.url,'_blank','noopener,noreferrer'); });
         container.appendChild(el);
       });
     }else{
@@ -31541,7 +31546,6 @@ async function uploadProfileImage(input, kind){
 window._currentProfile = null; // {address, own}
 
 function _shortAddr(a){ return a ? (a.length>12 ? a.slice(0,6)+'...'+a.slice(-4) : a) : ''; }
-function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 // Escape a value for embedding inside a single-quoted JS string literal
 // that lives inside an HTML attribute (e.g. onclick="foo('...')").
 function _jsq(s){ return String(s||'').replace(/[\\'"<>]/g, function(c){ return '\\x'+c.charCodeAt(0).toString(16).padStart(2,'0'); }); }
@@ -33109,10 +33113,21 @@ function _unlockPPVConfirmed(postId, authorId, price, imgEl, overlayEl, consent)
     return r.json().then(function(d){ return { ok: r.ok, d: d }; });
   }).then(function(res){
     if (res.ok && res.d && res.d.success) {
-      imgEl.style.filter = 'none';
-      imgEl.style.transition = 'filter 0.5s ease';
-      imgEl.style.transform = 'none';
       overlayEl.style.display = 'none';
+      if (imgEl) { imgEl.style.filter = 'none'; imgEl.style.transition = 'filter 0.5s ease'; imgEl.style.transform = 'none'; }
+      // The server withholds media_url until the viewer has unlocked the
+      // post: fetch it again and swap the locked tile for the real media.
+      var wrap = overlayEl.parentNode;
+      if (wrap && typeof yeetFetch === 'function') {
+        yeetFetch('/api/v1/posts/' + encodeURIComponent(postId)).then(function(rr){
+          var p = rr && rr.ok && rr.data; if (!p || !p.media_url) return;
+          p.is_unlocked = true;
+          var html = renderMediaUrl(p); if (!html) return;
+          var tmp = document.createElement('div'); tmp.innerHTML = html;
+          while (tmp.firstChild) wrap.parentNode.insertBefore(tmp.firstChild, wrap);
+          wrap.remove();
+        }).catch(function(){});
+      }
       var paid = (res.d.data && res.d.data.price_paid) || price;
       if (res.d.data && res.d.data.already_unlocked) {
         showToast(window.t('ppv.alreadyUnlocked'), 'success');
@@ -33668,15 +33683,27 @@ function _isAudioUrl(u){
   if(!u || typeof u !== 'string') return false;
   return /\.(weba|ogg|oga|opus|m4a|aac|mp3|wav)(\?|#|$)/i.test(u);
 }
+// Only same-origin upload paths or https URLs, and only characters that can
+// never break out of a src="…" attribute (audit FE-C1: a crafted media_url
+// executed script for every viewer). The backend enforces the same rule.
+function _safeMediaUrl(u) {
+  u = String(u || '');
+  if (!/^(\/uploads\/|https:\/\/)[^\s"'<>`\\]{1,512}$/.test(u)) return '';
+  return u.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
 function renderMediaUrl(p) {
-  if (!p.media_url) return '';
-  var isAudio = p.kind === 'audio' || _isAudioUrl(p.media_url);
-  var isVideo = !isAudio && _isVideoUrl(p.media_url);
+  var mediaUrl = _safeMediaUrl(p.media_url);
+  var ppvLocked = !!p.ppv_price_yeet && !p.is_unlocked;
+  // The server withholds media_url for a locked pay-per-view post; the card
+  // still needs the locked tile + unlock button.
+  if (!mediaUrl && !ppvLocked) return '';
+  var isAudio = p.kind === 'audio' || _isAudioUrl(p.media_url || '');
+  var isVideo = !isAudio && _isVideoUrl(p.media_url || '');
   var openMedia = isAudio
-    ? '<div class="audio-story"><span class="yi yi-mic" aria-hidden="true"></span><audio class="story-audio" src="' + p.media_url + '" controls preload="metadata" aria-label="' + window.t('audio.story') + '"></audio><span class="as-label">' + window.t('audio.story') + '</span></div>'
+    ? '<div class="audio-story"><span class="yi yi-mic" aria-hidden="true"></span><audio class="story-audio" src="' + mediaUrl + '" controls preload="metadata" aria-label="' + window.t('audio.story') + '"></audio><span class="as-label">' + window.t('audio.story') + '</span></div>'
     : isVideo
-    ? '<video src="' + p.media_url + '" controls preload="metadata" playsinline style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;background:var(--bg)"></video>'
-    : '<img src="' + p.media_url + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
+    ? '<video src="' + mediaUrl + '" controls preload="metadata" playsinline style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;background:var(--bg)"></video>'
+    : '<img src="' + mediaUrl + '" style="max-width:100%;border-radius:10px;margin:8px 0;display:block;max-height:400px;object-fit:contain" loading="lazy">';
   // No PPV price set: render normally.
   if (!p.ppv_price_yeet) {
     return openMedia;
@@ -33694,10 +33721,8 @@ function renderMediaUrl(p) {
   // icon; for images we blur the actual image. Video frames aren't
   // trivially blurrable client-side without decoding, so a tile keeps
   // PPV simple and prevents accidental playback before payment.
-  var lockedPreview = (isVideo || isAudio)
-    ? '<div style="width:100%;height:' + (isAudio ? '120px' : '280px') + ';background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--border-2)"><span class="yi ' + (isAudio ? 'yi-mic' : 'yi-video') + '"></span></div>'
-    : '<img src="' + p.media_url + '" style="max-width:100%;display:block;max-height:400px;object-fit:contain;filter:blur(18px);transform:scale(1.05)">';
-  return '<div class="ppv-wrap" data-pid="' + p.id + '" data-aid="' + aid + '" data-price="' + price + '" style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:block">'
+  var lockedPreview = '<div style="width:100%;height:' + (isAudio ? '120px' : '280px') + ';background:linear-gradient(135deg,var(--card-2),var(--bg));display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--border-2)"><span class="yi ' + (isAudio ? 'yi-mic' : (isVideo ? 'yi-play' : 'yi-image')) + '" aria-hidden="true"></span></div>';
+  return '<div class="ppv-wrap" data-pid="' + _esc(p.id) + '" data-aid="' + _esc(aid) + '" data-price="' + _esc(price) + '" style="position:relative;margin:8px 0;border-radius:10px;overflow:hidden;display:block">'
     + lockedPreview
     + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.5);gap:10px">'
     + '<div style="font-size:32px"><span class="yi yi-lock"></span></div>'
@@ -35899,7 +35924,7 @@ info@blocksocial.eu</address>
       'loading': 'Lädt…',
       'err.callFailed': 'Admin-Aufruf fehlgeschlagen:',
       'err.status': '(Status {status})',
-      'err.secretHint': 'Das in den Einstellungen eingegebene Secret stimmt nicht mit der ADMIN_SECRET-Umgebungsvariable des Servers überein. Standard ist <code>yeet_admin_2024</code>, sofern in <code>/root/yeet-social/.env</code> auf dem VPS nichts anderes gesetzt ist.',
+      'err.secretHint': 'Das in den Einstellungen eingegebene Secret stimmt nicht mit der ADMIN_SECRET-Umgebungsvariable des Servers überein (mindestens 24 Zeichen; es gibt keinen Standardwert).',
       'err.network': 'Netzwerkfehler.',
       'err.badSecret': 'Ungültiges Admin-Secret.',
       'ov.totalUsers': 'Nutzer gesamt', 'ov.posts24h': 'Beiträge in 24 h', 'ov.flagged': 'Gemeldet', 'ov.banned': 'Gesperrte Nutzer', 'ov.pendingInvites': 'Offene Einladungen',
@@ -35952,7 +35977,7 @@ info@blocksocial.eu</address>
       'loading': 'Loading...',
       'err.callFailed': 'Admin call failed:',
       'err.status': '(status {status})',
-      'err.secretHint': 'The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env. Default is <code>yeet_admin_2024</code> unless you set one in <code>/root/yeet-social/.env</code> on the VPS.',
+      'err.secretHint': 'The secret you typed in Settings does not match the server&#39;s ADMIN_SECRET env (at least 24 characters; there is no default).',
       'err.network': 'Network error.',
       'err.badSecret': 'Bad admin secret.',
       'ov.totalUsers': 'Total users', 'ov.posts24h': 'Posts in 24 h', 'ov.flagged': 'Flagged', 'ov.banned': 'Banned users', 'ov.pendingInvites': 'Pending invites',
@@ -36096,7 +36121,7 @@ info@blocksocial.eu</address>
   async function renderOverview(){
     _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">'+ at('loading') +'</div>';
     try {
-      var r = await fetch('/api/v1/admin/stats?secret=' + encodeURIComponent(secret()));
+      var r = await fetch('/api/v1/admin/stats', { headers: { 'X-Admin-Secret': secret() } });
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
@@ -36148,10 +36173,9 @@ info@blocksocial.eu</address>
     var list = document.getElementById('admPostList');
     list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">'+ at('loading') +'</div>';
     try {
-      var url = '/api/v1/admin/posts?secret=' + encodeURIComponent(secret())
-              + '&filter=' + encodeURIComponent(_postsFilter)
+      var url = '/api/v1/admin/posts?filter=' + encodeURIComponent(_postsFilter)
               + '&page=' + _postsPage;
-      var r = await fetch(url);
+      var r = await fetch(url, { headers: { 'X-Admin-Secret': secret() } });
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
@@ -36291,12 +36315,11 @@ info@blocksocial.eu</address>
     var list = document.getElementById('admUserList');
     if(!list) return;
     list.innerHTML = '<div style="color:var(--muted);padding:14px;text-align:center">'+ at('loading') +'</div>';
-    var url = '/api/v1/admin/users?secret=' + encodeURIComponent(secret())
-            + '&page=' + _usersPage
+    var url = '/api/v1/admin/users?page=' + _usersPage
             + '&filter=' + encodeURIComponent(_usersFilter)
             + (_usersQ.trim() ? '&q=' + encodeURIComponent(_usersQ.trim()) : '');
     try {
-      var r = await fetch(url);
+      var r = await fetch(url, { headers: { 'X-Admin-Secret': secret() } });
       if(!r.ok){
         var ed = await r.json().catch(function(){return{};});
         var msg = (ed.error && ed.error.message) || ed.message || ('HTTP '+r.status);
@@ -36391,8 +36414,8 @@ info@blocksocial.eu</address>
     status = status || 'pending';
     _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">'+ at('loading') +'</div>';
     try {
-      var r = await fetch('/api/v1/admin/age-verification?status='+ encodeURIComponent(status)
-        + '&secret=' + encodeURIComponent(secret()));
+      var r = await fetch('/api/v1/admin/age-verification?status='+ encodeURIComponent(status),
+        { headers: { 'X-Admin-Secret': secret() } });
       if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.badSecret') +'</div>'; return; }
       var d = await r.json();
       var rows = (d && d.data) || [];
@@ -36455,9 +36478,9 @@ info@blocksocial.eu</address>
     } catch(e){ alert(at('alert.network')); }
   };
   window._adminViewBlob = async function(caseId, slot){
-    var url = '/api/v1/admin/age-verification/'+ encodeURIComponent(caseId) +'/blob?slot='+ slot +'&secret='+ encodeURIComponent(secret());
+    var url = '/api/v1/admin/age-verification/'+ encodeURIComponent(caseId) +'/blob?slot='+ encodeURIComponent(slot);
     try {
-      var r = await fetch(url);
+      var r = await fetch(url, { headers: { 'X-Admin-Secret': secret() } });
       if(!r.ok){ alert(at('alert.failed', {status: r.status})); return; }
       var blob = await r.blob();
       var u = URL.createObjectURL(blob);
@@ -36483,7 +36506,7 @@ info@blocksocial.eu</address>
   async function renderAudit(){
     _adminContent.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">'+ at('loading') +'</div>';
     try {
-      var r = await fetch('/api/v1/admin/actions?secret=' + encodeURIComponent(secret()));
+      var r = await fetch('/api/v1/admin/actions', { headers: { 'X-Admin-Secret': secret() } });
       if(!r.ok){ _adminContent.innerHTML = '<div style="color:#ff6666;padding:20px">'+ at('err.badSecret') +'</div>'; return; }
       var d = await r.json();
       var rows = (d && d.data) || [];
@@ -37477,7 +37500,7 @@ info@blocksocial.eu</address>
   // Back-compat alias used by some older call sites
 
   function escapeHtml(s){
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function fmtTime(ts){
@@ -40585,6 +40608,13 @@ window.YeetFeedFilter={load:load,save:save,renderChip:renderChip,state:state};
   fetch('/api/v1/config', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(d){
     var c = d && d.data; if(!c) return;
     if(c.walletconnect_project_id && !window.YEET_WC_PROJECT_ID) window.YEET_WC_PROJECT_ID = c.walletconnect_project_id;
+    // Follow the server's chain (YEET_CHAIN_ID): wallet login, chain switch
+    // and WalletConnect all read window.YEET_CHAIN at call time.
+    var preset = window.YEET_CHAIN_PRESETS && window.YEET_CHAIN_PRESETS[Number(c.chain_id)];
+    if(preset && window.YEET_CHAIN && window.YEET_CHAIN.idHex !== preset.idHex){
+      window.YEET_CHAIN.idHex = preset.idHex; window.YEET_CHAIN.name = preset.name;
+      window.YEET_CHAIN.rpc = preset.rpc; window.YEET_CHAIN.explorer = preset.explorer;
+    }
     if(c.yeet_token_address && window.YEET_CHAIN && !window.YEET_CHAIN.token) window.YEET_CHAIN.token = c.yeet_token_address;
   }).catch(function(){});
 })();

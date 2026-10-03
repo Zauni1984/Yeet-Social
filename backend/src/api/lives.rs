@@ -444,6 +444,16 @@ pub async fn end_live(
     if status == "ended" || status == "cancelled" {
         return Ok(Json(ApiResponse::ok(())));
     }
+    if status == "scheduled" {
+        // Ending a live that never started is a cancellation: refund a booked
+        // promotion instead of stranding it (audit M-M1).
+        let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+        refund_promotion_in_tx(&mut tx, id).await?;
+        sqlx::query("UPDATE lives SET status = 'cancelled', ended_at = NOW() WHERE id = $1 AND status = 'scheduled'")
+            .bind(id).execute(&mut *tx).await.map_err(AppError::Database)?;
+        tx.commit().await.map_err(AppError::Database)?;
+        return Ok(Json(ApiResponse::ok(())));
+    }
     sqlx::query(
         "UPDATE lives SET status = 'ended', ended_at = NOW() WHERE id = $1"
     ).bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
@@ -538,6 +548,9 @@ pub async fn tip_live(
     .bind(id)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
     .ok_or_else(|| AppError::NotFound("Live not currently broadcasting".into()))?;
+    if crate::api::blocks::either_blocks(state.db.pool(), from_id, host_id).await? {
+        return Err(AppError::Forbidden("You cannot tip this host".into()));
+    }
 
     let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
     let tip_id = crate::api::tips::send_tip_tx(

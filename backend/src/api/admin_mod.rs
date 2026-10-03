@@ -26,7 +26,7 @@ use crate::api::middleware::OptionalAuth;
 /// Resolve the admin actor (the logged-in user) from an optional JWT.
 /// Returns (id, username) — both None if the caller isn't signed in
 /// (admin-secret-only flow). Used for audit-log attribution.
-async fn admin_actor(state: &AppState, viewer: &OptionalAuth) -> (Option<Uuid>, Option<String>) {
+pub(crate) async fn admin_actor(state: &AppState, viewer: &OptionalAuth) -> (Option<Uuid>, Option<String>) {
     let auth = match &viewer.0 { Some(a) => a, None => return (None, None) };
     let id_opt: Option<Uuid> = if let Some(rest) = auth.address.strip_prefix("email:") {
         Uuid::parse_str(rest).ok()

@@ -56,6 +56,8 @@ struct FeedRow {
     kind: Option<String>,
     #[sqlx(default)]
     author_is_bot: Option<bool>,
+    #[sqlx(default)]
+    is_adult: Option<bool>,
 }
 
 pub async fn get_feed(
@@ -231,13 +233,17 @@ pub async fn fetch_post(state: &AppState, post_id: Uuid, viewer_id: Option<Uuid>
             p.reposted_from,
             (SELECT COALESCE(ou.display_name, ou.username) FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_name,
             (SELECT ou.username FROM users ou WHERE ou.id = (SELECT op.author_id FROM posts op WHERE op.id = p.reposted_from)) AS reposted_from_author_username,
-            p.promoted_live_id, p.pinned_until, p.lang, p.kind, u.is_bot AS author_is_bot,
+            p.promoted_live_id, p.pinned_until, p.lang, p.kind, u.is_bot AS author_is_bot, p.is_adult,
             (p.ppv_price_yeet IS NULL OR p.ppv_price_yeet = 0 OR p.author_id = $2::uuid
               OR EXISTS(SELECT 1 FROM ppv_unlocks pu WHERE pu.user_id = $2::uuid AND pu.post_id = p.id)) AS is_unlocked
         FROM posts p JOIN users u ON p.author_id = u.id
-        WHERE p.id = $1 AND p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL"
+        WHERE p.id = $1 AND p.expires_at > NOW() AND p.is_removed = FALSE AND p.deleted_at IS NULL
+          AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $2::uuid
+               OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2::uuid AND f.following_id = p.author_id))
+          AND (p.is_adult = FALSE OR p.author_id = $2::uuid
+               OR EXISTS (SELECT 1 FROM users v WHERE v.id = $2::uuid AND v.age_verified_at IS NOT NULL))"
     )
-    .bind(post_id).bind(viewer_id)
+    .bind(post_id).bind(viewer_id.unwrap_or(Uuid::nil()))
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(row.map(row_to_feed_post))
 }
@@ -304,11 +310,17 @@ pub async fn get_following_feed(
 
 fn row_to_feed_post(r: FeedRow) -> FeedPost {
     let media_url = r.media_url.or_else(|| r.media_urls.and_then(|v| v.into_iter().next()));
+    // Pay-per-view: the paid asset is the media. Never hand the URL to a
+    // viewer who has not unlocked it — the old client-side blur was the only
+    // "lock" (audit C-C3). Price and ppv flags stay so the card renders the
+    // locked tile and the unlock button.
+    let locked = r.ppv_price_yeet.map(|p| p > 0.0).unwrap_or(false) && !r.is_unlocked.unwrap_or(false);
+    let media_url = if locked { None } else { media_url };
     FeedPost {
         id: r.id,
         content: r.content,
         media_url,
-        is_adult: false,
+        is_adult: r.is_adult.unwrap_or(false),
         is_nft: r.is_nft,
         like_count: r.like_count as i32,
         reshare_count: r.reshare_count as i32,
@@ -416,6 +428,8 @@ pub async fn get_user_posts(
         FROM posts p JOIN users u ON p.author_id = u.id
         WHERE p.author_id = $1 AND p.expires_at > NOW()
           AND p.is_removed = FALSE AND p.deleted_at IS NULL{}
+          AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $4
+               OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $4 AND f.following_id = p.author_id))
         ORDER BY (p.pinned_until IS NOT NULL AND p.pinned_until > NOW()) DESC,
                  p.pinned_until DESC NULLS LAST,
                  p.created_at DESC
@@ -427,12 +441,14 @@ pub async fn get_user_posts(
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
     let count_sql = format!(
-        "SELECT COUNT(*) FROM posts
-         WHERE author_id = $1 AND expires_at > NOW() AND deleted_at IS NULL AND is_removed = FALSE{}",
+        "SELECT COUNT(*) FROM posts p
+         WHERE p.author_id = $1 AND p.expires_at > NOW() AND p.deleted_at IS NULL AND p.is_removed = FALSE{}
+           AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $2
+                OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2 AND f.following_id = p.author_id))",
         include_adult_count_sql
     );
     let total: i64 = sqlx::query_scalar(&count_sql)
-        .bind(user_id)
+        .bind(user_id).bind(viewer_for_unlock)
         .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     let posts = rows.into_iter().map(row_to_feed_post).collect();
