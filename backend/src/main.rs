@@ -279,6 +279,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/swap/address",     post(api::swap::address))
         .route("/api/v1/swap/deposits",    get(api::swap::deposits))
         .route("/api/v1/points/convert",   post(api::points::convert))
+        .route("/api/v1/points/rate",      get(api::points::get_rate))
+        .route("/api/v1/admin/conversion-rate", get(api::points::admin_rate_history).post(api::points::admin_schedule_rate))
         // Paper wallets — printable YEET banknotes
         .route("/api/v1/paper-wallets",          post(api::paper_wallets::create))
         .route("/api/v1/paper-wallets",          get(api::paper_wallets::list_mine))

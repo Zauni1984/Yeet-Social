@@ -61,3 +61,13 @@ Einstellungsvorbehalt, Umwandlungsvorbehalte, Transparenzgebot), ob die Zusicher
 „bereits erworbene Punkte bleiben nutzbar“ gewollt ist, und ob eine Verfall-/
 Verjährungsregel für Punkte ergänzt werden soll (derzeit kein Verfall implementiert).
 Die Liste der juristischen Prüfpunkte A1–A9 steht in docs/mica/09 §10.
+
+### Technische Absicherung der Kursklausel (§6 „Umwandlung“)
+
+Die Zusage „Änderung des Verhältnisses nur für künftige Umwandlungen, vorab angekündigt“
+ist seit 3. Oktober 2026 im System erzwungen: Kurse liegen versioniert mit Gültig-ab-Datum
+in `conversion_rates`; der Admin-Endpoint lehnt Änderungen mit weniger als
+`YEET_RATE_NOTICE_DAYS` (14) Tagen Vorlauf ab; jede Umwandlung speichert den angewandten
+Kurs; der Dialog zeigt angekündigte Änderungen mit Datum an (docs/mica/09 §6.3).
+**Anwalt:** Ist eine 14-Tage-Frist angemessen, und genügt die Anzeige im Dialog plus
+Changelog-Post als „Ankündigung“, oder ist eine E-Mail an alle Nutzer mit Punkteguthaben nötig?

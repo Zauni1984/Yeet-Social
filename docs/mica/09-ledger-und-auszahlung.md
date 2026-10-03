@@ -38,7 +38,7 @@ Die **einzige Brücke** zwischen den Ebenen ist die Einbahnstraße
 
 - **Punkte** — der Wert in `users.yeet_token_balance`. Historisch hieß die Spalte „Token-Balance"; seit Migration 0038 ist sie semantisch **Punkte** (Doc 05 §4.1). In der UI heißt es „Punkte", nicht „YEET".
 - **YEET** — der On-Chain-Token (`contracts/src/YeetToken.sol`, 18 Dezimalstellen).
-- **Umwandlung / Conversion** — die vom Nutzer ausgelöste Abbuchung von Punkten mit dem Ziel, YEET an seine verknüpfte externe Wallet zu erhalten. Verhältnis derzeit **1 Punkt = 1 YEET** (Konstante in `api/points.rs`, UI-Text `convert.prompt`).
+- **Umwandlung / Conversion** — die vom Nutzer ausgelöste Abbuchung von Punkten mit dem Ziel, YEET an seine verknüpfte externe Wallet zu erhalten. Verhältnis derzeit **1 Punkt = 1 YEET**; seit 3. Okt. 2026 **versioniert** in der Tabelle `conversion_rates` (gültig-ab-Datum, Ankündigungszeitpunkt, Notiz) statt als Code-Konstante — Details §6.3.
 - **Auszahlung (Payout)** — die technische Erfüllung der Umwandlung: eine Zeile in `token_rewards` mit `kind='conversion'`, die der Batch-Minter on-chain mintet.
 - **Conversion-Pool** — rechnerische Obergrenze aller Umwandlungen (`services/tokens.rs::pool_status`), siehe §6.3.
 - **Ledger** — das append-only Journal `ledger_entries` (Migration 0039), in dem jede Punkte- und YEET-Bewegung hash-verkettet protokolliert wird (§8).
@@ -52,7 +52,7 @@ Die **einzige Brücke** zwischen den Ebenen ist die Einbahnstraße
 1. Punkte werden **nie gegen Zahlung ausgegeben** (kein Kaufendpoint, kein Fiat-Ramp, kein Krypto-Eingang). Sie entstehen nur durch die in §4 genannten Vorgänge.
 2. Punkte haben **keinen Geldwert** und werden **nicht in Geld ausgezahlt**. Der einzige „Ausgang" ist die Umwandlung in YEET auf die eigene Wallet.
 3. Die Umwandlung ist **kein garantierter Anspruch auf eine bestimmte Menge YEET zu einem bestimmten Zeitpunkt**:
-   - sie steht unter **Pool-Vorbehalt** (`CONVERSION_POOL_EXHAUSTED`, §6.3),
+   - sie steht unter **Pool-Vorbehalt** (`CONVERSION_POOL_EXHAUSTED`, §6.4),
    - unter **Admin-Freigabe** (`awaiting_approval`, §6.2),
    - unter **Sanktions-Screening** (`SANCTIONED_ADDRESS`, F6),
    - unter dem Vorbehalt eines **änderbaren Umwandlungsverhältnisses** (L7, nur prospektiv),
@@ -163,7 +163,15 @@ Der Nutzer sieht in „Punkte umwandeln" die Bestätigung `convert.queued` („E
 (`get_pending_payout`: Summe `awaiting_approval` + `pending`). Admins sehen die Queue unter
 `GET /api/v1/admin/payouts?status=…` (admin.html).
 
-### 6.3 Conversion-Pool (Drain-Schutz)
+### 6.3 Umwandlungsverhältnis (versioniert, nur prospektiv änderbar — L7)
+
+- Tabelle `conversion_rates` (Migration 0052): `rate` = YEET je Punkt, `valid_from`, `announced_at`, `note`, `created_by`. Gültig ist die Zeile mit dem jüngsten `valid_from ≤ now()`; Zeilen mit künftigem `valid_from` sind **angekündigte** Änderungen.
+- Jede Umwandlung speichert `points_debited` und `rate` auf der `token_rewards`-Zeile; `amount` ist der zu mintende YEET-Betrag (= Punkte × Kurs, 8 Nachkommastellen). Ablehnung/Erstattung gibt `points_debited` zurück. Der Journaleintrag `points_conversion` nennt Punkte, YEET und Kurs.
+- **Vorlauf:** `POST /api/v1/admin/conversion-rate` lehnt jede Änderung ab, die früher als `YEET_RATE_NOTICE_DAYS` (Default 14) nach dem Eintragen gelten würde; rückwirkende Änderungen sind damit technisch ausgeschlossen (AGB §6: „nur für künftige Umwandlungen, vorab angekündigt“). Admin-Aktion wird in `admin_actions` protokolliert.
+- **Transparenz:** `GET /api/v1/points/rate` (öffentlich) liefert aktuellen Kurs, angekündigte Änderungen und die Vorlauffrist. Der Umwandlungsdialog zeigt den Kurs dynamisch und blendet eine angekündigte Änderung mit Datum ein (38 Sprachen, `convert.rateChange`). Admin-Panel unter „Auszahlungen“.
+- **Prozess bei Änderung (Anwalt/Marketing):** 1) Kurs mit Datum eintragen, 2) Changelog-Eintrag des Updates-Bots veröffentlichen (Nutzerinformation), 3) ggf. AGB-Hinweis prüfen. Punkte verfallen nicht; wer vor dem Stichtag umwandelt, erhält den alten Kurs.
+
+### 6.4 Conversion-Pool (Drain-Schutz)
 
 ```
 effective_pool = YEET_CONVERSION_POOL (Default 15 750 000 000) + Σ fee_ledger.fee_amount
@@ -266,7 +274,7 @@ Reconcile-Liste prüfen, danach muss (1) dauerhaft aufgehen.
 | D1 | ~~Live-Promotion ohne Journaleintrag~~ **behoben (3. Okt. 2026):** `live_promotion` bei Buchung, `live_promotion_refund` bei Erstattung; Sweep-Job nutzt dieselbe Funktion wie `cancel_live` (die `fee_ledger`-Gegenbuchung gab es bereits) | — | — |
 | D2 | ~~Pool-Default vs. `MAX_SUPPLY`~~ **behoben (2. Okt. 2026):** Contract auf 21 Mrd./Tranchen des Whitepapers umgestellt, 75 % nur via `batchMintRewards` mintbar (`rewardsMinted`-Deckel, kein generisches `mint()`), effektiver Pool im Backend auf `REWARD_RESERVE` gedeckelt | — | Nach Deploy: `rewardsRemaining()` gegen Pool-Status abgleichen (D6) |
 | D3 | Minter-Key = Contract-Owner (Hot Key) | Single Point of Failure; F8 | Ownership → Multisig (Ownable2Step); Minter nur mit begrenzter Minter-Rolle |
-| D4 | Umwandlungsverhältnis ist Code-Konstante (1:1) ohne Versionierung | L7 „nur prospektiv änderbar" ist nicht nachweisbar | Verhältnis + Gültig-ab in Konfig/Tabelle, im Ledger-Eintrag `points_conversion` mitschreiben |
+| D4 | ~~Verhältnis als Code-Konstante~~ **behoben (3. Okt. 2026):** `conversion_rates` mit Gültig-ab, Vorlauffrist ≥ 14 Tage serverseitig erzwungen, Kurs/Punkte auf jeder Umwandlung und im Journal, öffentlicher Endpoint + dynamischer Dialog (§6.3) | — | Bei Kursänderung zusätzlich Changelog-Eintrag veröffentlichen |
 | D5 | `pending` kann vom Admin nicht zurückgezogen werden | Einmal freigegeben, nur über Mint-Fehler → `failed` wieder stornierbar | Bewusst so (Race mit Minter); ggf. „Approve zurücknehmen" nur zwischen Batches mit Lock |
 | D6 | ~~Abstimmung manuell~~ **behoben (3. Okt. 2026):** `GET /api/v1/admin/ledger/reconcile` (Gleichungen 1–3 + Kettenprüfung), täglicher Job mit Warnung im Log; `POST /api/v1/admin/ledger/baseline` schreibt einmalig `opening_balance`-Einträge für Guthaben aus der Zeit vor dem Journal | — | Baseline **einmal** nach Review der Reconcile-Liste ausführen |
 | D7 | ~~PPV als Tip journaliert~~ **behoben (3. Okt. 2026):** `send_tip_tx(…, TipKind)`; PPV schreibt `ppv_purchase`/`ppv_earning` und `fee_ledger.source_type = 'ppv'`. Ältere Einträge bleiben `tip_*` (append-only) | — | — |
@@ -294,6 +302,8 @@ Reconcile-Liste prüfen, danach muss (1) dauerhaft aufgehen.
 | Methode | Pfad | Zweck |
 | --- | --- | --- |
 | POST | `/api/v1/points/convert` | Umwandlung anstoßen (`{points}`) |
+| GET | `/api/v1/points/rate` | Aktueller Kurs, angekündigte Änderungen, Vorlauffrist (öffentlich) |
+| GET / POST | `/api/v1/admin/conversion-rate` | Kurs-Historie · neuen Kurs mit Gültig-ab ankündigen (≥ Vorlauffrist) |
 | GET | `/api/v1/tokens/balance` | Punktesaldo + offene Auszahlung |
 | GET | `/api/v1/tokens/rewards` | Reward-Historie des Nutzers |
 | GET | `/api/v1/tokens/pool` | Pool-Status (öffentlich) |
@@ -307,7 +317,7 @@ Reconcile-Liste prüfen, danach muss (1) dauerhaft aufgehen.
 
 | Variable | Default | Bedeutung |
 | --- | --- | --- |
-| `YEET_CONVERSION_POOL` | 15 750 000 000 | Basispool in YEET = `REWARD_RESERVE` (§6.3) |
+| `YEET_CONVERSION_POOL` | 15 750 000 000 | Basispool in YEET = `REWARD_RESERVE` (§6.4) |
 | `YEET_REWARD_RESERVE` | 15 750 000 000 | Harter Deckel des effektiven Pools (Basis + Gebühren) = On-Chain-Mint-Reserve |
 | `YEET_TAPER_THRESHOLD_PCT` / `YEET_TAPER_FACTOR` | 10 / 0,5 | Reward-Taper |
 | `YEET_DAILY_POINTS_CAP`, `YEET_POST_REWARD`, `YEET_POST_MIN_CHARS` | 1 000 / 10 / 120 | Reward-Regeln |
@@ -315,4 +325,5 @@ Reconcile-Liste prüfen, danach muss (1) dauerhaft aufgehen.
 | `REWARDS_MINTER_PRIVKEY` | — | Minter aktiv nur wenn gesetzt (**D3**) |
 | `YEET_CHAIN_ID`, `BSC_RPC_URL`, `YEET_TOKEN_ADDRESS` | 56 / BSC-Dataseed / — | Chain |
 | `YEET_MINT_MAX_ATTEMPTS` | 5 | Versuche bis `failed` |
+| `YEET_RATE_NOTICE_DAYS` | 14 | Mindestvorlauf für eine Kursänderung (§6.4) |
 | `SANCTIONS_*` | s. `docs/sanktions-screening.md` | F6 |

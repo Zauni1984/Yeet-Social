@@ -173,6 +173,20 @@ input:focus{border-color:#c6f135}
       <span id="payoutHint" style="font-size:12px;color:#888"></span>
     </div>
     <div id="payoutList"></div>
+
+    <!-- Umwandlungskurs Punkte→YEET (versioniert, Änderungen nur mit Vorlauf; docs/mica/09 D4) -->
+    <div class="card" id="rateCard" style="margin-top:18px">
+      <div class="meta"><span class="author" data-i18n="rate.title">Umwandlungskurs Punkte → YEET</span></div>
+      <div class="kv"><span data-i18n="rate.current">Aktuell:</span> <b id="rateCurrent">…</b></div>
+      <div class="kv"><span data-i18n="rate.upcoming">Angekündigt:</span> <span id="rateUpcoming">…</span></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px">
+        <input id="rateNew" class="search" type="number" step="0.00000001" min="0.00000001" placeholder="1.0" style="width:120px;margin:0" aria-label="rate">
+        <input id="rateFrom" class="search" type="date" style="width:auto;margin:0" aria-label="valid from">
+        <input id="rateNote" class="search" type="text" placeholder="Notiz / Begründung" data-i18n-placeholder="rate.note" style="flex:1;min-width:160px;margin:0">
+        <button class="btn sm" onclick="scheduleRate()"><span class="yi yi-calendar"></span> <span data-i18n="rate.schedule">Kurs ankündigen</span></button>
+      </div>
+      <div class="kv" id="rateNotice" style="font-size:12px;color:#888;margin-top:6px"></div>
+    </div>
   </div>
 </div>
 
@@ -225,6 +239,15 @@ var ADM = {
     'payout.noWallet': '— keine verknüpft —',
     'payout.attempts': 'Mint-Versuche:',
     'payout.lastError': 'Letzter Fehler:',
+    'rate.title': 'Umwandlungskurs Punkte → YEET',
+    'rate.current': 'Aktuell:',
+    'rate.upcoming': 'Angekündigt:',
+    'rate.none': 'keine Änderung angekündigt',
+    'rate.note': 'Notiz / Begründung',
+    'rate.schedule': 'Kurs ankündigen',
+    'rate.notice': 'Eine Änderung gilt nur für künftige Umwandlungen und muss mindestens {n} Tage vorher angekündigt werden (AGB §6). Nach dem Eintragen zusätzlich einen Changelog-Eintrag veröffentlichen.',
+    'rate.fromOn': 'ab {date}',
+    'toast.rateScheduled': 'Kursänderung eingetragen',
     'btn.approve': 'Freigeben',
     'btn.rejectRefund': 'Ablehnen & erstatten',
     'btn.remove': 'Entfernen',
@@ -286,6 +309,15 @@ var ADM = {
     'payout.noWallet': '— none linked —',
     'payout.attempts': 'Mint attempts:',
     'payout.lastError': 'Last error:',
+    'rate.title': 'Conversion rate points → YEET',
+    'rate.current': 'Current:',
+    'rate.upcoming': 'Announced:',
+    'rate.none': 'no change announced',
+    'rate.note': 'Note / reason',
+    'rate.schedule': 'Announce rate',
+    'rate.notice': 'A change applies to future conversions only and must be announced at least {n} days ahead (Terms §6). After saving, also publish a changelog entry.',
+    'rate.fromOn': 'from {date}',
+    'toast.rateScheduled': 'Rate change scheduled',
     'btn.approve': 'Approve',
     'btn.rejectRefund': 'Reject & refund',
     'btn.remove': 'Remove',
@@ -408,7 +440,40 @@ async function refreshPayoutBadge() {
   } catch(e) {}
 }
 
+function fmtRate(x) { var n = Number(x); return isFinite(n) ? String(Number(n.toFixed(8))) : String(x); }
+async function loadRate() {
+  var cur = document.getElementById('rateCurrent'), up = document.getElementById('rateUpcoming'), note = document.getElementById('rateNotice');
+  if (!cur) return;
+  try {
+    var r = await fetch('/api/v1/points/rate', {cache: 'no-store'});
+    var d = await r.json();
+    if (!d.success) throw new Error('rate');
+    cur.textContent = '1 : ' + fmtRate(d.data.current.rate) + ' YEET';
+    var ups = d.data.upcoming || [];
+    up.textContent = ups.length ? ups.map(function(u) { return '1 : ' + fmtRate(u.rate) + ' YEET ' + A('rate.fromOn', {date: new Date(u.valid_from).toLocaleDateString(admLocale())}); }).join(' · ') : A('rate.none');
+    note.textContent = A('rate.notice', {n: d.data.notice_days});
+    var from = document.getElementById('rateFrom');
+    if (from && !from.value) { var dt = new Date(Date.now() + (d.data.notice_days + 1) * 86400000); from.value = dt.toISOString().slice(0, 10); }
+  } catch (e) { cur.textContent = '?'; up.textContent = '?'; }
+}
+async function scheduleRate() {
+  var rate = Number(document.getElementById('rateNew').value);
+  var from = document.getElementById('rateFrom').value;
+  var noteV = document.getElementById('rateNote').value.trim();
+  if (!(rate > 0) || !from) { showToast(A('toast.error', {msg: 'rate / date'}), 'err'); return; }
+  try {
+    var r = await fetch('/api/v1/admin/conversion-rate', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({secret: SECRET, rate: rate, valid_from: from + 'T00:00:00Z', note: noteV || null})});
+    if (r.status === 401) { showToast(A('toast.secretInvalid'), 'err'); return; }
+    var d = await r.json();
+    if (!d.success) { showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err'); return; }
+    showToast(A('toast.rateScheduled'), 'ok');
+    document.getElementById('rateNew').value = ''; document.getElementById('rateNote').value = '';
+    loadRate();
+  } catch (e) { showToast(A('toast.error', {msg: String(e)}), 'err'); }
+}
 async function loadPayouts() {
+  loadRate();
   var status = document.getElementById('payoutStatus').value;
   var list = document.getElementById('payoutList');
   list.innerHTML = '';
