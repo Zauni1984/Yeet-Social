@@ -230,3 +230,35 @@ pub async fn verify(
         total_entries: total,
     })))
 }
+
+/// GET /api/v1/admin/ledger/reconcile — the three reconciliation equations
+/// from docs/mica/09 §8.1 plus the hash-chain check, in one call.
+/// `per_page` caps the mismatch list (default 100).
+pub async fn reconcile(
+    State(state): State<AppState>,
+    Query(q): Query<LedgerQuery>,
+) -> AppResult<Json<ApiResponse<ledger::Reconciliation>>> {
+    check_admin(q.secret.as_deref().unwrap_or(""))?;
+    let r = ledger::reconcile(state.db.pool(), q.per_page.unwrap_or(100)).await?;
+    Ok(Json(ApiResponse::ok(r)))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BaselineResponse {
+    pub entries_written: i64,
+    pub reconciliation: ledger::Reconciliation,
+}
+
+/// POST /api/v1/admin/ledger/baseline — append one `opening_balance` entry per
+/// off-balance user so that balances predating the journal reconcile from
+/// now on. Review GET …/reconcile first; run once after deploying the
+/// journal, not as a routine fix.
+pub async fn baseline(
+    State(state): State<AppState>,
+    Query(q): Query<LedgerQuery>,
+) -> AppResult<Json<ApiResponse<BaselineResponse>>> {
+    check_admin(q.secret.as_deref().unwrap_or(""))?;
+    let entries_written = ledger::write_opening_balances(state.db.pool(), "admin:baseline").await?;
+    let reconciliation = ledger::reconcile(state.db.pool(), 100).await?;
+    Ok(Json(ApiResponse::ok(BaselineResponse { entries_written, reconciliation })))
+}

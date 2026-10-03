@@ -16,7 +16,9 @@ at each money-flow site:
 | --- | --- | --- |
 | Engagement points earned | `reward_grant` | POINTS |
 | Points tip (sender / creator / platform) | `tip_sent` / `tip_received` / `platform_fee` | POINTS |
-| PPV purchase (flows through the tip path) | `tip_sent`/`tip_received`/`platform_fee` | POINTS |
+| PPV purchase (buyer / creator / platform; same 90/10 helper as tips, `TipKind::PayPerView`) | `ppv_purchase` / `ppv_earning` / `platform_fee` | POINTS |
+| Live promotion booked (100 % platform) / refunded when the live never starts | `live_promotion` / `live_promotion_refund` | POINTS |
+| One-time opening balance for points older than the journal (admin baseline, see below) | `opening_balance` | POINTS |
 | Paper wallet issue / claim / void | `paper_wallet_issue` / `_claim` / `_refund` | POINTS |
 | Points → YEET conversion (debit) | `points_conversion` | POINTS |
 | On-chain payout of a conversion | `onchain_payout` | YEET |
@@ -47,14 +49,29 @@ at each money-flow site:
 - `GET /api/v1/admin/ledger/summary` — aggregates per `tx_type`×`asset`
   (entries, total_credit, total_debit, net, total_fee) for the period.
 - `GET /api/v1/admin/ledger/verify` — hash-chain integrity check.
+- `GET /api/v1/admin/ledger/reconcile` — the three reconciliation equations from
+  `docs/mica/09` §8.1 in one call: (1) per-user `yeet_token_balance` vs. Σ POINTS
+  journal (mismatch list, largest first, `per_page` caps it), (2) conversions marked
+  `minted` without an `onchain_payout` entry, (3) open conversions per status; plus
+  the chain check. `ok` is true only when (1) and (2) are empty and the chain is intact.
+  A daily job runs the same check 2 min after boot and every 24 h and logs a
+  **warning** with the counts on any mismatch.
+- `POST /api/v1/admin/ledger/baseline` — writes one `opening_balance` entry per
+  off-balance user for the difference, so balances that predate the journal
+  (migration 0039) reconcile from now on. **Run once**, right after reviewing
+  `…/reconcile`; it would also paper over a genuine bug, so never use it as a
+  routine fix. Returns the entries written and a fresh reconciliation.
 
 Access is only through the backend and gated on `ADMIN_SECRET` (same mechanism
 as the moderation admin API). **Set a strong `ADMIN_SECRET` in production** — the
 default is a placeholder.
 
 ### Notes
-- PPV is captured via the tip path (it reuses `send_tip_tx`), so it's in the
-  ledger even though its `tx_type` reads as a tip with a post reference.
+- PPV reuses the tip helper (`send_tip_tx` with `TipKind::PayPerView`) for the
+  90/10 split, but is journaled as `ppv_purchase`/`ppv_earning` and lands in
+  `fee_ledger` with `source_type = 'ppv'`, so consumer purchases (F7) are
+  separable from voluntary tips in every export. Entries written before
+  2026-10-03 still carry `tip_sent`/`tip_received` with a post reference.
 - On-chain payout entries are best-effort *after* the mint settles (they carry
   the `onchain_tx_hash`); a ledger hiccup never rolls back a settled on-chain tx.
 

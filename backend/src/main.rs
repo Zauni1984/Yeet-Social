@@ -50,6 +50,7 @@ async fn main() {
     tokio::spawn(services::changelog_bot::start_changelog_bot(state.clone()));
     // F6 — sanctions list for payout screening (docs/mica/04); fail-closed until loaded.
     tokio::spawn(services::sanctions::start_sanctions_refresh());
+    tokio::spawn(services::ledger::start_reconcile_job(state.clone()));
     info!(" Background jobs started (batch rewards + cleanup + message-cleanup)");
 
     axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.expect("Server error");
@@ -236,6 +237,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/admin/ledger/export",   get(api::ledger::export_csv))
         .route("/api/v1/admin/ledger/summary",  get(api::ledger::summary))
         .route("/api/v1/admin/ledger/verify",   get(api::ledger::verify))
+        .route("/api/v1/admin/ledger/reconcile", get(api::ledger::reconcile))
+        .route("/api/v1/admin/ledger/baseline",  post(api::ledger::baseline))
         // Public YEET token explorer (read-only; for third-party providers)
         .route("/api/v1/explorer/token",        get(api::explorer::token_info))
         .route("/api/v1/explorer/richlist",     get(api::explorer::richlist))

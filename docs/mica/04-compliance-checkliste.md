@@ -44,7 +44,7 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☑ | Backend-Indexer geplant + Migration 0037 (idempotente Event-Verarbeitung); Rust-Skeleton in Doc 08 | Dev | Design erledigt; Wiring nach Contract-Deploy |
 | ☑ | Chain-ID-Inkonsistenz behoben (Frontend `window.YEET_CHAIN` + Backend `YEET_CHAIN_ID`, Default Mainnet) | Dev | erledigt |
 | ☑ | WalletConnect v2 + injected Provider (MetaMask/Trust) für Auszahlung & On-Chain-Tips | Dev | erledigt — Provider-Broker `window.YeetWallet`, WalletConnect-Login (QR/Deep Link), alle Signatur-Pfade (Login, Wallet verknüpfen, E2EE) laufen über den aktiven Provider; Konfiguration per `WALLETCONNECT_PROJECT_ID` (`docs/walletconnect.md`). On-Chain-Tips selbst folgen mit dem Contract-Deploy (F1/F2) |
-| ☐ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | offen |
+| ☑ | Conversion-Flow Punkte→YEET über bestehende Batch-Mint-Infrastruktur | Dev | erledigt — `POST /api/v1/points/convert` → `token_rewards` (`kind='conversion'`, `awaiting_approval`) → Admin-Freigabe → stündlicher Batch-Mint mit F6-Screening; Zustandsautomat und Abstimmung in [09-ledger-und-auszahlung.md](09-ledger-und-auszahlung.md) §6–8; Journal-Lücken D1/D6/D7 geschlossen (`/admin/ledger/reconcile`, täglicher Abgleich) |
 
 ## C. Bei Angebot/Listing (auslösende Ereignisse: Sale, CEX/DEX-Listing, Pool)
 
