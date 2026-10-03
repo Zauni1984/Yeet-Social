@@ -46,13 +46,19 @@ pub(crate) async fn send_tip_tx(
     tx_hash: Option<&str>,
     kind: TipKind,
 ) -> AppResult<Uuid> {
-    if !["BNB", "YEET"].contains(&currency) {
-        return Err(AppError::Validation("Currency must be BNB or YEET".into()));
+    // Points move only in YEET units. A "BNB" tip used to debit the sender's
+    // points for an unverified on-chain claim and journal a phantom credit
+    // (audit M-H3); on-chain tips are indexed from the contract instead.
+    if currency != "YEET" {
+        return Err(AppError::Validation("Only YEET points tips are supported here".into()));
     }
-    let amount_val: f64 = amount_str.parse().unwrap_or(0.0);
-    if amount_val <= 0.0 {
-        return Err(AppError::Validation("Amount must be greater than 0".into()));
-    }
+    // NaN/inf parse as f64 and slip past "< balance" checks (audit M-C1):
+    // insist on a finite positive number and work in 8-decimal units.
+    let amount_val: f64 = amount_str.trim().parse::<f64>().ok()
+        .filter(|v| v.is_finite() && *v > 0.0)
+        .map(|v| (v * 1e8).round() / 1e8)
+        .filter(|v| *v > 0.0 && *v <= 1e9)
+        .ok_or_else(|| AppError::Validation("Amount must be a positive number".into()))?;
     if from_id == to_id {
         return Err(AppError::Validation("Cannot tip yourself".into()));
     }
@@ -69,14 +75,15 @@ pub(crate) async fn send_tip_tx(
         return Err(AppError::Validation("Insufficient points".into()));
     }
 
-    let creator_amount = amount_val * 0.9;
-    let platform_cut   = amount_val * 0.1;
+    // Split in 8-decimal units so creator + platform == amount exactly.
+    let creator_amount = (amount_val * 0.9 * 1e8).round() / 1e8;
+    let platform_cut   = ((amount_val - creator_amount) * 1e8).round() / 1e8;
 
     let tip_id: Uuid = sqlx::query_scalar(
         "INSERT INTO tips (from_user_id, to_user_id, post_id, amount, creator_amount, platform_cut, currency, tx_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
     )
     .bind(from_id).bind(to_id).bind(post_id)
-    .bind(amount_str)
+    .bind(amount_val.to_string())
     .bind(creator_amount.to_string()).bind(platform_cut.to_string())
     .bind(currency).bind(tx_hash)
     .fetch_one(&mut **tx)

@@ -43,8 +43,12 @@ pub struct RefreshRequest { pub refresh_token: String }
 
 pub async fn get_nonce(
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(req): Json<NonceRequest>,
 ) -> AppResult<Json<ApiResponse<NonceResponse>>> {
+    // Nonce minting writes a Redis key per address: 20/min, 200/h per IP.
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "nonce_ip", &ip, 60, 20, 3600, 200).await?;
     let address = req.address.to_lowercase();
     if !is_valid_address(&address) {
         return Err(AppError::Validation("Invalid wallet address".into()));
@@ -193,8 +197,13 @@ pub async fn refresh_token(
 ) -> AppResult<Json<ApiResponse<TokenResponse>>> {
     let claims = auth::verify_refresh_token(&req.refresh_token, &state.jwt)
         .map_err(|e| AppError::Unauthorised(e.to_string()))?;
-    if state.cache.is_blacklisted(&claims.jti).await.unwrap_or(false) {
-        return Err(AppError::Unauthorised("Token revoked".into()));
+    match state.cache.is_blacklisted(&claims.jti).await {
+        Ok(false) => {}
+        Ok(true) => return Err(AppError::Unauthorised("Token revoked".into())),
+        Err(e) => {
+            tracing::error!("auth: blacklist lookup failed: {e}");
+            return Err(AppError::Cache("auth temporarily unavailable".into()));
+        }
     }
 
     // Mint the new pair first so we have the new JTI to thread through

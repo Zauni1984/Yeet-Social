@@ -19,7 +19,7 @@ if old in f:
 
 ## Backend deploy (after CI build)
 ```bash
-bash /tmp/start_backend.sh
+bash /tmp/docker compose (start_backend.sh was removed in the 2026-10 audit: it edited pg_hba.conf, ran ad-hoc DDL and published :8080 on all interfaces)
 ```
 
 ## Quick health check
@@ -41,7 +41,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 - Secrets: in `/root/yeet-social/.env` (mode 600, see `vps/.env.example`)
 
 ## Secrets / .env (VPS)
-`docker-compose.yml` and `start_backend.sh` both expect these at
+`docker-compose.yml` and `docker compose (start_backend.sh was removed in the 2026-10 audit: it edited pg_hba.conf, ran ad-hoc DDL and published :8080 on all interfaces)` both expect these at
 `/root/yeet-social/.env`:
 ```
 POSTGRES_PASSWORD=...
@@ -68,8 +68,8 @@ then `chmod 600 /root/yeet-social/.env`. Never commit.
 After changing `/root/yeet-social/.env`, restart the backend container:
 ```bash
 docker compose -f /root/yeet-social/docker-compose.yml restart yeet-api
-# or, if running via start_backend.sh:
-bash /tmp/start_backend.sh
+# or, if running via docker compose (start_backend.sh was removed in the 2026-10 audit: it edited pg_hba.conf, ran ad-hoc DDL and published :8080 on all interfaces):
+bash /tmp/docker compose (start_backend.sh was removed in the 2026-10 audit: it edited pg_hba.conf, ran ad-hoc DDL and published :8080 on all interfaces)
 ```
 
 Migration `0020_email_verification.sql` adds the

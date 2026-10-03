@@ -68,6 +68,8 @@ pub async fn create(
         return Err(AppError::Validation("Cannot schedule more than 60 days ahead".into()));
     }
     let user_id = resolve_user_id(&state, &auth.address).await?;
+    if let Some(m) = req.media_url.as_deref() { crate::api::posts::validate_media_url(m)?; }
+    crate::api::posts::ensure_not_posting_banned(state.db.pool(), user_id).await?;
 
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO scheduled_posts

@@ -122,14 +122,13 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/users/me",         patch(api::users::update_profile))
         .route("/api/v1/users/me",         delete(api::users::delete_my_account))
         .route("/api/v1/users/me/export",  get(api::users::export_my_data))
-        .route("/api/v1/users/me/verify-age", post(api::users::verify_age))
         .route("/api/v1/me/age-verification/status",   get(api::age_verification::get_status))
-        .route("/api/v1/me/age-verification/submit",   post(api::age_verification::submit))
+        .route("/api/v1/me/age-verification/submit",   post(api::age_verification::submit).layer(DefaultBodyLimit::max(24 * 1024 * 1024)))
         .route("/api/v1/me/age-verification/withdraw", post(api::age_verification::withdraw))
         .route("/api/v1/me/age-badge",                 patch(api::age_verification::set_badge_visibility))
-        .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar))
-        .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover))
-        .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media))
+        .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar).layer(DefaultBodyLimit::max(12 * 1024 * 1024)))
+        .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover).layer(DefaultBodyLimit::max(12 * 1024 * 1024)))
+        .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media).layer(DefaultBodyLimit::max(40 * 1024 * 1024)))
         // Live broadcasts
         .route("/api/v1/lives",              post(api::lives::create_live))
         .route("/api/v1/lives/active",       get(api::lives::list_active))
@@ -190,7 +189,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/conversations/:id/messages", get(api::messages::list))
         .route("/api/v1/conversations/:id/messages", post(api::messages::send))
         .route("/api/v1/messages/:id",               axum::routing::delete(api::messages::delete_one))
-        .route("/api/v1/conversations/:id/messages/image", post(api::messages::upload_image))
+        .route("/api/v1/conversations/:id/messages/image", post(api::messages::upload_image).layer(DefaultBodyLimit::max(12 * 1024 * 1024)))
         .route("/api/v1/messages/:id/blob",           get(api::messages::get_blob))
         .route("/api/v1/me/dm-retention",            get(api::conversations::get_retention))
         .route("/api/v1/me/dm-retention",            post(api::conversations::update_retention))
@@ -286,10 +285,12 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/paper-wallets",          get(api::paper_wallets::list_mine))
         .route("/api/v1/paper-wallets/redeem",   post(api::paper_wallets::redeem))
         .route("/api/v1/paper-wallets/:id/void", post(api::paper_wallets::void))
-        // Sized for the largest accepted upload: a 32 MB video via the
-        // multipart endpoint (`/api/v1/uploads/post-media`) plus envelope
-        // overhead. Base64-encoded JSON image bodies (≤7 MB) easily fit too.
-        .layer(DefaultBodyLimit::max(40 * 1024 * 1024))
+        // Default body cap for JSON routes (auth, posts, settings …). The
+        // media routes above raise their own limit per route (12–40 MB), so
+        // an anonymous caller can no longer push 40 MB bodies at /auth/*.
+        .layer(DefaultBodyLimit::max(1024 * 1024))
+        // Per-IP throttle for the auth and admin route classes.
+        .layer(axum::middleware::from_fn_with_state(state.clone(), api::middleware::abuse_guard))
         .layer(ServiceBuilder::new()
             .layer(TraceLayer::new_for_http())
             .layer(cors)

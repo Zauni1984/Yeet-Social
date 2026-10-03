@@ -1,8 +1,9 @@
 use anyhow::Result;
 use ethers::{
     prelude::*,
-    providers::{Http, Provider},
+    providers::{Http, Middleware, Provider},
     signers::LocalWallet,
+    types::H256,
 };
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
@@ -48,57 +49,165 @@ pub async fn start_reward_batch_job(state: AppState) {
     }
 }
 
-async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
-    // Fetch all unminted rewards (tx_hash IS NULL) from DB
-    #[allow(dead_code)]
-    struct RewardRow {
-        id: uuid::Uuid,
-        user_id: uuid::Uuid,
-        wallet_address: Option<String>,
-        action: Option<String>,
-        amount: Option<f64>,
+#[derive(sqlx::FromRow)]
+struct PayoutRow {
+    id: uuid::Uuid,
+    user_id: uuid::Uuid,
+    wallet: Option<String>,
+    action: Option<String>,
+    amount: Option<f64>,
+}
+
+type MintClient = SignerMiddleware<Provider<Http>, LocalWallet>;
+
+abigen!(
+    YeetToken,
+    r#"[{"inputs":[{"name":"recipients","type":"address[]"},{"name":"amounts","type":"uint256[]"},{"name":"actions","type":"string[]"}],"name":"batchMintRewards","outputs":[],"stateMutability":"nonpayable","type":"function"}]"#
+);
+
+fn max_attempts() -> i32 {
+    std::env::var("YEET_MINT_MAX_ATTEMPTS").ok().and_then(|s| s.parse().ok()).unwrap_or(5)
+}
+
+/// Rows per on-chain batch. Each recipient costs storage writes + calldata;
+/// keeping batches small bounds gas and the blast radius of one bad row.
+const BATCH_MAX: i64 = 100;
+
+/// Settle a batch that we know the outcome of: `success` ⇒ minted (tx hash
+/// as evidence + one ONCHAIN_PAYOUT journal entry per row); otherwise back to
+/// `pending` (or `failed` once the attempt budget is spent). Only rows still
+/// in `minting` are touched, so a concurrent admin action cannot be undone.
+async fn finalize_batch(state: &AppState, ids: &[uuid::Uuid], tx_hash: &str, success: bool, why: &str) {
+    if success {
+        let rows: Vec<(uuid::Uuid, uuid::Uuid, Option<String>, f64)> = sqlx::query_as(
+            "UPDATE token_rewards r SET tx_hash = $1, status = 'minted', pending_tx_hash = NULL
+              WHERE r.id = ANY($2) AND r.status = 'minting'
+              RETURNING r.id, r.user_id,
+                        COALESCE(r.wallet_address, (SELECT u.wallet_address FROM users u WHERE u.id = r.user_id)),
+                        r.amount::float8"
+        ).bind(tx_hash).bind(ids).fetch_all(&state.db.pool).await.unwrap_or_default();
+        info!("batch-rewards: {} rows minted in {tx_hash}", rows.len());
+        // Ledger: best-effort after the on-chain settlement (a journal hiccup
+        // must never make a mined mint look un-mined).
+        for (payout_id, user_id, wallet, yeet) in rows {
+            let _ = crate::services::ledger::record(&state.db.pool, crate::services::ledger::NewEntry {
+                tx_type: crate::services::ledger::tx_type::ONCHAIN_PAYOUT.into(),
+                asset: crate::services::ledger::asset::YEET.into(),
+                amount: yeet,
+                user_id: Some(user_id),
+                user_wallet: wallet,
+                reference_type: Some("payout".into()),
+                reference_id: Some(payout_id.to_string()),
+                onchain_tx_hash: Some(tx_hash.to_string()),
+                description: Some("points→YEET conversion paid on-chain".into()),
+                ..Default::default()
+            }).await;
+        }
+    } else {
+        let err_text: String = why.chars().take(500).collect();
+        let res = sqlx::query(
+            "UPDATE token_rewards
+                SET last_error = $2, pending_tx_hash = NULL,
+                    status = CASE WHEN mint_attempts >= $3 THEN 'failed' ELSE 'pending' END
+              WHERE id = ANY($1) AND status = 'minting'"
+        ).bind(ids).bind(&err_text).bind(max_attempts()).execute(&state.db.pool).await;
+        match res {
+            Ok(r) => warn!("batch-rewards: {} rows NOT minted ({err_text}); returned to the queue / parked", r.rows_affected()),
+            Err(e) => error!("batch-rewards: could not record mint failure: {e}"),
+        }
     }
-    // Only user-initiated POINT→YEET conversions are minted on-chain
-    // (docs/mica/05, one-way). Engagement rewards are points and never
-    // auto-mint. The payout target is the user's verified EXTERNAL wallet.
-    let rows: Vec<RewardRow> = sqlx::query_as!(
-        RewardRow,
-        r#"SELECT r.id as "id: uuid::Uuid", r.user_id as "user_id: uuid::Uuid", u.wallet_address, r.action::text as action, r.amount::float8 as amount
-        FROM token_rewards r JOIN users u ON u.id = r.user_id
-        WHERE r.tx_hash IS NULL AND r.kind = 'conversion' AND r.status = 'pending'
-          AND u.wallet_address IS NOT NULL
-        ORDER BY r.created_at ASC LIMIT 500"#
-    )
-    .fetch_all(&state.db.pool)
-    .await?;
+}
+
+/// Before minting anything new, settle batches whose receipt we lost
+/// (crash / timeout after broadcast). A mined tx is finalised by its real
+/// status; a tx that never mined after two hours goes back to the queue.
+/// Rows stuck in `minting` without a broadcast hash for two hours are
+/// released as well. This is what makes a retry safe: a row is only
+/// re-minted once its previous attempt is known to have failed.
+async fn reconcile_inflight(state: &AppState, client: &Arc<MintClient>) {
+    let hashes: Vec<String> = sqlx::query_scalar(
+        "SELECT DISTINCT pending_tx_hash FROM token_rewards WHERE status = 'minting' AND pending_tx_hash IS NOT NULL"
+    ).fetch_all(&state.db.pool).await.unwrap_or_default();
+    for h in hashes {
+        let ids: Vec<uuid::Uuid> = sqlx::query_scalar(
+            "SELECT id FROM token_rewards WHERE status = 'minting' AND pending_tx_hash = $1"
+        ).bind(&h).fetch_all(&state.db.pool).await.unwrap_or_default();
+        let Ok(hash) = h.parse::<H256>() else {
+            finalize_batch(state, &ids, &h, false, "unparseable pending tx hash").await; continue;
+        };
+        match client.get_transaction_receipt(hash).await {
+            Ok(Some(receipt)) => {
+                let ok = receipt.status == Some(1u64.into());
+                info!("batch-rewards: reconciled {} rows of {h} → {}", ids.len(), if ok { "minted" } else { "reverted" });
+                finalize_batch(state, &ids, &h, ok, &format!("on-chain revert in {h}")).await;
+            }
+            Ok(None) => {
+                let _ = sqlx::query(
+                    "UPDATE token_rewards SET status = 'pending', pending_tx_hash = NULL,
+                            last_error = 'broadcast tx not mined within 2h, re-queued'
+                      WHERE status = 'minting' AND pending_tx_hash = $1 AND minting_started_at < NOW() - INTERVAL '2 hours'"
+                ).bind(&h).execute(&state.db.pool).await;
+            }
+            Err(e) => warn!("batch-rewards: receipt lookup for {h} failed: {e} — will retry next run"),
+        }
+    }
+    let _ = sqlx::query(
+        "UPDATE token_rewards SET status = 'pending', last_error = 'minting state released (no broadcast recorded)'
+          WHERE status = 'minting' AND pending_tx_hash IS NULL AND minting_started_at < NOW() - INTERVAL '2 hours'"
+    ).execute(&state.db.pool).await;
+}
+
+async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
+    // Set up signer. Chain id comes from env so the backend and the
+    // frontend (window.YEET_CHAIN, via /api/v1/config) stay in lock-step;
+    // default 56 (BSC Mainnet) matches the default RPC below.
+    let chain_id: u64 = std::env::var("YEET_CHAIN_ID")
+        .ok().and_then(|s| s.parse().ok()).unwrap_or(56);
+    let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
+        .with_chain_id(chain_id);
+    let provider = Provider::<Http>::try_from(
+        std::env::var("BSC_RPC_URL")
+            .unwrap_or_else(|_| "https://bsc-dataseed.binance.org/".into())
+    )?;
+    let client = Arc::new(SignerMiddleware::new(provider, wallet));
+    let token_addr: Address = std::env::var("YEET_TOKEN_ADDRESS")?.parse()?;
+    let contract = YeetToken::new(token_addr, client.clone());
+
+    // 0. Settle anything left in flight by a previous run.
+    reconcile_inflight(state, &client).await;
+
+    // 1. Only user-initiated POINT→YEET conversions are minted on-chain
+    //    (docs/mica/05, one-way). The payout target is the wallet recorded
+    //    at conversion time (fallback: the linked wallet, for rows created
+    //    before the column existed).
+    let rows: Vec<PayoutRow> = sqlx::query_as(
+        "SELECT r.id, r.user_id, COALESCE(r.wallet_address, u.wallet_address) AS wallet,
+                r.action::text AS action, r.amount::float8 AS amount
+           FROM token_rewards r JOIN users u ON u.id = r.user_id
+          WHERE r.tx_hash IS NULL AND r.kind = 'conversion' AND r.status = 'pending'
+            AND COALESCE(r.wallet_address, u.wallet_address) IS NOT NULL
+          ORDER BY r.created_at ASC LIMIT $1"
+    ).bind(BATCH_MAX).fetch_all(&state.db.pool).await?;
 
     if rows.is_empty() {
         info!("No pending rewards to mint.");
         return Ok(());
     }
+    info!("Minting {} reward records on chain {chain_id}...", rows.len());
 
-    info!("Minting {} reward records on BSC...", rows.len());
-
-    // Build arrays for batchMintRewards(address[], uint256[], string[]) in a
-    // SINGLE pass so recipients/amounts/actions can never desync, and track
-    // exactly which reward ids made it into the transaction so we only mark
-    // those minted. Previously `recipients` used filter_map while
-    // amounts/actions iterated every row — a future SQL edit dropping the
-    // `wallet_address IS NOT NULL` guard would have minted the wrong amount
-    // to the wrong address, and all ids were marked minted regardless.
+    // 2. Build the call arrays in ONE pass so recipients/amounts/actions can
+    //    never desync, and remember exactly which rows are in the tx.
     let mut recipients: Vec<Address> = Vec::with_capacity(rows.len());
     let mut amounts: Vec<U256> = Vec::with_capacity(rows.len());
     let mut actions: Vec<String> = Vec::with_capacity(rows.len());
     let mut included_ids: Vec<uuid::Uuid> = Vec::with_capacity(rows.len());
-    // (payout_id, user_id, wallet, yeet_amount) for ledger entries after mint.
-    let mut ledger_rows: Vec<(uuid::Uuid, uuid::Uuid, String, f64)> = Vec::with_capacity(rows.len());
     // F6 — sanctions screening (docs/mica/04 §B): a hit parks the row as
     // 'failed' with the reason (admin queue → reject/refund); no loaded list
     // holds the whole batch for the next run rather than paying out blind.
     let mut sanctioned_ids: Vec<uuid::Uuid> = Vec::new();
     let mut screening_unavailable = false;
     for r in &rows {
-        let Some(wallet) = r.wallet_address.as_ref() else { continue; };
+        let Some(wallet) = r.wallet.as_ref() else { continue; };
         match crate::services::sanctions::check(wallet) {
             crate::services::sanctions::Verdict::Clear => {}
             crate::services::sanctions::Verdict::Sanctioned => {
@@ -109,20 +218,20 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
             crate::services::sanctions::Verdict::Unknown => { screening_unavailable = true; break; }
         }
         let addr = match wallet.parse::<Address>() {
-            Ok(a) => a,
+            Ok(a) if a != Address::zero() => a,
+            Ok(_) => { warn!("batch-rewards: skip reward {} — zero address", r.id); continue; }
             Err(e) => { warn!("batch-rewards: skip reward {} — bad wallet {wallet}: {e}", r.id); continue; }
         };
         let yeet: f64 = r.amount.unwrap_or(0.0);
-        if !yeet.is_finite() || yeet < 0.0 {
+        if !yeet.is_finite() || yeet <= 0.0 {
             warn!("batch-rewards: skip reward {} — invalid amount {yeet}", r.id);
             continue;
         }
-        let wei = (yeet * 1e18) as u128; // non-negative + finite, checked above
+        let wei = (yeet * 1e18) as u128; // finite + positive, checked above
         recipients.push(addr);
         amounts.push(U256::from(wei));
         actions.push(r.action.clone().unwrap_or_default());
         included_ids.push(r.id);
-        ledger_rows.push((r.id, r.user_id, wallet.clone(), yeet));
     }
 
     if screening_unavailable {
@@ -139,103 +248,70 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         .bind(&sanctioned_ids)
         .execute(&state.db.pool).await?;
     }
-
     if recipients.is_empty() {
         info!("No mintable rewards after validation.");
         return Ok(());
     }
 
-    // Set up signer. Chain id comes from env so the backend and the
-    // frontend (window.YEET_CHAIN) can be kept in lock-step; default 56
-    // (BSC Mainnet) matches the default RPC below.
-    let chain_id: u64 = std::env::var("YEET_CHAIN_ID")
-        .ok().and_then(|s| s.parse().ok()).unwrap_or(56);
-    let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
-        .with_chain_id(chain_id);
+    // 3. Claim the rows (pending → minting) BEFORE broadcasting, so a crash
+    //    between send and receipt leaves a visible in-flight state instead
+    //    of a silent second mint next hour (audit M-H1).
+    let claimed = sqlx::query(
+        "UPDATE token_rewards
+            SET status = 'minting', mint_attempts = mint_attempts + 1,
+                minting_started_at = NOW(), pending_tx_hash = NULL
+          WHERE id = ANY($1) AND status = 'pending'"
+    ).bind(&included_ids).execute(&state.db.pool).await?;
+    if claimed.rows_affected() as usize != included_ids.len() {
+        warn!("batch-rewards: claimed {} of {} rows (concurrent change) — releasing and retrying next run",
+              claimed.rows_affected(), included_ids.len());
+        finalize_batch(state, &included_ids, "", false, "batch claim mismatch").await;
+        return Ok(());
+    }
 
-    let provider = Provider::<Http>::try_from(
-        std::env::var("BSC_RPC_URL")
-            .unwrap_or_else(|_| "https://bsc-dataseed.binance.org/".into())
-    )?;
-    let client = Arc::new(SignerMiddleware::new(provider, wallet));
-
-    // Call batchMintRewards on YeetToken contract
-    let token_addr: Address = std::env::var("YEET_TOKEN_ADDRESS")?.parse()?;
-
-    abigen!(
-    YeetToken,
-    r#"[{"inputs":[{"name":"recipients","type":"address[]"},{"name":"amounts","type":"uint256[]"},{"name":"actions","type":"string[]"}],"name":"batchMintRewards","outputs":[],"stateMutability":"nonpayable","type":"function"}]"#
-);
-
-    let contract = YeetToken::new(token_addr, client);
-    let mint_result: Result<_> = async {
-        contract
-            .batch_mint_rewards(recipients, amounts, actions)
-            .gas(500_000u64)
-            .send()
-            .await?
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("No receipt"))
-    }.await;
-
-    // Failure path: a failed mint used to leave every included row 'pending'
-    // forever (silently retried each hour, invisible to admins). Count the
-    // attempt; after YEET_MINT_MAX_ATTEMPTS (default 5) park the rows as
-    // 'failed' so they surface in the admin payout queue, where reject →
-    // refund closes them out. Points stay debited until then.
-    let tx = match mint_result {
-        Ok(tx) => tx,
+    // 4. Broadcast. Gas is estimated (constant 500k used to revert on bigger
+    //    batches, which the old code then recorded as a success — audit M-C2).
+    let n = recipients.len() as u64;
+    let call = contract.batch_mint_rewards(recipients, amounts, actions);
+    let gas = match call.estimate_gas().await {
+        Ok(g) => g * U256::from(12u64) / U256::from(10u64),
         Err(e) => {
-            let max_attempts: i32 = std::env::var("YEET_MINT_MAX_ATTEMPTS")
-                .ok().and_then(|s| s.parse().ok()).unwrap_or(5);
-            let err_text: String = e.to_string().chars().take(500).collect();
-            let res = sqlx::query(
-                "UPDATE token_rewards
-                    SET mint_attempts = mint_attempts + 1,
-                        last_error    = $2,
-                        status        = CASE WHEN mint_attempts + 1 >= $3 THEN 'failed' ELSE status END
-                  WHERE id = ANY($1) AND status = 'pending'"
-            )
-            .bind(&included_ids).bind(&err_text).bind(max_attempts)
-            .execute(&state.db.pool).await;
-            if let Err(db_e) = res {
-                error!("batch-rewards: could not record mint failure: {db_e}");
-            }
-            warn!("batch-rewards: mint failed for {} rows (attempt recorded, max {max_attempts}): {err_text}", included_ids.len());
-            return Err(e);
+            // estimate_gas simulates the call: a revert here means the tx
+            // would revert — do not broadcast, release the rows.
+            finalize_batch(state, &included_ids, "", false, &format!("gas estimation failed (call would revert?): {e}")).await;
+            return Err(e.into());
         }
     };
+    let call = call.gas(gas.max(U256::from(150_000u64 + 90_000u64 * n)));
+    let pending = match call.send().await {
+        Ok(p) => p,
+        Err(e) => {
+            // Nothing was accepted by the node (or we cannot tell): release
+            // the rows; if the node did accept it, the next run's receipt
+            // lookup cannot find a hash for them — hence the 2h release
+            // window in reconcile_inflight rather than an instant retry.
+            let _ = sqlx::query(
+                "UPDATE token_rewards SET last_error = $2 WHERE id = ANY($1) AND status = 'minting'"
+            ).bind(&included_ids).bind(format!("broadcast failed: {e}").chars().take(500).collect::<String>())
+             .execute(&state.db.pool).await;
+            return Err(e.into());
+        }
+    };
+    let tx_hash = format!("{:?}", pending.tx_hash());
+    info!("Batch mint tx broadcast: {tx_hash} ({n} recipients, gas {gas})");
+    let _ = sqlx::query(
+        "UPDATE token_rewards SET pending_tx_hash = $1 WHERE id = ANY($2) AND status = 'minting'"
+    ).bind(&tx_hash).bind(&included_ids).execute(&state.db.pool).await;
 
-    let tx_hash = format!("{:?}", tx.transaction_hash);
-    info!("Batch mint tx: {}", tx_hash);
-
-    // Mark ONLY the rows actually included in the transaction.
-    sqlx::query!(
-        "UPDATE token_rewards SET tx_hash = $1, status = 'minted' WHERE id = ANY($2)",
-        tx_hash,
-        &included_ids,
-    )
-    .execute(&state.db.pool)
-    .await?;
-
-    info!("Marked {} rewards as minted.", included_ids.len());
-
-    // Ledger: one ONCHAIN_PAYOUT entry per included conversion, with the tx
-    // hash as evidence. Best-effort — a ledger hiccup must not undo a mint
-    // that already settled on-chain.
-    for (payout_id, user_id, wallet, yeet) in ledger_rows {
-        let _ = crate::services::ledger::record(&state.db.pool, crate::services::ledger::NewEntry {
-            tx_type: crate::services::ledger::tx_type::ONCHAIN_PAYOUT.into(),
-            asset: crate::services::ledger::asset::YEET.into(),
-            amount: yeet,
-            user_id: Some(user_id),
-            user_wallet: Some(wallet),
-            reference_type: Some("payout".into()),
-            reference_id: Some(payout_id.to_string()),
-            onchain_tx_hash: Some(tx_hash.clone()),
-            description: Some("points→YEET conversion paid on-chain".into()),
-            ..Default::default()
-        }).await;
+    // 5. Wait for the receipt and settle by its real status.
+    match pending.await {
+        Ok(Some(receipt)) => {
+            let ok = receipt.status == Some(1u64.into());
+            finalize_batch(state, &included_ids, &tx_hash, ok, &format!("on-chain revert in {tx_hash}")).await;
+            if !ok { return Err(anyhow::anyhow!("batch mint reverted: {tx_hash}")); }
+        }
+        Ok(None) => warn!("batch-rewards: no receipt yet for {tx_hash}; rows stay in 'minting' until reconciled"),
+        Err(e) => warn!("batch-rewards: waiting for receipt of {tx_hash} failed ({e}); rows stay in 'minting' until reconciled"),
     }
     Ok(())
 }
@@ -468,8 +544,10 @@ pub async fn start_scheduled_publish_job(state: AppState) {
                     is_permanent,
                     ppv_price_yeet::float8 AS ppv_price_yeet,
                     publish_at
-               FROM scheduled_posts
+               FROM scheduled_posts sp
               WHERE publish_at <= NOW()
+                AND NOT EXISTS (SELECT 1 FROM users bu WHERE bu.id = sp.author_id
+                                   AND bu.posting_banned_until IS NOT NULL AND bu.posting_banned_until > NOW())
               ORDER BY publish_at ASC
               LIMIT 500
               FOR UPDATE SKIP LOCKED"

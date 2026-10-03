@@ -362,10 +362,20 @@ pub struct AdminBlobQuery {
 /// Returns the decrypted image bytes. Sets strict no-store headers.
 pub async fn admin_get_blob(
     State(state): State<AppState>,
+    viewer: OptionalAuth,
     Path(case_id): Path<Uuid>,
     Query(q): Query<AdminBlobQuery>,
 ) -> Result<Response, AppError> {
     check_admin_secret(&q.secret)?;
+    // Every read of biometric / ID material is written to admin_actions so
+    // the access is attributable (admin JWT if present; the case id always).
+    {
+        let (admin_id, admin_name) = crate::api::admin_mod::admin_actor(&state, &viewer).await;
+        crate::api::admin_mod::record_action(
+            state.db.pool(), None, None, "age_verify_blob_read", None,
+            Some(&format!("case {case_id} slot {}", q.slot)), admin_id, admin_name.as_deref(),
+        ).await;
+    }
     if !matches!(q.slot.as_str(), "face" | "id") {
         return Err(AppError::Validation("slot must be 'face' or 'id'".into()));
     }

@@ -75,3 +75,4 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | Nachhaltigkeitsdaten aktualisieren | jährlich |
 | ☐ | Level-2/Level-3-Maßnahmen (ESMA/EBA-RTS & Guidelines) beobachten | quartalsweise |
 | ☐ | Dieses Dokumenten-Set bei Strategieänderung fortschreiben | anlassbezogen |
+| ☑ | Code-Audit (Sicherheit/Korrektheit) — [docs/audit-2026-10-03.md](../audit-2026-10-03.md): Kritische/hohe Befunde behoben, Follow-ups mit Owner; vor Mainnet erneut + externes Audit | halbjährlich / vor Mainnet |
