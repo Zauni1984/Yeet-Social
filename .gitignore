@@ -22,3 +22,6 @@ pkg/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local Redis snapshot (written when redis-server is started in the repo)
+dump.rdb
