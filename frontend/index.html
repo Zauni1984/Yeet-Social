@@ -30294,9 +30294,14 @@ let connectedWallet=null,connectedAddress=null;
 // is the ONE switch. Default = BSC Mainnet, matching the backend
 // (batch_rewards uses chain 56, .env uses the mainnet RPC).
 //
-// To move everything to testnet, flip this single object to the 0x61 values
-// and set `token` to the testnet YEET address. Keep it in sync with the
-// backend YEET_CHAIN_ID / YEET_TOKEN_ADDRESS env vars.
+// The backend is the source of truth at runtime: GET /api/v1/config returns
+// YEET_CHAIN_ID (56 mainnet / 97 testnet) and YEET_TOKEN_ADDRESS, and the
+// bootstrap below switches this object accordingly — so "stay on testnet"
+// is one env var on the server (YEET_CHAIN_ID=97), no index.html edit.
+window.YEET_CHAIN_PRESETS = {
+  56: { idHex: '0x38', name: 'BNB Smart Chain', rpc: 'https://bsc-dataseed.binance.org/', explorer: 'https://bscscan.com' },
+  97: { idHex: '0x61', name: 'BNB Smart Chain Testnet', rpc: 'https://bsc-testnet-dataseed.bnbchain.org', explorer: 'https://testnet.bscscan.com' }
+};
 window.YEET_CHAIN = window.YEET_CHAIN || {
   idHex: '0x38',            // 56 = BSC Mainnet
   name: 'BNB Smart Chain',
@@ -40585,6 +40590,13 @@ window.YeetFeedFilter={load:load,save:save,renderChip:renderChip,state:state};
   fetch('/api/v1/config', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(d){
     var c = d && d.data; if(!c) return;
     if(c.walletconnect_project_id && !window.YEET_WC_PROJECT_ID) window.YEET_WC_PROJECT_ID = c.walletconnect_project_id;
+    // Follow the server's chain (YEET_CHAIN_ID): wallet login, chain switch
+    // and WalletConnect all read window.YEET_CHAIN at call time.
+    var preset = window.YEET_CHAIN_PRESETS && window.YEET_CHAIN_PRESETS[Number(c.chain_id)];
+    if(preset && window.YEET_CHAIN && window.YEET_CHAIN.idHex !== preset.idHex){
+      window.YEET_CHAIN.idHex = preset.idHex; window.YEET_CHAIN.name = preset.name;
+      window.YEET_CHAIN.rpc = preset.rpc; window.YEET_CHAIN.explorer = preset.explorer;
+    }
     if(c.yeet_token_address && window.YEET_CHAIN && !window.YEET_CHAIN.token) window.YEET_CHAIN.token = c.yeet_token_address;
   }).catch(function(){});
 })();
