@@ -392,7 +392,7 @@ function logout() {
 
 async function loadData() {
   try {
-    var r = await fetch('/api/v1/admin/posts?secret=' + encodeURIComponent(SECRET));
+    var r = await fetch('/api/v1/admin/posts', { headers: { 'X-Admin-Secret': SECRET } });
     if (r.status === 401) { showToast(A('toast.wrongPassword'), 'err'); return; }
     var d = await r.json();
     if (!d.success) { showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err'); return; }
@@ -433,7 +433,7 @@ function shortAddr(a){ a = a || ''; return a.length > 14 ? a.slice(0,6) + '…' 
 
 async function refreshPayoutBadge() {
   try {
-    var r = await fetch('/api/v1/admin/payouts?status=awaiting_approval&secret=' + encodeURIComponent(SECRET));
+    var r = await fetch('/api/v1/admin/payouts?status=awaiting_approval', { headers: { 'X-Admin-Secret': SECRET } });
     if (!r.ok) return;
     var d = await r.json(); var n = (d.data || []).length;
     var b = document.getElementById('payoutBadge'); b.textContent = n; b.style.display = n > 0 ? '' : 'none';
@@ -479,7 +479,7 @@ async function loadPayouts() {
   list.innerHTML = '';
   var ld = document.createElement('div'); ld.className = 'empty'; ld.textContent = A('loading'); list.appendChild(ld);
   try {
-    var r = await fetch('/api/v1/admin/payouts?status=' + encodeURIComponent(status) + '&secret=' + encodeURIComponent(SECRET));
+    var r = await fetch('/api/v1/admin/payouts?status=' + encodeURIComponent(status), { headers: { 'X-Admin-Secret': SECRET } });
     if (r.status === 401) { showToast(A('toast.secretInvalid'), 'err'); return; }
     var d = await r.json();
     if (!d.success) { showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err'); return; }

@@ -21,11 +21,13 @@
 import { Wallet, Mnemonic, HDNodeWallet } from 'ethers';
 
 const BASE_URL = (process.env.BASE_URL || 'https://justyeet.it').replace(/\/$/, '');
-// A throwaway default so the runner works without configuration. Override with
-// the BOT_SEED secret in any real/shared deployment.
-const DEFAULT_SEED =
-  'test test test test test test test test test test test junk';
-const SEED = process.env.BOT_SEED || DEFAULT_SEED;
+// BOT_SEED is required: the old fallback was the universally known Hardhat
+// mnemonic, i.e. anyone could log in as the bot personas on the live site.
+const SEED = process.env.BOT_SEED;
+if (!SEED || SEED.trim().split(/\s+/).length < 12) {
+  console.error('BOT_SEED (12/24-word mnemonic) is required; refusing to run with a public default.');
+  process.exit(1);
+}
 const BOT_COUNT = Math.min(25, Math.max(1, parseInt(process.env.BOT_COUNT || '5', 10)));
 
 // ── Bot personas ─────────────────────────────────────────────────────────

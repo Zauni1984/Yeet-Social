@@ -39,7 +39,9 @@ contract Deploy is Script {
 
         // 1. YEET BEP-20 Token — 21 B cap; 25 % minted to the deployer now, the 75 %
         //    reward reserve is minted only through batchMintRewards (points→YEET).
-        YeetToken token = new YeetToken(deployer);
+        // Full suite (payments, escrow, NFT) — only needed once on-chain tips go
+        // live. For the points model deploy script/DeployToken.s.sol instead.
+        YeetToken token = new YeetToken(deployer, vm.envOr("MINTER_ADDRESS", deployer), vm.envOr("DAILY_MINT_CAP", uint256(1_000_000)) * 1e18);
         console.log("YeetToken:        ", address(token));
 
         // 2. Legacy tipping (kept for compatibility; superseded by YeetPayments).

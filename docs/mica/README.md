@@ -20,6 +20,7 @@
 | [07-contracts-design.md](07-contracts-design.md) | Design von `YeetPayments` + `PaperWalletEscrow` (Solidity), Guardrail-Mapping, Front-Running-Schutz, Client-/Indexer-Integration | Entwurf |
 | [08-backend-indexer.md](08-backend-indexer.md) | Umbau Off-Chain-Buchung → On-Chain-Event-Indexing (Architektur, Migration 0037, Rust-Skeleton, Endpoint-Umbau) | Entwurf |
 | [09-ledger-und-auszahlung.md](09-ledger-und-auszahlung.md) | Off-Chain-Punkte ↔ On-Chain-YEET: Anspruch, Entstehung/Verwendung von Punkten, Umwandlung (Zustandsautomat), Batch-Auszahlung, Ledger-Abstimmung, Prüfpunkte für den Anwalt | Entwurf |
+| [10-testnet-contract.md](10-testnet-contract.md) | Nachweis: Punktesystem läuft ohne Chain; Vorschlag „ein Contract": `YeetToken` mit Minter-Rolle, Tages-Cap, Not-Aus; was undeployt bleibt; Runbook Testnet → Mainnet | Entwurf |
 
 ## Wie diese Dokumente gepflegt werden
 

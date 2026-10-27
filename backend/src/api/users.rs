@@ -134,6 +134,7 @@ pub async fn update_profile(
 ) -> AppResult<Json<ApiResponse<()>>> {
     if let Some(ref n) = req.display_name { if n.len() > 50 { return Err(AppError::Validation("Display name max 50 chars".into())); } }
     if let Some(ref b) = req.bio { if b.len() > 280 { return Err(AppError::Validation("Bio max 280 chars".into())); } }
+    if let Some(ref a) = req.avatar_url { if !a.trim().is_empty() { crate::api::posts::validate_media_url(a)?; } }
     // country: Some("") clears, Some("de") sets "DE", None leaves untouched.
     let country: Option<Option<String>> = match req.country_code.as_deref().map(|c| c.trim().to_ascii_uppercase()) {
         None => None,
@@ -277,17 +278,6 @@ pub async fn export_my_data(
         "followers": followers,
         "following": following,
     })))
-}
-
-pub async fn verify_age(
-    State(state): State<AppState>,
-    auth: AuthUser,
-) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
-    let user_id = resolve_user_id(&state, &auth.address).await?;
-    sqlx::query("UPDATE users SET age_verified_at = COALESCE(age_verified_at, NOW()) WHERE id = $1")
-        .bind(user_id)
-        .execute(state.db.pool()).await.map_err(AppError::Database)?;
-    Ok(Json(ApiResponse::ok(serde_json::json!({"age_verified": true}))))
 }
 
 pub async fn delete_my_account(

@@ -207,9 +207,12 @@ pub async fn pool_status(db: &Database) -> AppResult<PoolStatus> {
         "SELECT COALESCE(SUM(amount), 0)::float8 FROM token_rewards
            WHERE kind = 'conversion' AND status <> 'rejected'"
     ).fetch_one(db.pool()).await.map_err(AppError::Database)?;
-    let fees_recycled: f64 = sqlx::query_scalar::<_, f64>(
+    // fee_ledger holds POINTS; the pool is denominated in YEET, so apply the
+    // rate in force (audit M-M2: at a rate ≠ 1 the pool was over-credited).
+    let fee_points: f64 = sqlx::query_scalar::<_, f64>(
         "SELECT COALESCE(SUM(fee_amount), 0)::float8 FROM fee_ledger"
     ).fetch_one(db.pool()).await.map_err(AppError::Database)?;
+    let fees_recycled = fee_points * current_conversion_rate(db).await?.rate;
 
     let base = conversion_pool_base();
     // Fee recycling tops the pool up, but the token contract can only ever mint

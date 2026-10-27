@@ -30,7 +30,7 @@ pub struct TokenInfo {
 /// GET /api/v1/explorer/token — token metadata + aggregate stats.
 pub async fn token_info(State(state): State<AppState>) -> AppResult<Json<ApiResponse<TokenInfo>>> {
     let chain_id: u64 = std::env::var("YEET_CHAIN_ID").ok()
-        .and_then(|s| s.parse().ok()).unwrap_or(56);
+        .and_then(|s| s.parse().ok()).unwrap_or(97); // testnet default, see public_config.rs
     let contract = std::env::var("YEET_TOKEN_ADDRESS").ok()
         .filter(|a| a != "0x0000000000000000000000000000000000000000" && !a.is_empty());
 

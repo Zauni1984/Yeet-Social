@@ -25,7 +25,7 @@ contract PaperWalletEscrowTest is Test {
     function setUp() public {
         claimAddr = vm.addr(claimPk);
         vm.startPrank(owner);
-        token  = new YeetToken(owner);
+        token  = new YeetToken(owner, owner, 0);
         escrow = new PaperWalletEscrow(address(token), platform, owner, 1000 ether, MIN_V, MAX_V);
         token.transfer(issuer, 5000 ether);
         vm.stopPrank();

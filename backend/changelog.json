@@ -252,6 +252,23 @@
         "#Languages",
         "#i18n"
       ]
+    },
+    {
+      "id": "2026-10-03-24-security-audit",
+      "text": "Security update after a full code audit: pay-per-view media is now withheld by the server until you unlock it, user-supplied media links are validated, followers-only and 18+ posts stay private on every page, login and admin endpoints are rate-limited, and tips reject invalid amounts. Nothing to do on your side.",
+      "tags": [
+        "#Security",
+        "#Audit"
+      ]
+    },
+    {
+      "id": "2026-10-27-25-points-schema-testnet",
+      "text": "Fix: tips, pay-per-view unlocks and DM/live tips were failing with a database error on freshly set-up servers — the storage tables now match the points model everywhere. The app runs on the BNB Smart Chain TESTNET by default while we test the token: test YEET have no value and will not carry over to mainnet.",
+      "tags": [
+        "#Fix",
+        "#Points",
+        "#Testnet"
+      ]
     }
   ]
 }

@@ -184,10 +184,10 @@ pub async fn convert(
     // flips the row to 'pending'). Rejecting refunds the points. This human gate
     // is deliberate for launch; automated rules will replace it later.
     let payout_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO token_rewards (user_id, action, amount, status, kind, points_debited, rate)
-         VALUES ($1, 'conversion', $2, 'awaiting_approval', 'conversion', $3, $4) RETURNING id"
+        "INSERT INTO token_rewards (user_id, action, amount, status, kind, points_debited, rate, wallet_address)
+         VALUES ($1, 'conversion', $2, 'awaiting_approval', 'conversion', $3, $4, $5) RETURNING id"
     )
-    .bind(user_id).bind(yeet_amount).bind(req.points as f64).bind(rate.rate)
+    .bind(user_id).bind(yeet_amount).bind(req.points as f64).bind(rate.rate).bind(&wallet)
     .fetch_one(&mut *tx).await.map_err(AppError::Database)?;
 
     // Ledger: points debited for a one-way conversion to on-chain YEET.

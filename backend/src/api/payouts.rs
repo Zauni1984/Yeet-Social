@@ -40,7 +40,7 @@ pub struct PayoutRow {
 }
 
 const SELECT: &str =
-    "SELECT r.id, r.user_id, u.username, u.wallet_address, r.amount::float8 AS amount,
+    "SELECT r.id, r.user_id, u.username, COALESCE(r.wallet_address, u.wallet_address) AS wallet_address, r.amount::float8 AS amount,
             r.points_debited::float8 AS points_debited, r.rate::float8 AS rate, r.status, r.created_at,
             r.mint_attempts, r.last_error
        FROM token_rewards r JOIN users u ON u.id = r.user_id
@@ -53,7 +53,7 @@ pub async fn admin_list(
 ) -> AppResult<Json<ApiResponse<Vec<PayoutRow>>>> {
     check_admin_secret(&q.secret)?;
     let status = q.status.unwrap_or_else(|| "awaiting_approval".into());
-    if !["awaiting_approval", "pending", "minted", "failed", "rejected", "all"].contains(&status.as_str()) {
+    if !["awaiting_approval", "pending", "minting", "minted", "failed", "rejected", "all"].contains(&status.as_str()) {
         return Err(AppError::Validation("invalid status filter".into()));
     }
     let rows: Vec<PayoutRow> = if status == "all" {

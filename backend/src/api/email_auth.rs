@@ -130,15 +130,22 @@ async fn issue_and_send_verification(
             tracing::warn!("SMTP send failed: {e}");
         }
     } else {
-        tracing::warn!("SMTP not configured; verification token created but no email sent: {}", token);
+        tracing::warn!("SMTP not configured; verification token created for {} but no email sent (token prefix {}…)", email, &token[..token.len().min(6)]);
     }
     Ok(())
 }
 
 pub async fn register(
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(req): Json<EmailRegisterRequest>,
 ) -> AppResult<Json<ApiResponse<TokenResponse>>> {
+    // Account creation + verification mail: 5 per 10 min, 20 per hour per IP.
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "register_ip", &ip, 600, 5, 3600, 20).await?;
+    if req.password.len() > 256 {
+        return Err(AppError::Validation("Password too long".into()));
+    }
     if req.email.is_empty() || !req.email.contains('@') {
         return Err(AppError::Validation("Invalid email address".into()));
     }
@@ -197,11 +204,19 @@ pub async fn register(
 
 pub async fn login(
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(req): Json<EmailLoginRequest>,
 ) -> AppResult<Json<ApiResponse<TokenResponse>>> {
     if req.email.is_empty() || req.password.is_empty() {
         return Err(AppError::Validation("Email and password required".into()));
     }
+    if req.password.len() > 256 {
+        return Err(AppError::Validation("Password too long".into()));
+    }
+    // Online guessing: 10/min + 100/h per client IP, 5/min + 30/h per account.
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "login_ip", &ip, 60, 10, 3600, 100).await?;
+    crate::api::middleware::limit(&state, "login_email", &req.email.to_lowercase(), 60, 5, 3600, 30).await?;
 
     let row = sqlx::query_as::<_, (Uuid, String, String, String, Option<chrono::DateTime<Utc>>)>(
         "SELECT id, password_hash, password_salt, COALESCE(username, 'user'), email_verified_at
@@ -357,6 +372,8 @@ pub async fn resend_verification(
     State(state): State<AppState>,
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    // Mail sending on behalf of a user: 3 per 10 min, 10 per hour.
+    crate::api::middleware::limit(&state, "email_resend_user", &auth.address, 600, 3, 3600, 10).await?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     let row: Option<PendingEmailRow> = sqlx::query_as(
         "SELECT email, email_pending, email_verified_at FROM users WHERE id = $1"
@@ -379,6 +396,8 @@ pub async fn link_email(
     auth: AuthUser,
     Json(req): Json<LinkEmailRequest>,
 ) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    // Mail sending on behalf of a user: 3 per 10 min, 10 per hour.
+    crate::api::middleware::limit(&state, "link_email_user", &auth.address, 600, 3, 3600, 10).await?;
     if !req.email.contains('@') {
         return Err(AppError::Validation("Invalid email address".into()));
     }

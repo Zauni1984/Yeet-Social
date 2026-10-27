@@ -217,6 +217,12 @@ entsteht die Umwandlungs-Zeile nicht aus Punkten, sondern aus einer bestätigten
 
 ---
 
+**Contract-Seite (seit 2026-10-27):** `batchMintRewards` ist auf die Rolle `minter`
+beschränkt (= Adresse von `REWARDS_MINTER_PRIVKEY`), pro UTC-Tag durch `dailyMintCap`
+begrenzt und vom Owner pausierbar. Der Minter prüft `minter()`, `mintingPaused()` und
+`dailyRemaining()` vor jedem Lauf; passt eine Zeile nicht mehr ins Tagesbudget, bleibt sie
+`pending` bis zum nächsten Tag. Details: [10-testnet-contract.md](10-testnet-contract.md).
+
 ## 8. Nachweis: das Transaktionsjournal
 
 `ledger_entries` (Migration 0039, `services/ledger.rs`) ist das Beweis- und Steuerjournal:
@@ -323,7 +329,7 @@ Reconcile-Liste prüfen, danach muss (1) dauerhaft aufgehen.
 | `YEET_DAILY_POINTS_CAP`, `YEET_POST_REWARD`, `YEET_POST_MIN_CHARS` | 1 000 / 10 / 120 | Reward-Regeln |
 | `YEET_REGISTRATION_BONUS`, `YEET_REGISTRATION_BONUS_MAX` | 1 000 / 100 000 | Bonus |
 | `REWARDS_MINTER_PRIVKEY` | — | Minter aktiv nur wenn gesetzt (**D3**) |
-| `YEET_CHAIN_ID`, `BSC_RPC_URL`, `YEET_TOKEN_ADDRESS` | 56 / BSC-Dataseed / — | Chain |
+| `YEET_CHAIN_ID`, `BSC_RPC_URL`, `YEET_TOKEN_ADDRESS` | 97 / Testnet-RPC / — | Chain (Testnet-Phase, [10](10-testnet-contract.md)); Mainnet-Umstellung setzt 56 + neue Adresse |
 | `YEET_MINT_MAX_ATTEMPTS` | 5 | Versuche bis `failed` |
 | `YEET_RATE_NOTICE_DAYS` | 14 | Mindestvorlauf für eine Kursänderung (§6.4) |
 | `SANCTIONS_*` | s. `docs/sanktions-screening.md` | F6 |
