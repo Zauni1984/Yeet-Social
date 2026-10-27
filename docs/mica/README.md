@@ -12,7 +12,7 @@
 | Datei | Zweck | Status |
 | --- | --- | --- |
 | [01-readiness-assessment.md](01-readiness-assessment.md) | Einstufung des YEET-Tokens, anwendbare Pflichten, Ausnahmen, CASP-Risikoanalyse | Entwurf |
-| [02-whitepaper-entwurf-yeet.md](02-whitepaper-entwurf-yeet.md) | Krypto-Whitepaper-Gerüst nach MiCA Titel II (Art. 6 + Anhang I) mit Platzhaltern | Entwurf |
+| [02-whitepaper-entwurf-yeet.md](02-whitepaper-entwurf-yeet.md) | Krypto-Whitepaper nach MiCA Titel II (Art. 6 + Anhang I); v0.2: Contract-Rollen, Off-Chain-Belohnungssystem, Testnet-Phase eingetragen — Rest Platzhalter für Anwalt/Gründer | Entwurf v0.2 |
 | [03-chain-assessment.md](03-chain-assessment.md) | BNB Chain unter MiCA + Alternativen-Matrix + Nachhaltigkeitsangaben | Entwurf |
 | [04-compliance-checkliste.md](04-compliance-checkliste.md) | Abarbeitbare Checkliste mit Verantwortlichkeiten | Entwurf |
 | [05-zielarchitektur-non-custodial.md](05-zielarchitektur-non-custodial.md) | Zielarchitektur „Punkte + Direktauszahlung" (non-custodial) inkl. MiCA-Bewertung und Leitplanken | Entwurf |

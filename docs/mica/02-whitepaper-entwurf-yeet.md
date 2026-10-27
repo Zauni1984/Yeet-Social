@@ -26,18 +26,27 @@ bestätigt, dass dieses Whitepaper den Anforderungen des Titels II MiCA entspric
 dass die darin enthaltenen Informationen nach bestem Wissen redlich, eindeutig und nicht
 irreführend sind und keine wesentlichen Auslassungen enthalten.⟧
 
-**Datum der Notifizierung:** ⟦TT.MM.JJJJ⟧ · **Version:** 0.1-ENTWURF
+**Datum der Notifizierung:** ⟦TT.MM.JJJJ⟧ · **Version:** 0.2-ENTWURF (Stand 2026-10-27:
+Contract-Rollen, Off-Chain-Belohnungssystem und Testnet-Phase eingetragen)
 
 ## Zusammenfassung (Art. 6 Abs. 7)
 
 ⟦Kurze, allgemein verständliche Zusammenfassung: Warnhinweis, dass die Zusammenfassung
 als Einleitung zu lesen ist; Kaufentscheidung nur auf Basis des gesamten Whitepapers.⟧
-- Token: **YEET** (Ticker `YEET`, Contract-Adresse ⟦0x… nach Deployment⟧), Utility-Token
+- Token: **YEET** (Ticker `YEET`, Contract-Adresse ⟦0x… nach Mainnet-Deployment⟧), Utility-Token
   der Social-Plattform Yeet (justyeet.it), auf der **BNB Smart Chain (BEP-20)**.
+  **Derzeit Testphase auf dem BNB-Smart-Chain-Testnet (Chain-ID 97):** dort ausgegebene
+  Test-YEET haben keinen Wert und werden nicht auf das Mainnet übertragen (Teil J).
 - **Feste Höchstmenge: 21.000.000.000 YEET (21 Mrd.)** — im Contract als `MAX_SUPPLY`
   fixiert (kein „Uncapped"). 25 % (Developer/Team/Reserve) werden beim Deploy ausgegeben;
   die 75 %-Rewards-Tranche wird ausschließlich bei Punkte→YEET-Umwandlungen bis zur
-  Obergrenze gemintet; eine andere Mint-Funktion existiert nicht.
+  Obergrenze gemintet; eine andere Mint-Funktion existiert nicht. Minten darf nur eine
+  einzelne **Minter-Rolle** (Backend der Plattform), begrenzt durch ein **Tageslimit**; der
+  Eigentümer des Contracts kann das Minting jederzeit anhalten, selbst aber nicht minten.
+- **Ein Contract, sonst nichts on-chain:** Die gesamte Plattform-Ökonomie (Rewards, Tips,
+  Pay-per-View, Gutscheine) läuft als **Punkte** in einem geprüften Off-Chain-Journal der
+  Plattform. Die Blockchain wird nur berührt, wenn ein Nutzer Punkte in YEET umwandelt;
+  die YEET gehen dann direkt in seine eigene Wallet. Die Plattform verwahrt nichts.
 - Funktionen: Trinkgelder (Tips), Pay-per-View-Freischaltungen, Promotionen, Rewards,
   Einweg-Umtausch von Plattform-Punkten in YEET.
 - Angebotstyp: **keine öffentliche Emission/Sale** — YEET wird ausschließlich als
@@ -58,8 +67,11 @@ als Einleitung zu lesen ist; Kaufentscheidung nur auf Basis des gesamten Whitepa
 
 ## Teil B — Angaben zum Emittenten (falls vom Anbieter verschieden)
 
-⟦Entfällt, falls identisch — sonst analog Teil A. Hinweis: Minting erfolgt derzeit durch
-die Plattform via `batchMintRewards`; Emittent = Betreiber-Rechtsträger.⟧
+⟦Entfällt, falls identisch — sonst analog Teil A.⟧ Hinweis: Das Minting erfolgt durch das
+Backend der Plattform über die Contract-Rolle `minter` (Funktion `batchMintRewards`),
+ausschließlich zur Erfüllung von Punkte→YEET-Umwandlungen; Emittent = Betreiber-Rechtsträger
+(BlockSocial UG). Contract-Eigentümer (`owner`) ist ⟦bis zur Multisig-Übergabe der Deployer-Schlüssel
+des Betreibers / danach die Multisig ⟦Adresse⟧⟧.
 
 ## Teil C — Angaben zum Betreiber der Handelsplattform (nur bei Admission to Trading)
 
@@ -90,8 +102,20 @@ die Plattform via `batchMintRewards`; Emittent = Betreiber-Rechtsträger.⟧
 
 - **Rechte:** Nutzung innerhalb der Plattform (Tips, PPV, Promotion). **Keine** Dividenden-,
   Stimm-, Rückzahlungs- oder sonstigen Ansprüche gegen den Rechtsträger. ⟦prüfen/ergänzen⟧
-- **Übertragbarkeit:** ⟦TODO(strategie): frei übertragbar on-chain? Einschränkungen?⟧
-- **Bedingungen für Funktionsänderungen:** ⟦Governance/Upgrade-Prozess des Contracts⟧
+- **Übertragbarkeit:** On-Chain-YEET sind ein gewöhnlicher BEP-20-Token und **frei
+  übertragbar**; der Contract enthält keine Transfersperren, Blacklists oder Transfergebühren,
+  und der Eigentümer kann Transfers nicht anhalten (nur das Minting). ⟦Anwalt: Wording
+  prüfen.⟧ **Punkte** dagegen sind nicht übertragbar und nicht handelbar; sie können innerhalb
+  der Plattform verwendet (Tips, Pay-per-View, Gutscheine) oder einmalig in YEET umgewandelt
+  werden.
+- **Bedingungen für Funktionsänderungen:** Der Token-Contract ist **nicht upgradefähig**
+  (kein Proxy); seine Regeln (Höchstmenge, Tranchen, Mint-Beschränkung) sind unveränderlich.
+  Der Eigentümer hat genau drei Stellschrauben: Minter-Adresse wechseln, Tageslimit setzen,
+  Minting anhalten/fortsetzen; jede davon löst ein öffentliches Event aus. Änderungen des
+  **Umwandlungsverhältnisses** Punkte→YEET gelten nur für künftige Umwandlungen und müssen
+  mindestens **14 Tage vorher** angekündigt werden (technisch erzwungen, Teil J; AGB §6).
+  Änderungen der Reward-Regeln (Punkte je Aktivität, Tageskappe) werden im öffentlichen
+  Changelog der Plattform angekündigt. ⟦Anwalt: Übergangsregel für bereits angesammelte Punkte.⟧
 - **Off-Chain-Guthaben (Punkte-Modell):** Aktivität auf der Plattform wird in internen
   **Punkten** geführt und angezeigt (Yeet betreibt **keine** eigene Wallet). Punkte lassen
   sich **1:1 und ausschließlich in eine Richtung** in On-Chain-YEET umtauschen
@@ -102,7 +126,12 @@ die Plattform via `batchMintRewards`; Emittent = Betreiber-Rechtsträger.⟧
   einsehbar. **Auszahlungen werden in der Startphase manuell von einem Admin
   freigegeben** (Betrugs-/Missbrauchsschutz); ohne Freigabe erfolgt keine
   On-Chain-Zahlung, eine Ablehnung erstattet die Punkte. Automatisierte Regeln
-  ersetzen diese manuelle Freigabe später.
+  ersetzen diese manuelle Freigabe später. Weitere Bedingungen: Mindestmenge **100 Punkte**
+  je Umwandlung; die Zielwallet wird gegen öffentliche **Sanktionslisten** geprüft
+  (Treffer → keine Auszahlung); Umwandlungen sind auf den verbleibenden Rewards-Pool
+  begrenzt (Teil J, Drain-Schutz). Punkte **verfallen derzeit nicht**. ⟦Anwalt: Rechtsnatur
+  des Punkteguthabens (Leistungsanspruch ohne Geldwert), Verjährung/Verfall, Behandlung
+  bei Account-Löschung und Plattform-Einstellung — vgl. 09-ledger-und-auszahlung.md §10.⟧
 
 ## Teil G — Zugrunde liegende Technologie
 
@@ -110,18 +139,60 @@ die Plattform via `batchMintRewards`; Emittent = Betreiber-Rechtsträger.⟧
   (~45 aktive Validatoren). Nutzer benötigen für On-Chain-Aktionen (u. a. Swap) etwas
   **BNB zur Deckung der Netzwerkgebühren** (Beispielgröße ~0,01 BNB); spätere Anpassungen
   des Fee-Managements sind möglich.
-- **Smart Contract:** Adresse ⟦0x…⟧, Standard BEP-20/ERC-20, Minting-Funktion
-  `batchMintRewards(address[], uint256[], string[])`, Mint-Berechtigung: ⟦Rollen/Multisig⟧
-- **Audits:** ⟦TODO(verify): Contract-Audit beauftragen/verlinken⟧
+- **Smart Contract `YeetToken`** (Quelle: `contracts/src/YeetToken.sol`, Solidity 0.8.24,
+  OpenZeppelin 5.1.0, 54 automatisierte Tests): Standard BEP-20/ERC-20 mit `ERC20Burnable`
+  und `ERC20Permit`, 18 Dezimalstellen, **nicht upgradefähig**.
+  - Adresse Testnet (Chain-ID 97): ⟦0x… nach Testnet-Deployment⟧ · Adresse Mainnet
+    (Chain-ID 56): ⟦0x… nach Mainnet-Deployment⟧.
+  - **Höchstmenge** `MAX_SUPPLY` = 21 Mrd.; 25 % beim Deploy an den Eigentümer; die
+    **75 %-Rewards-Reserve** (`REWARD_RESERVE`, 15,75 Mrd.) ist die einzige nach dem
+    Deploy mintbare Menge, kumulativ gezählt (`rewardsMinted`) — Burns öffnen sie nicht
+    wieder. Eine andere Mint-Funktion existiert nicht.
+  - **Rollen:** `owner` (Ownable2Step; Ziel: Multisig) setzt Minter, Tageslimit und Pause,
+    mintet aber **nie selbst**. `minter` (ein Backend-Schlüssel der Plattform) kann
+    ausschließlich `batchMintRewards(address[], uint256[], string[])` aufrufen: max. 200
+    Empfänger je Aufruf, Summe ≤ Rewards-Reserve, Summe ≤ **Tageslimit** `dailyMintCap`
+    pro UTC-Tag, kein Null-Empfänger, atomar (ein Fehler verwirft den ganzen Aufruf).
+  - **Not-Aus:** `setMintingPaused(true)` stoppt das Minting; Transfers der Nutzer sind
+    davon **nie** betroffen.
+  - **Ereignisse** (öffentlich nachvollziehbar): `RewardMinted`, `MinterUpdated`,
+    `DailyMintCapUpdated`, `MintingPaused`.
+  - Bewusst **nicht** enthalten: Verkaufs-/Presale-Logik, Transfergebühren, Blacklist,
+    Proxy/Upgrade, Zugriff des Betreibers auf Nutzerguthaben, Vesting (separat, Teil J).
+- **Weitere Contracts:** Keine. Zahlungs-, Escrow- und NFT-Contracts existieren als
+  geprüfte Entwürfe im Quellcode, werden aber **nicht deployt**, solange Zahlungen als
+  Punkte abgewickelt werden (siehe 10-testnet-contract.md).
+- **Off-Chain-Komponente:** Punkte und deren Bewegungen werden in einem append-only
+  **Transaktionsjournal mit Hash-Kette** geführt (jede Buchung referenziert den Hash der
+  vorherigen); Saldo und Journal werden regelmäßig automatisch abgeglichen; Nutzer können
+  ihr eigenes Journal einsehen und exportieren. Details: Teil J und 09-ledger-und-auszahlung.md.
+- **Betriebsphase:** Zuerst **BNB Smart Chain Testnet (Chain-ID 97)**; die Umstellung auf das
+  Mainnet (Chain-ID 56) erfolgt nach externem Audit und Multisig-Übergabe mit einem neuen
+  Deployment (10-testnet-contract.md §6).
+- **Audits:** ⟦TODO(verify): externes Contract-Audit beauftragen/verlinken (Commit-Hash der
+  geprüften Fassung angeben)⟧; interner Code-Audit des Backends vom 2026-10-03
+  (`docs/audit-2026-10-03.md`).
 
 ## Teil H — Risiken
 
-⟦Projektspezifisch ausformulieren; Gerüst:⟧
-1. Angebots-/Emittentenrisiken (Abhängigkeit vom Fortbestand der Plattform)
-2. Marktrisiken (Volatilität, fehlende Liquidität, kein Marktpreis solange kein Listing)
-3. Technische Risiken (Smart-Contract-Fehler, Chain-Ausfälle, Schlüsselverlust)
-4. Verwahrrisiken (internes Guthaben vs. Self-Custody; Plattform-Insolvenz)
-5. Regulatorische Risiken (MiCA-Einstufung, künftige Level-2/Level-3-Maßnahmen)
+⟦Projektspezifisch ausformulieren; Gerüst mit den bereits bekannten Punkten:⟧
+1. Angebots-/Emittentenrisiken (Abhängigkeit vom Fortbestand der Plattform; Punkte sind ein
+   Anspruch gegen die Plattform, kein Kryptowert — bei Einstellung der Plattform ⟦Regelung⟧)
+2. Marktrisiken (Volatilität, fehlende Liquidität, kein Marktpreis solange kein Listing;
+   Yeet betreibt keine Liquidity-Pools)
+3. Technische Risiken: Smart-Contract-Fehler (Audit ausstehend), Chain-Ausfälle, Verlust des
+   Nutzer-Wallet-Schlüssels (Auszahlungen sind endgültig, kein Rückruf möglich),
+   **Kompromittierung des Minter-Schlüssels** (Schaden auf höchstens ein Tageslimit der
+   Rewards-Reserve begrenzt; Eigentümer kann pausieren und den Schlüssel wechseln),
+   Fehlkonfiguration (falsche Zielwallet durch den Nutzer)
+4. Verwahrrisiken (internes Punkteguthaben vs. Self-Custody der YEET; Plattform-Insolvenz;
+   Verlust der Journaldaten — tägliche Backups, 10-jährige Aufbewahrung)
+5. Operative Risiken des Belohnungssystems: Reward-Taper bei niedrigem Pool, Ablehnung
+   oder Verzögerung einer Umwandlung (manuelle Freigabe, Sanktionsprüfung, Tageslimit),
+   Änderung des Umwandlungsverhältnisses mit 14 Tagen Vorlauf
+6. **Testnet-Phase:** Test-YEET auf der Testkette haben keinen Wert und keine Beziehung zum
+   späteren Mainnet-Token; Testdaten können zurückgesetzt werden
+7. Regulatorische Risiken (MiCA-Einstufung, künftige Level-2/Level-3-Maßnahmen)
 
 ## Teil I — Nachhaltigkeitsangaben (Art. 6 Abs. 1 lit. j, ESMA-RTS)
 
@@ -140,9 +211,10 @@ Energieintensität je Transaktion, THG-Emissionen.
 
 ## Teil J — Tokenomics-Eckdaten
 
-> Stand: Eckdaten festgelegt; Smart Contract wird erst nach Finalisierung geschrieben.
-> Der Note→YEET-Swap läuft über eine **eigene Seite auf justyeet.it** (`/swap.html`);
-> Swaps sind bis zur Fertigstellung des Smart Contracts gesperrt (Start wird angekündigt).
+> Stand 2026-10-27: Eckdaten festgelegt und im Smart Contract `YeetToken` umgesetzt
+> (Teil G); Deploy **zuerst auf dem BNB-Smart-Chain-Testnet**, Mainnet nach Audit und
+> Multisig-Übergabe. Der Note→YEET-Swap läuft über eine **eigene Seite auf justyeet.it**
+> (`/swap.html`); Swaps sind bis zum Mainnet-Start gesperrt (Start wird angekündigt).
 > Technisches Design: `docs/swap-note-to-yeet.md`.
 
 ### Token
@@ -153,7 +225,11 @@ Energieintensität je Transaktion, THG-Emissionen.
 | Chain / Standard | BNB Smart Chain, BEP-20 |
 | Dezimalstellen | 18 (BEP-20-Standard) |
 | **Höchstmenge** | **21.000.000.000 YEET — FIX** (`MAX_SUPPLY`); 25 % beim Deploy, 75 % Rewards-Tranche nur per `batchMintRewards` bis zur Obergrenze (`REWARD_RESERVE`), keine weitere Mint-Funktion |
+| Mint-Berechtigung | nur die Rolle `minter` (Backend-Schlüssel), begrenzt durch Tageslimit `dailyMintCap` (Startwert ⟦1.000.000 YEET/Tag⟧, vom Eigentümer anpassbar); Eigentümer kann Minting pausieren und den Minter wechseln, mintet nie selbst |
+| Eigentümer (`owner`) | Testnet: Deployer-Schlüssel des Betreibers; Mainnet: **Multisig** ⟦Adresse, Signer, Schwelle⟧ (zweistufige Übergabe) |
+| Upgradefähigkeit | keine (kein Proxy); Regeln sind nach Deploy unveränderlich |
 | Verwahrung | non-custodial — Yeet hält niemals Wallets/Token für Kunden |
+| Netzwerk-Phase | **Testnet (Chain-ID 97)** bis ⟦Datum/Meilenstein⟧; danach Mainnet (Chain-ID 56) mit neuer Contract-Adresse; Test-YEET werden nicht migriert |
 
 ### Verteilung des Initial-Supply (21 Mrd.)
 
@@ -164,23 +240,71 @@ Energieintensität je Transaktion, THG-Emissionen.
 | Reserve | 5 % | 1.050.000.000 | Liquidität, Listings, Notfälle |
 | Rewards-/Community-Pool | 75 % | 15.750.000.000 | speist Registrierungs-Bonus, Posting-Rewards, Note-Swap-Pool u. a. |
 
-### Punkte & Rewards (on-platform)
+### Off-Chain-Belohnungssystem (Punkte) — so läuft es ohne Blockchain
+
+Alle Aktivität wird in **Punkten** geführt. Punkte sind ein internes Guthaben der Plattform
+(kein Kryptowert, keine Wallet, nicht übertragbar). Jede Bewegung wird in derselben
+Datenbanktransaktion in ein **append-only Journal mit Hash-Kette** geschrieben; Saldo und
+Journal werden automatisch abgeglichen. Das System benötigt keine Blockchain-Verbindung —
+die Chain wird ausschließlich bei der Auszahlung einer Umwandlung berührt (nachgewiesen
+in 10-testnet-contract.md §1).
+
+**Punkte entstehen** (Stand 2026-10-27; Werte per Konfiguration anpassbar, Änderungen
+werden im Changelog angekündigt):
+
+| Pfad | Punkte | Bedingung |
+| --- | --- | --- |
+| Artikel veröffentlicht | **10** | Text ≥ 120 Zeichen; Entwürfe/Kurzposts erhalten nichts |
+| Kommentar | **1** | sichtbarer Post |
+| Reshare | **2** | einmal je Post, nur Live-/öffentliche Posts |
+| Tageskappe | **max. 1.000 P/Tag und Nutzer** | für alle Aktivitäts-Rewards zusammen |
+| Reward-Taper | ×0,5 | sobald der Auszahlungs-Pool unter 10 % seines Basiswerts fällt |
+| Registrierungs-Bonus | **1.000 P**, einmalig | E-Mail-Double-Opt-in **und** Alters-/KYC-Verifizierung; nur die ersten 100.000 Nutzer (max. 100.000.000 P); vom Taper ausgenommen |
+| Tip erhalten / Pay-per-View-Erlös | 90 % des Betrags | 10 % Plattformgebühr |
+| Gutschein (Paper Wallet) eingelöst | gesperrter Betrag | Einlösung per Claim-Code |
+
+(Im Code vorgesehene, derzeit **nicht aktive** Regeln: Like 1 P, täglicher Login 2 P; der
+frühere NFT-Mint-Reward ist deaktiviert.)
+
+**Punkte werden verwendet** (in-app, ohne Chain):
+
+| Verwendung | Abbuchung | Gegenbuchung | Gebühr |
+| --- | --- | --- | --- |
+| Tip an Creator (Post, Profil, DM, Live) | −X | Creator +0,9 X | 0,1 X |
+| Pay-per-View-Freischaltung | −Preis, erst nach ausdrücklicher Zustimmung (Consent-Protokoll) | Autor +0,9 Preis | 0,1 Preis |
+| Paper-Wallet-Gutschein | Aussteller −Betrag (gesperrt, stornierbar bis zur Einlösung) | Einlöser +Betrag | — |
+| Live-Promotion | −Preis | — (Plattformleistung; Erstattung bei Absage) | 100 % |
+
+**Umwandlung Punkte → YEET** (der einzige Weg aus dem Punktesystem):
+
+| Regel | Wert |
+| --- | --- |
+| Verhältnis | **1 Punkt = 1 YEET** (versioniert; Änderungen nur für künftige Umwandlungen, **≥ 14 Tage** vorab angekündigt, öffentlich unter `GET /api/v1/points/rate`) |
+| Richtung | **Einweg** — YEET → Punkte ist nicht möglich |
+| Mindestmenge | **100 Punkte** je Umwandlung |
+| Zielwallet | ausschließlich eine vom Nutzer **selbst verwahrte**, per Signatur verknüpfte externe Wallet; Sanktionslisten-Prüfung |
+| Voraussetzung | abgeschlossene KYC/Altersverifikation |
+| Ablauf | Punkte sofort abgebucht → „wartet auf Freigabe" → Admin-Freigabe → Batch-Mint durch die Minter-Rolle (≤ 200 Empfänger je Transaktion, Tageslimit) → Transaktions-Hash im Journal; Ablehnung erstattet die Punkte |
+| Transparenz | eigenes Journal (Ansicht/Export), öffentlicher Pool-Status, Explorer-Link je Auszahlung |
+
+### Punkte & Rewards — Kurzfassung
 
 | Regel | Wert |
 | --- | --- |
 | Anzeige | Alle Guthaben werden als **Punkte** dargestellt; keine Wallet auf der Plattform |
-| Punkte → YEET | **1 Punkt = 1 YEET**, Einweg, Auszahlung nur an selbst verwahrte, verifizierte Wallet; KYC erforderlich |
+| Punkte → YEET | **1 Punkt = 1 YEET**, Einweg, min. 100 Punkte, Auszahlung nur an selbst verwahrte, verifizierte Wallet; KYC erforderlich |
 | YEET → Punkte | **nicht möglich** |
-| Registrierungs-Bonus | **1.000 YEET** für die **ersten 100.000** Registrierungen nach Double-Opt-in **und** KYC — **gebührenfrei** (max. 100.000.000 YEET) |
-| Posting-Reward | **10 YEET** pro Artikel ≥ 120 Zeichen; **Tages-Cap 1.000 Punkte/User** (später anpassbar) |
-| Tips | implementiert; **90/10-Split** zugunsten des Creators |
+| Registrierungs-Bonus | **1.000 Punkte** für die **ersten 100.000** Registrierungen nach Double-Opt-in **und** KYC — **gebührenfrei** (max. 100.000.000 Punkte) |
+| Posting-Reward | **10 Punkte** pro Artikel ≥ 120 Zeichen (Kommentar 1, Reshare 2); **Tages-Cap 1.000 Punkte/User** (anpassbar) |
+| Tips | implementiert (Punkte); **90/10-Split** zugunsten des Creators |
 
 ### Gebühren (Plattform)
 
 | Quelle | Gebühr |
 | --- | --- |
-| Tips, NFT-Verkäufe, sonstige Transaktionen | **10 % Plattform-Anteil** |
-| Registrierungs-Bonus | **0 % (Ausnahme, gebührenfrei)** |
+| Tips, Pay-per-View | **10 % Plattform-Anteil** (in Punkten erfasst, fließt dem Auszahlungs-Pool zu — Fee-Recycling) |
+| Live-Promotion | 100 % Plattformleistung |
+| Registrierungs-Bonus, Punkte→YEET-Umwandlung | **0 % (gebührenfrei)**; Netzwerkgebühr des Mints trägt die Plattform (Minter-Wallet) |
 | Netzwerk | BNB-Gasgebühren trägt der Nutzer; ~0,01 BNB (Beispiel) für Swap; spätere Fee-Anpassungen möglich |
 
 ### Note → YEET Swap (eigene Seite auf justyeet.it)
@@ -205,16 +329,33 @@ einseitig entleert wird:
 | **Fee-Recycling** | Die 10 % Plattform-Gebühren fließen als Reserve zurück in den effektiven Pool — ein aktives Ökosystem füllt nach, was Auszahlungen abziehen. |
 | **Drain-Guard** | Auszahlungen, die den verbleibenden Pool übersteigen würden, werden abgelehnt (`CONVERSION_POOL_EXHAUSTED`). |
 | **Reward-Taper** | Sinkt der Pool unter einen Schwellwert (Standard 10 %), wird die Reward-Ausgabe automatisch reduziert (Standard-Faktor 0,5). |
-| **Transparenz** | Öffentlicher Pool-Status via `GET /api/v1/tokens/pool` (Basis, recycelte Fees, ausgezahlt, Rest). |
+| **On-Chain-Tageslimit** | Der Contract lässt der Minter-Rolle pro UTC-Tag höchstens `dailyMintCap` zu; was nicht mehr ins Tagesbudget passt, wartet automatisch auf den nächsten Tag. Ein kompromittierter Minter-Schlüssel kann damit höchstens ein Tageslimit minten. |
+| **Not-Aus** | Der Eigentümer kann das Minting jederzeit anhalten (`setMintingPaused`); Umwandlungen bleiben dann in der Warteschlange, Punkte gehen nicht verloren. Transfers der Nutzer sind nie betroffen. |
+| **Sanktions-Screening** | Jede Zielwallet wird vor der Auszahlung gegen öffentliche Sanktionslisten geprüft (täglich aktualisiert); Treffer werden nicht ausgezahlt. |
+| **Transparenz** | Öffentlicher Pool-Status via `GET /api/v1/tokens/pool` (Basis, recycelte Fees, ausgezahlt, Rest); On-Chain `rewardsRemaining()` und `dailyRemaining()`. |
 
-Alle Parameter sind per Env konfigurierbar (`YEET_CONVERSION_POOL`,
-`YEET_TAPER_THRESHOLD_PCT`, `YEET_TAPER_FACTOR`).
+Alle Backend-Parameter sind per Env konfigurierbar (`YEET_CONVERSION_POOL`,
+`YEET_REWARD_RESERVE`, `YEET_TAPER_THRESHOLD_PCT`, `YEET_TAPER_FACTOR`); der effektive
+Pool ist zusätzlich auf die On-Chain-Reserve gedeckelt, damit Gebühren-Recycling nie mehr
+zusagt, als der Contract minten kann.
+
+### Testnet-Phase und Mainnet-Umstellung
+
+| Phase | Chain | Was gilt |
+| --- | --- | --- |
+| **Jetzt: Testnet** | BNB Smart Chain Testnet (97) | Punktesystem produktiv; Umwandlungen zahlen **Test-YEET ohne Wert** aus; Minter = Deployer zulässig; Zweck: Ablauf, Freigabe, Not-Aus und Explorer-Anzeige unter Realbedingungen prüfen |
+| **Später: Mainnet** | BNB Smart Chain (56) | Voraussetzungen: externes Audit, Multisig als Eigentümer, Minter ≠ Deployer (Deploy-Skript erzwingt es), Tageslimit gesetzt; neue Contract-Adresse; Umwandlungen während der Umstellung pausiert; Test-YEET werden **nicht** migriert |
+
+⟦TODO(strategie): Werden während der Testnet-Phase angesammelte **Punkte** zum Mainnet-Start
+anerkannt (Umwandlung 1:1 in Mainnet-YEET) oder zurückgesetzt? Empfehlung: anerkennen — die
+Punkte sind der Anspruch, die Test-YEET nur der Testlauf; vor Start in AGB und Changelog festlegen.⟧
 
 ### Offene Punkte (nicht Teil dieses Whitepapers)
 
-- Smart Contract: `contracts/src/YeetToken.sol` bildet die 21-Mrd.-Obergrenze und die Tranchen ab (Tests grün); Vesting-Verträge für Developer/Team **fehlen noch**. TODO(strategie): Alternativ könnte die 75 %-Tranche beim Deploy an eine Multisig vorgemintet und per Transfer ausgezahlt werden — dann wäre „kein Minting nach Deploy" wörtlich wahr, dafür läge der gesamte Pool als Hot-Bestand in einer Wallet.
+- Smart Contract: `YeetToken` ist fertig (Minter-Rolle, Tageslimit, Not-Aus, 54 Tests), **externes Audit und Multisig-Übergabe stehen aus**; Vesting-Verträge für Developer/Team **fehlen noch** (die 25 % liegen nach dem Deploy ungesperrt beim Eigentümer). Entschieden: Rewards werden gemintet (nicht vorgemintet) — es gibt keinen Hot-Bestand des Pools in einer Wallet.
 - Rechtliche MiCA-Prüfung + NCA-Notifizierung; Einstufung als Utility-Token ist **angestrebt, nicht bestätigt** — kein „fully compliant"-Claim vor Rechtsgutachten.
-- Etwaige Auszahlungs-/Fee-Anpassungen (Points → YEET) noch nicht festgelegt.
+- Automatisierte Freigaberegeln für Umwandlungen (Betragsgrenzen, Kontoalter) als Ersatz der manuellen Freigabe; Höhe des Tageslimits für das Mainnet.
+- Umgang mit Testnet-Punkten beim Mainnet-Start (siehe oben).
 
 ## Anhang: Interessenkonflikte, anwendbares Recht, Beschwerdeweg
 
