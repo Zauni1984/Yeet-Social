@@ -15,6 +15,25 @@ on:
         options:
           - bsc_testnet
           - bsc_mainnet
+      scope:
+        description: 'What to deploy: token (points model, recommended) or all (token + payments + escrow + NFT)'
+        required: true
+        default: 'token'
+        type: choice
+        options:
+          - token
+          - all
+      minter_address:
+        description: 'Backend minter address (address of REWARDS_MINTER_PRIVKEY). Empty = deployer (testnet only).'
+        required: false
+        default: ''
+      daily_mint_cap:
+        description: 'Daily mint cap in whole YEET (0 = uncapped; mainnet requires a value)'
+        required: false
+        default: '1000000'
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
@@ -29,10 +48,10 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
-      - name: Install dependencies
+      - name: Install dependencies (pinned — the contracts are written for OZ 5.1.0; >= 5.2 needs evm_version cancun)
         run: |
-          git clone --depth 1 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
-          git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
+          git clone --depth 1 --branch v5.1.0 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
+          git clone --depth 1 --branch v1.9.6 https://github.com/foundry-rs/forge-std lib/forge-std
       - name: Build
         run: forge build
       - name: Test (must pass before deploy)
@@ -41,11 +60,17 @@ jobs:
         env:
           PRIVATE_KEY: ${{ secrets.BNB_PRIVATE_KEY }}
           BSCSCAN_API_KEY: ${{ secrets.BSCSCAN_API_KEY }}
+          MINTER_ADDRESS: ${{ github.event.inputs.minter_address }}
+          DAILY_MINT_CAP: ${{ github.event.inputs.daily_mint_cap }}
         run: |
-          forge script script/Deploy.s.sol \
+          if [ -z "$MINTER_ADDRESS" ]; then unset MINTER_ADDRESS; fi
+          SCRIPT=script/DeployToken.s.sol
+          if [ "${{ github.event.inputs.scope }}" = "all" ]; then SCRIPT=script/Deploy.s.sol; fi
+          echo "Deploying $SCRIPT to ${{ github.event.inputs.network }}"
+          forge script "$SCRIPT" \
             --rpc-url ${{ github.event.inputs.network }} \
-            --broadcast --verify -vvvv 2>&1 | tee deploy-output.txt
-          grep -E "YeetToken|YeetTipping|YeetNFT" deploy-output.txt | grep "0x" || true
+            --broadcast --verify -vv 2>&1 | tee deploy-output.txt
+          grep -E "YeetToken|YeetPayments|PaperWalletEscrow|YeetNFT|YEET_TOKEN_ADDRESS" deploy-output.txt | grep "0x" || true
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         if: always()

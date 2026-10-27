@@ -260,6 +260,15 @@
         "#Security",
         "#Audit"
       ]
+    },
+    {
+      "id": "2026-10-27-25-points-schema-testnet",
+      "text": "Fix: tips, pay-per-view unlocks and DM/live tips were failing with a database error on freshly set-up servers — the storage tables now match the points model everywhere. The app runs on the BNB Smart Chain TESTNET by default while we test the token: test YEET have no value and will not carry over to mainnet.",
+      "tags": [
+        "#Fix",
+        "#Points",
+        "#Testnet"
+      ]
     }
   ]
 }

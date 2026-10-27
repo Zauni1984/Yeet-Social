@@ -2,8 +2,13 @@
 
 **Status: ENTWURF** · Solidity 0.8.24, OpenZeppelin v5.1.0, Foundry.
 Quellen: `contracts/src/YeetPayments.sol`, `contracts/src/PaperWalletEscrow.sol`,
-Tests: `contracts/test/*.t.sol` — **`forge test`: 40/40 grün** (Stand 2026-09-30,
+Tests: `contracts/test/*.t.sol` — **`forge test`: 54/54 grün** (Stand 2026-10-27,
 Forge 1.8.4). **Externes Audit vor Deploy erforderlich (F8).**
+
+> **Stand 2026-10-27:** Für das Punktemodell wird **nur `YeetToken`** deployt
+> (zuerst Testnet) — siehe [10-testnet-contract.md](10-testnet-contract.md).
+> `YeetPayments` und `PaperWalletEscrow` bleiben Entwurf im Repo, bis
+> Zahlungen bewusst on-chain gehen.
 
 Diese Contracts setzen die Funktionsanpassungen **F1/F2** (Zahlungen strikt
 Wallet↔Wallet) und **F3** (Paper Wallets als On-Chain-Escrow) aus
@@ -126,12 +131,17 @@ neue Signatur erzeugen. → Test `test_FrontRunWithSwappedRecipientReverts`.
 
 ## 5. Deploy-Reihenfolge
 
-1. `YeetToken` (existiert) — Adresse fix.
-2. `YeetPayments(token, platformWallet, owner)`.
-3. `PaperWalletEscrow(token, platformWallet, owner, maxVoucherAmount, minValidity, maxValidity)`.
-4. Owner → Multisig übertragen (`transferOwnership` + `acceptOwnership`, Ownable2Step).
-5. `Deploy.s.sol` um beide erweitern. TODO(dev).
-6. Verifizieren (bscscan), Adressen in Backend-Env + Frontend eintragen.
+**Phase 1 (jetzt, Testnet):** nur `YeetToken(owner, minter, dailyCap)` über
+`script/DeployToken.s.sol` bzw. Workflow `scope: token` — Runbook in
+[10 §5](10-testnet-contract.md). Owner → Multisig vor Mainnet ([10 §6](10-testnet-contract.md)).
+
+**Phase 2 (nur bei On-Chain-Zahlungen, nach Freigabe):**
+
+1. `YeetPayments(token, platformWallet, owner)`.
+2. `PaperWalletEscrow(token, platformWallet, owner, maxVoucherAmount, minValidity, maxValidity)`.
+3. Owner → Multisig übertragen (`transferOwnership` + `acceptOwnership`, Ownable2Step).
+4. `script/Deploy.s.sol` (Workflow `scope: all`) enthält beide bereits.
+5. Verifizieren (bscscan), Adressen in Backend-Env + Frontend eintragen.
 
 ## 6a. Stand der lokalen Prüfung (2026-09-30)
 

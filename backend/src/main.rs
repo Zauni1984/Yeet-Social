@@ -327,8 +327,11 @@ async fn shutdown_signal() {
 }
 
 fn init_tracing() {
+    // The binary is `yeet-server`, so the app's tracing target is `yeet_server`
+    // (not the package name `backend`): a filter of `backend=info` silences
+    // every application log line, including DB errors. Accept both spellings.
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("backend=info,tower_http=warn,sqlx=warn"));
+        .unwrap_or_else(|_| EnvFilter::new("yeet_server=info,backend=info,tower_http=warn,sqlx=warn"));
     tracing_subscriber::registry()
         .with(filter)
         .with(tracing_subscriber::fmt::layer())

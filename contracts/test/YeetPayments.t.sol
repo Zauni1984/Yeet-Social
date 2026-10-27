@@ -18,7 +18,7 @@ contract YeetPaymentsTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        token = new YeetToken(owner);
+        token = new YeetToken(owner, owner, 0);
         pay   = new YeetPayments(address(token), platform, owner);
         token.transfer(alice, 1000 ether);
         vm.stopPrank();

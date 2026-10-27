@@ -25,7 +25,9 @@ fn non_empty(var: &str) -> Option<String> {
 
 /// GET /api/v1/config
 pub async fn get() -> Json<ApiResponse<PublicConfig>> {
-    let chain_id: u64 = std::env::var("YEET_CHAIN_ID").ok().and_then(|s| s.parse().ok()).unwrap_or(56);
+    // Default 97 (BSC Testnet) while the platform is in its testnet phase
+    // (docs/mica/10); the mainnet switch sets YEET_CHAIN_ID=56 explicitly.
+    let chain_id: u64 = std::env::var("YEET_CHAIN_ID").ok().and_then(|s| s.parse().ok()).unwrap_or(97);
     let yeet_token_address = non_empty("YEET_TOKEN_ADDRESS")
         .filter(|a| a != "0x0000000000000000000000000000000000000000");
     Json(ApiResponse::ok(PublicConfig {

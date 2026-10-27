@@ -83,8 +83,10 @@ pub(crate) async fn send_tip_tx(
         "INSERT INTO tips (from_user_id, to_user_id, post_id, amount, creator_amount, platform_cut, currency, tx_hash) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
     )
     .bind(from_id).bind(to_id).bind(post_id)
-    .bind(amount_val.to_string())
-    .bind(creator_amount.to_string()).bind(platform_cut.to_string())
+    // numeric(20,8) columns: bind as float8 (text binds fail the insert —
+    // "column amount is of type numeric but expression is of type text").
+    .bind(amount_val)
+    .bind(creator_amount).bind(platform_cut)
     .bind(currency).bind(tx_hash)
     .fetch_one(&mut **tx)
     .await

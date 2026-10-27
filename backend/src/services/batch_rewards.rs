@@ -62,7 +62,10 @@ type MintClient = SignerMiddleware<Provider<Http>, LocalWallet>;
 
 abigen!(
     YeetToken,
-    r#"[{"inputs":[{"name":"recipients","type":"address[]"},{"name":"amounts","type":"uint256[]"},{"name":"actions","type":"string[]"}],"name":"batchMintRewards","outputs":[],"stateMutability":"nonpayable","type":"function"}]"#
+    r#"[{"inputs":[{"name":"recipients","type":"address[]"},{"name":"amounts","type":"uint256[]"},{"name":"actions","type":"string[]"}],"name":"batchMintRewards","outputs":[],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[],"name":"minter","outputs":[{"name":"","type":"address"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"mintingPaused","outputs":[{"name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"dailyRemaining","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]"#
 );
 
 fn max_attempts() -> i32 {
@@ -160,14 +163,19 @@ async fn reconcile_inflight(state: &AppState, client: &Arc<MintClient>) {
 async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // Set up signer. Chain id comes from env so the backend and the
     // frontend (window.YEET_CHAIN, via /api/v1/config) stay in lock-step;
-    // default 56 (BSC Mainnet) matches the default RPC below.
+    // default 97 (BSC Testnet) during the testnet phase (docs/mica/10); the
+    // default RPC follows the chain id so the two can never disagree.
     let chain_id: u64 = std::env::var("YEET_CHAIN_ID")
-        .ok().and_then(|s| s.parse().ok()).unwrap_or(56);
+        .ok().and_then(|s| s.parse().ok()).unwrap_or(97);
     let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
         .with_chain_id(chain_id);
+    let default_rpc = if chain_id == 97 {
+        "https://data-seed-prebsc-1-s1.binance.org:8545/"
+    } else {
+        "https://bsc-dataseed.binance.org/"
+    };
     let provider = Provider::<Http>::try_from(
-        std::env::var("BSC_RPC_URL")
-            .unwrap_or_else(|_| "https://bsc-dataseed.binance.org/".into())
+        std::env::var("BSC_RPC_URL").unwrap_or_else(|_| default_rpc.into())
     )?;
     let client = Arc::new(SignerMiddleware::new(provider, wallet));
     let token_addr: Address = std::env::var("YEET_TOKEN_ADDRESS")?.parse()?;
@@ -194,6 +202,29 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         return Ok(());
     }
     info!("Minting {} reward records on chain {chain_id}...", rows.len());
+
+    // 1b. Contract guards (docs/mica/10): the token mints only for its
+    //     `minter`, never while paused, and at most `dailyMintCap` per UTC
+    //     day. Check up front so a wrong key or a paused contract holds the
+    //     queue (rows stay 'pending') instead of burning gas on reverts.
+    let our_addr = client.address();
+    match contract.minter().call().await {
+        Ok(m) if m == our_addr => {}
+        Ok(m) => {
+            tracing::error!("batch-rewards: REWARDS_MINTER_PRIVKEY is {our_addr:?} but the token's minter is {m:?} — holding {} payouts (owner must call setMinter)", rows.len());
+            return Ok(());
+        }
+        Err(e) => {
+            warn!("batch-rewards: cannot read minter(): {e} — holding payouts until the next run");
+            return Ok(());
+        }
+    }
+    if contract.minting_paused().call().await.unwrap_or(false) {
+        warn!("batch-rewards: minting is paused on the token — holding {} payouts", rows.len());
+        return Ok(());
+    }
+    // Daily cap: rows that do not fit today's remaining budget simply wait.
+    let mut budget: U256 = contract.daily_remaining().call().await.unwrap_or(U256::MAX);
 
     // 2. Build the call arrays in ONE pass so recipients/amounts/actions can
     //    never desync, and remember exactly which rows are in the tx.
@@ -228,8 +259,14 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
             continue;
         }
         let wei = (yeet * 1e18) as u128; // finite + positive, checked above
+        let wei = U256::from(wei);
+        if wei > budget {
+            info!("batch-rewards: reward {} ({yeet} YEET) exceeds today's remaining mint cap — waits for the next UTC day", r.id);
+            continue;
+        }
+        budget -= wei;
         recipients.push(addr);
-        amounts.push(U256::from(wei));
+        amounts.push(wei);
         actions.push(r.action.clone().unwrap_or_default());
         included_ids.push(r.id);
     }

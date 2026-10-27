@@ -49,7 +49,7 @@ services:
       DATABASE_URL: "postgres://yeet:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing in .env}@yeet-postgres:5432/yeet"
       REDIS_URL: "redis://yeet-redis:6379"
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET missing in .env}
-      RUST_LOG: ${RUST_LOG:-backend=info,tower_http=warn}
+      RUST_LOG: ${RUST_LOG:-yeet_server=info,tower_http=warn,sqlx=warn}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_USER: ${SMTP_USER:-}
