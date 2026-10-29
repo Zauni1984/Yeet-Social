@@ -6,8 +6,8 @@ Desktop), nach 24 Stunden weg oder permanent, optional 18+.
 ## Nutzerseite
 
 - Eigener Tab **AUDIO** im Feed. Oben eine Karte „Audio Stories → Aufnehmen".
-- Aufnahme-Dialog: großer Aufnahmeknopf, Timer (max. 180 s, stoppt
-  automatisch), Pegelanzeige, danach Vorschau-Player, optionaler Text
+- Aufnahme-Dialog: großer Aufnahmeknopf, Timer (max. **60 Minuten**, stoppt
+  automatisch; Bildschirm bleibt per Wake Lock an), Pegelanzeige, danach Vorschau-Player, optionaler Text
   (≤ 420 Zeichen), Wahl **Verschwindet in 24 h** / **Permanent**, Häkchen
   **18+** (nur sichtbar, wenn 18+-Inhalte in den Einstellungen aktiv sind),
   **Veröffentlichen**.
@@ -30,13 +30,15 @@ Desktop), nach 24 Stunden weg oder permanent, optional 18+.
 | --- | --- |
 | Recorder-Modul `YeetAudio` | `frontend/index.html` (Script-Block am Ende) |
 | Karten-Rendering | `renderMediaUrl()` (`kind === 'audio'` oder Audio-Endung) |
-| Upload | `POST /api/v1/uploads/post-media` — akzeptiert jetzt `audio/webm→.weba`, `audio/mp4|x-m4a|aac→.m4a`, `audio/mpeg→.mp3`, `audio/ogg|opus→.ogg`, `audio/wav→.wav`, max. 16 MB; MIME-Parameter (`;codecs=opus`) werden ignoriert |
+| Upload | `POST /api/v1/uploads/post-media` — akzeptiert jetzt `audio/webm→.weba`, `audio/mp4|x-m4a|aac→.m4a`, `audio/mpeg→.mp3`, `audio/ogg|opus→.ogg`, `audio/wav→.wav`, max. **80 MB** (Route-Body-Limit 96 MB, nginx 96M, `proxy_read_timeout 600s`); MIME-Parameter (`;codecs=opus`) werden ignoriert |
 | Post | `POST /api/v1/posts` mit `kind:"audio"`, `media_url` Pflicht, `content` darf leer sein |
 | Feed | `GET /api/v1/feed?kind=audio` (permanente Posts ohne 24-h-Grenze) |
 | Migration | `0046_post_kind_audio.sql` (`posts.kind`, Default `text`) |
 
 Aufnahmeformat: `audio/webm;codecs=opus` (Chrome/Firefox/Android), `audio/mp4`
-(Safari/iOS); die Endung im Upload richtet sich nach dem MIME-Typ, damit der
+(Safari/iOS), angefordert mit 64 kbit/s (≈ 29 MB je volle Stunde). Hochgeladene
+Dateien werden vor dem Upload clientseitig auf ≤ 60 min (Metadaten-Probe) und
+≤ 80 MB geprüft (`audio.tooLong` / `audio.tooLarge`, 42 Sprachen); die Endung im Upload richtet sich nach dem MIME-Typ, damit der
 Client Audio (`.weba`) und Video (`.webm`) an der URL unterscheiden kann.
 
 Punkte-Belohnung: wie bei allen Posts nur ab 120 Zeichen Text — eine reine

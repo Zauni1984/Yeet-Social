@@ -269,6 +269,14 @@
         "#Points",
         "#Testnet"
       ]
+    },
+    {
+      "id": "2026-10-29-26-audio-60-minutes",
+      "text": "Audio Stories can now be up to 60 minutes long (was 3 minutes) — recorded in the browser or uploaded as a file up to 80 MB. The screen stays awake while you record.",
+      "tags": [
+        "#Audio",
+        "#Feature"
+      ]
     }
   ]
 }
