@@ -277,6 +277,14 @@
         "#Audio",
         "#Feature"
       ]
+    },
+    {
+      "id": "2026-10-29-27-terms-section-1",
+      "text": "Terms of Service, section 1 corrected: tips, pay-per-view, promotions and paper wallets are paid with platform points, not on-chain. The only blockchain feature is the one-way conversion of points into YEET, paid out to your own wallet. No change to your rights or obligations.",
+      "tags": [
+        "#Legal",
+        "#Terms"
+      ]
     }
   ]
 }
