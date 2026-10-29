@@ -34194,16 +34194,18 @@ function showExternalLinkWarning(e,url){
     localStorage.setItem('yeetUser',JSON.stringify(user));
     if(wallet)localStorage.setItem('yeetWallet',wallet);
     _updateAuthUI(user,wallet);
-    // Refresh the gated UI so the user lands on the feed instead of the
-    // "please log in" placeholder.
-    if(typeof window.showGlobalFeed === 'function') window.showGlobalFeed();
-    else if(typeof window.loadFeed === 'function') window.loadFeed();
-    if(typeof window.refreshTokenBalance === 'function') window.refreshTokenBalance();
-    if(typeof window.refreshNavAvatar === 'function') window.refreshNavAvatar();
-    if(typeof window.loadTrendingTags === 'function') window.loadTrendingTags();
-    // Restore server-side settings (18+ visibility, age verification) that
-    // logout wiped from localStorage.
-    if(typeof window.syncSettingsFromServer === 'function') window.syncSettingsFromServer();
+    // Full reload after login (mirrors doLogout). Patching the feed,
+    // balance and avatar by hand left every other module — DMs,
+    // notifications, sidebars, websocket, points, landing page — in its
+    // logged-out state, so users had to press F5. The welcome toast and any
+    // follow-up step (email onboarding, pending redeem) are replayed on boot.
+    try{
+      sessionStorage.setItem('yeet_login_toast', JSON.stringify({u:(user&&user.username)||'', w:wallet||''}));
+      sessionStorage.removeItem('yeet_guest');
+    }catch(e){}
+    var p=new URLSearchParams(location.search); p.delete('_'); p.delete('verify');
+    var qs=p.toString();
+    setTimeout(function(){ location.replace(location.pathname+(qs?'?'+qs:'')+location.hash); },150);
   }
 
   function _updateAuthUI(user,wallet){
@@ -34343,7 +34345,7 @@ function showExternalLinkWarning(e,url){
     _setLoggedIn(tok,{username:addr.slice(0,6)+'...'+addr.slice(-4)},addr);
     window.closeAuthModal();
     _toast(window.t('auth.connected',{addr:addr.slice(0,6)+'...'+addr.slice(-4)}));
-    if(payload.needs_email===true)_showOnboarding(addr);
+    if(payload.needs_email===true){ try{ sessionStorage.setItem('yeet_onboard','1'); }catch(e){} _showOnboarding(addr); }
   }
   window.connectMetaMaskAuth = async function(){
     if(!window.ethereum){_showErr(window.t('toast.walletNotFound'));return}
@@ -34427,6 +34429,13 @@ function showExternalLinkWarning(e,url){
     if(tok&&user){
       _updateAuthUI(user,wallet);
       if(user.email_verified===false)_showVerifyBanner();
+      // Replay what the pre-reload login flow wanted to show (see _setLoggedIn).
+      try{
+        var lt=sessionStorage.getItem('yeet_login_toast');
+        if(lt){ sessionStorage.removeItem('yeet_login_toast'); var o=JSON.parse(lt)||{};
+          _toast(o.w ? window.t('auth.connected',{addr:o.w.slice(0,6)+'...'+o.w.slice(-4)}) : window.t('auth.welcomeBackUser',{u:o.u||user.username||''})); }
+        if(sessionStorage.getItem('yeet_onboard')==='1'){ sessionStorage.removeItem('yeet_onboard'); _showOnboarding(wallet); }
+      }catch(e){}
     }
     _handleVerifyUrlParam();
     // Close modal on backdrop click
@@ -34889,6 +34898,15 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
     } catch(e){ /* ignore */ }
   }
   autoRedeemFromUrl();
+
+  // A code stashed before login is redeemed on the post-login reload
+  // (the `storage` event below only fires in OTHER tabs).
+  (function(){
+    try{
+      var code = sessionStorage.getItem('yeet_pending_redeem');
+      if(code && authJwt()){ sessionStorage.removeItem('yeet_pending_redeem'); var go=function(){ openRedeemModal(code); }; if(document.readyState==='complete') setTimeout(go,300); else window.addEventListener('load', function(){ setTimeout(go,300); }); }
+    }catch(e){}
+  })();
 
   // After successful login, fire any pending redeem
   window.addEventListener('storage', function(ev){
