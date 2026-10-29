@@ -294,6 +294,14 @@
         "#Landing",
         "#Points"
       ]
+    },
+    {
+      "id": "2026-10-29-29-login-reload",
+      "text": "Fix: after logging in, the page now refreshes itself once so everything (feed, messages, notifications, points, sidebars) shows your signed-in state right away — no more manual reload needed.",
+      "tags": [
+        "#Fix",
+        "#Login"
+      ]
     }
   ]
 }
