@@ -128,7 +128,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/age-badge",                 patch(api::age_verification::set_badge_visibility))
         .route("/api/v1/users/me/avatar",  post(api::uploads::upload_avatar).layer(DefaultBodyLimit::max(12 * 1024 * 1024)))
         .route("/api/v1/users/me/cover",   post(api::uploads::upload_cover).layer(DefaultBodyLimit::max(12 * 1024 * 1024)))
-        .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media).layer(DefaultBodyLimit::max(40 * 1024 * 1024)))
+        .route("/api/v1/uploads/post-media", post(api::uploads::upload_post_media).layer(DefaultBodyLimit::max(96 * 1024 * 1024)))
         // Live broadcasts
         .route("/api/v1/lives",              post(api::lives::create_live))
         .route("/api/v1/lives/active",       get(api::lives::list_active))

@@ -124,9 +124,10 @@ pub async fn upload_cover(
 /// background services purges any file whose URL no longer appears
 /// in the posts table (matching the 24h ephemeral retention rule).
 const POST_VIDEO_MAX_BYTES: usize = 32 * 1024 * 1024; // 32 MB
-/// Audio stories: 3 min of Opus/AAC is ~3–6 MB; 16 MB leaves headroom for
-/// browsers that only produce PCM-ish containers.
-const POST_AUDIO_MAX_BYTES: usize = 16 * 1024 * 1024; // 16 MB
+/// Audio stories: up to 60 minutes. The recorder asks for 64 kbit/s
+/// Opus/AAC (~29 MB per hour); 80 MB also covers a 60-minute MP3 at
+/// 160 kbit/s picked from the file dialog. Route body limit: 96 MB.
+const POST_AUDIO_MAX_BYTES: usize = 80 * 1024 * 1024; // 80 MB
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum MediaKind { Image, Video, Audio }
