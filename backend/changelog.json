@@ -285,6 +285,15 @@
         "#Legal",
         "#Terms"
       ]
+    },
+    {
+      "id": "2026-10-29-28-landing-page",
+      "text": "New start page: visitors who are not logged in now see what Yeet Social is, can register or log in right away, or explore as a guest. It also states clearly that the on-chain YEET token is not available yet and comes in a later version — until then everything runs on platform points. The same note now appears in the points conversion dialog and in the Terms.",
+      "tags": [
+        "#Feature",
+        "#Landing",
+        "#Points"
+      ]
     }
   ]
-}
+}\n
