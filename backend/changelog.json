@@ -302,6 +302,14 @@
         "#Fix",
         "#Login"
       ]
+    },
+    {
+      "id": "2026-11-01-30-empty-state-login-hint",
+      "text": "Fix: the 18+ tab (and any empty feed) no longer shows a \"log in / register\" hint while you are signed in. If your age verification is still missing, the 18+ tab now says so and offers to start it.",
+      "tags": [
+        "#Fix",
+        "#18plus"
+      ]
     }
   ]
 }
