@@ -294,6 +294,22 @@
         "#Landing",
         "#Points"
       ]
+    },
+    {
+      "id": "2026-10-29-29-login-reload",
+      "text": "Fix: after logging in, the page now refreshes itself once so everything (feed, messages, notifications, points, sidebars) shows your signed-in state right away — no more manual reload needed.",
+      "tags": [
+        "#Fix",
+        "#Login"
+      ]
+    },
+    {
+      "id": "2026-11-01-30-empty-state-login-hint",
+      "text": "Fix: the 18+ tab (and any empty feed) no longer shows a \"log in / register\" hint while you are signed in. If your age verification is still missing, the 18+ tab now says so and offers to start it.",
+      "tags": [
+        "#Fix",
+        "#18plus"
+      ]
     }
   ]
 }
