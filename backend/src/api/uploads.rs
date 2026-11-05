@@ -31,6 +31,25 @@ async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid
         .ok_or_else(|| AppError::NotFound("User not found".into()))
 }
 
+/// Audit I-M5: the declared type (Content-Type / file name) must match the
+/// file's own signature, so a renamed HTML/SVG/script never lands under
+/// /uploads with an image or media extension.
+fn sniff_matches(ext: &str, b: &[u8]) -> bool {
+    let at = |i: usize, s: &[u8]| b.len() >= i + s.len() && &b[i..i + s.len()] == s;
+    match ext {
+        "jpg"  => at(0, &[0xFF, 0xD8, 0xFF]),
+        "png"  => at(0, &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]),
+        "gif"  => at(0, b"GIF87a") || at(0, b"GIF89a"),
+        "webp" => at(0, b"RIFF") && at(8, b"WEBP"),
+        "mp4" | "mov" | "m4a" => at(4, b"ftyp"),
+        "webm" | "weba"       => at(0, &[0x1A, 0x45, 0xDF, 0xA3]),
+        "ogg"  => at(0, b"OggS"),
+        "wav"  => at(0, b"RIFF") && at(8, b"WAVE"),
+        "mp3"  => at(0, b"ID3") || (b.len() >= 2 && b[0] == 0xFF && (b[1] & 0xE0) == 0xE0),
+        _ => false,
+    }
+}
+
 /// Accept only common image types. Returns the file extension to use on disk.
 fn ext_for(ct: Option<&str>, filename: Option<&str>) -> Option<&'static str> {
     let ct = ct.unwrap_or("").to_ascii_lowercase();
@@ -75,6 +94,9 @@ async fn save_image(
     }
     if bytes.is_empty() {
         return Err(AppError::Validation("Empty file".into()));
+    }
+    if !sniff_matches(ext, &bytes) {
+        return Err(AppError::Validation("File content does not match its image type".into()));
     }
 
     let dir = uploads_dir().join(subdir);
@@ -201,6 +223,9 @@ pub async fn upload_post_media(
             "{label} too large (max {} MB)", cap / (1024 * 1024)
         )));
     }
+    if !sniff_matches(ext, &bytes) {
+        return Err(AppError::Validation(format!("{label} content does not match its declared type")));
+    }
 
     let dir = uploads_dir().join("posts-media");
     tokio::fs::create_dir_all(&dir).await
@@ -216,4 +241,26 @@ pub async fn upload_post_media(
 
     let url = format!("/uploads/posts-media/{filename}");
     Ok(Json(ApiResponse::ok(UploadResponse { url })))
+}
+
+#[cfg(test)]
+mod sniff_tests {
+    use super::sniff_matches;
+    #[test]
+    fn signatures() {
+        assert!(sniff_matches("png", &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0]));
+        assert!(sniff_matches("jpg", &[0xFF, 0xD8, 0xFF, 0xE0]));
+        assert!(sniff_matches("webp", b"RIFF\x00\x00\x00\x00WEBPVP8 "));
+        assert!(sniff_matches("mp4", b"\x00\x00\x00\x18ftypisom"));
+        assert!(sniff_matches("weba", &[0x1A, 0x45, 0xDF, 0xA3, 0x01]));
+        assert!(sniff_matches("ogg", b"OggS\x00\x02"));
+        assert!(sniff_matches("mp3", b"ID3\x04"));
+        assert!(sniff_matches("mp3", &[0xFF, 0xFB, 0x90]));
+        assert!(sniff_matches("wav", b"RIFF\x24\x08\x00\x00WAVEfmt "));
+        // A renamed HTML/SVG/script never passes.
+        assert!(!sniff_matches("png", b"<html><script>"));
+        assert!(!sniff_matches("jpg", b"<svg xmlns"));
+        assert!(!sniff_matches("mp4", b"GIF89a"));
+        assert!(!sniff_matches("gif", b""));
+    }
 }

@@ -84,7 +84,11 @@ pub async fn presence_query(
              ON cm2.conversation_id = cm1.conversation_id
           WHERE cm1.user_id = $1
             AND cm2.user_id <> $1
-            AND cm2.user_id = ANY($2)"
+            AND cm2.user_id = ANY($2)
+            -- audit MSG-M6: a block in either direction hides presence
+            AND NOT EXISTS (SELECT 1 FROM user_blocks b
+                             WHERE (b.blocker_id = $1 AND b.blocked_id = cm2.user_id)
+                                OR (b.blocker_id = cm2.user_id AND b.blocked_id = $1))"
     )
     .bind(me).bind(&req.user_ids)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
@@ -327,9 +331,13 @@ async fn handle_typing(
     .fetch_optional(state.db.pool()).await.ok().flatten();
     if !is_member.unwrap_or(false) { return; }
 
+    // audit MSG-M7: never fan typing out across a block (either direction).
     let others: Vec<Uuid> = sqlx::query_scalar(
-        "SELECT user_id FROM conversation_members
-          WHERE conversation_id = $1 AND user_id <> $2"
+        "SELECT cm.user_id FROM conversation_members cm
+          WHERE cm.conversation_id = $1 AND cm.user_id <> $2
+            AND NOT EXISTS (SELECT 1 FROM user_blocks b
+                             WHERE (b.blocker_id = $2 AND b.blocked_id = cm.user_id)
+                                OR (b.blocker_id = cm.user_id AND b.blocked_id = $2))"
     )
     .bind(conversation_id).bind(user_id)
     .fetch_all(state.db.pool()).await.unwrap_or_default();

@@ -4,10 +4,10 @@
 //! BSC blockchain integration, JWT wallet auth, PostgreSQL, Redis
 
 use std::{net::SocketAddr, time::Duration};
-use axum::{extract::{DefaultBodyLimit, State}, http::StatusCode, response::IntoResponse, routing::{get, post, delete, patch}, Json, Router};
+use axum::{extract::{DefaultBodyLimit, State}, http::{header, HeaderName, HeaderValue, Method, StatusCode}, response::IntoResponse, routing::{get, post, delete, patch}, Json, Router};
 use serde_json::json;
 use tower::ServiceBuilder;
-use tower_http::{cors::{Any, CorsLayer}, services::ServeDir, timeout::TimeoutLayer, trace::TraceLayer};
+use tower_http::{cors::{AllowOrigin, CorsLayer}, services::ServeDir, timeout::TimeoutLayer, trace::TraceLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
@@ -58,10 +58,20 @@ async fn main() {
 }
 
 fn build_router(state: AppState) -> Router {
+    // CORS (audit FE-M4 / I-M6): the app is same-origin (nginx serves the
+    // frontend and the API), so only the public origin(s) are allowed.
+    // `CORS_ORIGINS` (comma-separated) overrides, e.g. for local dev.
+    let origins: Vec<HeaderValue> = std::env::var("CORS_ORIGINS")
+        .unwrap_or_else(|_| "https://justyeet.it,https://www.justyeet.it".into())
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| s.parse::<HeaderValue>().ok())
+        .collect();
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any)
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE, Method::OPTIONS])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, HeaderName::from_static("x-admin-secret")])
         .max_age(Duration::from_secs(86400));
 
     let uploads_dir = api::uploads::uploads_dir();

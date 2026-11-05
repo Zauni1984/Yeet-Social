@@ -310,6 +310,14 @@
         "#Fix",
         "#18plus"
       ]
+    },
+    {
+      "id": "2026-11-05-31-hardening-round-2",
+      "text": "Security round 2: uploaded images, videos and audio are now checked against their real file signature, the API only answers browser requests from justyeet.it, encrypted-chat key bundles are rate-limited, and blocked users no longer see each other's online or typing status. While we test on the BNB testnet, the points conversion dialog reminds you that test YEET have no value.",
+      "tags": [
+        "#Security",
+        "#Testnet"
+      ]
     }
   ]
 }
