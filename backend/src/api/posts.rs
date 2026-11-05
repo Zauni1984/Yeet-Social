@@ -79,7 +79,7 @@ pub async fn create_post(
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
     if let Some(m) = req.media_url.as_deref() { validate_media_url(m)?; }
     for f in [req.ppv_price_yeet, req.nft_price_yeet].into_iter().flatten() {
-        if !f.is_finite() || f < 0.0 || f > 1e9 {
+        if !f.is_finite() || !(0.0..=1e9).contains(&f) {
             return Err(AppError::Validation("price must be a finite non-negative number".into()));
         }
     }

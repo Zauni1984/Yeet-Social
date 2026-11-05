@@ -55,7 +55,7 @@ pub async fn get_nonce(
     }
     let nonce = auth::generate_nonce();
     let message = auth::sign_message(&nonce);
-    state.cache.set_nonce(&address, &nonce, Duration::from_secs(600)).await
+    state.cache.set_nonce("login", &address, &nonce, Duration::from_secs(600)).await
         .map_err(|e| AppError::Cache(e.to_string()))?;
     Ok(Json(ApiResponse::ok(NonceResponse { nonce, message })))
 }
@@ -70,7 +70,7 @@ pub async fn verify_signature(
     if !is_valid_address(&address) {
         return Err(AppError::Unauthorised("Invalid wallet address".into()));
     }
-    let stored_nonce = state.cache.consume_nonce(&address).await
+    let stored_nonce = state.cache.consume_nonce("login", &address).await
         .map_err(|e| AppError::Cache(e.to_string()))?
         .ok_or_else(|| AppError::Unauthorised("Nonce not found or expired".into()))?;
     if stored_nonce != req.nonce {
