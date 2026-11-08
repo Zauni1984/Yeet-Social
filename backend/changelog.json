@@ -318,6 +318,14 @@
         "#Security",
         "#Testnet"
       ]
+    },
+    {
+      "id": "2026-11-08-32-sessions",
+      "text": "Sessions: signing out on one device no longer signs you out everywhere (use Sign out everywhere else in Settings for that). Revoking a device in Devices & sessions now takes effect immediately, and the list marks the device you are on exactly.",
+      "tags": [
+        "#Security",
+        "#Sessions"
+      ]
     }
   ]
 }

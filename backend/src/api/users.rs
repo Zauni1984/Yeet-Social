@@ -285,6 +285,11 @@ pub async fn delete_my_account(
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     let user_id = resolve_user_id(&state, &auth.address).await?;
+    // Audit A-M1: every access token of this account dies with it.
+    let _ = crate::api::sessions::revoke_all_for_user(
+        state.db.pool(), &state.cache, user_id, state.jwt.refresh_ttl_secs,
+    ).await;
+    let _ = state.cache.revoke_subject(&auth.address, std::time::Duration::from_secs(state.jwt.access_ttl_secs)).await;
     sqlx::query("DELETE FROM users WHERE id = $1")
         .bind(user_id)
         .execute(state.db.pool()).await.map_err(AppError::Database)?;

@@ -56,9 +56,9 @@ pub async fn list_mine(
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<Vec<SessionRow>>>> {
     let me = caller_user_id(&state, &auth).await?;
-    let rows: Vec<(Uuid, Option<String>, Option<String>, DateTime<Utc>, DateTime<Utc>, String)> =
+    let rows: Vec<(Uuid, Option<String>, Option<String>, DateTime<Utc>, DateTime<Utc>, Uuid)> =
         sqlx::query_as(
-            "SELECT id, device_label, ip_country, created_at, last_seen_at, jti
+            "SELECT id, device_label, ip_country, created_at, last_seen_at, family_id
                FROM user_sessions
               WHERE user_id = $1
                 AND revoked_at IS NULL
@@ -69,16 +69,15 @@ pub async fn list_mine(
         .bind(me)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
-    // We don't actually know the *refresh* JTI on the current request
-    // (the AuthUser carries the *access* JTI). Best-effort: mark the
-    // most-recently-touched session as current. Good enough for the UX
-    // and avoids surfacing the access JTI in the list response.
+    // The access token carries its session family (`sid`, audit A-M8), so
+    // "this device" is exact. Tokens from before the claim existed fall
+    // back to the most recently touched session.
     let mut out: Vec<SessionRow> = rows.into_iter().map(|r| SessionRow {
         id: r.0, device_label: r.1, ip_country: r.2,
-        created_at: r.3, last_seen_at: r.4, is_current: false,
+        created_at: r.3, last_seen_at: r.4, is_current: auth.sid == Some(r.5),
     }).collect();
-    if let Some(first) = out.first_mut() {
-        first.is_current = true;
+    if auth.sid.is_none() {
+        if let Some(first) = out.first_mut() { first.is_current = true; }
     }
     Ok(Json(ApiResponse::ok(out)))
 }
@@ -91,21 +90,23 @@ pub async fn revoke_one(
     let me = caller_user_id(&state, &auth).await?;
     // UPDATE … RETURNING in one shot: ensures the SELECT-vs-UPDATE race
     // can't leave the row revoked but the JTI un-blacklisted.
-    let jti: Option<String> = sqlx::query_scalar(
+    let row: Option<(String, Uuid)> = sqlx::query_as(
         "UPDATE user_sessions
             SET revoked_at = NOW(), revoked_reason = 'user_revoke'
           WHERE id = $1 AND user_id = $2
             AND revoked_at IS NULL
-         RETURNING jti"
+         RETURNING jti, family_id"
     )
     .bind(session_id).bind(me)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let jti = jti.ok_or_else(|| AppError::NotFound("Session not found".into()))?;
+    let (jti, family_id) = row.ok_or_else(|| AppError::NotFound("Session not found".into()))?;
 
     // Belt-and-braces: blacklist the refresh JTI in Redis so reissue
     // can't sneak through during the small window between DB update
-    // and the next refresh attempt.
+    // and the next refresh attempt — and revoke the family so the live
+    // access tokens of that device die now, not at expiry (A-M1).
     blacklist_session_jti(&state.cache, &jti, state.jwt.refresh_ttl_secs).await;
+    revoke_family_now(&state.cache, family_id, state.jwt.access_ttl_secs).await;
     Ok(Json(ApiResponse::ok("revoked")))
 }
 
@@ -114,17 +115,21 @@ pub async fn revoke_all(
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
     let me = caller_user_id(&state, &auth).await?;
-    let jtis: Vec<String> = sqlx::query_scalar(
+    // "Sign out everywhere else": the caller's own session family stays
+    // (audit A-M8); legacy tokens without `sid` revoke everything.
+    let keep = auth.sid.unwrap_or(Uuid::nil());
+    let rows: Vec<(String, Uuid)> = sqlx::query_as(
         "UPDATE user_sessions
             SET revoked_at = NOW(), revoked_reason = 'user_revoke_all'
-          WHERE user_id = $1 AND revoked_at IS NULL
-         RETURNING jti"
+          WHERE user_id = $1 AND revoked_at IS NULL AND family_id <> $2
+         RETURNING jti, family_id"
     )
-    .bind(me)
+    .bind(me).bind(keep)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
-    for jti in jtis {
+    for (jti, family_id) in rows {
         blacklist_session_jti(&state.cache, &jti, state.jwt.refresh_ttl_secs).await;
+        revoke_family_now(&state.cache, family_id, state.jwt.access_ttl_secs).await;
     }
     Ok(Json(ApiResponse::ok("revoked_all")))
 }
@@ -136,10 +141,10 @@ pub async fn record_login(
     pool: &PgPool,
     user_id: Uuid,
     refresh_jti: &str,
+    family_id: Uuid,
     device_label: Option<&str>,
     ip_country: Option<&str>,
 ) -> Result<(), sqlx::Error> {
-    let family_id = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO user_sessions
             (user_id, jti, family_id, device_label, ip_country)
@@ -233,23 +238,44 @@ pub async fn revoke_family(
     family_id: Uuid,
     refresh_ttl: u64,
 ) -> Result<(), sqlx::Error> {
+    revoke_family_with_reason(pool, cache, family_id, refresh_ttl, "refresh_reuse").await
+}
+
+/// Revoke one session family (DB rows + Redis) with the given reason.
+/// Used by logout ("this device only") and by reuse detection.
+pub async fn revoke_family_with_reason(
+    pool: &PgPool,
+    cache: &Cache,
+    family_id: Uuid,
+    refresh_ttl: u64,
+    reason: &str,
+) -> Result<(), sqlx::Error> {
     let jtis: Vec<String> = sqlx::query_scalar(
         "UPDATE user_sessions
-            SET revoked_at = NOW(), revoked_reason = 'refresh_reuse'
+            SET revoked_at = NOW(), revoked_reason = $2
           WHERE family_id = $1 AND revoked_at IS NULL
          RETURNING jti"
     )
-    .bind(family_id)
+    .bind(family_id).bind(reason)
     .fetch_all(pool).await?;
 
     for jti in jtis {
         blacklist_session_jti(cache, &jti, refresh_ttl).await;
     }
+    // Access tokens of the family die now (A-M1); the DB above only
+    // protects refreshes. TTL = refresh TTL covers both lifetimes.
+    revoke_family_now(cache, family_id, refresh_ttl).await;
     Ok(())
 }
 
 pub async fn blacklist_session_jti(cache: &Cache, jti: &str, ttl_secs: u64) {
     let _ = cache.blacklist_token(jti, Duration::from_secs(ttl_secs)).await;
+}
+
+/// Mark a session family revoked in Redis so the auth middleware rejects
+/// its access tokens immediately. Best-effort like the blacklist.
+pub async fn revoke_family_now(cache: &Cache, family_id: Uuid, ttl_secs: u64) {
+    let _ = cache.revoke_family(&family_id.to_string(), Duration::from_secs(ttl_secs)).await;
 }
 
 /// Revoke every active refresh session for a user and blacklist each
@@ -261,16 +287,17 @@ pub async fn revoke_all_for_user(
     user_id: Uuid,
     refresh_ttl: u64,
 ) -> Result<(), sqlx::Error> {
-    let jtis: Vec<String> = sqlx::query_scalar(
+    let rows: Vec<(String, Uuid)> = sqlx::query_as(
         "UPDATE user_sessions
             SET revoked_at = NOW(), revoked_reason = 'logout'
           WHERE user_id = $1 AND revoked_at IS NULL
-         RETURNING jti"
+         RETURNING jti, family_id"
     )
     .bind(user_id)
     .fetch_all(pool).await?;
-    for jti in jtis {
+    for (jti, family_id) in rows {
         blacklist_session_jti(cache, &jti, refresh_ttl).await;
+        revoke_family_now(cache, family_id, refresh_ttl).await;
     }
     Ok(())
 }
