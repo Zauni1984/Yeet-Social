@@ -326,6 +326,13 @@
         "#Security",
         "#Sessions"
       ]
+    },
+    {
+      "id": "2026-11-08-33-sri-csp",
+      "text": "Delivery hardening: the few third-party scripts we load (PDF export, QR codes, live video) are now pinned by checksum so a tampered CDN file is refused, the live-video library finally loads (its old address was dead), and a content security policy runs in report-only mode to prepare enforcement.",
+      "tags": [
+        "#Security"
+      ]
     }
   ]
 }
