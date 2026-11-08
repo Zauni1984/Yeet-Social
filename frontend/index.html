@@ -33758,7 +33758,9 @@ async function _attachLive(tok){
         await room.localParticipant.setMicrophoneEnabled(true);
         await room.localParticipant.setCameraEnabled(true);
         // Show the host their own preview so they can frame the shot.
-        var cam = room.localParticipant.getTrack(lk.Track.Source.Camera);
+        // livekit-client 2.x renamed getTrack → getTrackPublication.
+        var lp = room.localParticipant;
+        var cam = lp.getTrackPublication ? lp.getTrackPublication(lk.Track.Source.Camera) : lp.getTrack(lk.Track.Source.Camera);
         if(cam && cam.track){
           var preview = cam.track.attach();
           preview.muted = true; preview.autoplay = true; preview.playsInline = true;
@@ -34733,12 +34735,15 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 </script>
 
 <!-- Paper-wallet PDF + QR libs (loaded async; UI gracefully waits) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" integrity="sha384-mZT2gIty7ZDdOGkxfP6joZcYdMW1Jvj9dRlfpTmaJAKKXTqzygtB22k7FLe+KZC1" crossorigin="anonymous" defer></script>
 <!-- LiveKit client (WebRTC). Royalty-free codecs (VP8/VP9/Opus). Loaded
      lazily so the rest of the app boots without it; openLiveViewer
      waits for window.LivekitClient before connecting. -->
-<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.6.4/dist/livekit-client.umd.min.js" defer></script>
+<!-- livekit-client 2.6.4 never existed on the CDN (404), so the Live
+     feature could not connect. 2.23.0 is pinned by SRI; the plain .umd.js is
+     used because jsDelivr's generated .min.js is not SRI-stable. -->
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.23.0/dist/livekit-client.umd.js" integrity="sha384-HkA7rQNo8H04l1p4zoXX1Cy+h9YoYp8LvKt4vfMFhv4KFk07UkrNwIUnyBum8Pw6" crossorigin="anonymous" defer></script>
 
 <script>
 // ---------- Paper Wallet (custodial claim-tickets) ----------
