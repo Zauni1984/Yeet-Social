@@ -189,4 +189,4 @@ Voraussetzungen (Checkliste [04](04-compliance-checkliste.md) B1/F8, keine davon
 - Vesting Dev/Team (Teil J) als separater Vertrag oder Safe-Policy vor Mainnet.
 - Tages-Cap und Freigabe-Regeln (automatische Freigabe kleiner Beträge?) sind Strategie-Fragen
   (`TODO(strategie)` in `api/points.rs`).
-- UI-Hinweis „Testnet — kein Wert" im Umtausch-Dialog, solange `chain_id == 97`.
+- ~~UI-Hinweis „Testnet — kein Wert" im Umtausch-Dialog~~ erledigt (5. Nov. 2026, `convert.testnet`, 42 Sprachen).

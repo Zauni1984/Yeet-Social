@@ -19,16 +19,19 @@ impl Cache {
         Ok(())
     }
 
-    pub async fn set_nonce(&self, address: &str, nonce: &str, ttl: Duration) -> Result<()> {
+    /// `scope` separates the login challenge from the wallet-link challenge
+    /// (audit A-M6): a nonce issued for one flow can never be consumed by
+    /// the other.
+    pub async fn set_nonce(&self, scope: &str, address: &str, nonce: &str, ttl: Duration) -> Result<()> {
         let mut c = self.conn.clone();
-        c.set_ex::<_, _, ()>(format!("nonce:{}", address.to_lowercase()), nonce, ttl.as_secs())
+        c.set_ex::<_, _, ()>(format!("nonce:{scope}:{}", address.to_lowercase()), nonce, ttl.as_secs())
             .await.context("Failed to set nonce")?;
         Ok(())
     }
 
-    pub async fn consume_nonce(&self, address: &str) -> Result<Option<String>> {
+    pub async fn consume_nonce(&self, scope: &str, address: &str) -> Result<Option<String>> {
         let mut c = self.conn.clone();
-        let v: Option<String> = c.get_del(format!("nonce:{}", address.to_lowercase()))
+        let v: Option<String> = c.get_del(format!("nonce:{scope}:{}", address.to_lowercase()))
             .await.context("Failed to consume nonce")?;
         Ok(v)
     }

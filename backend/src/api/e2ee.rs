@@ -388,10 +388,17 @@ pub struct BundlesResponse {
 /// session until they provision.
 pub async fn get_prekey_bundles(
     State(state): State<AppState>,
-    _auth: AuthUser,
+    auth: AuthUser,
     Path(address): Path<String>,
 ) -> AppResult<Json<ApiResponse<BundlesResponse>>> {
     let id = resolve_user(&state, &address).await?;
+    // Audit MSG-M3: every fetch burns one one-time prekey per device, so a
+    // caller may fetch bundles for one target at most 10×/hour — enough to
+    // start sessions with every device, not enough to drain the pool.
+    let principal = format!("{}:{}", auth.address.to_lowercase(), id);
+    if !crate::services::rate_limit::check_one_window(&state.cache, "e2ee_bundles", &principal, 3600, 10).await {
+        return Err(AppError::RateLimited);
+    }
 
     let identity_key: Option<String> = sqlx::query_scalar(
         "SELECT e2ee_public_key FROM users WHERE id = $1"
