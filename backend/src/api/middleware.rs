@@ -8,6 +8,9 @@ use crate::{AppError, AppResult, AppState, services::auth::verify_access_token};
 /// Authenticated user extracted from JWT Bearer token.
 #[derive(Debug, Clone)]
 pub struct AuthUser {
+    /// Session family id from the token's `sid` claim (None for tokens
+    /// minted before the claim existed).
+    pub sid: Option<uuid::Uuid>,
     pub address: String,
     pub jti: String,
 }
@@ -30,18 +33,19 @@ impl FromRequestParts<AppState> for AuthUser {
         let claims = verify_access_token(token, &state.jwt)
             .map_err(|e| AppError::Unauthorised(e.to_string()))?;
 
-        // Check token blacklist (logout / revoked session). Fail closed: if
-        // Redis is unreachable we cannot prove the token was not revoked.
-        match state.cache.is_blacklisted(&claims.jti).await {
+        // Revocation (logout / revoked session / deleted account). Fail
+        // closed: if Redis is unreachable we cannot prove the token is live.
+        let sid = claims.sid.as_deref().and_then(|s| uuid::Uuid::parse_str(s).ok());
+        match state.cache.is_revoked(&claims.jti, claims.sid.as_deref(), &claims.sub).await {
             Ok(false) => {}
             Ok(true) => return Err(AppError::Unauthorised("Token has been revoked".into())),
             Err(e) => {
-                tracing::error!("auth: blacklist lookup failed: {e}");
+                tracing::error!("auth: revocation lookup failed: {e}");
                 return Err(AppError::Cache("auth temporarily unavailable".into()));
             }
         }
 
-        Ok(AuthUser { address: claims.sub, jti: claims.jti })
+        Ok(AuthUser { sid, address: claims.sub, jti: claims.jti })
     }
 }
 

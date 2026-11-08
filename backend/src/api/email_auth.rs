@@ -69,6 +69,16 @@ fn ct_eq(a: &[u8], b: &[u8]) -> bool {
 /// Hash a new password with Argon2id. Returns a self-contained PHC string
 /// (algorithm, parameters and a random per-password salt are all embedded), so
 /// the separate `password_salt` column is not needed for new accounts.
+/// A real Argon2 PHC string nobody can log in with; used to equalise the
+/// timing of "unknown e-mail" and "wrong password" (A-M4).
+fn dummy_phc() -> &'static str {
+    static DUMMY: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    DUMMY.get_or_init(|| {
+        hash_password_argon2(&format!("yeet-dummy-{}", Uuid::new_v4()))
+            .unwrap_or_default()
+    })
+}
+
 fn hash_password_argon2(password: &str) -> AppResult<String> {
     use argon2::{Argon2, PasswordHasher, password_hash::{SaltString, rand_core::OsRng}};
     let salt = SaltString::generate(&mut OsRng);
@@ -189,10 +199,11 @@ pub async fn register(
     issue_and_send_verification(&state, user_id, &email_lower).await?;
 
     let subject = format!("email:{}", user_id);
-    let (access_token, refresh_token) = auth::issue_token_pair(&subject, &state.jwt)
+    let family_id = Uuid::new_v4();
+    let (access_token, refresh_token) = auth::issue_token_pair(&subject, family_id, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    record_session_best_effort(&state, user_id, &refresh_token).await;
+    record_session_best_effort(&state, user_id, &refresh_token, family_id).await;
 
     Ok(Json(ApiResponse::ok(TokenResponse {
         access_token, refresh_token,
@@ -225,8 +236,13 @@ pub async fn login(
     .bind(req.email.to_lowercase())
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
 
-    let (user_id, stored_hash, salt, username, verified_at) = row
-        .ok_or_else(|| AppError::Unauthorised("Invalid email or password".into()))?;
+    let Some((user_id, stored_hash, salt, username, verified_at)) = row else {
+        // Audit A-M4: an unknown e-mail used to answer in microseconds, a
+        // wrong password after a full Argon2 verify — burn the same work
+        // so response time does not reveal which addresses exist.
+        let _ = verify_password(&req.password, dummy_phc(), "");
+        return Err(AppError::Unauthorised("Invalid email or password".into()));
+    };
 
     let (ok, needs_upgrade) = verify_password(&req.password, &stored_hash, &salt);
     if !ok {
@@ -243,10 +259,11 @@ pub async fn login(
     }
 
     let subject = format!("email:{}", user_id);
-    let (access_token, refresh_token) = auth::issue_token_pair(&subject, &state.jwt)
+    let family_id = Uuid::new_v4();
+    let (access_token, refresh_token) = auth::issue_token_pair(&subject, family_id, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    record_session_best_effort(&state, user_id, &refresh_token).await;
+    record_session_best_effort(&state, user_id, &refresh_token, family_id).await;
 
     Ok(Json(ApiResponse::ok(TokenResponse {
         access_token, refresh_token,
@@ -260,10 +277,10 @@ pub async fn login(
 /// row so /me/sessions surfaces this login and refresh-rotation can
 /// detect reuse. Failure is logged but never blocks the auth flow —
 /// the access-token blacklist still protects active sessions.
-async fn record_session_best_effort(state: &AppState, user_id: Uuid, refresh_token: &str) {
+async fn record_session_best_effort(state: &AppState, user_id: Uuid, refresh_token: &str, family_id: Uuid) {
     if let Ok(claims) = auth::verify_refresh_token(refresh_token, &state.jwt) {
         if let Err(e) = crate::api::sessions::record_login(
-            state.db.pool(), user_id, &claims.jti, None, None,
+            state.db.pool(), user_id, &claims.jti, family_id, None, None,
         ).await {
             tracing::warn!(error = %e, "Failed to record session row");
         }

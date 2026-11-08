@@ -109,7 +109,8 @@ pub async fn verify_signature(
     .await
     .map_err(AppError::Database)?;
 
-    let (access_token, refresh_token) = auth::issue_token_pair(&address, &state.jwt)
+    let family_id = Uuid::new_v4();
+    let (access_token, refresh_token) = auth::issue_token_pair(&address, family_id, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Record the refresh-token JTI server-side so subsequent rotations
@@ -119,7 +120,7 @@ pub async fn verify_signature(
     if let Ok(claims) = auth::verify_refresh_token(&refresh_token, &state.jwt) {
         let label = sanitize_device_label(req.device_label.as_deref());
         let _ = sessions::record_login(
-            state.db.pool(), user_id, &claims.jti, label.as_deref(), None,
+            state.db.pool(), user_id, &claims.jti, family_id, label.as_deref(), None,
         ).await;
     }
 
@@ -141,8 +142,8 @@ pub struct LogoutRequest {
 ///
 /// Properly ends the session server-side: blacklists the current
 /// access token's JTI (so it can't be reused for its remaining TTL),
-/// blacklists the supplied refresh token if any, and revokes ALL of
-/// the user's refresh-token sessions in user_sessions. The client is
+/// blacklists the supplied refresh token if any, and revokes THIS
+/// session family in user_sessions (other devices stay signed in). The client is
 /// responsible for clearing its local token copies; this makes a
 /// stolen/leaked token useless even if it wasn't cleared everywhere.
 pub async fn logout(
@@ -164,20 +165,26 @@ pub async fn logout(
         }
     }
 
-    // Revoke every refresh session this user has (mirrors the
-    // "sign out everywhere" path). Best-effort: resolve the user id
-    // from the access subject.
-    let user_id: Option<Uuid> = if let Some(rest) = auth.address.strip_prefix("email:") {
-        Uuid::parse_str(rest).ok()
-    } else {
-        sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
-            .bind(&auth.address)
-            .fetch_optional(state.db.pool()).await.ok().flatten()
-    };
-    if let Some(uid) = user_id {
-        let _ = sessions::revoke_all_for_user(
-            state.db.pool(), &state.cache, uid, state.jwt.refresh_ttl_secs,
+    // Audit A-M8: logging out ends THIS session only ("sign out everywhere
+    // else" is DELETE /me/sessions). Tokens from before the `sid` claim
+    // existed cannot name their session, so they fall back to revoking all.
+    if let Some(sid) = auth.sid {
+        let _ = sessions::revoke_family_with_reason(
+            state.db.pool(), &state.cache, sid, state.jwt.refresh_ttl_secs, "logout",
         ).await;
+    } else {
+        let user_id: Option<Uuid> = if let Some(rest) = auth.address.strip_prefix("email:") {
+            Uuid::parse_str(rest).ok()
+        } else {
+            sqlx::query_scalar("SELECT id FROM users WHERE wallet_address = $1")
+                .bind(&auth.address)
+                .fetch_optional(state.db.pool()).await.ok().flatten()
+        };
+        if let Some(uid) = user_id {
+            let _ = sessions::revoke_all_for_user(
+                state.db.pool(), &state.cache, uid, state.jwt.refresh_ttl_secs,
+            ).await;
+        }
     }
 
     // Strict no-store so no proxy or browser HTTP cache holds onto a
@@ -206,9 +213,18 @@ pub async fn refresh_token(
         }
     }
 
+    // The new pair stays in the same session family: from the refresh
+    // token's own `sid`, else (pre-claim tokens) from the session row.
+    let family_id = match claims.sid.as_deref().and_then(|s| Uuid::parse_str(s).ok()) {
+        Some(f) => f,
+        None => sqlx::query_scalar::<_, Uuid>("SELECT family_id FROM user_sessions WHERE jti = $1")
+            .bind(&claims.jti)
+            .fetch_optional(state.db.pool()).await.ok().flatten()
+            .unwrap_or_else(Uuid::new_v4),
+    };
     // Mint the new pair first so we have the new JTI to thread through
     // rotation. If rotation fails we discard the new pair and reply 401.
-    let (access_token, refresh_token_new) = auth::issue_token_pair(&claims.sub, &state.jwt)
+    let (access_token, refresh_token_new) = auth::issue_token_pair(&claims.sub, family_id, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
     let new_claims = auth::verify_refresh_token(&refresh_token_new, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;

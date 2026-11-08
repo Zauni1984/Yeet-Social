@@ -15,19 +15,25 @@ pub struct AccessClaims {
     pub exp: u64,
     pub jti: String,
     pub token_type: TokenType,
+    /// Session (refresh-token family) id, audit A-M1: lets the server
+    /// reject an access token the moment its session is revoked instead of
+    /// waiting for the token to expire. Absent on tokens minted before this
+    /// claim existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum TokenType { Access, Refresh }
 
-pub fn issue_token_pair(address: &str, config: &JwtConfig) -> Result<(String, String)> {
-    let access  = issue_token(address, TokenType::Access,  config.access_ttl_secs,  config)?;
-    let refresh = issue_token(address, TokenType::Refresh, config.refresh_ttl_secs, config)?;
+pub fn issue_token_pair(address: &str, session_id: Uuid, config: &JwtConfig) -> Result<(String, String)> {
+    let access  = issue_token(address, session_id, TokenType::Access,  config.access_ttl_secs,  config)?;
+    let refresh = issue_token(address, session_id, TokenType::Refresh, config.refresh_ttl_secs, config)?;
     Ok((access, refresh))
 }
 
-fn issue_token(address: &str, token_type: TokenType, ttl: u64, config: &JwtConfig) -> Result<String> {
+fn issue_token(address: &str, session_id: Uuid, token_type: TokenType, ttl: u64, config: &JwtConfig) -> Result<String> {
     let now = unix_now();
     let claims = AccessClaims {
         sub: address.to_lowercase(),
@@ -35,6 +41,7 @@ fn issue_token(address: &str, token_type: TokenType, ttl: u64, config: &JwtConfi
         exp: now + ttl,
         jti: Uuid::new_v4().to_string(),
         token_type,
+        sid: Some(session_id.to_string()),
     };
     encode(&Header::default(), &claims, &EncodingKey::from_secret(config.secret.as_bytes()))
         .context("JWT encode failed")

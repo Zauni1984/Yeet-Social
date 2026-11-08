@@ -49,6 +49,33 @@ impl Cache {
         Ok(e)
     }
 
+    /// Audit A-M1: mark a whole session family revoked so every access token
+    /// minted for it is rejected at once (TTL = access-token lifetime).
+    pub async fn revoke_family(&self, family_id: &str, ttl: Duration) -> Result<()> {
+        let mut c = self.conn.clone();
+        c.set_ex::<_, _, ()>(format!("revoked_sid:{family_id}"), "1", ttl.as_secs())
+            .await.context("Failed to revoke family")?;
+        Ok(())
+    }
+
+    /// Reject every access token of a subject (account deletion).
+    pub async fn revoke_subject(&self, sub: &str, ttl: Duration) -> Result<()> {
+        let mut c = self.conn.clone();
+        c.set_ex::<_, _, ()>(format!("revoked_sub:{}", sub.to_lowercase()), "1", ttl.as_secs())
+            .await.context("Failed to revoke subject")?;
+        Ok(())
+    }
+
+    /// One round trip: is the token's JTI blacklisted, its session family
+    /// revoked, or its subject revoked?
+    pub async fn is_revoked(&self, jti: &str, sid: Option<&str>, sub: &str) -> Result<bool> {
+        let mut c = self.conn.clone();
+        let mut keys = vec![format!("blacklist:{jti}"), format!("revoked_sub:{}", sub.to_lowercase())];
+        if let Some(s) = sid { keys.push(format!("revoked_sid:{s}")); }
+        let n: i64 = c.exists(keys).await.context("Failed to check revocation")?;
+        Ok(n > 0)
+    }
+
     pub async fn get(&self, key: &str) -> Result<Option<String>> {
         let mut c = self.conn.clone();
         let v: Option<String> = c.get(key).await.context("Failed to get")?;
