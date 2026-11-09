@@ -82,6 +82,14 @@ jobs:
             mv $HTML_DIR/swap.html.new $HTML_DIR/swap.html
             ls -la $HTML_DIR/swap.html
 
+            # Developer API page + OpenAPI spec (docs/api). Without these
+            # copies nginx's SPA fallback serves index.html for /api.html.
+            for f in api.html openapi.json; do
+              curl -fsSL "$REPO_RAW/frontend/$f" -o "$HTML_DIR/$f.new"
+              mv "$HTML_DIR/$f.new" "$HTML_DIR/$f"
+              ls -la "$HTML_DIR/$f"
+            done
+
             docker exec yeet-nginx nginx -s reload || \
               docker compose restart nginx
 
