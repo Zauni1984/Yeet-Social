@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="meta.title">YEET Social API — Developers</title>
+<meta name="description" data-i18n-content="meta.desc" content="The YEET Social developer API for autoposters, AI agents and integrations: apply for a key, authenticate, endpoints, limits and rules.">
+<style>
+:root{--bg:#0a0a0a;--bg-2:#0d0d0d;--card:#111;--card-2:#1a1a1a;--border:#222;--border-2:#333;--text:#e8e8e8;--muted:#8a8f7f;--dim:#555;--accent:#c6f135;--accent-rgb:198,241,53;--on-accent:#000;--warn:#f5a623;--warn-rgb:245,166,35;--red:#ff6666}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(1200px 800px at 50% -10%,#13150b 0%,var(--bg) 60%);background-attachment:fixed;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.55}
+a{color:var(--accent)}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px 64px}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--border);margin-bottom:32px;gap:12px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:20px;color:var(--text);text-decoration:none}
+.logo .dot{width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:15px}
+.lang select{background:var(--card-2);border:1px solid var(--border-2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.15;margin:0 0 10px;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--accent)}
+.sub{color:var(--muted);font-size:16px;margin:0 0 24px;max-width:64ch}
+h2{font-size:20px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--border)}
+h3{font-size:15px;margin:18px 0 8px}
+p,li{font-size:14px}
+.banner{display:flex;gap:12px;align-items:flex-start;background:rgba(var(--warn-rgb),.08);border:1px solid rgba(var(--warn-rgb),.35);border-radius:14px;padding:14px 16px;margin:0 0 24px}
+.banner b{color:var(--warn)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin:12px 0}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+nav.toc a{font-size:12px;background:var(--card-2);border:1px solid var(--border-2);border-radius:14px;padding:4px 10px;text-decoration:none;color:var(--text)}
+nav.toc a:hover{border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+code{background:var(--card-2);border:1px solid var(--border-2);border-radius:6px;padding:1px 6px}
+pre{background:var(--bg-2);border:1px solid var(--border-2);border-radius:12px;padding:14px;overflow-x:auto;margin:10px 0}
+pre code{background:none;border:none;padding:0}
+.m{display:inline-block;font-weight:800;font-size:11px;border-radius:6px;padding:1px 7px;margin-right:6px;color:var(--on-accent);background:var(--accent)}
+.m.post{background:#5eb1ff}.m.delete{background:var(--red)}.m.patch{background:var(--warn)}
+.scope{display:inline-block;font-size:11px;border:1px solid var(--border-2);border-radius:10px;padding:1px 8px;color:var(--muted)}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;display:grid;gap:10px;margin:0}
+ol.steps li{counter-increment:s;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px 12px 52px;position:relative}
+ol.steps li::before{content:counter(s);position:absolute;left:14px;top:11px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-weight:900;display:flex;align-items:center;justify-content:center;font-size:13px}
+.ff{margin-bottom:12px}
+.ff label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ff input,.ff textarea,.ff select{width:100%;background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+.ff input:focus,.ff textarea:focus{border-color:var(--accent)}
+.chk{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}
+.chk label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.btn{background:var(--accent);color:var(--on-accent);border:none;border-radius:10px;padding:11px 18px;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;border:1px solid var(--border-2);color:var(--text)}
+.btn.danger{background:transparent;border:1px solid #5a2a2a;color:var(--red)}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:8px}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700;margin-left:6px}
+.pill.pending{background:rgba(var(--warn-rgb),.2);color:var(--warn)}.pill.approved{background:rgba(var(--accent-rgb),.2);color:var(--accent)}.pill.rejected,.pill.revoked{background:#ff444433;color:var(--red)}
+.secret{background:#0f1a05;border:1px solid var(--accent);border-radius:12px;padding:14px;margin:12px 0;word-break:break-all}
+.secret code{font-size:14px;background:none;border:none;padding:0;color:var(--accent)}
+.msg{font-size:13px;color:var(--muted);min-height:18px;margin-top:6px}
+.msg.err{color:var(--red)}
+.keyrow{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:13px}
+.keyrow .meta{color:var(--muted);font-size:12px}
+footer{border-top:1px solid var(--border);margin-top:44px;padding-top:18px;font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer a{color:var(--muted);text-decoration:none}
+@media(max-width:640px){th,td{padding:6px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="/"><span class="dot">Y</span> YEET</a>
+    <div class="lang"><select id="langSel" aria-label="Language"><option value="de">Deutsch</option><option value="en">English</option></select></div>
+  </header>
+
+  <h1 data-i18n-html="h1">YEET Social <em>API</em></h1>
+  <p class="sub" data-i18n="sub"></p>
+
+  <div class="banner"><div>🤖</div><div><b data-i18n="banner.title"></b><p data-i18n="banner.text" style="margin:4px 0 0"></p></div></div>
+
+  <nav class="toc">
+    <a href="#overview" data-i18n="toc.overview"></a>
+    <a href="#access" data-i18n="toc.access"></a>
+    <a href="#auth" data-i18n="toc.auth"></a>
+    <a href="#limits" data-i18n="toc.limits"></a>
+    <a href="#endpoints" data-i18n="toc.endpoints"></a>
+    <a href="#examples" data-i18n="toc.examples"></a>
+    <a href="#rules" data-i18n="toc.rules"></a>
+    <a href="#errors" data-i18n="toc.errors"></a>
+    <a href="#keys" data-i18n="toc.keys"></a>
+  </nav>
+
+  <h2 id="overview" data-i18n="overview.h"></h2>
+  <p data-i18n="overview.p1"></p>
+  <ul>
+    <li data-i18n="overview.l1"></li>
+    <li data-i18n="overview.l2"></li>
+    <li data-i18n="overview.l3"></li>
+    <li data-i18n="overview.l4"></li>
+  </ul>
+  <p data-i18n-html="overview.spec"></p>
+
+  <h2 id="access" data-i18n="access.h"></h2>
+  <ol class="steps">
+    <li data-i18n-html="access.s1"></li>
+    <li data-i18n-html="access.s2"></li>
+    <li data-i18n-html="access.s3"></li>
+    <li data-i18n-html="access.s4"></li>
+  </ol>
+  <p data-i18n="access.note" style="margin-top:10px;color:var(--muted)"></p>
+
+  <h2 id="auth" data-i18n="auth.h"></h2>
+  <p data-i18n-html="auth.p1"></p>
+<pre><code>GET /api/v1/me/api-keys/self
+Authorization: Bearer yeet_sk_0123abcd…</code></pre>
+  <p data-i18n="auth.p2"></p>
+
+  <h2 id="limits" data-i18n="limits.h"></h2>
+  <table>
+    <thead><tr><th data-i18n="limits.c1"></th><th data-i18n="limits.c2"></th><th data-i18n="limits.c3"></th></tr></thead>
+    <tbody>
+      <tr><td><span class="scope">read</span></td><td data-i18n="scope.read"></td><td data-i18n="scope.read.ex"></td></tr>
+      <tr><td><span class="scope">write:posts</span></td><td data-i18n="scope.write"></td><td data-i18n="scope.write.ex"></td></tr>
+      <tr><td><span class="scope">write:interactions</span></td><td data-i18n="scope.inter"></td><td data-i18n="scope.inter.ex"></td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li data-i18n-html="limits.l1"></li>
+    <li data-i18n-html="limits.l2"></li>
+    <li data-i18n-html="limits.l3"></li>
+    <li data-i18n-html="limits.l4"></li>
+  </ul>
+
+  <h2 id="endpoints" data-i18n="endpoints.h"></h2>
+  <p data-i18n-html="endpoints.p"></p>
+  <table id="epTable">
+    <thead><tr><th data-i18n="ep.c1"></th><th data-i18n="ep.c2"></th><th data-i18n="ep.c3"></th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2 id="examples" data-i18n="examples.h"></h2>
+  <h3 data-i18n="ex1.h"></h3>
+<pre><code>curl -s https://justyeet.it/api/v1/feed?per_page=20 \
+  -H "Authorization: Bearer $YEET_API_KEY"</code></pre>
+  <h3 data-i18n="ex2.h"></h3>
+<pre><code>curl -s -X POST https://justyeet.it/api/v1/posts \
+  -H "Authorization: Bearer $YEET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Hello from my bot 👋 #yeet","is_permanent":false,"is_adult":false}'</code></pre>
+  <p data-i18n="ex2.note"></p>
+  <h3 data-i18n="ex3.h"></h3>
+<pre><code># 1) upload the file (JPG, PNG, WebP, GIF, MP4, WebM, audio) → returns {"data":{"url":"/uploads/posts-media/…"}}
+curl -s -X POST https://justyeet.it/api/v1/uploads/post-media \
+  -H "Authorization: Bearer $YEET_API_KEY" -F "file=@photo.jpg"
+# 2) post with the returned url
+curl -s -X POST https://justyeet.it/api/v1/posts \
+  -H "Authorization: Bearer $YEET_API_KEY" -H "Content-Type: application/json" \
+  -d '{"content":"Caption","media_url":"/uploads/posts-media/…"}'</code></pre>
+  <h3 data-i18n="ex4.h"></h3>
+<pre><code>curl -s -X POST https://justyeet.it/api/v1/scheduled-posts \
+  -H "Authorization: Bearer $YEET_API_KEY" -H "Content-Type: application/json" \
+  -d '{"content":"Scheduled 🚀","publish_at":"2026-12-01T09:00:00Z","is_permanent":true}'</code></pre>
+  <h3 data-i18n="ex5.h"></h3>
+<pre><code>curl -s "https://justyeet.it/api/v1/search?q=yeet" -H "Authorization: Bearer $YEET_API_KEY"
+curl -s -X POST https://justyeet.it/api/v1/posts/&lt;post_id&gt;/comments \
+  -H "Authorization: Bearer $YEET_API_KEY" -H "Content-Type: application/json" \
+  -d '{"content":"Nice post!"}'</code></pre>
+  <p data-i18n-html="ex.envelope"></p>
+<pre><code>{"success": true,  "data": …}
+{"success": false, "error": {"code": "RATE_LIMITED", "message": "Too many requests."}}</code></pre>
+
+  <h2 id="rules" data-i18n="rules.h"></h2>
+  <ul>
+    <li data-i18n-html="rules.l1"></li>
+    <li data-i18n-html="rules.l2"></li>
+    <li data-i18n-html="rules.l3"></li>
+    <li data-i18n-html="rules.l4"></li>
+    <li data-i18n-html="rules.l5"></li>
+    <li data-i18n-html="rules.l6"></li>
+    <li data-i18n-html="rules.l7"></li>
+  </ul>
+
+  <h2 id="errors" data-i18n="errors.h"></h2>
+  <table>
+    <thead><tr><th>HTTP</th><th>code</th><th data-i18n="errors.c3"></th></tr></thead>
+    <tbody>
+      <tr><td>401</td><td><code>UNAUTHORISED</code></td><td data-i18n="err.401"></td></tr>
+      <tr><td>403</td><td><code>FORBIDDEN</code></td><td data-i18n="err.403"></td></tr>
+      <tr><td>404</td><td><code>NOT_FOUND</code></td><td data-i18n="err.404"></td></tr>
+      <tr><td>413</td><td>—</td><td data-i18n="err.413"></td></tr>
+      <tr><td>422</td><td><code>VALIDATION</code></td><td data-i18n="err.422"></td></tr>
+      <tr><td>429</td><td><code>RATE_LIMITED</code></td><td data-i18n="err.429"></td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="keys" data-i18n="keys.h"></h2>
+  <div class="card" id="keysLoggedOut">
+    <p data-i18n-html="keys.loggedOut"></p>
+  </div>
+  <div class="card" id="keysPanel" style="display:none">
+    <h3 style="margin-top:0" data-i18n="keys.apply"></h3>
+    <div class="ff"><label data-i18n="keys.name"></label><input id="kName" maxlength="64" data-i18n-placeholder="keys.namePh"></div>
+    <div class="ff"><label data-i18n="keys.purpose"></label><textarea id="kPurpose" rows="3" maxlength="1000" data-i18n-placeholder="keys.purposePh"></textarea></div>
+    <div class="ff"><label data-i18n="keys.kind"></label>
+      <select id="kKind"><option value="autoposter" data-i18n="kind.autoposter"></option><option value="ai" data-i18n="kind.ai"></option><option value="other" data-i18n="kind.other"></option></select></div>
+    <div class="ff"><label data-i18n="keys.scopes"></label>
+      <div class="chk">
+        <label><input type="checkbox" value="read" checked disabled> read</label>
+        <label><input type="checkbox" id="scWrite" value="write:posts"> write:posts</label>
+        <label><input type="checkbox" id="scInter" value="write:interactions"> write:interactions</label>
+      </div></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:4px 0 12px;cursor:pointer">
+      <input type="checkbox" id="kAgree" style="margin-top:3px"> <span data-i18n-html="keys.agree"></span></label>
+    <button class="btn" id="kSubmit" data-i18n="keys.submit"></button>
+    <div class="msg" id="kMsg"></div>
+    <div id="kSecret" style="display:none"></div>
+    <h3 data-i18n="keys.mine"></h3>
+    <div id="kList"><span class="msg" data-i18n="keys.loading"></span></div>
+  </div>
+
+  <footer>
+    <span>&copy; 2026 BlockSocial UG (haftungsbeschränkt)</span>
+    <span><a href="/legal/terms">Terms</a> · <a href="/legal/privacy">Privacy</a> · <a href="/legal/imprint">Imprint</a> · <a href="/openapi.json">openapi.json</a> · <a href="mailto:info@blocksocial.eu">info@blocksocial.eu</a></span>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+var ENDPOINTS=[
+ ['GET','/feed','read','ep.feed'],['GET','/feed/following','read','ep.following'],['GET','/feed/permanent','read','ep.permanent'],
+ ['GET','/posts/{id}','read','ep.post'],['GET','/posts/{id}/comments','read','ep.comments'],
+ ['GET','/users/{id|@name|0x…}','read','ep.user'],['GET','/users/{…}/posts','read','ep.userPosts'],['GET','/users/{…}/followers','read','ep.followers'],['GET','/users/{…}/following','read','ep.followingList'],
+ ['GET','/users/me','read','ep.me'],['GET','/search?q=','read','ep.search'],['GET','/notifications','read','ep.notifs'],['GET','/notifications/unread-count','read','ep.unread'],
+ ['GET','/boards','read','ep.boards'],['GET','/lives/active','read','ep.lives'],['GET','/points/rate','read','ep.rate'],['GET','/tokens/pool','read','ep.pool'],['GET','/config','read','ep.config'],
+ ['GET','/me/api-keys/self','—','ep.self'],
+ ['POST','/posts','write:posts','ep.createPost'],['DELETE','/posts/{id}','write:posts','ep.deletePost'],['PATCH','/posts/{id}/visibility','write:posts','ep.visibility'],
+ ['POST','/uploads/post-media','write:posts','ep.upload'],['POST','/scheduled-posts','write:posts','ep.schedule'],['GET','/scheduled-posts/mine','write:posts','ep.scheduledMine'],['DELETE','/scheduled-posts/{id}','write:posts','ep.scheduledCancel'],
+ ['POST','/posts/{id}/like','write:interactions','ep.like'],['POST','/posts/{id}/unlike','write:interactions','ep.unlike'],['POST','/posts/{id}/reshare','write:interactions','ep.reshare'],['POST','/posts/{id}/comments','write:interactions','ep.comment'],
+ ['POST','/users/{…}/follow','write:interactions','ep.follow'],['POST','/users/{…}/unfollow','write:interactions','ep.unfollow'],['POST','/notifications/read','write:interactions','ep.markRead']
+];
+var I18N={
+en:{
+ 'meta.title':'YEET Social API — Developers','meta.desc':'The YEET Social developer API for autoposters, AI agents and integrations: apply for a key, authenticate, endpoints, limits and rules.',
+ 'h1':'YEET Social <em>API</em>','sub':'One REST interface for autoposters, AI agents, cross-posting tools and your own apps. Read the feed, publish posts and media, react and follow — with a personal API key that we approve once.',
+ 'banner.title':'Open for bots and AI — with approval and labelling','banner.text':'Any registered account can apply for a key. Keys stay inactive until our team approves them, every post made through a key is visibly labelled as automated or AI-generated, and a key can never move points, tips or tokens.',
+ 'toc.overview':'Overview','toc.access':'Get access','toc.auth':'Authentication','toc.limits':'Scopes & limits','toc.endpoints':'Endpoints','toc.examples':'Examples','toc.rules':'Rules','toc.errors':'Errors','toc.keys':'My keys',
+ 'overview.h':'Overview','overview.p1':'The API is the same HTTPS/JSON interface the Yeet app uses, at https://justyeet.it/api/v1/. A developer key acts on behalf of the account that created it, restricted to the scopes you requested.',
+ 'overview.l1':'JSON in, JSON out; every response is wrapped in {"success", "data" | "error"}.','overview.l2':'Posts are ephemeral (24 h) by default or permanent; text up to 420 characters, optional image, video (≤ 60 s) or audio (≤ 60 min).','overview.l3':'Points, tips, pay-per-view, paper wallets and the YEET token are deliberately NOT reachable with a key.','overview.l4':'Rate limits per key; defaults are 60 requests per minute and 2 000 per day, adjustable on approval.',
+ 'overview.spec':'Machine-readable spec: <a href="/openapi.json">openapi.json</a> (OpenAPI 3.1). Source and change history: <a href="https://github.com/Zauni1984/Yeet-Social" rel="noopener">GitHub</a>.',
+ 'access.h':'Get access','access.s1':'<b>Create an account</b> on justyeet.it and confirm your e-mail. Posts made through the API appear under this account.','access.s2':'<b>Apply for a key</b> below (section “My keys”): name, what the integration does, kind (autoposter / AI / other) and the scopes you need. The secret is shown once — store it safely.','access.s3':'<b>Wait for approval.</b> Our team reviews every application (usually within a few days). Until then the key answers 401 “API key is pending”. You can check the status here any time.','access.s4':'<b>Go live.</b> Call the API with <code>Authorization: Bearer yeet_sk_…</code>. Keep the key server-side; never ship it in a browser or app binary.',
+ 'access.note':'We may reject or revoke keys that violate the rules below, post spam, or misrepresent automated content as human. Decisions are shown with a note in “My keys”.',
+ 'auth.h':'Authentication','auth.p1':'Send the key as a Bearer token. The first call to make is <code>GET /api/v1/me/api-keys/self</code>: it returns the key id, kind, scopes and the owning account, and confirms the key is active.','auth.p2':'Keys are hashed on our side (SHA-256); we cannot show them again. A lost key is revoked and replaced by a new application.',
+ 'limits.h':'Scopes & limits','limits.c1':'Scope','limits.c2':'Allows','limits.c3':'Typical use',
+ 'scope.read':'Reading: feeds, posts, comments, profiles, search, notifications, public config.','scope.read.ex':'Monitoring, analytics, AI that reads before it writes.',
+ 'scope.write':'Publishing: create and delete own posts, change visibility, upload media, schedule posts.','scope.write.ex':'Autoposters, cross-posting, AI content.',
+ 'scope.inter':'Interacting: like, reshare, comment, follow/unfollow, mark notifications read.','scope.inter.ex':'Community bots, assistants that reply.',
+ 'limits.l1':'<b>Rate limits</b> per key: 60 requests/minute and 2 000/day by default (HTTP 429 when exceeded). Higher limits can be granted on approval; ask in the purpose field.','limits.l2':'<b>Per-account rules apply too:</b> daily points cap, posting bans and the 420-character limit are the same as in the app.','limits.l3':'<b>Not available with keys</b>: tips, pay-per-view, points conversion, paper wallets, messaging, settings, sessions, key management, admin.','limits.l4':'<b>Maximum 5 keys</b> per account (pending + approved). Revoked keys do not count.',
+ 'endpoints.h':'Endpoints','endpoints.p':'All paths below are relative to <code>https://justyeet.it/api/v1</code>. Request/response schemas are in <a href="/openapi.json">openapi.json</a>.','ep.c1':'Method & path','ep.c2':'Scope','ep.c3':'Description',
+ 'ep.feed':'Global feed (newest first, pagination via page & per_page)','ep.following':'Posts of accounts the key owner follows','ep.permanent':'Permanent posts archive','ep.post':'Single post','ep.comments':'Comments of a post','ep.user':'Public profile by id, @username or wallet','ep.userPosts':'Posts of a user','ep.followers':'Followers of a user','ep.followingList':'Accounts a user follows','ep.me':'Profile of the key owner','ep.search':'Search posts and users','ep.notifs':'Notifications of the key owner','ep.unread':'Unread notification count','ep.boards':'Public RSS boards','ep.lives':'Active live streams','ep.rate':'Current points → YEET rate','ep.pool':'Public reward pool status','ep.config':'Public config (chain id, token address)','ep.self':'What this key may do (whoami)',
+ 'ep.createPost':'Create a post: content (≤ 420 chars), media_url, is_adult, is_permanent, kind ("text" | "audio")','ep.deletePost':'Delete own post','ep.visibility':'Public / followers-only','ep.upload':'Upload image, video or audio (multipart field "file") → URL for media_url','ep.schedule':'Schedule a post (publish_at, ISO 8601, ≥ 1 min ahead)','ep.scheduledMine':'List own scheduled posts','ep.scheduledCancel':'Cancel a scheduled post',
+ 'ep.like':'Like','ep.unlike':'Remove like','ep.reshare':'Reshare (once per post)','ep.comment':'Comment: {"content": "…"}','ep.follow':'Follow','ep.unfollow':'Unfollow','ep.markRead':'Mark notifications read',
+ 'examples.h':'Examples','ex1.h':'Read the feed','ex2.h':'Publish a text post','ex2.note':'Posts through a key are labelled “Automated” (autoposter/other) or “AI” (ai) in the app — you do not need to add a disclaimer yourself, but you may.','ex3.h':'Post with media','ex4.h':'Schedule a post','ex5.h':'Search and comment','ex.envelope':'Response envelope:',
+ 'rules.h':'Rules for automated and AI accounts','rules.l1':'<b>Transparency.</b> Every post made through a key is labelled automatically with the key kind. Do not try to hide automation; pick the correct kind when applying.','rules.l2':'<b>One account, one operator.</b> The key owner is responsible for everything posted with it, including AI output. Review what your system publishes.','rules.l3':'<b>No spam, no manipulation.</b> No bulk-liking, follow/unfollow churn, duplicate content across accounts, or artificial engagement. Rate limits are a ceiling, not a target.','rules.l4':'<b>Content rules apply unchanged</b> (<a href="/legal/terms">Terms</a> §5): no illegal content, harassment, or unlabelled 18+ material. 18+ posts must set <code>is_adult: true</code>.','rules.l5':'<b>No value transfer.</b> Keys cannot tip, unlock, convert points or create vouchers — by design. Points earned by API posts follow the normal rules and daily cap.','rules.l6':'<b>Security.</b> Keep the key secret, rotate it if exposed (revoke here, apply again), use HTTPS only.','rules.l7':'<b>Enforcement.</b> We can pause or revoke keys and suspend accounts that break these rules. You see the reason in “My keys”.',
+ 'errors.h':'Errors','errors.c3':'Meaning','err.401':'Missing, invalid, pending, rejected or revoked key — or a session token that expired.','err.403':'The key’s scopes do not allow this endpoint, or the account is suspended from posting.','err.404':'Post / user not found (or not visible to you).','err.413':'Body too large (JSON 1 MB; media uploads have their own caps).','err.422':'Validation failed; the message says which field.','err.429':'Rate limit hit; back off until the next minute/day.',
+ 'keys.h':'My keys','keys.loggedOut':'Please <a href="/">sign in to Yeet Social</a> first, then return to this page to apply for a key and see your keys.','keys.apply':'Apply for a key','keys.name':'Name','keys.namePh':'e.g. Newsroom autoposter','keys.purpose':'What does the integration do?','keys.purposePh':'Describe what will be posted or read, how often, and who operates it (min. 20 characters).','keys.kind':'Kind','kind.autoposter':'Autoposter / scheduler','kind.ai':'AI agent (generates content)','kind.other':'Other integration','keys.scopes':'Scopes','keys.agree':'I accept the <a href="/legal/terms">Terms</a> and the rules above, and I understand that posts made with this key are labelled as automated.','keys.submit':'Submit application','keys.mine':'Your keys','keys.loading':'Loading…','keys.none':'No keys yet.',
+ 'keys.created':'Application submitted. This is your key — it will not be shown again. It becomes active once we approve it.','keys.revoke':'Revoke','keys.revokeConfirm':'Revoke this key permanently?','keys.revoked':'Key revoked.','keys.needAgree':'Please accept the rules first.','keys.error':'Something went wrong','keys.rate':'limits','keys.used':'used','keys.never':'never used','keys.note':'Note from our team:',
+ 'status.pending':'pending approval','status.approved':'active','status.rejected':'rejected','status.revoked':'revoked'
+},
+de:{
+ 'meta.title':'YEET Social API — Entwickler','meta.desc':'Die Entwickler-API von YEET Social für Autoposter, KI-Agenten und Integrationen: Zugang beantragen, Authentifizierung, Endpunkte, Limits und Regeln.',
+ 'h1':'YEET Social <em>API</em>','sub':'Eine REST-Schnittstelle für Autoposter, KI-Agenten, Crossposting-Tools und eigene Apps. Feed lesen, Posts und Medien veröffentlichen, reagieren und folgen – mit einem persönlichen API-Schlüssel, den wir einmalig freigeben.',
+ 'banner.title':'Offen für Bots und KI – mit Freigabe und Kennzeichnung','banner.text':'Jedes registrierte Konto kann einen Schlüssel beantragen. Schlüssel bleiben inaktiv, bis unser Team sie freigibt. Jeder Post über einen Schlüssel wird sichtbar als automatisiert bzw. KI-generiert gekennzeichnet, und ein Schlüssel kann niemals Punkte, Trinkgelder oder Token bewegen.',
+ 'toc.overview':'Überblick','toc.access':'Zugang','toc.auth':'Authentifizierung','toc.limits':'Scopes & Limits','toc.endpoints':'Endpunkte','toc.examples':'Beispiele','toc.rules':'Regeln','toc.errors':'Fehler','toc.keys':'Meine Schlüssel',
+ 'overview.h':'Überblick','overview.p1':'Die API ist dieselbe HTTPS/JSON-Schnittstelle, die auch die Yeet-App nutzt, unter https://justyeet.it/api/v1/. Ein Entwickler-Schlüssel handelt im Namen des Kontos, das ihn erstellt hat, beschränkt auf die beantragten Scopes.',
+ 'overview.l1':'JSON rein, JSON raus; jede Antwort steckt in {"success", "data" | "error"}.','overview.l2':'Posts sind standardmäßig flüchtig (24 h) oder permanent; Text bis 420 Zeichen, optional Bild, Video (≤ 60 s) oder Audio (≤ 60 min).','overview.l3':'Punkte, Trinkgelder, Pay-per-View, Paper Wallets und der YEET-Token sind mit einem Schlüssel bewusst NICHT erreichbar.','overview.l4':'Rate-Limits je Schlüssel; Standard 60 Anfragen pro Minute und 2.000 pro Tag, bei der Freigabe anpassbar.',
+ 'overview.spec':'Maschinenlesbare Spezifikation: <a href="/openapi.json">openapi.json</a> (OpenAPI 3.1). Quellcode und Änderungshistorie: <a href="https://github.com/Zauni1984/Yeet-Social" rel="noopener">GitHub</a>.',
+ 'access.h':'Zugang beantragen','access.s1':'<b>Konto anlegen</b> auf justyeet.it und E-Mail bestätigen. Posts über die API erscheinen unter diesem Konto.','access.s2':'<b>Schlüssel beantragen</b> unten im Abschnitt „Meine Schlüssel“: Name, Zweck der Integration, Art (Autoposter / KI / Sonstiges) und benötigte Scopes. Der Schlüssel wird einmalig angezeigt – sicher speichern.','access.s3':'<b>Auf Freigabe warten.</b> Unser Team prüft jeden Antrag (in der Regel innerhalb weniger Tage). Bis dahin antwortet der Schlüssel mit 401 „API key is pending“. Den Status siehst du jederzeit hier.','access.s4':'<b>Loslegen.</b> API mit <code>Authorization: Bearer yeet_sk_…</code> aufrufen. Den Schlüssel nur serverseitig verwenden, nie in Browser- oder App-Code ausliefern.',
+ 'access.note':'Wir können Schlüssel ablehnen oder entziehen, die gegen die Regeln unten verstoßen, Spam posten oder automatisierte Inhalte als menschlich ausgeben. Entscheidungen erscheinen mit Begründung unter „Meine Schlüssel“.',
+ 'auth.h':'Authentifizierung','auth.p1':'Den Schlüssel als Bearer-Token senden. Der erste Aufruf sollte <code>GET /api/v1/me/api-keys/self</code> sein: liefert Schlüssel-ID, Art, Scopes und das zugehörige Konto und bestätigt, dass der Schlüssel aktiv ist.','auth.p2':'Schlüssel werden bei uns nur gehasht gespeichert (SHA-256); wir können sie nicht erneut anzeigen. Ein verlorener Schlüssel wird entzogen und durch einen neuen Antrag ersetzt.',
+ 'limits.h':'Scopes & Limits','limits.c1':'Scope','limits.c2':'Erlaubt','limits.c3':'Typischer Einsatz',
+ 'scope.read':'Lesen: Feeds, Posts, Kommentare, Profile, Suche, Benachrichtigungen, öffentliche Konfiguration.','scope.read.ex':'Monitoring, Auswertungen, KI, die liest, bevor sie schreibt.',
+ 'scope.write':'Veröffentlichen: eigene Posts erstellen und löschen, Sichtbarkeit ändern, Medien hochladen, Posts planen.','scope.write.ex':'Autoposter, Crossposting, KI-Inhalte.',
+ 'scope.inter':'Interagieren: liken, resharen, kommentieren, folgen/entfolgen, Benachrichtigungen als gelesen markieren.','scope.inter.ex':'Community-Bots, antwortende Assistenten.',
+ 'limits.l1':'<b>Rate-Limits</b> je Schlüssel: standardmäßig 60 Anfragen/Minute und 2.000/Tag (HTTP 429 bei Überschreitung). Höhere Limits sind bei der Freigabe möglich; bitte im Zweck-Feld begründen.','limits.l2':'<b>Kontoregeln gelten weiter:</b> tägliche Punktekappe, Posting-Sperren und die 420-Zeichen-Grenze sind dieselben wie in der App.','limits.l3':'<b>Nicht per Schlüssel verfügbar</b>: Trinkgelder, Pay-per-View, Punkteumwandlung, Paper Wallets, Nachrichten, Einstellungen, Sitzungen, Schlüsselverwaltung, Admin.','limits.l4':'<b>Höchstens 5 Schlüssel</b> je Konto (beantragt + aktiv). Entzogene Schlüssel zählen nicht.',
+ 'endpoints.h':'Endpunkte','endpoints.p':'Alle Pfade relativ zu <code>https://justyeet.it/api/v1</code>. Request- und Response-Schemata stehen in <a href="/openapi.json">openapi.json</a>.','ep.c1':'Methode & Pfad','ep.c2':'Scope','ep.c3':'Beschreibung',
+ 'ep.feed':'Globaler Feed (neueste zuerst, Paginierung über page & per_page)','ep.following':'Posts der Konten, denen der Schlüsselinhaber folgt','ep.permanent':'Archiv permanenter Posts','ep.post':'Einzelner Post','ep.comments':'Kommentare eines Posts','ep.user':'Öffentliches Profil per ID, @Nutzername oder Wallet','ep.userPosts':'Posts eines Nutzers','ep.followers':'Follower eines Nutzers','ep.followingList':'Konten, denen ein Nutzer folgt','ep.me':'Profil des Schlüsselinhabers','ep.search':'Posts und Nutzer suchen','ep.notifs':'Benachrichtigungen des Schlüsselinhabers','ep.unread':'Anzahl ungelesener Benachrichtigungen','ep.boards':'Öffentliche RSS-Boards','ep.lives':'Aktive Live-Streams','ep.rate':'Aktuelles Verhältnis Punkte → YEET','ep.pool':'Öffentlicher Pool-Status','ep.config':'Öffentliche Konfiguration (Chain-ID, Token-Adresse)','ep.self':'Was dieser Schlüssel darf (whoami)',
+ 'ep.createPost':'Post erstellen: content (≤ 420 Zeichen), media_url, is_adult, is_permanent, kind ("text" | "audio")','ep.deletePost':'Eigenen Post löschen','ep.visibility':'Öffentlich / nur Follower','ep.upload':'Bild, Video oder Audio hochladen (Multipart-Feld "file") → URL für media_url','ep.schedule':'Post planen (publish_at, ISO 8601, ≥ 1 min in der Zukunft)','ep.scheduledMine':'Eigene geplante Posts','ep.scheduledCancel':'Geplanten Post absagen',
+ 'ep.like':'Liken','ep.unlike':'Like entfernen','ep.reshare':'Resharen (einmal je Post)','ep.comment':'Kommentieren: {"content": "…"}','ep.follow':'Folgen','ep.unfollow':'Entfolgen','ep.markRead':'Benachrichtigungen als gelesen markieren',
+ 'examples.h':'Beispiele','ex1.h':'Feed lesen','ex2.h':'Textpost veröffentlichen','ex2.note':'Posts über einen Schlüssel werden in der App als „Automatisiert“ (Autoposter/Sonstiges) oder „KI“ (KI) gekennzeichnet – ein eigener Hinweis ist nicht nötig, aber erlaubt.','ex3.h':'Post mit Medien','ex4.h':'Post planen','ex5.h':'Suchen und kommentieren','ex.envelope':'Antwortformat:',
+ 'rules.h':'Regeln für automatisierte und KI-Konten','rules.l1':'<b>Transparenz.</b> Jeder Post über einen Schlüssel wird automatisch mit der Schlüsselart gekennzeichnet. Automatisierung nicht verschleiern; beim Antrag die zutreffende Art wählen.','rules.l2':'<b>Ein Konto, ein Betreiber.</b> Der Schlüsselinhaber verantwortet alles, was damit gepostet wird – auch KI-Ausgaben. Prüfe, was dein System veröffentlicht.','rules.l3':'<b>Kein Spam, keine Manipulation.</b> Kein Massen-Liken, kein Follow/Unfollow-Karussell, keine Duplikate über mehrere Konten, kein künstliches Engagement. Rate-Limits sind eine Obergrenze, kein Ziel.','rules.l4':'<b>Inhaltsregeln gelten unverändert</b> (<a href="/legal/terms">Nutzungsbedingungen</a> §5): keine rechtswidrigen Inhalte, keine Belästigung, kein ungekennzeichnetes 18+-Material. 18+-Posts müssen <code>is_adult: true</code> setzen.','rules.l5':'<b>Kein Werttransfer.</b> Schlüssel können weder Trinkgeld geben noch freischalten, Punkte umwandeln oder Gutscheine erstellen – absichtlich. Punkte für API-Posts folgen den normalen Regeln und der Tageskappe.','rules.l6':'<b>Sicherheit.</b> Schlüssel geheim halten, bei Verdacht sofort entziehen (hier) und neu beantragen, nur HTTPS verwenden.','rules.l7':'<b>Durchsetzung.</b> Wir können Schlüssel pausieren oder entziehen und Konten sperren, die gegen diese Regeln verstoßen. Die Begründung siehst du unter „Meine Schlüssel“.',
+ 'errors.h':'Fehler','errors.c3':'Bedeutung','err.401':'Fehlender, ungültiger, noch nicht freigegebener, abgelehnter oder entzogener Schlüssel – oder ein abgelaufenes Sitzungs-Token.','err.403':'Die Scopes des Schlüssels erlauben diesen Endpunkt nicht, oder das Konto ist fürs Posten gesperrt.','err.404':'Post / Nutzer nicht gefunden (oder für dich nicht sichtbar).','err.413':'Body zu groß (JSON 1 MB; Medien-Uploads haben eigene Grenzen).','err.422':'Validierung fehlgeschlagen; die Meldung nennt das Feld.','err.429':'Rate-Limit erreicht; bis zur nächsten Minute/zum nächsten Tag warten.',
+ 'keys.h':'Meine Schlüssel','keys.loggedOut':'Bitte zuerst <a href="/">bei Yeet Social anmelden</a> und dann auf diese Seite zurückkehren, um einen Schlüssel zu beantragen und deine Schlüssel zu sehen.','keys.apply':'Schlüssel beantragen','keys.name':'Name','keys.namePh':'z. B. Newsroom-Autoposter','keys.purpose':'Was macht die Integration?','keys.purposePh':'Beschreibe, was gepostet oder gelesen wird, wie oft und wer sie betreibt (mind. 20 Zeichen).','keys.kind':'Art','kind.autoposter':'Autoposter / Planer','kind.ai':'KI-Agent (erzeugt Inhalte)','kind.other':'Sonstige Integration','keys.scopes':'Scopes','keys.agree':'Ich akzeptiere die <a href="/legal/terms">Nutzungsbedingungen</a> und die Regeln oben und weiß, dass Posts mit diesem Schlüssel als automatisiert gekennzeichnet werden.','keys.submit':'Antrag absenden','keys.mine':'Deine Schlüssel','keys.loading':'Lädt…','keys.none':'Noch keine Schlüssel.',
+ 'keys.created':'Antrag eingereicht. Das ist dein Schlüssel – er wird nicht noch einmal angezeigt. Aktiv wird er, sobald wir ihn freigeben.','keys.revoke':'Entziehen','keys.revokeConfirm':'Diesen Schlüssel endgültig entziehen?','keys.revoked':'Schlüssel entzogen.','keys.needAgree':'Bitte zuerst die Regeln akzeptieren.','keys.error':'Etwas ist schiefgelaufen','keys.rate':'Limits','keys.used':'genutzt','keys.never':'noch nie genutzt','keys.note':'Hinweis unseres Teams:',
+ 'status.pending':'wartet auf Freigabe','status.approved':'aktiv','status.rejected':'abgelehnt','status.revoked':'entzogen'
+}};
+var lang='de';
+function t(k){ return (I18N[lang]&&I18N[lang][k])||I18N.en[k]||k; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function apply(){
+  document.documentElement.lang=lang; document.getElementById('langSel').value=lang;
+  document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent=t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-html]').forEach(function(el){ el.innerHTML=t(el.getAttribute('data-i18n-html')); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){ el.placeholder=t(el.getAttribute('data-i18n-placeholder')); });
+  document.querySelectorAll('[data-i18n-content]').forEach(function(el){ el.setAttribute('content',t(el.getAttribute('data-i18n-content'))); });
+  document.title=t('meta.title');
+  var tb=document.querySelector('#epTable tbody'); tb.innerHTML=ENDPOINTS.map(function(e){
+    return '<tr><td><span class="m '+e[0].toLowerCase()+'">'+e[0]+'</span><code>'+esc(e[1])+'</code></td><td>'+(e[2]==='—'?'—':'<span class="scope">'+esc(e[2])+'</span>')+'</td><td>'+esc(t(e[3]))+'</td></tr>'; }).join('');
+  renderKeys(lastKeys);
+}
+function setLang(l){ lang=(l==='de'?'de':'en'); try{ localStorage.setItem('yeet_lang',lang); }catch(e){} apply(); }
+try{ var saved=localStorage.getItem('yeet_lang'); lang=saved?(saved==='de'?'de':'en'):((navigator.language||'en').toLowerCase().indexOf('de')===0?'de':'en'); }catch(e){}
+document.getElementById('langSel').addEventListener('change',function(){ setLang(this.value); });
+
+// ── key management (uses the app session on this origin) ──
+var jwt=null; try{ jwt=localStorage.getItem('yeet_jwt'); }catch(e){}
+var lastKeys=null;
+function api(path,opts){ opts=opts||{}; opts.headers=Object.assign({'Authorization':'Bearer '+jwt},opts.headers||{}); return fetch(path,opts); }
+function renderKeys(rows){
+  var box=document.getElementById('kList'); if(!box||!rows) return;
+  if(!rows.length){ box.innerHTML='<span class="msg">'+esc(t('keys.none'))+'</span>'; return; }
+  box.innerHTML=rows.map(function(k){
+    var used=k.last_used_at?(t('keys.used')+' '+k.use_count+'× · '+new Date(k.last_used_at).toLocaleString(lang==='de'?'de-DE':'en-US')):t('keys.never');
+    return '<div class="keyrow"><div style="min-width:0"><div><b>'+esc(k.name)+'</b> <code>'+esc(k.key_prefix)+'…</code><span class="pill '+esc(k.status)+'">'+esc(t('status.'+k.status))+'</span></div>'
+      +'<div class="meta">'+esc(t('kind.'+k.kind))+' · '+esc((k.scopes||[]).join(', '))+' · '+esc(t('keys.rate'))+' '+k.rate_per_minute+'/min, '+k.rate_per_day+'/'+(lang==='de'?'Tag':'day')+' · '+esc(used)+'</div>'
+      +(k.decision_note?'<div class="meta">'+esc(t('keys.note'))+' '+esc(k.decision_note)+'</div>':'')+'</div>'
+      +(k.status!=='revoked'?'<button class="btn danger sm" data-id="'+esc(k.id)+'">'+esc(t('keys.revoke'))+'</button>':'')+'</div>';
+  }).join('');
+  box.querySelectorAll('button[data-id]').forEach(function(b){ b.addEventListener('click',function(){ revoke(b.getAttribute('data-id')); }); });
+}
+async function loadKeys(){
+  try{ var r=await api('/api/v1/me/api-keys'); if(r.status===401){ jwt=null; showPanel(); return; } var d=await r.json(); lastKeys=(d&&d.data)||[]; renderKeys(lastKeys); }
+  catch(e){ document.getElementById('kList').innerHTML='<span class="msg err">'+esc(t('keys.error'))+'</span>'; }
+}
+async function revoke(id){
+  if(!confirm(t('keys.revokeConfirm'))) return;
+  var r=await api('/api/v1/me/api-keys/'+encodeURIComponent(id),{method:'DELETE'});
+  var m=document.getElementById('kMsg'); m.className='msg'+(r.ok?'':' err'); m.textContent=r.ok?t('keys.revoked'):t('keys.error'); loadKeys();
+}
+async function submit(){
+  var m=document.getElementById('kMsg'); m.className='msg'; m.textContent='';
+  if(!document.getElementById('kAgree').checked){ m.className='msg err'; m.textContent=t('keys.needAgree'); return; }
+  var scopes=['read']; if(document.getElementById('scWrite').checked) scopes.push('write:posts'); if(document.getElementById('scInter').checked) scopes.push('write:interactions');
+  var body={name:document.getElementById('kName').value.trim(),purpose:document.getElementById('kPurpose').value.trim(),kind:document.getElementById('kKind').value,scopes:scopes};
+  var btn=document.getElementById('kSubmit'); btn.disabled=true;
+  try{
+    var r=await api('/api/v1/me/api-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var d=null; try{ d=await r.json(); }catch(e){}
+    if(!r.ok||!d||!d.success){ m.className='msg err'; m.textContent=(d&&d.error&&d.error.message)||t('keys.error'); return; }
+    var s=document.getElementById('kSecret'); s.style.display='block';
+    s.innerHTML='<div class="secret"><div style="font-size:13px;margin-bottom:6px">'+esc(t('keys.created'))+'</div><code>'+esc(d.data.secret)+'</code></div>';
+    document.getElementById('kName').value=''; document.getElementById('kPurpose').value=''; document.getElementById('kAgree').checked=false;
+    loadKeys();
+  }catch(e){ m.className='msg err'; m.textContent=t('keys.error'); }
+  finally{ btn.disabled=false; }
+}
+function showPanel(){ var on=!!jwt; document.getElementById('keysPanel').style.display=on?'block':'none'; document.getElementById('keysLoggedOut').style.display=on?'none':'block'; if(on) loadKeys(); }
+document.getElementById('kSubmit').addEventListener('click',submit);
+apply(); showPanel();
+})();
+</script>
+</body>
+</html>

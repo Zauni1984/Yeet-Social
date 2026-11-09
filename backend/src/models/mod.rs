@@ -98,6 +98,10 @@ pub struct FeedPost {
     /// queries sort pinned posts above everything else until expiry.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pinned_until: Option<DateTime<Utc>>,
+    /// Set when the post was created through a developer API key:
+    /// `autoposter`, `ai` or `other` — the UI labels such posts.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub automation_kind: Option<String>,
     /// Detected language (ISO 639-1, `und` = undetermined). Lets the client
     /// decide whether to offer / auto-run a translation.
     #[serde(skip_serializing_if = "Option::is_none")]
