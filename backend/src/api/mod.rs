@@ -24,6 +24,7 @@ pub mod ledger;
 pub mod explorer;
 pub mod public_config;
 pub mod csp;
+pub mod api_keys;
 pub mod permanent;
 pub mod settings;
 pub mod uploads;

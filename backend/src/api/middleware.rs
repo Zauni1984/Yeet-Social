@@ -13,6 +13,9 @@ pub struct AuthUser {
     pub sid: Option<uuid::Uuid>,
     pub address: String,
     pub jti: String,
+    /// Set when the request was authenticated with a developer API key
+    /// (`yeet_sk_…`, api/api_keys.rs) instead of a user session.
+    pub api_key: Option<crate::api::api_keys::ApiKeyCtx>,
 }
 
 #[async_trait]
@@ -30,6 +33,13 @@ impl FromRequestParts<AppState> for AuthUser {
             .strip_prefix("Bearer ")
             .ok_or_else(|| AppError::Unauthorised("Invalid Authorization format — expected 'Bearer <token>'".into()))?;
 
+        // Developer API key: acts as the owning user, but only on the
+        // endpoints its scopes allow and within its own rate limits.
+        if token.starts_with(crate::api::api_keys::PREFIX) {
+            let (subject, ctx) = crate::api::api_keys::authenticate(state, token, parts.method.as_str(), parts.uri.path()).await?;
+            return Ok(AuthUser { sid: None, address: subject, jti: format!("apikey:{}", ctx.id), api_key: Some(ctx) });
+        }
+
         let claims = verify_access_token(token, &state.jwt)
             .map_err(|e| AppError::Unauthorised(e.to_string()))?;
 
@@ -45,7 +55,7 @@ impl FromRequestParts<AppState> for AuthUser {
             }
         }
 
-        Ok(AuthUser { sid, address: claims.sub, jti: claims.jti })
+        Ok(AuthUser { sid, address: claims.sub, jti: claims.jti, api_key: None })
     }
 }
 

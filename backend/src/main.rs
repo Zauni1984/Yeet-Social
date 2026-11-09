@@ -120,6 +120,10 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/translate/status", get(api::translate::status))
         .route("/api/v1/config",           get(api::public_config::get))
         .route("/api/v1/csp-report",       post(api::csp::report).layer(DefaultBodyLimit::max(16 * 1024)))
+        // Developer API keys (docs/api): apply / list / revoke (session only), whoami (key only)
+        .route("/api/v1/me/api-keys",      get(api::api_keys::list_mine).post(api::api_keys::create))
+        .route("/api/v1/me/api-keys/self", get(api::api_keys::whoami))
+        .route("/api/v1/me/api-keys/:id",  delete(api::api_keys::revoke_mine))
         .route("/api/v1/comments/:id/translate", post(api::translate::translate_comment))
         .route("/api/v1/profile/:user_id/permanent", get(api::permanent::get_permanent_posts))
         .route("/api/v1/me/permanent",     get(api::permanent::get_my_permanent_posts))
@@ -272,6 +276,10 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/admin/users/:address/age-verify/revoke",
                post(api::age_verification::admin_revoke_verification))
         // Manual payout approval (point→YEET conversions) — admin-secret gated
+        .route("/api/v1/admin/api-keys",            get(api::api_keys::admin_list))
+        .route("/api/v1/admin/api-keys/:id/approve", post(api::api_keys::admin_approve))
+        .route("/api/v1/admin/api-keys/:id/reject",  post(api::api_keys::admin_reject))
+        .route("/api/v1/admin/api-keys/:id/revoke",  post(api::api_keys::admin_revoke))
         .route("/api/v1/admin/payouts",            get(api::payouts::admin_list))
         .route("/api/v1/admin/payouts/:id/approve", post(api::payouts::admin_approve))
         .route("/api/v1/admin/payouts/:id/reject",  post(api::payouts::admin_reject))

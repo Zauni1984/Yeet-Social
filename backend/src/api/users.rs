@@ -170,7 +170,7 @@ pub async fn update_profile(
 }
 
 // Resolve user UUID from auth (supports both wallet and email users)
-async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid> {
+pub(crate) async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid> {
     if let Some(uuid_str) = auth_address.strip_prefix("email:") {
         return uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
     }

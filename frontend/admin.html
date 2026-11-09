@@ -152,11 +152,29 @@ input:focus{border-color:#c6f135}
   <div class="tabs">
     <div class="tab active" id="tab-reports" onclick="switchTab('reports')"><span class="yi yi-flag"></span> <span data-i18n="tab.reports">Gemeldet</span> <span class="badge" id="badge">0</span></div>
     <div class="tab" id="tab-all" onclick="switchTab('all')"><span class="yi yi-copy"></span> <span data-i18n="tab.all">Alle Posts</span></div>
-    <div class="tab" id="tab-payouts" onclick="switchTab('payouts')"><span class="yi yi-wallet"></span> <span data-i18n="tab.payouts">Auszahlungen</span> <span class="badge" id="payoutBadge" style="display:none">0</span></div>
+    <div class="tab" id="tab-payouts" onclick="switchTab('payouts')"><span class="yi yi-wallet"></span> <span data-i18n="tab.payouts">Auszahlungen</span> <span class="badge" id="payoutBadge" style="display:none">0</span>
+    <div class="tab" id="tab-apikeys" onclick="switchTab('apikeys')"><span class="yi yi-link"></span> <span data-i18n="tab.apikeys">API-Schlüssel</span> <span class="badge" id="apikeyBadge" style="display:none">0</span></div></div>
   </div>
 
   <input class="search" type="text" id="searchInput" data-i18n-placeholder="search.placeholder" placeholder="Suche..." oninput="renderPosts()">
   <div id="grid"></div>
+
+  <!-- Developer API keys: applications wait here for approval (docs/api) -->
+  <div id="apikeysView" style="display:none">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <select id="apikeyStatus" class="search" style="width:auto;margin:0" onchange="loadApiKeys()">
+        <option value="pending" data-i18n="ak.pending">Wartet auf Freigabe</option>
+        <option value="approved" data-i18n="ak.approved">Freigegeben</option>
+        <option value="rejected" data-i18n="ak.rejected">Abgelehnt</option>
+        <option value="revoked" data-i18n="ak.revoked">Entzogen</option>
+        <option value="all" data-i18n="opt.all">Alle</option>
+      </select>
+      <button class="btn sm ghost" onclick="loadApiKeys()"><span class="yi yi-refresh"></span> <span data-i18n="btn.reload">Aktualisieren</span></button>
+      <span id="apikeyHint" style="font-size:12px;color:#888"></span>
+      <a href="/api.html" target="_blank" rel="noopener" style="font-size:12px;color:#c6f135;margin-left:auto" data-i18n="ak.docs">API-Doku</a>
+    </div>
+    <div id="apikeyList"></div>
+  </div>
 
   <!-- Payout-Freigabe: Points→YEET- und NOTE-Swap-Auszahlungen (manuelles Gate in der Startphase) -->
   <div id="payoutsView" style="display:none">
@@ -210,6 +228,15 @@ var ADM = {
     'tab.reports': 'Gemeldet',
     'tab.all': 'Alle Posts',
     'tab.payouts': 'Auszahlungen',
+    'tab.apikeys': 'API-Schlüssel',
+    'ak.pending': 'Wartet auf Freigabe', 'ak.approved': 'Freigegeben', 'ak.rejected': 'Abgelehnt', 'ak.revoked': 'Entzogen',
+    'ak.docs': 'API-Doku', 'ak.empty': 'Keine Schlüssel in diesem Status.',
+    'ak.kind.autoposter': 'Autoposter', 'ak.kind.ai': 'KI-Agent', 'ak.kind.other': 'Sonstige',
+    'ak.purpose': 'Zweck:', 'ak.scopes': 'Scopes:', 'ak.limits': 'Limits:', 'ak.used': 'Nutzung:', 'ak.never': 'noch nie', 'ak.note': 'Notiz:',
+    'ak.approve': 'Freigeben', 'ak.reject': 'Ablehnen', 'ak.revoke': 'Entziehen',
+    'ak.promptLimits': 'Limits als "pro Minute,pro Tag" (leer = Standard 60,2000):', 'ak.promptNote': 'Notiz für den Antragsteller (optional):',
+    'ak.promptReject': 'Grund der Ablehnung (wird dem Antragsteller angezeigt):', 'ak.confirmRevoke': 'Schlüssel endgültig entziehen?',
+    'ak.toastApproved': 'Schlüssel freigegeben.', 'ak.toastRejected': 'Schlüssel abgelehnt.', 'ak.toastRevoked': 'Schlüssel entzogen.',
     'search.placeholder': 'Suche...',
     'opt.awaiting': 'Wartet auf Freigabe',
     'opt.failed': 'Fehlgeschlagen (Mint)',
@@ -280,6 +307,15 @@ var ADM = {
     'tab.reports': 'Flagged',
     'tab.all': 'All posts',
     'tab.payouts': 'Payouts',
+    'tab.apikeys': 'API keys',
+    'ak.pending': 'Awaiting approval', 'ak.approved': 'Approved', 'ak.rejected': 'Rejected', 'ak.revoked': 'Revoked',
+    'ak.docs': 'API docs', 'ak.empty': 'No keys in this status.',
+    'ak.kind.autoposter': 'Autoposter', 'ak.kind.ai': 'AI agent', 'ak.kind.other': 'Other',
+    'ak.purpose': 'Purpose:', 'ak.scopes': 'Scopes:', 'ak.limits': 'Limits:', 'ak.used': 'Usage:', 'ak.never': 'never', 'ak.note': 'Note:',
+    'ak.approve': 'Approve', 'ak.reject': 'Reject', 'ak.revoke': 'Revoke',
+    'ak.promptLimits': 'Limits as "per minute,per day" (empty = default 60,2000):', 'ak.promptNote': 'Note for the applicant (optional):',
+    'ak.promptReject': 'Reason for rejection (shown to the applicant):', 'ak.confirmRevoke': 'Revoke this key permanently?',
+    'ak.toastApproved': 'Key approved.', 'ak.toastRejected': 'Key rejected.', 'ak.toastRevoked': 'Key revoked.',
     'search.placeholder': 'Search...',
     'opt.awaiting': 'Awaiting approval',
     'opt.failed': 'Failed (mint)',
@@ -418,13 +454,80 @@ function updateStats() {
 
 function switchTab(tab) {
   currentTab = tab;
-  ['reports','all','payouts'].forEach(function(t){ document.getElementById('tab-'+t).classList.toggle('active', tab === t); });
-  var isPay = tab === 'payouts';
+  ['reports','all','payouts','apikeys'].forEach(function(t){ document.getElementById('tab-'+t).classList.toggle('active', tab === t); });
+  var isPay = tab === 'payouts', isKeys = tab === 'apikeys';
   document.getElementById('payoutsView').style.display = isPay ? 'block' : 'none';
-  document.getElementById('grid').style.display = isPay ? 'none' : '';
-  document.getElementById('searchInput').style.display = isPay ? 'none' : 'block';
+  document.getElementById('apikeysView').style.display = isKeys ? 'block' : 'none';
+  document.getElementById('grid').style.display = (isPay || isKeys) ? 'none' : '';
+  document.getElementById('searchInput').style.display = (isPay || isKeys) ? 'none' : 'block';
   if (isPay) { loadPayouts(); return; }
+  if (isKeys) { loadApiKeys(); return; }
   renderPosts();
+}
+
+// ---------- Developer API keys (docs/api) ----------
+async function loadApiKeys() {
+  var status = document.getElementById('apikeyStatus').value;
+  var list = document.getElementById('apikeyList');
+  list.innerHTML = '';
+  var ld = document.createElement('div'); ld.className = 'empty'; ld.textContent = A('loading'); list.appendChild(ld);
+  try {
+    var r = await fetch('/api/v1/admin/api-keys?status=' + encodeURIComponent(status), { headers: { 'X-Admin-Secret': SECRET } });
+    if (r.status === 401) { showToast(A('toast.secretInvalid'), 'err'); return; }
+    var d = await r.json();
+    if (!d.success) { showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err'); return; }
+    var rows = d.data || [];
+    var hint = document.getElementById('apikeyHint'); hint.textContent = A('entries', {n: rows.length});
+    if (status === 'pending') { var b = document.getElementById('apikeyBadge'); b.textContent = rows.length; b.style.display = rows.length ? '' : 'none'; }
+    list.innerHTML = '';
+    if (!rows.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = A('ak.empty'); list.appendChild(e); return; }
+    var PILL = {pending:'wait', approved:'done', rejected:'rej', revoked:'fail'};
+    rows.forEach(function(k) {
+      var card = document.createElement('div'); card.className = 'card';
+      var meta = document.createElement('div'); meta.className = 'meta';
+      var who = document.createElement('span'); who.className = 'author'; who.textContent = '@' + (k.username || k.user_id.slice(0,8)) + (k.email ? ' · ' + k.email : ''); meta.appendChild(who);
+      var age = document.createElement('span'); age.textContent = timeAgo(k.created_at); meta.appendChild(age);
+      var pill = document.createElement('span'); pill.className = 'pill ' + (PILL[k.status] || 'rej'); pill.textContent = A('ak.' + k.status); meta.appendChild(pill);
+      card.appendChild(meta);
+      var title = document.createElement('div'); title.className = 'content'; title.style.fontWeight = '800';
+      title.textContent = k.name + ' — ' + A('ak.kind.' + k.kind) + ' (' + k.key_prefix + '…)'; card.appendChild(title);
+      function kv(label, val, color){ var d = document.createElement('div'); d.className = 'kv'; if (color) d.style.color = color; d.appendChild(document.createTextNode(A(label) + ' ')); var b = document.createElement('b'); b.textContent = val; d.appendChild(b); card.appendChild(d); }
+      kv('ak.purpose', k.purpose);
+      kv('ak.scopes', (k.scopes || []).join(', '));
+      kv('ak.limits', k.rate_per_minute + '/min · ' + k.rate_per_day + '/d');
+      kv('ak.used', k.last_used_at ? (k.use_count + '× · ' + timeAgo(k.last_used_at)) : A('ak.never'));
+      if (k.decision_note) kv('ak.note', k.decision_note, '#f5a623');
+      var actions = document.createElement('div'); actions.className = 'actions';
+      if (k.status === 'pending' || k.status === 'rejected') { var ok = iconBtn('btn sm ok', 'yi-check', A('ak.approve')); ok.onclick = function(){ decideApiKey(k.id, 'approve'); }; actions.appendChild(ok); }
+      if (k.status === 'pending') { var no = iconBtn('btn sm warn', 'yi-close', A('ak.reject')); no.onclick = function(){ decideApiKey(k.id, 'reject'); }; actions.appendChild(no); }
+      if (k.status !== 'revoked') { var rv = iconBtn('btn sm danger', 'yi-trash', A('ak.revoke')); rv.onclick = function(){ decideApiKey(k.id, 'revoke'); }; actions.appendChild(rv); }
+      if (actions.childElementCount) card.appendChild(actions);
+      var pid = document.createElement('div'); pid.className = 'pid'; pid.textContent = k.id; card.appendChild(pid);
+      list.appendChild(card);
+    });
+  } catch(e) { showToast(A('toast.network', {msg: e.message}), 'err'); }
+}
+
+async function decideApiKey(id, action) {
+  var body = {secret: SECRET, note: null};
+  if (action === 'approve') {
+    var lim = prompt(A('ak.promptLimits'), '');
+    if (lim === null) return;
+    if (lim.trim()) { var parts = lim.split(',').map(function(x){ return parseInt(x, 10); }); if (parts[0] > 0) body.rate_per_minute = parts[0]; if (parts[1] > 0) body.rate_per_day = parts[1]; }
+    var n = prompt(A('ak.promptNote'), ''); if (n === null) return; body.note = n || null;
+  } else if (action === 'reject') {
+    var reason = prompt(A('ak.promptReject')); if (reason === null) return; body.note = reason || null;
+  } else {
+    if (!confirm(A('ak.confirmRevoke'))) return;
+  }
+  try {
+    var r = await fetch('/api/v1/admin/api-keys/' + encodeURIComponent(id) + '/' + action, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+    });
+    var d = await r.json();
+    if (d.success) { showToast(A(action === 'approve' ? 'ak.toastApproved' : action === 'reject' ? 'ak.toastRejected' : 'ak.toastRevoked'), 'ok'); loadApiKeys(); }
+    else showToast(A('toast.error', {msg: (d.error && d.error.message)}), 'err');
+  } catch(e) { showToast(A('toast.network', {msg: e.message}), 'err'); }
 }
 
 // ---------- Payout-Freigabe ----------

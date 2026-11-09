@@ -133,8 +133,8 @@ pub async fn create_post(
     let media_url_clone = req.media_url.clone();
     let media_arr: Vec<String> = req.media_url.into_iter().collect();
     let post_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO posts (author_id, content, media_urls, media_url, expires_at, is_adult, is_nft, nft_price_yeet, is_permanent, ppv_price_yeet, kind)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id"
+        "INSERT INTO posts (author_id, content, media_urls, media_url, expires_at, is_adult, is_nft, nft_price_yeet, is_permanent, ppv_price_yeet, kind, api_key_id, automation_kind)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id"
     )
     .bind(user_id).bind(&req.content).bind(&media_arr)
     .bind(media_url_clone.as_deref())
@@ -150,6 +150,10 @@ pub async fn create_post(
     .bind(is_permanent)
     .bind(req.ppv_price_yeet)
     .bind(kind)
+    // Posts created through a developer API key are tagged with the key and
+    // its kind so the UI labels automated / AI content (docs/api).
+    .bind(auth.api_key.as_ref().map(|k| k.id))
+    .bind(auth.api_key.as_ref().map(|k| k.kind.clone()))
     .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
     // Posting reward: only articles of at least the configured length earn

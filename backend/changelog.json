@@ -333,6 +333,14 @@
       "tags": [
         "#Security"
       ]
+    },
+    {
+      "id": "2026-11-09-34-developer-api",
+      "text": "New: the Yeet developer API. Autoposters, AI agents and your own tools can read the feed and publish posts with a personal API key — apply at justyeet.it/api.html, we approve each key once. Posts made through the API are labelled AUTO or AI next to the author; keys can never touch points, tips or tokens. Docs in English and German, OpenAPI spec included.",
+      "tags": [
+        "#Feature",
+        "#API"
+      ]
     }
   ]
 }
