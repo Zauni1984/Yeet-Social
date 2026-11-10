@@ -1,7 +1,7 @@
 services:
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine
     container_name: yeet-postgres
     restart: unless-stopped
     command: postgres -h 0.0.0.0
@@ -23,7 +23,7 @@ services:
     expose: ["5432"]
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.12-alpine
     container_name: yeet-redis
     restart: unless-stopped
     volumes:
@@ -112,7 +112,7 @@ services:
       options: { max-size: "20m", max-file: "5" }
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.31.8-alpine
     container_name: yeet-nginx
     restart: unless-stopped
     volumes:

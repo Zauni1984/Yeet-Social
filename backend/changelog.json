@@ -349,6 +349,14 @@
         "#Messages",
         "#Privacy"
       ]
+    },
+    {
+      "id": "2026-11-10-36-e2ee-hardening",
+      "text": "Encrypted messages: what the app keeps on your device for forward-secret chats (ratchet state, decrypted texts) is now stored encrypted under your message key and purged on delete or expiry. Edits keep a message forward-secret; received messages stay readable after a reload. The backend now runs without root privileges; YEET payouts are no longer blocked by one failing recipient.",
+      "tags": [
+        "#Security",
+        "#Messages"
+      ]
     }
   ]
 }

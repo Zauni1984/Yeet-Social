@@ -7,7 +7,7 @@
 services:
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine
     container_name: yeet-dev-postgres
     restart: unless-stopped
     environment:
@@ -25,7 +25,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.12-alpine
     container_name: yeet-dev-redis
     restart: unless-stopped
     ports:
@@ -39,7 +39,7 @@ services:
 
   # Dev-Nginx: Frontend statisch ausliefern + /api -> Host-Backend (cargo run :8080)
   nginx-dev:
-    image: nginx:alpine
+    image: nginx:1.31.8-alpine
     container_name: yeet-dev-nginx
     restart: unless-stopped
     ports:
