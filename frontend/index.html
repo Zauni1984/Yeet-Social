@@ -1264,6 +1264,9 @@ html.ld-on body{overflow:hidden}
       'dm.deleteForAllConfirm':'Unsend this message for everyone in the conversation? Cannot be undone.',
       'dm.edit':'Edit','dm.editPrompt':'Edit your message:','dm.edited':'edited',
       'dm.editTooLate':'Edit window (15 minutes) has passed',
+      'dm.pinIdentityChanged':'The encryption identity of this contact has CHANGED. This happens after they reset their keys, but it could also mean someone is intercepting your messages. Compare this safety number with them in person before continuing:\n\n{sn}\n\nAccept the new key?',
+      'dm.pinNewDevice':'This contact has a new device ({device}…). Your messages will also be delivered to it. If they did not add a device, do not continue. Safety number:\n\n{sn}\n\nAllow this device?',
+      'dm.pinNewOwnDevice':'A new device ({device}…) is registered on YOUR account and would receive copies of your messages. If you did not add it, cancel and remove it under Settings → Devices. Safety number:\n\n{sn}\n\nAllow this device?',
       'dm.editRatchetUnavailable':'This message is forward-secret and can only be edited while the recipient has encryption keys available. Please try again later.',
       'dm.deleteForMe':'Delete for me','dm.deleteForAll':'Delete for everyone',
       'dm.report':'Report','dm.reportTitle':'Report this message',
@@ -1690,6 +1693,9 @@ html.ld-on body{overflow:hidden}
       'dm.deleteForAllConfirm':'Diese Nachricht für alle in der Konversation zurückziehen? Das kann nicht rückgängig gemacht werden.',
       'dm.edit':'Bearbeiten','dm.editPrompt':'Nachricht bearbeiten:','dm.edited':'bearbeitet',
       'dm.editTooLate':'Bearbeitungsfenster (15 Min) abgelaufen',
+      'dm.pinIdentityChanged':'Die Verschlüsselungs-Identität dieses Kontakts hat sich GEÄNDERT. Das passiert nach einem Schlüssel-Reset, kann aber auch bedeuten, dass jemand mitliest. Vergleiche diese Sicherheitsnummer persönlich, bevor du weitermachst:\n\n{sn}\n\nNeuen Schlüssel akzeptieren?',
+      'dm.pinNewDevice':'Dieser Kontakt hat ein neues Gerät ({device}…). Deine Nachrichten werden auch dorthin zugestellt. Wenn er kein Gerät hinzugefügt hat, brich ab. Sicherheitsnummer:\n\n{sn}\n\nGerät zulassen?',
+      'dm.pinNewOwnDevice':'Auf DEINEM Konto ist ein neues Gerät ({device}…) registriert, das Kopien deiner Nachrichten erhalten würde. Wenn du es nicht hinzugefügt hast, brich ab und entferne es unter Einstellungen → Geräte. Sicherheitsnummer:\n\n{sn}\n\nGerät zulassen?',
       'dm.editRatchetUnavailable':'Diese Nachricht ist forward-secret und kann nur bearbeitet werden, solange für den Empfänger Schlüssel verfügbar sind. Bitte später erneut versuchen.',
       'dm.deleteForMe':'Für mich löschen','dm.deleteForAll':'Für alle löschen',
       'dm.report':'Melden','dm.reportTitle':'Diese Nachricht melden',
@@ -37259,7 +37265,7 @@ info@blocksocial.eu</address>
     // injected wallet we prefer wallet sign (matches the rest of the
     // app's Web3 identity); otherwise fall back to password.
     if(promptMessage && !confirm(promptMessage)) throw new Error('setup_declined');
-    var master2;
+    var master2, setupPwd = null;
     if(hasInjectedWallet()){
       master2 = await deriveMasterKeyFromWallet();
     } else {
@@ -37267,6 +37273,7 @@ info@blocksocial.eu</address>
       var pwd = await promptPassword((window.t? window.t('dm.enableSetup') : 'Enter your account password to derive an encryption key. Use the same password you log in with.'));
       if(pwd === null || pwd.length < 1) throw new Error('aborted');
       master2 = await deriveMasterKeyFromPassword(pwd, uid);
+      setupPwd = pwd;
     }
     var kp = await genIdentityKeypair();
     var spki = await exportPubSpki(kp.publicKey);
@@ -37275,7 +37282,9 @@ info@blocksocial.eu</address>
     var ur = await fetch('/api/v1/me/e2ee/keys', {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
-      body: JSON.stringify({ public_key: spki, encrypted_private_key: wrapped })
+      // Replacing an existing identity needs proof of possession on the
+      // server (audit MSG-H4); the password just entered doubles as that.
+      body: JSON.stringify({ public_key: spki, encrypted_private_key: wrapped, reauth: setupPwd ? { password: setupPwd } : null })
     });
     var ud = await ur.json();
     if(!ur.ok || !ud.success) throw new Error('upload_failed');
@@ -37584,6 +37593,52 @@ info@blocksocial.eu</address>
   // Fetch all of a user's per-device bundles. Returns
   // { identity_key, devices:[{device_id, signing_identity_key,
   //   signed_prekey, one_time_prekey}] } or null.
+  // ── key pinning (TOFU, audit MSG-M4/H4) ───────────────────────────
+  // The server hands out identity keys and per-device signing keys, so
+  // a compromised server — or a stolen session token registering an
+  // extra device — could substitute them and the prekey signature would
+  // still verify (it is signed by a key from the same source). The first
+  // keys seen for a peer are pinned on this device; a changed identity
+  // key, a changed device key or a device added later is only used
+  // after the user confirms it against the safety number. The user's
+  // own device list is pinned the same way, so a device silently added
+  // to their account is surfaced before any message is fanned out to it.
+  function pinKey(uid){ return 'yeet_pin_'+(localStorage.getItem('yeet_user_id')||'')+'_'+uid; }
+  function loadPin(uid){ try { return JSON.parse(localStorage.getItem(pinKey(uid))||'null') || null; } catch(e){ return null; } }
+  function savePin(uid, pin){ try { localStorage.setItem(pinKey(uid), JSON.stringify(pin)); } catch(e){} }
+  async function confirmKeyChange(kind, ik, deviceId, own){
+    var sn = '';
+    try { var id = await E().ensureIdentity(); sn = await E().safetyNumber(id.pk, ik); } catch(e){}
+    var tr = window.t || function(k){ return k; };
+    var key = kind === 'identity' ? 'dm.pinIdentityChanged' : (own ? 'dm.pinNewOwnDevice' : 'dm.pinNewDevice');
+    return window.confirm(tr(key, { sn: sn, device: String(deviceId || '').slice(0, 8) }));
+  }
+  // Returns true when the keys may be used. `devices` is the bundle
+  // device list (or null when only the identity key is being checked).
+  async function checkPins(uid, identityKey, devices, isOwn){
+    if(!uid || !identityKey) return true;
+    var pin = loadPin(uid) || { ik: null, devices: {} };
+    var changed = false;
+    if(pin.ik && pin.ik !== identityKey){
+      if(!(await confirmKeyChange('identity', identityKey))) return false;
+      pin = { ik: identityKey, devices: {} }; changed = true; // a re-keyed identity resets its device pins
+    } else if(!pin.ik){ pin.ik = identityKey; changed = true; }
+    if(devices && devices.length){
+      var firstSet = !Object.keys(pin.devices).length;
+      for(var i=0;i<devices.length;i++){
+        var d = devices[i]; if(!d || !d.device_id || !d.signing_identity_key) continue;
+        var known = pin.devices[d.device_id];
+        if(known === d.signing_identity_key) continue;
+        // Unknown device after the first set, or a device whose signing
+        // key changed: ask. The very first device list is pinned as is.
+        if(!firstSet && !(await confirmKeyChange('device', identityKey, d.device_id, !!isOwn))) return false;
+        pin.devices[d.device_id] = d.signing_identity_key; changed = true;
+      }
+    }
+    if(changed) savePin(uid, pin);
+    return true;
+  }
+
   async function fetchBundles(addrOrId){
     try {
       var jwt = localStorage.getItem('yeet_jwt'); if(!jwt) return null;
@@ -37619,6 +37674,9 @@ info@blocksocial.eu</address>
 
         var peerB = await fetchBundles(peerAddrOrId);
         if(!peerB || !peerB.identity_key || !peerB.devices) return null;
+        // Pinned keys only: a rejected change throws so the caller never
+        // falls back to the static path with the same rejected key.
+        if(!(await checkPins(peerB.user_id || peerAddrOrId, peerB.identity_key, peerB.devices, false))) throw new Error('peer keys rejected');
 
         var targets = [];
         peerB.devices.forEach(function(dev){
@@ -37633,6 +37691,7 @@ info@blocksocial.eu</address>
         if(myUid){
           var selfB = await fetchBundles(myUid);
           if(selfB && selfB.identity_key && selfB.devices){
+            if(!(await checkPins(myUid, selfB.identity_key, selfB.devices, true))) throw new Error('own device rejected');
             selfB.devices.forEach(function(dev){
               if(dev.device_id === myDev) return; // not myself
               var b = toSenderBundle(selfB.identity_key, dev);
@@ -37652,7 +37711,10 @@ info@blocksocial.eu</address>
         }
         var env = { v:3, from: myDev, msgs: msgs };
         return { ciphertext: b64(te.encode(JSON.stringify(env))), iv: 'r2' };
-      } catch(e){ return null; }
+      } catch(e){
+        if(e && /rejected/.test(String(e.message))) throw e; // never degrade past a pin refusal
+        return null;
+      }
     },
     // Decrypt a wire-marked ratchet message (m.iv === 'r2'). Returns
     // { text } on success, or { notForMe:true } when this device isn't
@@ -37688,6 +37750,7 @@ info@blocksocial.eu</address>
 
       if(!st){
         if(!hasPre) throw new Error('no session, no preamble');
+        if(m.sender_id && !(await checkPins(m.sender_id, entry.header.pre.ik, null, false))) throw new Error('sender identity rejected');
         var uid = localStorage.getItem('yeet_user_id') || '';
         var id = await E().ensureIdentity();
         var self = await receiverSelf(uid, id.sk);
@@ -37701,6 +37764,9 @@ info@blocksocial.eu</address>
       return { text: plain };
     },
     _wipe: function(){ _mem = Object.create(null); },
+    // Pin check for the static-key path (conversation key derived from
+    // the peer's identity key).
+    checkPeerIdentity: function(uid, ik){ return checkPins(uid, ik, null, false); },
   };
 
   // Drop in-memory ratchet sessions on logout (wrapped state stays in
@@ -37782,6 +37848,7 @@ info@blocksocial.eu</address>
       k = await unwrapGroupKey(c.encrypted_group_key, c.wrapper_public_key);
     } else {
       if(!c.peer_public_key) throw new Error('no_peer_key');
+      if(c.peer_id && window.YeetRatchet && !(await window.YeetRatchet.checkPeerIdentity(c.peer_id, c.peer_public_key))) throw new Error('peer keys rejected');
       k = await dmKeyFor(c.peer_public_key);
     }
     _convKeys[c.id] = k;

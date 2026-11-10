@@ -44,8 +44,8 @@ jobs:
       run:
         working-directory: contracts
     steps:
-      - uses: actions/checkout@v4
-      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1
         with:
           version: stable
       - name: Install dependencies (pinned — the contracts are written for OZ 5.1.0; >= 5.2 needs evm_version cancun)
@@ -72,7 +72,7 @@ jobs:
             --broadcast --verify -vv 2>&1 | tee deploy-output.txt
           grep -E "YeetToken|YeetPayments|PaperWalletEscrow|YeetNFT|YEET_TOKEN_ADDRESS" deploy-output.txt | grep "0x" || true
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: deploy-${{ github.event.inputs.network }}-${{ github.run_number }}

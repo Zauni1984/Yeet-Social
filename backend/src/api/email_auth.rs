@@ -94,7 +94,7 @@ fn hash_password_argon2(password: &str) -> AppResult<String> {
 /// Returns `(ok, needs_upgrade)`: `ok` is whether the password matched;
 /// `needs_upgrade` is true only when the match came from a legacy hash, i.e. the
 /// caller should re-hash with Argon2 and persist it.
-fn verify_password(password: &str, stored_hash: &str, salt: &str) -> (bool, bool) {
+pub(crate) fn verify_password(password: &str, stored_hash: &str, salt: &str) -> (bool, bool) {
     if stored_hash.starts_with("$argon2") {
         use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
         let ok = PasswordHash::new(stored_hash)

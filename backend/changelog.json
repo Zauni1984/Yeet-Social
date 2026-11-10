@@ -357,6 +357,14 @@
         "#Security",
         "#Messages"
       ]
+    },
+    {
+      "id": "2026-11-10-37-key-pinning",
+      "text": "Encrypted messages now remember each contact's keys on your device. If a contact's key changes or a new device appears (on their account or yours), the app stops and shows the safety number before anything is sent to it. Replacing your own encryption identity now requires your password or a wallet signature, not just an open session.",
+      "tags": [
+        "#Security",
+        "#Messages"
+      ]
     }
   ]
 }
