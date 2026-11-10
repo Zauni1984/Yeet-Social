@@ -76,6 +76,94 @@ fn max_attempts() -> i32 {
 /// keeping batches small bounds gas and the blast radius of one bad row.
 const BATCH_MAX: i64 = 100;
 
+/// One validated payout row as it goes into `batchMintRewards`.
+#[derive(Clone, Debug)]
+struct MintRow {
+    id: uuid::Uuid,
+    to: Address,
+    wei: U256,
+    action: String,
+}
+
+/// Outcome of simulating a batch: rows that mint together (`good`, with the
+/// estimated gas for exactly that set), rows that revert on their own
+/// (`bad`, with the node's reason), rows the simulation budget did not reach
+/// (`unresolved`), or an RPC failure that is not a revert (`rpc_error`).
+struct Simulation {
+    good: Vec<MintRow>,
+    gas: U256,
+    bad: Vec<(MintRow, String)>,
+    unresolved: Vec<MintRow>,
+    rpc_error: Option<String>,
+}
+
+/// Upper bound on `eth_estimateGas` calls per run. A batch of 100 with a
+/// single bad row needs about 2·log2(100) ≈ 14 simulations; the budget
+/// bounds the worst case (many bad rows) instead of hammering the RPC.
+const MAX_SIMULATIONS: usize = 32;
+
+fn is_revert(err: &str) -> bool {
+    let e = err.to_ascii_lowercase();
+    e.contains("revert") || e.contains("execution failed") || e.contains("invalid opcode")
+}
+
+/// Bisect the batch with `estimate_gas` so one reverting recipient no
+/// longer blocks everyone else (audit M-M3). Iterative (a stack of
+/// sub-batches) so the async fn needs no boxing.
+async fn isolate_revertors<M: Middleware + 'static>(contract: &YeetToken<M>, rows: Vec<MintRow>) -> Simulation {
+    let mut out = Simulation { good: Vec::new(), gas: U256::zero(), bad: Vec::new(), unresolved: Vec::new(), rpc_error: None };
+    let mut stack: Vec<Vec<MintRow>> = vec![rows];
+    let mut budget = MAX_SIMULATIONS;
+    while let Some(mut part) = stack.pop() {
+        if part.is_empty() { continue; }
+        if budget == 0 { out.unresolved.extend(part); continue; }
+        budget -= 1;
+        let call = contract.batch_mint_rewards(
+            part.iter().map(|m| m.to).collect(),
+            part.iter().map(|m| m.wei).collect(),
+            part.iter().map(|m| m.action.clone()).collect(),
+        );
+        match call.estimate_gas().await {
+            Ok(g) => {
+                // First simulation and it passed: the whole batch mints as
+                // is, and `g` is already the estimate for exactly that set.
+                if stack.is_empty() && out.good.is_empty() && out.bad.is_empty() && out.unresolved.is_empty() {
+                    out.gas = g;
+                }
+                out.good.extend(part);
+            }
+            Err(e) => {
+                let text = e.to_string();
+                if !is_revert(&text) {
+                    out.rpc_error = Some(text.chars().take(300).collect());
+                    return out;
+                }
+                if part.len() == 1 {
+                    out.bad.push((part.pop().unwrap(), text.chars().take(300).collect()));
+                } else {
+                    let right = part.split_off(part.len() / 2);
+                    stack.push(right);
+                    stack.push(part);
+                }
+            }
+        }
+    }
+    // Gas for the surviving set (a subset of the simulated parts may need
+    // a different estimate than the parts did individually).
+    if !out.good.is_empty() && out.gas.is_zero() {
+        let call = contract.batch_mint_rewards(
+            out.good.iter().map(|m| m.to).collect(),
+            out.good.iter().map(|m| m.wei).collect(),
+            out.good.iter().map(|m| m.action.clone()).collect(),
+        );
+        match call.estimate_gas().await {
+            Ok(g) => out.gas = g,
+            Err(e) => { out.rpc_error = Some(e.to_string().chars().take(300).collect()); }
+        }
+    }
+    out
+}
+
 /// Settle a batch that we know the outcome of: `success` ⇒ minted (tx hash
 /// as evidence + one ONCHAIN_PAYOUT journal entry per row); otherwise back to
 /// `pending` (or `failed` once the attempt budget is spent). Only rows still
@@ -228,10 +316,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
 
     // 2. Build the call arrays in ONE pass so recipients/amounts/actions can
     //    never desync, and remember exactly which rows are in the tx.
-    let mut recipients: Vec<Address> = Vec::with_capacity(rows.len());
-    let mut amounts: Vec<U256> = Vec::with_capacity(rows.len());
-    let mut actions: Vec<String> = Vec::with_capacity(rows.len());
-    let mut included_ids: Vec<uuid::Uuid> = Vec::with_capacity(rows.len());
+    let mut mint_rows: Vec<MintRow> = Vec::with_capacity(rows.len());
     // F6 — sanctions screening (docs/mica/04 §B): a hit parks the row as
     // 'failed' with the reason (admin queue → reject/refund); no loaded list
     // holds the whole batch for the next run rather than paying out blind.
@@ -265,10 +350,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
             continue;
         }
         budget -= wei;
-        recipients.push(addr);
-        amounts.push(wei);
-        actions.push(r.action.clone().unwrap_or_default());
-        included_ids.push(r.id);
+        mint_rows.push(MintRow { id: r.id, to: addr, wei, action: r.action.clone().unwrap_or_default() });
     }
 
     if screening_unavailable {
@@ -285,10 +367,11 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         .bind(&sanctioned_ids)
         .execute(&state.db.pool).await?;
     }
-    if recipients.is_empty() {
+    if mint_rows.is_empty() {
         info!("No mintable rewards after validation.");
         return Ok(());
     }
+    let included_ids: Vec<uuid::Uuid> = mint_rows.iter().map(|m| m.id).collect();
 
     // 3. Claim the rows (pending → minting) BEFORE broadcasting, so a crash
     //    between send and receipt leaves a visible in-flight state instead
@@ -306,19 +389,40 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         return Ok(());
     }
 
-    // 4. Broadcast. Gas is estimated (constant 500k used to revert on bigger
-    //    batches, which the old code then recorded as a success — audit M-C2).
-    let n = recipients.len() as u64;
-    let call = contract.batch_mint_rewards(recipients, amounts, actions);
-    let gas = match call.estimate_gas().await {
-        Ok(g) => g * U256::from(12u64) / U256::from(10u64),
-        Err(e) => {
-            // estimate_gas simulates the call: a revert here means the tx
-            // would revert — do not broadcast, release the rows.
-            finalize_batch(state, &included_ids, "", false, &format!("gas estimation failed (call would revert?): {e}")).await;
-            return Err(e.into());
-        }
-    };
+    // 4. Simulate, isolating bad rows. estimate_gas simulates the call: a
+    //    revert means at least one row makes the whole batch revert. One
+    //    bad recipient used to send the entire batch back to the queue
+    //    (audit M-M3); now the revertors are bisected out and parked on
+    //    their own while everyone else is minted. Gas is estimated rather
+    //    than constant (a fixed 500k reverted on bigger batches, which the
+    //    old code then recorded as a success — audit M-C2).
+    let sim = isolate_revertors(&contract, mint_rows).await;
+    if let Some(err) = sim.rpc_error {
+        // Not a revert but an RPC problem: nothing was learned, release
+        // every row and try again next run (as before).
+        finalize_batch(state, &included_ids, "", false, &format!("gas estimation failed: {err}")).await;
+        return Err(anyhow::anyhow!("gas estimation failed: {err}"));
+    }
+    for (row, why) in &sim.bad {
+        warn!("batch-rewards: reward {} ({:?}) reverts on its own — parked: {why}", row.id, row.to);
+        finalize_batch(state, &[row.id], "", false, &format!("simulation reverted for this payout: {why}")).await;
+    }
+    if !sim.unresolved.is_empty() {
+        let ids: Vec<uuid::Uuid> = sim.unresolved.iter().map(|r| r.id).collect();
+        warn!("batch-rewards: {} rows left unresolved by bisection (simulation budget spent) — retry next run", ids.len());
+        finalize_batch(state, &ids, "", false, "bisection budget exhausted; retried next run").await;
+    }
+    if sim.good.is_empty() {
+        return Err(anyhow::anyhow!("batch mint: every row reverted in simulation"));
+    }
+    let included_ids: Vec<uuid::Uuid> = sim.good.iter().map(|m| m.id).collect();
+    let n = sim.good.len() as u64;
+    let gas = sim.gas * U256::from(12u64) / U256::from(10u64);
+    let call = contract.batch_mint_rewards(
+        sim.good.iter().map(|m| m.to).collect(),
+        sim.good.iter().map(|m| m.wei).collect(),
+        sim.good.iter().map(|m| m.action.clone()).collect(),
+    );
     let call = call.gas(gas.max(U256::from(150_000u64 + 90_000u64 * n)));
     let pending = match call.send().await {
         Ok(p) => p,
@@ -739,5 +843,67 @@ pub async fn start_lives_sweep_job(state: AppState) {
         ).execute(&state.db.pool).await {
             warn!("lives sweep (old-rows): {e}");
         }
+    }
+}
+
+#[cfg(test)]
+mod bisect_tests {
+    use super::*;
+    use ethers::providers::{MockProvider, MockResponse};
+    use ethers::types::U256;
+
+    fn row(i: u8) -> MintRow {
+        MintRow { id: uuid::Uuid::from_u128(i as u128), to: Address::from_low_u64_be(i as u64 + 1), wei: U256::from(1u64), action: "conversion".into() }
+    }
+    fn revert() -> MockResponse {
+        MockResponse::Error(ethers::providers::JsonRpcError { code: 3, message: "execution reverted: bad recipient".into(), data: None })
+    }
+    fn ok(gas: u64) -> MockResponse { MockResponse::Value(serde_json::json!(U256::from(gas))) }
+
+    fn contract(responses: Vec<MockResponse>) -> YeetToken<Provider<MockProvider>> {
+        let (provider, mock) = Provider::mocked();
+        // The mock serves responses LIFO (push_back / pop_back), so queue
+        // them in reverse to get the listed order.
+        for r in responses.into_iter().rev() { mock.push_response(r); }
+        YeetToken::new(Address::zero(), Arc::new(provider))
+    }
+
+    #[tokio::test]
+    async fn one_bad_row_is_isolated_and_the_rest_mint() {
+        // rows [0,1,2,3], row 2 reverts.
+        // sequence: [0..4] Err → [0,1] Ok → [2,3] Err → [2] Err → [3] Ok → final gas for [0,1,3]
+        let c = contract(vec![revert(), ok(100), revert(), revert(), ok(50), ok(300_000)]);
+        let sim = isolate_revertors(&c, vec![row(0), row(1), row(2), row(3)]).await;
+        assert!(sim.rpc_error.is_none());
+        let good: Vec<u8> = sim.good.iter().map(|r| r.id.as_u128() as u8).collect();
+        assert_eq!(good, vec![0, 1, 3]);
+        assert_eq!(sim.bad.len(), 1);
+        assert_eq!(sim.bad[0].0.id.as_u128(), 2);
+        assert!(sim.bad[0].1.contains("reverted"));
+        assert!(sim.unresolved.is_empty());
+        assert_eq!(sim.gas, U256::from(300_000u64));
+    }
+
+    #[tokio::test]
+    async fn clean_batch_needs_one_simulation() {
+        let c = contract(vec![ok(777)]);
+        let sim = isolate_revertors(&c, vec![row(0), row(1)]).await;
+        assert_eq!(sim.good.len(), 2);
+        assert!(sim.bad.is_empty());
+        assert_eq!(sim.gas, U256::from(777u64));
+    }
+
+    #[tokio::test]
+    async fn rpc_failure_is_not_treated_as_a_revert() {
+        let c = contract(vec![MockResponse::Error(ethers::providers::JsonRpcError { code: -32000, message: "connection refused".into(), data: None })]);
+        let sim = isolate_revertors(&c, vec![row(0), row(1)]).await;
+        assert!(sim.rpc_error.is_some());
+        assert!(sim.good.is_empty() && sim.bad.is_empty());
+    }
+
+    #[test]
+    fn revert_classifier() {
+        assert!(is_revert("execution reverted: YeetToken: cap"));
+        assert!(!is_revert("error sending request for url"));
     }
 }

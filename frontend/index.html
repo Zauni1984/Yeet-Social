@@ -1264,6 +1264,7 @@ html.ld-on body{overflow:hidden}
       'dm.deleteForAllConfirm':'Unsend this message for everyone in the conversation? Cannot be undone.',
       'dm.edit':'Edit','dm.editPrompt':'Edit your message:','dm.edited':'edited',
       'dm.editTooLate':'Edit window (15 minutes) has passed',
+      'dm.editRatchetUnavailable':'This message is forward-secret and can only be edited while the recipient has encryption keys available. Please try again later.',
       'dm.deleteForMe':'Delete for me','dm.deleteForAll':'Delete for everyone',
       'dm.report':'Report','dm.reportTitle':'Report this message',
       'dm.reportCategory':'Why are you reporting this?',
@@ -1689,6 +1690,7 @@ html.ld-on body{overflow:hidden}
       'dm.deleteForAllConfirm':'Diese Nachricht für alle in der Konversation zurückziehen? Das kann nicht rückgängig gemacht werden.',
       'dm.edit':'Bearbeiten','dm.editPrompt':'Nachricht bearbeiten:','dm.edited':'bearbeitet',
       'dm.editTooLate':'Bearbeitungsfenster (15 Min) abgelaufen',
+      'dm.editRatchetUnavailable':'Diese Nachricht ist forward-secret und kann nur bearbeitet werden, solange für den Empfänger Schlüssel verfügbar sind. Bitte später erneut versuchen.',
       'dm.deleteForMe':'Für mich löschen','dm.deleteForAll':'Für alle löschen',
       'dm.report':'Melden','dm.reportTitle':'Diese Nachricht melden',
       'dm.reportCategory':'Warum meldest du das?',
@@ -37527,9 +37529,17 @@ info@blocksocial.eu</address>
       init: o.init || 'me',
     };
   }
+  // The whole serialized state (root/chain keys, skipped message keys,
+  // counters) is wrapped under the master key before it touches
+  // localStorage (audit MSG-H1): { v:2, w: AES-GCM(master, json) }.
+  // Older entries (only the DH private wrapped, chains in the clear) are
+  // still readable and are re-written in the wrapped form on first load.
   async function saveSession(convId, rdev, st){
     if(!E().hasMaster()) return; // can't persist without master; stays in-memory
-    try { localStorage.setItem(storeKey(convId, rdev), JSON.stringify(await serialize(st))); } catch(e){}
+    try {
+      var w = await E().wrapBytes(te.encode(JSON.stringify(await serialize(st))));
+      if(w) localStorage.setItem(storeKey(convId, rdev), JSON.stringify({ v:2, w:w }));
+    } catch(e){}
   }
   var _mem = Object.create(null); // convId|rdev -> live session
   async function loadSession(convId, rdev){
@@ -37537,7 +37547,18 @@ info@blocksocial.eu</address>
     if(_mem[mk]) return _mem[mk];
     var raw; try { raw = JSON.parse(localStorage.getItem(storeKey(convId, rdev))||'null'); } catch(e){ raw=null; }
     if(!raw) return null;
-    try { var st = await deserialize(raw); _mem[mk] = st; return st; } catch(e){ return null; }
+    try {
+      var obj = raw, legacy = true;
+      if(raw.v === 2 && typeof raw.w === 'string'){
+        var bytes = await E().unwrapBytes(raw.w);
+        if(!bytes) return null;
+        obj = JSON.parse(tdf.decode(bytes));
+        legacy = false;
+      }
+      var st = await deserialize(obj); _mem[mk] = st;
+      if(legacy) await saveSession(convId, rdev, st);
+      return st;
+    } catch(e){ return null; }
   }
 
   // Build the receiver "self" material from locally-stored prekeys.
@@ -38081,6 +38102,9 @@ info@blocksocial.eu</address>
       var msgs = (d && d.data) || [];
       var conv = _conversations.find(function(x){ return x.id === convId; });
       if(!conv) return;
+      _sentPlainSweep();
+      _msgById = Object.create(null);
+      msgs.forEach(function(m){ if(m && m.id) _msgById[m.id] = m; });
       var key = null;
       try { key = await convKeyForConv(conv); } catch(e){ /* per-message render falls back to error glyph */ }
       // Filter by client retention. Server has already enforced the 30d
@@ -38133,17 +38157,49 @@ info@blocksocial.eu</address>
 
   function _myUserId(){ return localStorage.getItem('yeet_user_id') || ''; }
 
-  // Local plaintext cache for our OWN ratchet-sent messages. The
-  // sending device isn't part of its own multi-device fan-out, so it
-  // can't ratchet-decrypt its own bubble; we keep the plaintext here
-  // keyed by server message id. Device-local, consistent with the
-  // ratchet private keys also living only on this device.
-  function _sentPlainSet(mid, text){
-    try { localStorage.setItem('yeet_sent_'+mid, text); } catch(e){}
+  // Local plaintext cache for ratchet messages, keyed by server message
+  // id. Ratchet message keys are one-shot, so the plaintext of a message
+  // this device has already decrypted (and of its OWN sent messages — the
+  // sending device isn't part of its own fan-out) is kept here to render
+  // the bubble again later. Every entry is wrapped under the session
+  // master key (audit MSG-H1/H2): { t: epoch ms, w: AES-GCM(master, utf8) }.
+  // Without a master nothing is cached; legacy unwrapped entries are
+  // dropped on sight; entries past the user's retention are swept on
+  // every thread load and on delete.
+  async function _sentPlainSet(mid, text){
+    try {
+      if(!window.YeetE2EE || !window.YeetE2EE.hasMaster()) return;
+      var w = await window.YeetE2EE.wrapBytes(new TextEncoder().encode(String(text)));
+      if(w) localStorage.setItem('yeet_sent_'+mid, JSON.stringify({ t: Date.now(), w: w }));
+    } catch(e){}
   }
-  function _sentPlainGet(mid){
-    try { var v = localStorage.getItem('yeet_sent_'+mid); return v == null ? null : v; } catch(e){ return null; }
+  async function _sentPlainGet(mid){
+    try {
+      var raw = localStorage.getItem('yeet_sent_'+mid);
+      if(raw == null) return null;
+      var o = null; try { o = JSON.parse(raw); } catch(e){ o = null; }
+      if(!o || typeof o.w !== 'string'){ localStorage.removeItem('yeet_sent_'+mid); return null; }
+      if(!window.YeetE2EE || !window.YeetE2EE.hasMaster()) return null;
+      var bytes = await window.YeetE2EE.unwrapBytes(o.w);
+      return bytes ? new TextDecoder().decode(bytes) : null;
+    } catch(e){ return null; }
   }
+  function _sentPlainDrop(mid){ try { localStorage.removeItem('yeet_sent_'+mid); } catch(e){} }
+  function _sentPlainSweep(){
+    try {
+      var cut = retentionCutoffMs(), drop = [];
+      for(var i=0;i<localStorage.length;i++){
+        var k = localStorage.key(i);
+        if(!k || k.indexOf('yeet_sent_') !== 0) continue;
+        var o = null; try { o = JSON.parse(localStorage.getItem(k) || ''); } catch(e){ o = null; }
+        if(!o || typeof o.w !== 'string' || !(o.t > cut)) drop.push(k);
+      }
+      drop.forEach(function(k){ localStorage.removeItem(k); });
+    } catch(e){}
+  }
+  // id → message object of the currently rendered thread (edit needs to
+  // know which encryption scheme a message is on).
+  var _msgById = Object.create(null);
 
   // Cache of conversation_id → array of { user_id, display_name }.
   // Populated lazily on openConversation; the per-recipient receipt
@@ -38194,8 +38250,12 @@ info@blocksocial.eu</address>
     // they don't use the conversation's static key at all.
     if(m.iv === 'r2' && window.YeetRatchet && _activeConv){
       try {
+        // Already decrypted on this device (or sent from it): the
+        // one-shot ratchet key is gone, the wrapped cache has the text.
+        var pre = await _sentPlainGet(m.id);
+        if(pre != null) return escapeHtml(pre);
         var res = await window.YeetRatchet.decryptText(_activeConv.id, m);
-        if(res && typeof res.text === 'string') return escapeHtml(res.text);
+        if(res && typeof res.text === 'string'){ await _sentPlainSet(m.id, res.text); return escapeHtml(res.text); }
         // notForMe: this device wasn't a fan-out target. If it's our
         // own sent message, show the locally-cached plaintext (the
         // sending device isn't in its own fan-out); otherwise it was
@@ -38203,8 +38263,6 @@ info@blocksocial.eu</address>
         if(res && res.notForMe){
           var mine = (m.sender_id && m.sender_id === _myUserId());
           if(mine){
-            var cached = _sentPlainGet(m.id);
-            if(cached != null) return escapeHtml(cached);
             return '<span style="color:var(--muted);font-style:italic">'+ T('dm.sentOtherDevice') +'</span>';
           }
         }
@@ -38296,7 +38354,7 @@ info@blocksocial.eu</address>
         try {
           var sd = await r.clone().json();
           var mid = sd && sd.data && sd.data.id;
-          if(mid) _sentPlainSet(mid, text);
+          if(mid) await _sentPlainSet(mid, text);
         } catch(e){}
       }
       input.value = '';
@@ -38349,6 +38407,7 @@ info@blocksocial.eu</address>
         window.showToast((d.error && d.error.message) || T('common.error'),'error');
         return;
       }
+      _sentPlainDrop(id);
       window.showToast(T('dm.deletedToast'),'success');
       if(_activeConv) await loadMessages(_activeConv.id);
     } catch(e){
@@ -38459,7 +38518,7 @@ info@blocksocial.eu</address>
       // Cache the file key locally so the sending device (not in its own
       // fan-out) can still display the image it just sent.
       if(fileKeyJson){
-        try { var sd = await r.clone().json(); var mid = sd && sd.data && sd.data.id; if(mid) _sentPlainSet(mid, fileKeyJson); } catch(e){}
+        try { var sd = await r.clone().json(); var mid = sd && sd.data && sd.data.id; if(mid) await _sentPlainSet(mid, fileKeyJson); } catch(e){}
       }
       await loadMessages(_activeConv.id);
     } catch(e){
@@ -38482,11 +38541,11 @@ info@blocksocial.eu</address>
         if(m.iv === 'r2'){
           var fkObj = null;
           try {
-            var res = await window.YeetRatchet.decryptText(_activeConv.id, m);
-            if(res && res.text) fkObj = JSON.parse(res.text);
-            else if(res && res.notForMe && m.sender_id === _myUserId()){
-              var cached = _sentPlainGet(m.id);
-              if(cached != null) fkObj = JSON.parse(cached);
+            var cachedFk = await _sentPlainGet(m.id);
+            if(cachedFk != null) fkObj = JSON.parse(cachedFk);
+            else {
+              var res = await window.YeetRatchet.decryptText(_activeConv.id, m);
+              if(res && res.text){ fkObj = JSON.parse(res.text); await _sentPlainSet(m.id, res.text); }
             }
           } catch(e){ fkObj = null; }
           if(!fkObj) return '<span style="color:#ff6666">'+ T('dm.decryptFailed') +'</span>';
@@ -38812,8 +38871,21 @@ info@blocksocial.eu</address>
     next = String(next).trim();
     if(!next || next === current) return;
     try {
-      var key = await convKeyForConv(_activeConv);
-      var blob = await window.YeetE2EE.encryptWithKey(key, next);
+      var orig = _msgById[messageId] || null;
+      var blob = null;
+      if(orig && orig.iv === 'r2'){
+        // Forward-secret message: the edit stays on the ratchet. It is
+        // never re-encrypted under the static conversation key (audit
+        // MSG-M2) — if the ratchet can't deliver right now, the edit is
+        // refused instead.
+        if(window.YeetRatchet && _activeConv.kind === 'dm' && _activeConv.peer_id){
+          blob = await window.YeetRatchet.encryptText(_activeConv.id, _activeConv.peer_id, next);
+        }
+        if(!blob){ window.showToast(T('dm.editRatchetUnavailable'), 'error'); return; }
+      } else {
+        var key = await convKeyForConv(_activeConv);
+        blob = await window.YeetE2EE.encryptWithKey(key, next);
+      }
       var r = await api('/api/v1/messages/'+ encodeURIComponent(messageId) +'/edit', {
         method:'PATCH',
         body: JSON.stringify({ ciphertext: blob.ciphertext, iv: blob.iv })
@@ -38825,6 +38897,7 @@ info@blocksocial.eu</address>
         window.showToast(msg, 'error');
         return;
       }
+      if(blob.iv === 'r2') await _sentPlainSet(messageId, next);
       await loadMessages(_activeConv.id);
     } catch(e){
       window.showToast(T('common.networkError'), 'error');
@@ -38840,6 +38913,7 @@ info@blocksocial.eu</address>
         window.showToast((d.error && d.error.message) || T('common.error'), 'error');
         return;
       }
+      _sentPlainDrop(messageId);
       if(_activeConv) await loadMessages(_activeConv.id);
     } catch(e){
       window.showToast(T('common.networkError'), 'error');
