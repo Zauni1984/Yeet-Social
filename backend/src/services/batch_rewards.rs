@@ -437,14 +437,45 @@ pub async fn start_message_cleanup_job(state: AppState) {
     loop {
         ticker.tick().await;
 
+        // 0. Per-user retention (audit MSG-M8): a member's 1/7/30-day
+        //    setting hides messages older than that for THAT member only;
+        //    once every member has hidden a message (by retention or
+        //    "delete for me") the row is purged. Blobs are unlinked below
+        //    together with the expired ones.
+        if let Err(e) = sqlx::query(
+            "INSERT INTO message_hides (message_id, user_id)
+             SELECT m.id, cm.user_id
+               FROM messages m
+               JOIN conversation_members cm ON cm.conversation_id = m.conversation_id
+               JOIN users u ON u.id = cm.user_id
+              WHERE m.created_at < NOW() - make_interval(days => u.dm_retention_days::int)
+             ON CONFLICT DO NOTHING"
+        ).execute(&state.db.pool).await {
+            error!("Retention-hide error: {e}");
+        }
+        let all_hidden = "NOT EXISTS (SELECT 1 FROM conversation_members cm
+                                       WHERE cm.conversation_id = m.conversation_id
+                                         AND NOT EXISTS (SELECT 1 FROM message_hides h
+                                                          WHERE h.message_id = m.id AND h.user_id = cm.user_id))
+                          AND EXISTS (SELECT 1 FROM conversation_members cm2 WHERE cm2.conversation_id = m.conversation_id)";
+        let hidden_paths: Vec<String> = sqlx::query_scalar(&format!(
+            "SELECT m.blob_path FROM messages m WHERE m.blob_path IS NOT NULL AND {all_hidden}"
+        )).fetch_all(&state.db.pool).await.unwrap_or_default();
+        match sqlx::query(&format!("DELETE FROM messages m WHERE {all_hidden}")).execute(&state.db.pool).await {
+            Ok(r) if r.rows_affected() > 0 => info!("Message cleanup: purged {} messages hidden by every member.", r.rows_affected()),
+            Ok(_) => {}
+            Err(e) => error!("Hidden-message purge error: {e}"),
+        }
+
         // 1. Snapshot expired image blob paths before deleting rows.
-        let expired_paths: Vec<String> = match sqlx::query_scalar(
+        let mut expired_paths: Vec<String> = match sqlx::query_scalar(
             "SELECT blob_path FROM messages
               WHERE expires_at < NOW() AND blob_path IS NOT NULL"
         ).fetch_all(&state.db.pool).await {
             Ok(v) => v,
             Err(e) => { error!("Expired-blob scan error: {e}"); Vec::new() }
         };
+        expired_paths.extend(hidden_paths);
 
         match sqlx::query("DELETE FROM messages WHERE expires_at < NOW()")
             .execute(&state.db.pool).await

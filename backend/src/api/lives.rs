@@ -11,7 +11,7 @@
 //! WebSocket; everything in this file is forward-compatible with that
 //! — the API surface (`POST /lives/:id/start`) is where we'll mint the
 //! LiveKit token and return it to the host client.
-use axum::{extract::{Path, Query, State}, Json};
+use axum::{extract::{Path, Query, State}, http::HeaderMap, Json};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -378,9 +378,14 @@ pub async fn viewer_token(
     let row: Option<(String, Option<String>, bool)> = sqlx::query_as(
         "SELECT status, livekit_room, is_adult FROM lives WHERE id = $1"
     ).bind(id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let (status, room_db, _is_adult) = row.ok_or_else(|| AppError::NotFound("Live not found".into()))?;
+    let (status, room_db, is_adult) = row.ok_or_else(|| AppError::NotFound("Live not found".into()))?;
     if status != "live" {
         return Err(AppError::Validation("Live not currently broadcasting".into()));
+    }
+    // 18+ lives (audit MSG-M10): same gate as 18+ posts — signed in and
+    // age-verified, no anonymous viewer tokens.
+    if is_adult && !crate::api::feed::viewer_is_age_verified(&state, auth_opt.as_ref()).await {
+        return Err(AppError::Forbidden("Age verification required for 18+ lives".into()));
     }
 
     let cfg = livekit::config_from_env()
@@ -500,10 +505,15 @@ pub struct JoinLeaveRequest {
 /// leave. Floors at zero.
 pub async fn ping_viewer_count(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(id): Path<Uuid>,
     Json(req): Json<JoinLeaveRequest>,
 ) -> AppResult<Json<ApiResponse<i32>>> {
     ensure_lives_feature()?;
+    // Unauthenticated by design (anonymous viewers count too), so the
+    // counter is throttled per client IP (audit MSG-M10).
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "live_viewers", &ip, 60, 12, 3600, 300).await?;
     let delta = req.delta.unwrap_or(1).clamp(-1, 1);
     let updated: Option<i32> = sqlx::query_scalar(
         "UPDATE lives

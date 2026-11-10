@@ -457,7 +457,7 @@ pub async fn get_user_posts(
     Ok(Json(PagedResponse { success: true, data: posts, total, page, per_page }))
 }
 
-async fn viewer_is_age_verified(state: &AppState, viewer: Option<&AuthUser>) -> bool {
+pub(crate) async fn viewer_is_age_verified(state: &AppState, viewer: Option<&AuthUser>) -> bool {
     let Some(v) = viewer else { return false; };
     let key = v.address.strip_prefix("email:").unwrap_or(&v.address);
     let verified: Option<bool> = if let Ok(uuid) = key.parse::<Uuid>() {

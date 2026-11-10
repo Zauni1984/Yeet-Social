@@ -52,6 +52,13 @@ pub async fn report_post(
             .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
     };
 
+    if req.reason.as_deref().map(|r| r.chars().count() > 200).unwrap_or(false) {
+        return Err(AppError::Validation("reason max 200 chars".into()));
+    }
+    if req.details.as_deref().map(|d| d.chars().count() > 2000).unwrap_or(false) {
+        return Err(AppError::Validation("details max 2000 chars".into()));
+    }
+
     // Check post exists and is not already removed
     let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1 AND is_removed = FALSE)")
         .bind(post_id)
