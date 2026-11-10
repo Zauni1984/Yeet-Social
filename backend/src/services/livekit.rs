@@ -81,7 +81,9 @@ pub fn mint_token(
             room_join: true,
             can_publish,
             can_subscribe: true,
-            can_publish_data: true,
+            // Viewers must not be able to publish data channels either
+            // (audit MSG-M10): only the host gets any publish grant.
+            can_publish_data: can_publish,
         },
     };
     encode(

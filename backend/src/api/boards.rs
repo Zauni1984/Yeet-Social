@@ -139,6 +139,12 @@ pub async fn add_feed(
 ) -> AppResult<Json<ApiResponse<UserFeed>>> {
     let user_id = caller_user_id(&state, &auth).await?;
 
+    if req.feed_url.len() > 512 {
+        return Err(AppError::Validation("feed_url max 512 chars".into()));
+    }
+    if req.title.as_deref().map(|t| t.chars().count() > 120).unwrap_or(false) {
+        return Err(AppError::Validation("title max 120 chars".into()));
+    }
     let url = req.feed_url.trim();
     // Validate: must be a real http(s) URL with a host (the host is the
     // per-user uniqueness key + fallback label). No server-side fetch.

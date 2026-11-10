@@ -341,6 +341,14 @@
         "#Feature",
         "#API"
       ]
+    },
+    {
+      "id": "2026-11-10-35-messaging-retention",
+      "text": "Messages: Delete for me now really only removes a message from your own view (the other side keeps its copy); Delete for everyone stays available for 24 hours. Your DM retention setting (1, 7 or 30 days) is now enforced on the server, not just in the app.",
+      "tags": [
+        "#Messages",
+        "#Privacy"
+      ]
     }
   ]
 }

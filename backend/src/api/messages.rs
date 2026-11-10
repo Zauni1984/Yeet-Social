@@ -379,10 +379,11 @@ pub async fn list(
                FROM messages m
                LEFT JOIN tips t ON t.id = m.tip_id
               WHERE m.conversation_id = $1 AND m.created_at < $2
+                AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.message_id = m.id AND h.user_id = $4)
               ORDER BY m.created_at DESC
               LIMIT $3"
         )
-        .bind(conv_id).bind(before).bind(limit)
+        .bind(conv_id).bind(before).bind(limit).bind(me)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     } else {
         sqlx::query_as(
@@ -393,10 +394,11 @@ pub async fn list(
                FROM messages m
                LEFT JOIN tips t ON t.id = m.tip_id
               WHERE m.conversation_id = $1
+                AND NOT EXISTS (SELECT 1 FROM message_hides h WHERE h.message_id = m.id AND h.user_id = $3)
               ORDER BY m.created_at DESC
               LIMIT $2"
         )
-        .bind(conv_id).bind(limit)
+        .bind(conv_id).bind(limit).bind(me)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     };
 
@@ -957,29 +959,19 @@ pub async fn delete_one(
     auth: AuthUser,
     Path(msg_id): Path<Uuid>,
 ) -> AppResult<Json<ApiResponse<&'static str>>> {
+    // "Delete for me" (audit MSG-M1): hides the message for the caller only
+    // — any member may do it, at any time, and the other side keeps its
+    // copy. "Delete for everyone" is the separate, time-boxed
+    // delete_for_all. The row is purged by the cleanup job once every
+    // member has hidden it.
     let me = caller_user_id(&state, &auth).await?;
-    let row: Option<(String, Option<String>)> = sqlx::query_as(
-        "SELECT kind, blob_path FROM messages
-          WHERE id = $1 AND sender_id = $2 AND deleted_at IS NULL"
-    )
-    .bind(msg_id).bind(me)
-    .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let (_kind, blob_path) = row.ok_or_else(||
-        AppError::NotFound("Message not found or not yours".into()))?;
-
-    sqlx::query(
-        "UPDATE messages
-            SET deleted_at = NOW(), ciphertext = '', iv = '', blob_path = NULL
-          WHERE id = $1 AND sender_id = $2"
-    )
-    .bind(msg_id).bind(me)
-    .execute(state.db.pool()).await.map_err(AppError::Database)?;
-
-    if let Some(rel) = blob_path {
-        if !rel.contains("..") && !rel.starts_with('/') {
-            let full = uploads_dir().join(&rel);
-            let _ = tokio::fs::remove_file(&full).await;
-        }
-    }
-    Ok(Json(ApiResponse::ok("deleted")))
+    let conv: Option<Uuid> = sqlx::query_scalar("SELECT conversation_id FROM messages WHERE id = $1")
+        .bind(msg_id)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let conv = conv.ok_or_else(|| AppError::NotFound("Message not found".into()))?;
+    crate::api::conversations::assert_member(state.db.pool(), conv, me).await?;
+    sqlx::query("INSERT INTO message_hides (message_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+        .bind(msg_id).bind(me)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+    Ok(Json(ApiResponse::ok("hidden")))
 }
