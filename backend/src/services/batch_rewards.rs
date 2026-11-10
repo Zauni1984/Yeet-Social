@@ -1,11 +1,10 @@
 use anyhow::Result;
-use ethers::{
-    prelude::*,
-    providers::{Http, Middleware, Provider},
-    signers::LocalWallet,
-    types::H256,
+use alloy::{
+    primitives::{Address, B256, U256},
+    providers::{Provider, ProviderBuilder},
+    signers::{local::PrivateKeySigner, Signer},
+    sol,
 };
-use std::sync::Arc;
 use tokio::time::{interval, Duration};
 use tracing::{info, error, warn};
 
@@ -58,15 +57,15 @@ struct PayoutRow {
     amount: Option<f64>,
 }
 
-type MintClient = SignerMiddleware<Provider<Http>, LocalWallet>;
-
-abigen!(
-    YeetToken,
-    r#"[{"inputs":[{"name":"recipients","type":"address[]"},{"name":"amounts","type":"uint256[]"},{"name":"actions","type":"string[]"}],"name":"batchMintRewards","outputs":[],"stateMutability":"nonpayable","type":"function"},
-        {"inputs":[],"name":"minter","outputs":[{"name":"","type":"address"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"mintingPaused","outputs":[{"name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-        {"inputs":[],"name":"dailyRemaining","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]"#
-);
+sol! {
+    #[sol(rpc)]
+    contract YeetToken {
+        function batchMintRewards(address[] recipients, uint256[] amounts, string[] actions) external;
+        function minter() external view returns (address);
+        function mintingPaused() external view returns (bool);
+        function dailyRemaining() external view returns (uint256);
+    }
+}
 
 fn max_attempts() -> i32 {
     std::env::var("YEET_MINT_MAX_ATTEMPTS").ok().and_then(|s| s.parse().ok()).unwrap_or(5)
@@ -91,7 +90,7 @@ struct MintRow {
 /// (`unresolved`), or an RPC failure that is not a revert (`rpc_error`).
 struct Simulation {
     good: Vec<MintRow>,
-    gas: U256,
+    gas: u64,
     bad: Vec<(MintRow, String)>,
     unresolved: Vec<MintRow>,
     rpc_error: Option<String>,
@@ -110,15 +109,15 @@ fn is_revert(err: &str) -> bool {
 /// Bisect the batch with `estimate_gas` so one reverting recipient no
 /// longer blocks everyone else (audit M-M3). Iterative (a stack of
 /// sub-batches) so the async fn needs no boxing.
-async fn isolate_revertors<M: Middleware + 'static>(contract: &YeetToken<M>, rows: Vec<MintRow>) -> Simulation {
-    let mut out = Simulation { good: Vec::new(), gas: U256::zero(), bad: Vec::new(), unresolved: Vec::new(), rpc_error: None };
+async fn isolate_revertors<P: Provider>(contract: &YeetToken::YeetTokenInstance<P>, rows: Vec<MintRow>) -> Simulation {
+    let mut out = Simulation { good: Vec::new(), gas: 0, bad: Vec::new(), unresolved: Vec::new(), rpc_error: None };
     let mut stack: Vec<Vec<MintRow>> = vec![rows];
     let mut budget = MAX_SIMULATIONS;
     while let Some(mut part) = stack.pop() {
         if part.is_empty() { continue; }
         if budget == 0 { out.unresolved.extend(part); continue; }
         budget -= 1;
-        let call = contract.batch_mint_rewards(
+        let call = contract.batchMintRewards(
             part.iter().map(|m| m.to).collect(),
             part.iter().map(|m| m.wei).collect(),
             part.iter().map(|m| m.action.clone()).collect(),
@@ -150,8 +149,8 @@ async fn isolate_revertors<M: Middleware + 'static>(contract: &YeetToken<M>, row
     }
     // Gas for the surviving set (a subset of the simulated parts may need
     // a different estimate than the parts did individually).
-    if !out.good.is_empty() && out.gas.is_zero() {
-        let call = contract.batch_mint_rewards(
+    if !out.good.is_empty() && out.gas == 0 {
+        let call = contract.batchMintRewards(
             out.good.iter().map(|m| m.to).collect(),
             out.good.iter().map(|m| m.wei).collect(),
             out.good.iter().map(|m| m.action.clone()).collect(),
@@ -215,7 +214,7 @@ async fn finalize_batch(state: &AppState, ids: &[uuid::Uuid], tx_hash: &str, suc
 /// Rows stuck in `minting` without a broadcast hash for two hours are
 /// released as well. This is what makes a retry safe: a row is only
 /// re-minted once its previous attempt is known to have failed.
-async fn reconcile_inflight(state: &AppState, client: &Arc<MintClient>) {
+async fn reconcile_inflight<P: Provider>(state: &AppState, provider: &P) {
     let hashes: Vec<String> = sqlx::query_scalar(
         "SELECT DISTINCT pending_tx_hash FROM token_rewards WHERE status = 'minting' AND pending_tx_hash IS NOT NULL"
     ).fetch_all(&state.db.pool).await.unwrap_or_default();
@@ -223,12 +222,12 @@ async fn reconcile_inflight(state: &AppState, client: &Arc<MintClient>) {
         let ids: Vec<uuid::Uuid> = sqlx::query_scalar(
             "SELECT id FROM token_rewards WHERE status = 'minting' AND pending_tx_hash = $1"
         ).bind(&h).fetch_all(&state.db.pool).await.unwrap_or_default();
-        let Ok(hash) = h.parse::<H256>() else {
+        let Ok(hash) = h.parse::<B256>() else {
             finalize_batch(state, &ids, &h, false, "unparseable pending tx hash").await; continue;
         };
-        match client.get_transaction_receipt(hash).await {
+        match provider.get_transaction_receipt(hash).await {
             Ok(Some(receipt)) => {
-                let ok = receipt.status == Some(1u64.into());
+                let ok = receipt.status();
                 info!("batch-rewards: reconciled {} rows of {h} → {}", ids.len(), if ok { "minted" } else { "reverted" });
                 finalize_batch(state, &ids, &h, ok, &format!("on-chain revert in {h}")).await;
             }
@@ -255,22 +254,22 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     // default RPC follows the chain id so the two can never disagree.
     let chain_id: u64 = std::env::var("YEET_CHAIN_ID")
         .ok().and_then(|s| s.parse().ok()).unwrap_or(97);
-    let wallet: LocalWallet = privkey.parse::<LocalWallet>()?
-        .with_chain_id(chain_id);
+    let signer: PrivateKeySigner = privkey.parse::<PrivateKeySigner>()?
+        .with_chain_id(Some(chain_id));
+    let our_addr = signer.address();
     let default_rpc = if chain_id == 97 {
         "https://data-seed-prebsc-1-s1.binance.org:8545/"
     } else {
         "https://bsc-dataseed.binance.org/"
     };
-    let provider = Provider::<Http>::try_from(
-        std::env::var("BSC_RPC_URL").unwrap_or_else(|_| default_rpc.into())
-    )?;
-    let client = Arc::new(SignerMiddleware::new(provider, wallet));
+    let rpc_url = std::env::var("BSC_RPC_URL").unwrap_or_else(|_| default_rpc.into());
+    // Recommended fillers (nonce, chain id, gas) + the minter wallet.
+    let provider = ProviderBuilder::new().wallet(signer).connect_http(rpc_url.parse()?);
     let token_addr: Address = std::env::var("YEET_TOKEN_ADDRESS")?.parse()?;
-    let contract = YeetToken::new(token_addr, client.clone());
+    let contract = YeetToken::new(token_addr, provider.clone());
 
     // 0. Settle anything left in flight by a previous run.
-    reconcile_inflight(state, &client).await;
+    reconcile_inflight(state, &provider).await;
 
     // 1. Only user-initiated POINT→YEET conversions are minted on-chain
     //    (docs/mica/05, one-way). The payout target is the wallet recorded
@@ -295,7 +294,6 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     //     `minter`, never while paused, and at most `dailyMintCap` per UTC
     //     day. Check up front so a wrong key or a paused contract holds the
     //     queue (rows stay 'pending') instead of burning gas on reverts.
-    let our_addr = client.address();
     match contract.minter().call().await {
         Ok(m) if m == our_addr => {}
         Ok(m) => {
@@ -307,12 +305,12 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
             return Ok(());
         }
     }
-    if contract.minting_paused().call().await.unwrap_or(false) {
+    if contract.mintingPaused().call().await.unwrap_or(false) {
         warn!("batch-rewards: minting is paused on the token — holding {} payouts", rows.len());
         return Ok(());
     }
     // Daily cap: rows that do not fit today's remaining budget simply wait.
-    let mut budget: U256 = contract.daily_remaining().call().await.unwrap_or(U256::MAX);
+    let mut budget: U256 = contract.dailyRemaining().call().await.unwrap_or(U256::MAX);
 
     // 2. Build the call arrays in ONE pass so recipients/amounts/actions can
     //    never desync, and remember exactly which rows are in the tx.
@@ -334,7 +332,7 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
             crate::services::sanctions::Verdict::Unknown => { screening_unavailable = true; break; }
         }
         let addr = match wallet.parse::<Address>() {
-            Ok(a) if a != Address::zero() => a,
+            Ok(a) if a != Address::ZERO => a,
             Ok(_) => { warn!("batch-rewards: skip reward {} — zero address", r.id); continue; }
             Err(e) => { warn!("batch-rewards: skip reward {} — bad wallet {wallet}: {e}", r.id); continue; }
         };
@@ -417,13 +415,15 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
     }
     let included_ids: Vec<uuid::Uuid> = sim.good.iter().map(|m| m.id).collect();
     let n = sim.good.len() as u64;
-    let gas = sim.gas * U256::from(12u64) / U256::from(10u64);
-    let call = contract.batch_mint_rewards(
+    let gas = (sim.gas * 12 / 10).max(150_000 + 90_000 * n);
+    // BSC: legacy (pre-EIP-1559) pricing — setting gas_price keeps the
+    // gas filler from building a type-2 transaction.
+    let gas_price = provider.get_gas_price().await?;
+    let call = contract.batchMintRewards(
         sim.good.iter().map(|m| m.to).collect(),
         sim.good.iter().map(|m| m.wei).collect(),
         sim.good.iter().map(|m| m.action.clone()).collect(),
-    );
-    let call = call.gas(gas.max(U256::from(150_000u64 + 90_000u64 * n)));
+    ).gas(gas).gas_price(gas_price);
     let pending = match call.send().await {
         Ok(p) => p,
         Err(e) => {
@@ -439,19 +439,19 @@ async fn run_batch(state: &AppState, privkey: &str) -> Result<()> {
         }
     };
     let tx_hash = format!("{:?}", pending.tx_hash());
+    let pending = pending.with_timeout(Some(Duration::from_secs(240)));
     info!("Batch mint tx broadcast: {tx_hash} ({n} recipients, gas {gas})");
     let _ = sqlx::query(
         "UPDATE token_rewards SET pending_tx_hash = $1 WHERE id = ANY($2) AND status = 'minting'"
     ).bind(&tx_hash).bind(&included_ids).execute(&state.db.pool).await;
 
     // 5. Wait for the receipt and settle by its real status.
-    match pending.await {
-        Ok(Some(receipt)) => {
-            let ok = receipt.status == Some(1u64.into());
+    match pending.get_receipt().await {
+        Ok(receipt) => {
+            let ok = receipt.status();
             finalize_batch(state, &included_ids, &tx_hash, ok, &format!("on-chain revert in {tx_hash}")).await;
             if !ok { return Err(anyhow::anyhow!("batch mint reverted: {tx_hash}")); }
         }
-        Ok(None) => warn!("batch-rewards: no receipt yet for {tx_hash}; rows stay in 'minting' until reconciled"),
         Err(e) => warn!("batch-rewards: waiting for receipt of {tx_hash} failed ({e}); rows stay in 'minting' until reconciled"),
     }
     Ok(())
@@ -562,10 +562,12 @@ pub async fn start_message_cleanup_job(state: AppState) {
                                          AND NOT EXISTS (SELECT 1 FROM message_hides h
                                                           WHERE h.message_id = m.id AND h.user_id = cm.user_id))
                           AND EXISTS (SELECT 1 FROM conversation_members cm2 WHERE cm2.conversation_id = m.conversation_id)";
-        let hidden_paths: Vec<String> = sqlx::query_scalar(&format!(
+        // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+        // whitelisted identifiers are interpolated; every user-supplied value is bound.
+        let hidden_paths: Vec<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
             "SELECT m.blob_path FROM messages m WHERE m.blob_path IS NOT NULL AND {all_hidden}"
-        )).fetch_all(&state.db.pool).await.unwrap_or_default();
-        match sqlx::query(&format!("DELETE FROM messages m WHERE {all_hidden}")).execute(&state.db.pool).await {
+        ))).fetch_all(&state.db.pool).await.unwrap_or_default();
+        match sqlx::query(sqlx::AssertSqlSafe(format!("DELETE FROM messages m WHERE {all_hidden}"))).execute(&state.db.pool).await {
             Ok(r) if r.rows_affected() > 0 => info!("Message cleanup: purged {} messages hidden by every member.", r.rows_affected()),
             Ok(_) => {}
             Err(e) => error!("Hidden-message purge error: {e}"),
@@ -849,23 +851,27 @@ pub async fn start_lives_sweep_job(state: AppState) {
 #[cfg(test)]
 mod bisect_tests {
     use super::*;
-    use ethers::providers::{MockProvider, MockResponse};
-    use ethers::types::U256;
+    use alloy::providers::mock::Asserter;
+
+    enum Resp { Ok(u64), Fail(&'static str) }
 
     fn row(i: u8) -> MintRow {
-        MintRow { id: uuid::Uuid::from_u128(i as u128), to: Address::from_low_u64_be(i as u64 + 1), wei: U256::from(1u64), action: "conversion".into() }
+        MintRow { id: uuid::Uuid::from_u128(i as u128), to: Address::with_last_byte(i + 1), wei: U256::from(1u64), action: "conversion".into() }
     }
-    fn revert() -> MockResponse {
-        MockResponse::Error(ethers::providers::JsonRpcError { code: 3, message: "execution reverted: bad recipient".into(), data: None })
-    }
-    fn ok(gas: u64) -> MockResponse { MockResponse::Value(serde_json::json!(U256::from(gas))) }
+    fn revert() -> Resp { Resp::Fail("execution reverted: bad recipient") }
+    fn ok(gas: u64) -> Resp { Resp::Ok(gas) }
 
-    fn contract(responses: Vec<MockResponse>) -> YeetToken<Provider<MockProvider>> {
-        let (provider, mock) = Provider::mocked();
-        // The mock serves responses LIFO (push_back / pop_back), so queue
-        // them in reverse to get the listed order.
-        for r in responses.into_iter().rev() { mock.push_response(r); }
-        YeetToken::new(Address::zero(), Arc::new(provider))
+    /// Mocked provider: responses are served in the listed order (FIFO).
+    fn contract(responses: Vec<Resp>) -> YeetToken::YeetTokenInstance<impl Provider + Clone> {
+        let asserter = Asserter::new();
+        for r in responses {
+            match r {
+                Resp::Ok(g) => asserter.push_success(&U256::from(g)),
+                Resp::Fail(m) => asserter.push_failure_msg(m),
+            }
+        }
+        let provider = ProviderBuilder::new().connect_mocked_client(asserter);
+        YeetToken::new(Address::ZERO, provider)
     }
 
     #[tokio::test]
@@ -881,7 +887,7 @@ mod bisect_tests {
         assert_eq!(sim.bad[0].0.id.as_u128(), 2);
         assert!(sim.bad[0].1.contains("reverted"));
         assert!(sim.unresolved.is_empty());
-        assert_eq!(sim.gas, U256::from(300_000u64));
+        assert_eq!(sim.gas, 300_000);
     }
 
     #[tokio::test]
@@ -890,12 +896,12 @@ mod bisect_tests {
         let sim = isolate_revertors(&c, vec![row(0), row(1)]).await;
         assert_eq!(sim.good.len(), 2);
         assert!(sim.bad.is_empty());
-        assert_eq!(sim.gas, U256::from(777u64));
+        assert_eq!(sim.gas, 777);
     }
 
     #[tokio::test]
     async fn rpc_failure_is_not_treated_as_a_revert() {
-        let c = contract(vec![MockResponse::Error(ethers::providers::JsonRpcError { code: -32000, message: "connection refused".into(), data: None })]);
+        let c = contract(vec![Resp::Fail("connection refused")]);
         let sim = isolate_revertors(&c, vec![row(0), row(1)]).await;
         assert!(sim.rpc_error.is_some());
         assert!(sim.good.is_empty() && sim.bad.is_empty());

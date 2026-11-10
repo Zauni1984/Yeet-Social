@@ -276,12 +276,14 @@ const MISMATCH_SQL: &str = "
      WHERE ABS(COALESCE(u.yeet_token_balance, 0) - COALESCE(l.s, 0)) > 0.000001";
 
 /// Run the reconciliation. `limit` caps the mismatch list in the response.
+/// Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only the constant
+/// `MISMATCH_SQL` fragment is interpolated; the limit is bound.
 pub async fn reconcile(pool: &PgPool, limit: i64) -> AppResult<Reconciliation> {
     let balance_mismatches: Vec<BalanceMismatch> = sqlx::query_as(
-        &format!("{MISMATCH_SQL} ORDER BY ABS(COALESCE(u.yeet_token_balance, 0) - COALESCE(l.s, 0)) DESC LIMIT $1")
+        sqlx::AssertSqlSafe(format!("{MISMATCH_SQL} ORDER BY ABS(COALESCE(u.yeet_token_balance, 0) - COALESCE(l.s, 0)) DESC LIMIT $1"))
     ).bind(limit.clamp(1, 10_000)).fetch_all(pool).await.map_err(AppError::Database)?;
     let balance_mismatch_count: i64 = sqlx::query_scalar(
-        &format!("SELECT COUNT(*)::bigint FROM ({MISMATCH_SQL}) m")
+        sqlx::AssertSqlSafe(format!("SELECT COUNT(*)::bigint FROM ({MISMATCH_SQL}) m"))
     ).fetch_one(pool).await.map_err(AppError::Database)?;
 
     let minted_without_journal: Vec<Uuid> = sqlx::query_scalar(

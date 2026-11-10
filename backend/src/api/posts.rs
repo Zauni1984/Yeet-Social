@@ -535,7 +535,9 @@ pub async fn get_comments(
                  OR EXISTS (SELECT 1 FROM users v WHERE v.id = $2::uuid AND v.age_verified_at IS NOT NULL))
           ORDER BY c.created_at ASC",
         vis = visibility_sql("$2"));
-    let comments = sqlx::query_as::<_, Comment>(&sql)
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+    // whitelisted identifiers are interpolated; every user-supplied value is bound.
+    let comments = sqlx::query_as::<_, Comment>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(id).bind(viewer)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(comments)))
@@ -560,10 +562,10 @@ pub async fn add_comment(
             .ok_or_else(|| AppError::NotFound("User not found".into()))?
     };
 
-    let target: Option<(Uuid,)> = sqlx::query_as(&format!(
+    let target: Option<(Uuid,)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT p.author_id FROM posts p
           WHERE p.id = $1 AND p.deleted_at IS NULL AND p.is_removed = FALSE AND p.expires_at > NOW()
-            AND {vis}", vis = visibility_sql("$2")))
+            AND {vis}", vis = visibility_sql("$2"))))
         .bind(id).bind(user_id)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     let (post_author,) = target.ok_or_else(|| AppError::NotFound("Post not found".into()))?;

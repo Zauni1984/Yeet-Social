@@ -303,10 +303,12 @@ pub async fn admin_list(
         return Err(AppError::Validation("invalid status filter".into()));
     }
     let rows: Vec<AdminKeyRow> = if status == "all" {
-        sqlx::query_as(&format!("{ADMIN_SELECT} ORDER BY k.created_at DESC LIMIT 500"))
+        // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+        // whitelisted identifiers are interpolated; every user-supplied value is bound.
+        sqlx::query_as(sqlx::AssertSqlSafe(format!("{ADMIN_SELECT} ORDER BY k.created_at DESC LIMIT 500")))
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     } else {
-        sqlx::query_as(&format!("{ADMIN_SELECT} WHERE k.status = $1 ORDER BY k.created_at DESC LIMIT 500"))
+        sqlx::query_as(sqlx::AssertSqlSafe(format!("{ADMIN_SELECT} WHERE k.status = $1 ORDER BY k.created_at DESC LIMIT 500")))
             .bind(&status)
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     };

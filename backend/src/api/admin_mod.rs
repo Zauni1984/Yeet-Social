@@ -500,12 +500,14 @@ pub async fn list_users(
 
     let rows: Vec<(Uuid, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>,
                    DateTime<Utc>, Option<DateTime<Utc>>, Option<String>, i64)> = if has_q {
-        sqlx::query_as(&sql)
+        // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+        // whitelisted identifiers are interpolated; every user-supplied value is bound.
+        sqlx::query_as(sqlx::AssertSqlSafe(sql.as_str()))
             .bind(offset)
             .bind(format!("%{}%", term))
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     } else {
-        sqlx::query_as(&sql)
+        sqlx::query_as(sqlx::AssertSqlSafe(sql.as_str()))
             .bind(offset)
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     };

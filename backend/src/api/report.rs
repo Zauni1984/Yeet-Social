@@ -123,7 +123,9 @@ pub async fn admin_list_posts(
           ORDER BY p.is_flagged DESC, p.report_count DESC, p.created_at DESC
           LIMIT 50 OFFSET $1"
     );
-    let posts: Vec<ReportedPost> = sqlx::query_as::<_, ReportedPost>(&sql)
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+    // whitelisted identifiers are interpolated; every user-supplied value is bound.
+    let posts: Vec<ReportedPost> = sqlx::query_as::<_, ReportedPost>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(offset)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(posts)))
