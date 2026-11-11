@@ -16,3 +16,13 @@ chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "1"
 anyhow = "1"
+
+# Release profile for builds from the workspace root (CI, local). The Docker
+# image builds from backend/ alone, where backend/Cargo.toml carries the same
+# profile — keep the two in sync.
+[profile.release]
+opt-level     = 3
+lto           = true
+codegen-units = 1
+strip         = true
+panic         = "abort"

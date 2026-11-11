@@ -79,3 +79,27 @@ columns; it runs automatically on backend start.
 To rotate the JWT secret without breaking active sessions, deploy the new
 secret during low-traffic windows  all existing JWTs become invalid and users
 must re-login.
+
+## Deploy-User statt root (Audit I-H1)
+
+Die CD loggt sich standardmäßig noch als `root` ein. Umstellung auf das unprivilegierte Konto
+`deploy` in vier Schritten (einmalig, ca. 5 Minuten, ohne Downtime):
+
+1. Auf dem VPS als root: `bash vps/setup-deploy-user.sh` (liegt im Repo; `setup.sh` ruft es auf
+   frischen Servern automatisch auf). Legt `deploy` an (Docker-Gruppe, kein Passwort, CD-Key nur in
+   seinem `authorized_keys`), kopiert `.env`, Compose-Datei, `nginx.conf`, Static-HTML und Backups
+   nach `/opt/yeet/{app,html,backups}` und trägt `YEET_HTML_DIR`/`YEET_NGINX_CONF` in die kopierte
+   `.env` ein. Die `/root`-Kopien bleiben als Fallback liegen.
+2. In GitHub: Settings → Secrets and variables → Actions → **Variables** → `DEPLOY_USER` = `deploy`.
+   Die CD nimmt den Wert beim nächsten Lauf (`username: ${{ vars.DEPLOY_USER || 'root' }}`) und
+   wählt die `/opt/yeet`-Pfade automatisch, sobald sie nicht als uid 0 läuft.
+3. Einen Deploy auslösen (Merge oder „Re-run" der CD) und im Log `Starting deploy … as deploy` sowie
+   die Health-Zeile prüfen. Der Compose-Projektname ist auf `yeet-social` gepinnt, deshalb benutzt
+   der Stack unter `/opt/yeet/app` dieselben Volumes wie zuvor (keine leere zweite Datenbank).
+4. Danach aufräumen: Zeile `github-actions-deploy` aus `/root/.ssh/authorized_keys` löschen und in
+   `/etc/ssh/sshd_config` `PermitRootLogin no` setzen (`systemctl reload sshd`). `backup.sh` per
+   `BACKUP_DIR=/opt/yeet/backups` betreiben bzw. den Cron auf den `deploy`-User umziehen.
+
+Rückweg: Variable `DEPLOY_USER` löschen → die CD läuft wieder als root mit den `/root`-Pfaden.
+Hinweis: Mitglied der Docker-Gruppe zu sein ist auf dem Host root-äquivalent; der Gewinn ist eine
+eigene, widerrufbare Identität ohne Root-Shell. Rootless Docker wäre der nächste Schritt.

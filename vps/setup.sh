@@ -41,15 +41,14 @@ fi
 curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/docker-compose.yml" -o $DEPLOY_DIR/docker-compose.yml
 curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/nginx.conf" -o $DEPLOY_DIR/nginx.conf
 
-# Add SSH key for GitHub Actions
-echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDzuDAis6M5T4NdVli/tfPrE4JVE+HxXBS7q6LdKWV25 github-actions-deploy" >> ~/.ssh/authorized_keys
-
-# Enable PubkeyAuthentication
-grep -q "^PubkeyAuthentication" /etc/ssh/sshd_config || echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-systemctl reload sshd
-
 cd $DEPLOY_DIR
 docker compose up -d
+
+# GitHub Actions deploys as the unprivileged `deploy` account (audit I-H1):
+# the CD key never goes into root's authorized_keys. The helper also moves
+# the deploy state to /opt/yeet and prints the remaining manual steps.
+curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/main/vps/setup-deploy-user.sh" -o /tmp/setup-deploy-user.sh
+bash /tmp/setup-deploy-user.sh
 
 echo ""
 echo "=== Setup complete! ==="
