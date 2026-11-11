@@ -78,6 +78,8 @@ async-trait      = "0.1"
 # Email (SMTP)
 lettre           = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "builder"] }
 
+# Only effective for the Docker build (context = backend/, no workspace);
+# from the repo root cargo reads the identical profile in ../Cargo.toml.
 [profile.release]
 opt-level     = 3
 lto           = true

@@ -32,24 +32,36 @@ jobs:
           DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           host: 76.13.150.206
-          username: root
+          # Repository variable DEPLOY_USER (audit I-H1): once the VPS has the
+          # unprivileged account from vps/setup-deploy-user.sh, set it to
+          # `deploy`; unset, the deploy keeps logging in as root.
+          username: ${{ vars.DEPLOY_USER || 'root' }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           timeout: 300s
           envs: DEPLOY_SHA
           script: |
             set -e
-            echo "[CD] $(date) — Starting deploy of ${DEPLOY_SHA}"
-            DEPLOY_DIR=/root/yeet-social
-            HTML_DIR=/root/yeet-html
-            NGINX_CONF=/root/yeet-nginx.conf
-            mkdir -p $DEPLOY_DIR $HTML_DIR
+            echo "[CD] $(date) — Starting deploy of ${DEPLOY_SHA} as $(id -un)"
+            if [ "$(id -u)" = "0" ]; then
+              DEPLOY_DIR=/root/yeet-social
+              HTML_DIR=/root/yeet-html
+              NGINX_CONF=/root/yeet-nginx.conf
+              BACKUP_DIR=/root/yeet-backups
+            else
+              # Unprivileged deploy account (vps/setup-deploy-user.sh).
+              DEPLOY_DIR=/opt/yeet/app
+              HTML_DIR=/opt/yeet/html
+              NGINX_CONF=/opt/yeet/app/nginx.conf
+              BACKUP_DIR=/opt/yeet/backups
+            fi
+            mkdir -p $DEPLOY_DIR $HTML_DIR $BACKUP_DIR
 
             REPO_RAW=https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${DEPLOY_SHA}
 
             curl -fsSL "$REPO_RAW/docker-compose.yml" -o $DEPLOY_DIR/docker-compose.yml
             curl -fsSL "$REPO_RAW/nginx.conf"          -o $DEPLOY_DIR/nginx.conf
-            cp $DEPLOY_DIR/nginx.conf $NGINX_CONF
+            [ "$DEPLOY_DIR/nginx.conf" -ef "$NGINX_CONF" ] || cp $DEPLOY_DIR/nginx.conf $NGINX_CONF
 
             if [ ! -f $DEPLOY_DIR/.env ]; then
               echo "ERROR: $DEPLOY_DIR/.env missing! Create it on the VPS first."
@@ -59,9 +71,8 @@ jobs:
             cd $DEPLOY_DIR
 
             # Pre-deploy safety copy of the database (ledger!), kept 7 days.
-            mkdir -p /root/yeet-backups
-            docker exec yeet-postgres pg_dump -U yeet yeet 2>/dev/null | gzip > "/root/yeet-backups/predeploy-$(date +%Y%m%d-%H%M%S).sql.gz" || echo "[CD] WARN: pre-deploy dump failed (first deploy?)"
-            find /root/yeet-backups -name 'predeploy-*.sql.gz' -mtime +7 -delete || true
+            docker exec yeet-postgres pg_dump -U yeet yeet 2>/dev/null | gzip > "$BACKUP_DIR/predeploy-$(date +%Y%m%d-%H%M%S).sql.gz" || echo "[CD] WARN: pre-deploy dump failed (first deploy?)"
+            find $BACKUP_DIR -name 'predeploy-*.sql.gz' -mtime +7 -delete || true
 
             docker pull ghcr.io/zauni1984/yeet-social/backend:main
             docker compose up -d --remove-orphans

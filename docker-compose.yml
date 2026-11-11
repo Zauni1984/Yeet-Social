@@ -1,3 +1,8 @@
+# Project name pinned: compose otherwise derives it from the directory, and
+# moving the stack (e.g. to /opt/yeet/app for the deploy user) would create
+# a second, empty set of volumes.
+name: yeet-social
+
 services:
 
   postgres:
@@ -116,8 +121,10 @@ services:
     container_name: yeet-nginx
     restart: unless-stopped
     volumes:
-      - /root/yeet-html:/usr/share/nginx/html:ro
-      - /root/yeet-nginx.conf:/etc/nginx/nginx.conf:ro
+      # Overridable from .env for the unprivileged deploy account
+      # (vps/setup-deploy-user.sh); the defaults are the root-era paths.
+      - ${YEET_HTML_DIR:-/root/yeet-html}:/usr/share/nginx/html:ro
+      - ${YEET_NGINX_CONF:-/root/yeet-nginx.conf}:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "80:80"
