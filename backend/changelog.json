@@ -365,6 +365,13 @@
         "#Security",
         "#Messages"
       ]
+    },
+    {
+      "id": "2026-11-10-38-dependency-refresh",
+      "text": "Under the hood: the backend moved to current, maintained libraries for its blockchain and database layers (alloy, sqlx 0.9). The old Ethereum stack with several outdated transitive dependencies is gone, and every dynamically built database query was re-audited in the process. No change in behaviour for you.",
+      "tags": [
+        "#Security"
+      ]
     }
   ]
 }

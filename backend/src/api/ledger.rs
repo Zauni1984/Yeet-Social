@@ -79,7 +79,9 @@ async fn fetch_rows(state: &AppState, q: &LedgerQuery, limit: i64, offset: i64) 
           ORDER BY entry_no ASC
           LIMIT $6 OFFSET $7"
     );
-    sqlx::query_as::<_, LedgerRow>(&sql)
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+    // whitelisted identifiers are interpolated; every user-supplied value is bound.
+    sqlx::query_as::<_, LedgerRow>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(q.from).bind(q.to)
         .bind(q.tx_type.as_deref()).bind(q.asset.as_deref()).bind(q.user_id)
         .bind(limit).bind(offset)
@@ -197,7 +199,7 @@ pub async fn summary(
           GROUP BY tx_type, asset
           ORDER BY asset, tx_type"
     );
-    let rows = sqlx::query_as::<_, SummaryRow>(&sql)
+    let rows = sqlx::query_as::<_, SummaryRow>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(q.from).bind(q.to)
         .bind(q.tx_type.as_deref()).bind(q.asset.as_deref()).bind(q.user_id)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;

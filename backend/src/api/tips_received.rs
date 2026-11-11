@@ -81,7 +81,9 @@ async fn fetch(state: &AppState, uid: Uuid, q: &TipsQuery) -> AppResult<Vec<TipR
           {}",
         order_by(q.sort.as_deref(), q.order.as_deref())
     );
-    sqlx::query_as::<_, TipReceived>(&sql)
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+    // whitelisted identifiers are interpolated; every user-supplied value is bound.
+    sqlx::query_as::<_, TipReceived>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(uid)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)
 }

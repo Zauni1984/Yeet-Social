@@ -73,9 +73,11 @@ const RATE_COLS: &str = "rate::float8 AS rate, valid_from, announced_at, note";
 /// The rate in force right now (latest `valid_from <= now()`); 1:1 if the
 /// table is empty.
 pub async fn current_conversion_rate(db: &Database) -> AppResult<ConversionRate> {
-    let row: Option<ConversionRate> = sqlx::query_as(&format!(
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+    // whitelisted identifiers are interpolated; every user-supplied value is bound.
+    let row: Option<ConversionRate> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT {RATE_COLS} FROM conversion_rates WHERE valid_from <= NOW() ORDER BY valid_from DESC LIMIT 1"
-    )).fetch_optional(db.pool()).await.map_err(AppError::Database)?;
+    ))).fetch_optional(db.pool()).await.map_err(AppError::Database)?;
     Ok(row.unwrap_or(ConversionRate {
         rate: 1.0,
         valid_from: chrono::DateTime::<chrono::Utc>::UNIX_EPOCH,
@@ -86,16 +88,16 @@ pub async fn current_conversion_rate(db: &Database) -> AppResult<ConversionRate>
 
 /// Announced future rates, soonest first.
 pub async fn upcoming_conversion_rates(db: &Database) -> AppResult<Vec<ConversionRate>> {
-    sqlx::query_as(&format!(
+    sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT {RATE_COLS} FROM conversion_rates WHERE valid_from > NOW() ORDER BY valid_from ASC"
-    )).fetch_all(db.pool()).await.map_err(AppError::Database)
+    ))).fetch_all(db.pool()).await.map_err(AppError::Database)
 }
 
 /// Full history (admin), newest first.
 pub async fn conversion_rate_history(db: &Database) -> AppResult<Vec<ConversionRate>> {
-    sqlx::query_as(&format!(
+    sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT {RATE_COLS} FROM conversion_rates ORDER BY valid_from DESC LIMIT 200"
-    )).fetch_all(db.pool()).await.map_err(AppError::Database)
+    ))).fetch_all(db.pool()).await.map_err(AppError::Database)
 }
 
 /// Pure validation of a rate change: positive finite rate, and it must not
@@ -130,10 +132,10 @@ pub async fn schedule_conversion_rate(
 ) -> AppResult<ConversionRate> {
     validate_rate_schedule(rate, valid_from, chrono::Utc::now(), rate_notice_days())
         .map_err(AppError::Validation)?;
-    sqlx::query_as(&format!(
+    sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "INSERT INTO conversion_rates (rate, valid_from, note, created_by)
          VALUES ($1, $2, $3, $4) RETURNING {RATE_COLS}"
-    ))
+    )))
     .bind(rate).bind(valid_from).bind(note).bind(created_by)
     .fetch_one(db.pool()).await
     .map_err(|e| match e {

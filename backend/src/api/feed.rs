@@ -438,7 +438,9 @@ pub async fn get_user_posts(
         LIMIT $2 OFFSET $3",
         include_adult_sql
     );
-    let rows = sqlx::query_as::<_, FeedRow>(&list_sql)
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
+    // whitelisted identifiers are interpolated; every user-supplied value is bound.
+    let rows = sqlx::query_as::<_, FeedRow>(sqlx::AssertSqlSafe(list_sql.as_str()))
         .bind(user_id).bind(per_page).bind(offset).bind(viewer_for_unlock)
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
 
@@ -449,7 +451,7 @@ pub async fn get_user_posts(
                 OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2 AND f.following_id = p.author_id))",
         include_adult_count_sql
     );
-    let total: i64 = sqlx::query_scalar(&count_sql)
+    let total: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(count_sql.as_str()))
         .bind(user_id).bind(viewer_for_unlock)
         .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
