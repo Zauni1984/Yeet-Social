@@ -57,7 +57,13 @@ pub struct UploadKeysRequest {
     /// Required once an identity key exists (see `Reauth`).
     #[serde(default)]
     pub reauth: Option<Reauth>,
+    /// How the wrapping master key was derived (audit MSG-H5): one of
+    /// `login-v1` (legacy default), `passphrase-v2`, `wallet-v1`.
+    #[serde(default)]
+    pub kdf: Option<String>,
 }
+
+const KDFS: [&str; 3] = ["login-v1", "passphrase-v2", "wallet-v1"];
 
 /// POST /api/v1/me/e2ee/reauth-nonce — a one-shot nonce (10 min) a wallet
 /// account signs to prove possession before replacing its identity key.
@@ -77,6 +83,8 @@ pub async fn reauth_nonce(
 pub struct MyKeysResponse {
     pub public_key: Option<String>,
     pub encrypted_private_key: Option<String>,
+    /// See `UploadKeysRequest::kdf`.
+    pub kdf: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -116,6 +124,10 @@ pub async fn upload_keys(
     if !req.encrypted_private_key.chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=' || c == '-' || c == '_') {
         return Err(AppError::Validation("encrypted_private_key must be base64".into()));
     }
+    let kdf = req.kdf.as_deref().unwrap_or("login-v1");
+    if !KDFS.contains(&kdf) {
+        return Err(AppError::Validation("kdf must be one of login-v1, passphrase-v2, wallet-v1".into()));
+    }
 
     let me = caller_user_id(&state, &auth).await?;
 
@@ -151,11 +163,12 @@ pub async fn upload_keys(
     }
 
     sqlx::query(
-        "UPDATE users SET e2ee_public_key = $1, e2ee_encrypted_private_key = $2 WHERE id = $3"
+        "UPDATE users SET e2ee_public_key = $1, e2ee_encrypted_private_key = $2, e2ee_kdf = $4 WHERE id = $3"
     )
     .bind(&req.public_key)
     .bind(&req.encrypted_private_key)
     .bind(me)
+    .bind(kdf)
     .execute(state.db.pool())
     .await
     .map_err(AppError::Database)?;
@@ -168,16 +181,17 @@ pub async fn get_my_keys(
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<MyKeysResponse>>> {
     let me = caller_user_id(&state, &auth).await?;
-    let row: Option<(Option<String>, Option<String>)> = sqlx::query_as(
-        "SELECT e2ee_public_key, e2ee_encrypted_private_key FROM users WHERE id = $1"
+    let row: Option<(Option<String>, Option<String>, String)> = sqlx::query_as(
+        "SELECT e2ee_public_key, e2ee_encrypted_private_key, e2ee_kdf FROM users WHERE id = $1"
     )
     .bind(me)
     .fetch_optional(state.db.pool())
     .await
     .map_err(AppError::Database)?;
 
-    let (pk, sk) = row.unwrap_or((None, None));
+    let (pk, sk, kdf) = row.unwrap_or((None, None, "login-v1".into()));
     Ok(Json(ApiResponse::ok(MyKeysResponse {
+        kdf: pk.as_ref().map(|_| kdf),
         public_key: pk,
         encrypted_private_key: sk,
     })))

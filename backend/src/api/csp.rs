@@ -1,5 +1,5 @@
-//! POST /api/v1/csp-report — sink for `Content-Security-Policy-Report-Only`
-//! violation reports (audit FE-H1, rollout step 1). Reports are logged at
+//! POST /api/v1/csp-report — sink for `Content-Security-Policy` violation
+//! reports (audit FE-H1; enforced since 11 Nov, report-only before). Reports are logged at
 //! warn level (target `yeet_server::api::csp`) so the policy can be tuned
 //! before it is enforced; nothing is stored. Rate-limited per client IP and
 //! capped at 16 KB by the route layer. Accepts both the legacy `report-uri`
@@ -39,7 +39,7 @@ pub async fn report(State(state): State<AppState>, headers: HeaderMap, body: Byt
             document  = %field(r, "document-uri", "documentURL"),
             source    = %field(r, "source-file", "sourceFile"),
             line      = %field(r, "line-number", "lineNumber"),
-            "CSP report-only violation"
+            "CSP violation"
         );
     }
     StatusCode::NO_CONTENT

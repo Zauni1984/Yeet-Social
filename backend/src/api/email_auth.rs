@@ -145,11 +145,22 @@ async fn issue_and_send_verification(
     Ok(())
 }
 
+/// Registration answer (audit A-M4). Deliberately token-free and identical
+/// whether the address was new or already taken: a new account gets its
+/// verification mail, an existing one gets a "you already have an account"
+/// note, and the caller logs in through the normal login endpoint (whose
+/// failure message does not distinguish unknown email from wrong password).
+#[derive(Debug, Serialize)]
+pub struct RegisterResponse {
+    pub status: &'static str,
+    pub email_verified: bool,
+}
+
 pub async fn register(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(req): Json<EmailRegisterRequest>,
-) -> AppResult<Json<ApiResponse<TokenResponse>>> {
+) -> AppResult<Json<ApiResponse<RegisterResponse>>> {
     // Account creation + verification mail: 5 per 10 min, 20 per hour per IP.
     let ip = crate::api::middleware::client_ip(&headers);
     crate::api::middleware::limit(&state, "register_ip", &ip, 600, 5, 3600, 20).await?;
@@ -172,7 +183,19 @@ pub async fn register(
         .bind(&email_lower)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     if exists.is_some() {
-        return Err(AppError::Validation("Email already registered".into()));
+        // Same cost as a real registration (Argon2 + one mail), same answer.
+        // The note is capped per address so the endpoint can't be used to
+        // flood somebody's inbox; when the cap is hit nothing is sent and
+        // the response is still the same.
+        let _ = verify_password(&req.password, dummy_phc(), "");
+        if crate::services::rate_limit::check_one_window(&state.cache, "register_exists_mail", &email_lower, 86400, 3).await {
+            if let Some(cfg) = state.email.as_ref() {
+                if let Err(e) = email_svc::send_account_exists_email(cfg, &email_lower).await {
+                    tracing::warn!("SMTP send (account-exists note) failed: {e}");
+                }
+            }
+        }
+        return Ok(Json(ApiResponse::ok(RegisterResponse { status: "verification_sent", email_verified: false })));
     }
 
     let hash = hash_password_argon2(&req.password)?;
@@ -198,19 +221,9 @@ pub async fn register(
 
     issue_and_send_verification(&state, user_id, &email_lower).await?;
 
-    let subject = format!("email:{}", user_id);
-    let family_id = Uuid::new_v4();
-    let (access_token, refresh_token) = auth::issue_token_pair(&subject, family_id, &state.jwt)
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    record_session_best_effort(&state, user_id, &refresh_token, family_id).await;
-
-    Ok(Json(ApiResponse::ok(TokenResponse {
-        access_token, refresh_token,
-        token_type: "Bearer".into(),
-        username,
-        email_verified: false,
-    })))
+    // No session here (see RegisterResponse): the client signs in with the
+    // credentials it just chose, through the regular login endpoint.
+    Ok(Json(ApiResponse::ok(RegisterResponse { status: "verification_sent", email_verified: false })))
 }
 
 pub async fn login(

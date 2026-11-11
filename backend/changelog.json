@@ -372,6 +372,21 @@
       "tags": [
         "#Security"
       ]
+    },
+    {
+      "id": "2026-11-11-39-message-passphrase",
+      "text": "Encrypted messages now use their own passphrase instead of your login password. New users pick it when they first open Messages; existing users are asked to set one the next time they unlock. It never leaves your device and cannot be recovered, so keep it safe.",
+      "tags": [
+        "#Security",
+        "#Messages"
+      ]
+    },
+    {
+      "id": "2026-11-11-40-csp-and-signup",
+      "text": "Two quiet hardening steps: the browser now enforces a strict content policy on every justyeet.it page, and signing up no longer reveals whether an email address already has an account (the account owner gets a note instead). Nothing changes in how you use the app.",
+      "tags": [
+        "#Security"
+      ]
     }
   ]
 }

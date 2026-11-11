@@ -1123,7 +1123,7 @@ html.ld-on body{overflow:hidden}
       'auth.consent':'I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Fill all fields','auth.loginFailed':'Login failed','auth.welcomeBackUser':'Welcome back, @{u}','auth.usernameMin':'Username min 3 chars',
       'auth.passwordMinErr':'Password min 8 chars','auth.invalidEmail':'Invalid email','auth.acceptPrivacy':'Please accept the privacy policy (GDPR)',
-      'auth.registerFailed':'Registration failed','auth.welcomeNew':'Welcome to YEET, @{u}','auth.nonceFailed':'Nonce failed','auth.failed':'Auth failed',
+      'auth.registerFailed':'Registration failed','auth.registerNeutral':'If this address was new, your account was created and a confirmation email is on its way — log in with your password. If you already had an account with this address, use that password or "Forgot password".','auth.welcomeNew':'Welcome to YEET, @{u}','auth.nonceFailed':'Nonce failed','auth.failed':'Auth failed',
       'auth.connected':'Connected: {addr}','auth.addressCopied':'Address copied',
       // --- onboarding / email verification ---
       'onboard.title':'One last step','onboard.text':'Add an email for account recovery and verify it (GDPR double opt-in).','onboard.send':'Send verification link',
@@ -1264,6 +1264,14 @@ html.ld-on body{overflow:hidden}
       'dm.deleteForAllConfirm':'Unsend this message for everyone in the conversation? Cannot be undone.',
       'dm.edit':'Edit','dm.editPrompt':'Edit your message:','dm.edited':'edited',
       'dm.editTooLate':'Edit window (15 minutes) has passed',
+      'dm.passphraseTitle':'Message passphrase',
+      'dm.passphraseSetup':'Choose a passphrase for your encrypted messages (at least 8 characters). It protects your message keys on this device, is never sent to the server and cannot be recovered — if you forget it, old messages stay locked.',
+      'dm.passphraseConfirm':'Repeat the passphrase.',
+      'dm.passphraseMismatch':'The two entries do not match — try again.',
+      'dm.passphraseTooShort':'At least {n} characters, please.',
+      'dm.passphraseUnlock':'Enter your message passphrase to unlock your encrypted messages on this device.',
+      'dm.passphraseMigrate':'Your message keys are still protected by your login password, which the server sees when you log in. Choose a separate message passphrase now (at least 8 characters). Only you know it; it cannot be recovered.',
+      'dm.passphraseMigrated':'Your messages are now protected by your own passphrase.',
       'dm.pinIdentityChanged':'The encryption identity of this contact has CHANGED. This happens after they reset their keys, but it could also mean someone is intercepting your messages. Compare this safety number with them in person before continuing:\n\n{sn}\n\nAccept the new key?',
       'dm.pinNewDevice':'This contact has a new device ({device}…). Your messages will also be delivered to it. If they did not add a device, do not continue. Safety number:\n\n{sn}\n\nAllow this device?',
       'dm.pinNewOwnDevice':'A new device ({device}…) is registered on YOUR account and would receive copies of your messages. If you did not add it, cancel and remove it under Settings → Devices. Safety number:\n\n{sn}\n\nAllow this device?',
@@ -1561,7 +1569,7 @@ html.ld-on body{overflow:hidden}
       'auth.consent':'Ich stimme der <a href="/privacy.html" target="_blank" style="color:var(--yeet)">Datenschutzerklärung</a> zu und willige ein, eine Bestätigungs-E-Mail zu erhalten (DSGVO-Double-Opt-in).',
       'auth.fillAll':'Bitte alle Felder ausfüllen','auth.loginFailed':'Anmeldung fehlgeschlagen','auth.welcomeBackUser':'Willkommen zurück, @{u}','auth.usernameMin':'Benutzername: mind. 3 Zeichen',
       'auth.passwordMinErr':'Passwort: mind. 8 Zeichen','auth.invalidEmail':'Ungültige E-Mail-Adresse','auth.acceptPrivacy':'Bitte akzeptiere die Datenschutzerklärung (DSGVO)',
-      'auth.registerFailed':'Registrierung fehlgeschlagen','auth.welcomeNew':'Willkommen bei YEET, @{u}','auth.nonceFailed':'Nonce fehlgeschlagen','auth.failed':'Authentifizierung fehlgeschlagen',
+      'auth.registerFailed':'Registrierung fehlgeschlagen','auth.registerNeutral':'Falls diese Adresse neu war, ist dein Konto angelegt und eine Bestätigungs-Mail unterwegs — melde dich mit deinem Passwort an. Falls du mit dieser Adresse schon ein Konto hattest, nutze dessen Passwort oder „Passwort vergessen“.','auth.welcomeNew':'Willkommen bei YEET, @{u}','auth.nonceFailed':'Nonce fehlgeschlagen','auth.failed':'Authentifizierung fehlgeschlagen',
       'auth.connected':'Verbunden: {addr}','auth.addressCopied':'Adresse kopiert',
       // --- onboarding / email verification ---
       'onboard.title':'Ein letzter Schritt','onboard.text':'Hinterlege eine E-Mail zur Kontowiederherstellung und bestätige sie (DSGVO-Double-Opt-in).','onboard.send':'Bestätigungslink senden',
@@ -1693,6 +1701,14 @@ html.ld-on body{overflow:hidden}
       'dm.deleteForAllConfirm':'Diese Nachricht für alle in der Konversation zurückziehen? Das kann nicht rückgängig gemacht werden.',
       'dm.edit':'Bearbeiten','dm.editPrompt':'Nachricht bearbeiten:','dm.edited':'bearbeitet',
       'dm.editTooLate':'Bearbeitungsfenster (15 Min) abgelaufen',
+      'dm.passphraseTitle':'Nachrichten-Passphrase',
+      'dm.passphraseSetup':'Wähle eine Passphrase für deine verschlüsselten Nachrichten (mindestens 8 Zeichen). Sie schützt deine Nachrichtenschlüssel auf diesem Gerät, wird nie an den Server gesendet und kann nicht wiederhergestellt werden — vergisst du sie, bleiben alte Nachrichten gesperrt.',
+      'dm.passphraseConfirm':'Passphrase wiederholen.',
+      'dm.passphraseMismatch':'Die beiden Eingaben stimmen nicht überein — bitte erneut versuchen.',
+      'dm.passphraseTooShort':'Mindestens {n} Zeichen, bitte.',
+      'dm.passphraseUnlock':'Gib deine Nachrichten-Passphrase ein, um deine verschlüsselten Nachrichten auf diesem Gerät zu entsperren.',
+      'dm.passphraseMigrate':'Deine Nachrichtenschlüssel sind noch durch dein Login-Passwort geschützt, das der Server beim Anmelden sieht. Wähle jetzt eine eigene Nachrichten-Passphrase (mindestens 8 Zeichen). Nur du kennst sie; sie kann nicht wiederhergestellt werden.',
+      'dm.passphraseMigrated':'Deine Nachrichten sind jetzt durch deine eigene Passphrase geschützt.',
       'dm.pinIdentityChanged':'Die Verschlüsselungs-Identität dieses Kontakts hat sich GEÄNDERT. Das passiert nach einem Schlüssel-Reset, kann aber auch bedeuten, dass jemand mitliest. Vergleiche diese Sicherheitsnummer persönlich, bevor du weitermachst:\n\n{sn}\n\nNeuen Schlüssel akzeptieren?',
       'dm.pinNewDevice':'Dieser Kontakt hat ein neues Gerät ({device}…). Deine Nachrichten werden auch dorthin zugestellt. Wenn er kein Gerät hinzugefügt hat, brich ab. Sicherheitsnummer:\n\n{sn}\n\nGerät zulassen?',
       'dm.pinNewOwnDevice':'Auf DEINEM Konto ist ein neues Gerät ({device}…) registriert, das Kopien deiner Nachrichten erhalten würde. Wenn du es nicht hinzugefügt hast, brich ab und entferne es unter Einstellungen → Geräte. Sicherheitsnummer:\n\n{sn}\n\nGerät zulassen?',
@@ -34547,9 +34563,16 @@ function showExternalLinkWarning(e,url){
       var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||window.t('auth.registerFailed'));
-      var payload=d.data||d;
+      // The registration answer carries no session and is the same whether
+      // the address was new or taken (audit A-M4). Sign in with the
+      // credentials just chosen; if that fails the address most likely
+      // already had an account with a different password.
+      var lr=await fetch('/api/v1/auth/email-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,password:p})});
+      var ld=await lr.json().catch(function(){return {};});
+      if(!lr.ok){ _showErr(window.t('auth.registerNeutral')); return; }
+      var payload=ld.data||ld;
       var tok=payload.access_token||payload.token||'';
-      if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
+      if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e2){}
       var usr={username:payload.username||u,email_verified:payload.email_verified===true};
       _setLoggedIn(tok,usr,null);
       window.closeAuthModal();
@@ -36924,26 +36947,54 @@ info@blocksocial.eu</address>
       { name:'PBKDF2', hash:'SHA-256', salt: enc.encode('YEET-E2EE-v1|' + userId), iterations: 200000 },
       km, { name:'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
   }
+  // MSG-H5: the message master key comes from a dedicated passphrase that
+  // is never sent to the server (the login password is — at login). Own
+  // salt label so a passphrase equal to the login password still yields a
+  // different key than the legacy derivation.
+  async function deriveMasterKeyFromPassphrase(pp, userId){
+    var enc = new TextEncoder();
+    var km = await subtle.importKey('raw', enc.encode(pp), 'PBKDF2', false, ['deriveKey']);
+    return await subtle.deriveKey(
+      { name:'PBKDF2', hash:'SHA-256', salt: enc.encode('YEET-E2EE-v2|' + userId), iterations: 300000 },
+      km, { name:'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
+  }
+  var PASSPHRASE_MIN = 8;
+  // Ask for a NEW passphrase twice (setup / migration). Resolves with the
+  // passphrase or null on cancel.
+  async function promptNewPassphrase(explain){
+    var tr = window.t || function(k){ return k; };
+    for(;;){
+      var a = await promptPassword(explain, { autocomplete:'new-password', title: tr('dm.passphraseTitle') });
+      if(a === null) return null;
+      if(a.length < PASSPHRASE_MIN){ if(window.showToast) window.showToast(tr('dm.passphraseTooShort', { n: PASSPHRASE_MIN }), 'error'); continue; }
+      var b = await promptPassword(tr('dm.passphraseConfirm'), { autocomplete:'new-password', title: tr('dm.passphraseTitle') });
+      if(b === null) return null;
+      if(a !== b){ if(window.showToast) window.showToast(tr('dm.passphraseMismatch'), 'error'); continue; }
+      return a;
+    }
+  }
   function hasInjectedWallet(){
     var prov = (window.YeetWallet && window.YeetWallet.providerSync()) || window.ethereum;
     return !!(prov && prov.request);
   }
-  function promptPassword(message){
+  function promptPassword(message, opts){
     // Lightweight UI: a fixed overlay with a password input. Resolves
     // with the entered password or null on cancel.
+    opts = opts || {};
     return new Promise(function(resolve){
       var ov = document.createElement('div');
+      ov.setAttribute('data-yeet-prompt', 'passphrase');
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center';
       var box = document.createElement('div');
       box.style.cssText = 'background:var(--card);border:1px solid var(--border-2);border-radius:14px;padding:22px;width:360px;max-width:92vw;color:var(--text);font-family:inherit';
       var h = document.createElement('h3');
-      h.innerHTML = '<span class="yi yi-lock"></span> ' + (window.t ? window.t('dm.enableTitle') : 'Enable encrypted messages');
+      h.innerHTML = '<span class="yi yi-lock"></span> ' + (opts.title || (window.t ? window.t('dm.enableTitle') : 'Enable encrypted messages'));
       h.style.cssText = 'margin:0 0 8px;color:var(--text);font-size:18px';
       var p = document.createElement('p');
       p.textContent = message;
       p.style.cssText = 'margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.45';
       var inp = document.createElement('input');
-      inp.type = 'password'; inp.autocomplete = 'current-password';
+      inp.type = 'password'; inp.autocomplete = opts.autocomplete || 'current-password';
       inp.style.cssText = 'width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px';
       var btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:8px';
@@ -37000,13 +37051,43 @@ info@blocksocial.eu</address>
     out.set(iv, 0); out.set(ct, iv.length);
     return bytesToB64(out);
   }
-  async function unwrapPrivateKey(master, blobB64){
+  async function unwrapPrivateKeyBytes(master, blobB64){
     var all = b64ToBytes(blobB64);
     var iv = all.slice(0, 12);
     var ct = all.slice(12);
-    var plain = new Uint8Array(await subtle.decrypt(
-      { name:'AES-GCM', iv: iv }, master, ct));
-    return await importPriv(plain);
+    return new Uint8Array(await subtle.decrypt({ name:'AES-GCM', iv: iv }, master, ct));
+  }
+  async function unwrapPrivateKey(master, blobB64){
+    return await importPriv(await unwrapPrivateKeyBytes(master, blobB64));
+  }
+
+  // Re-wrap everything this device keeps under the master key (prekey
+  // privates, ratchet sessions, plaintext cache) from `oldM` to `newM`.
+  // Entries that cannot be re-wrapped are dropped rather than left behind
+  // unreadable; a lost ratchet session simply starts over.
+  async function rewrapLocalState(uid, oldM, newM){
+    async function rw(b64){ return await wrapRawPrivBytes(newM, await unwrapPrivateKeyBytes(oldM, b64)); }
+    try {
+      var pk = JSON.parse(localStorage.getItem(prekeyStoreKey(uid)) || 'null');
+      if(pk){
+        if(pk.signing) pk.signing = await rw(pk.signing);
+        if(pk.signed)  pk.signed  = await rw(pk.signed);
+        var otps = {};
+        for(var id in (pk.otps || {})){ try { otps[id] = await rw(pk.otps[id]); } catch(e){} }
+        pk.otps = otps;
+        localStorage.setItem(prekeyStoreKey(uid), JSON.stringify(pk));
+      }
+    } catch(e){ try { localStorage.removeItem(prekeyStoreKey(uid)); } catch(e2){} }
+    var keys = [];
+    for(var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); if(k && (k.indexOf('yeet_ratchet_')===0 || k.indexOf('yeet_sent_')===0)) keys.push(k); }
+    for(var j=0;j<keys.length;j++){
+      var key = keys[j];
+      try {
+        var o = JSON.parse(localStorage.getItem(key) || 'null');
+        if(o && typeof o.w === 'string'){ o.w = await rw(o.w); localStorage.setItem(key, JSON.stringify(o)); }
+        else localStorage.removeItem(key); // legacy unwrapped layout: drop
+      } catch(e){ try { localStorage.removeItem(key); } catch(e2){} }
+    }
   }
 
   // ─── Prekey provisioning (Forward Secrecy phase 1) ─────────────────
@@ -37232,26 +37313,46 @@ info@blocksocial.eu</address>
       // an injected wallet); if it fails or is unavailable, fall back to
       // the password-derived master. AES-GCM authenticates, so a wrong
       // master fails loudly — we can safely race the two.
-      var unwrapped = null;
+      var unwrappedBytes = null;
       var usedMaster = null;
-      if(hasInjectedWallet()){
+      var kdf = d.data.kdf || 'login-v1';
+      var uid1 = await fetchOwnUserId();
+      if(kdf === 'passphrase-v2'){
+        // Dedicated message passphrase (MSG-H5).
+        var pp = await promptPassword((window.t? window.t('dm.passphraseUnlock') : 'Enter your message passphrase.'), { title: (window.t ? window.t('dm.passphraseTitle') : 'Message passphrase') });
+        if(pp === null) throw new Error('aborted');
         try {
-          var mw = await deriveMasterKeyFromWallet();
-          unwrapped = await unwrapPrivateKey(mw, d.data.encrypted_private_key);
-          usedMaster = mw;
-        } catch(e) { /* fall through to password */ }
-      }
-      if(!unwrapped){
-        var uid1 = await fetchOwnUserId();
-        var pwd1 = await promptPassword((window.t? window.t('dm.enableUnlock') : 'Enter your password to unlock encrypted messages.'));
-        if(pwd1 === null) throw new Error('aborted');
-        try {
-          var mp = await deriveMasterKeyFromPassword(pwd1, uid1);
-          unwrapped = await unwrapPrivateKey(mp, d.data.encrypted_private_key);
-          usedMaster = mp;
+          var mpp = await deriveMasterKeyFromPassphrase(pp, uid1);
+          unwrappedBytes = await unwrapPrivateKeyBytes(mpp, d.data.encrypted_private_key);
+          usedMaster = mpp;
         } catch(e) { throw new Error('unwrap_failed'); }
+      } else {
+        if(hasInjectedWallet()){
+          try {
+            var mw = await deriveMasterKeyFromWallet();
+            unwrappedBytes = await unwrapPrivateKeyBytes(mw, d.data.encrypted_private_key);
+            usedMaster = mw;
+          } catch(e) { /* fall through to password */ }
+        }
+        if(!unwrappedBytes){
+          // Legacy: master derived from the login password. Unlock, then
+          // move this account to a dedicated passphrase (MSG-H5); the
+          // login password just entered doubles as the server-side proof
+          // of possession for replacing the wrapped key.
+          var pwd1 = await promptPassword((window.t? window.t('dm.enableUnlock') : 'Enter your password to unlock encrypted messages.'));
+          if(pwd1 === null) throw new Error('aborted');
+          try {
+            var mp = await deriveMasterKeyFromPassword(pwd1, uid1);
+            unwrappedBytes = await unwrapPrivateKeyBytes(mp, d.data.encrypted_private_key);
+            usedMaster = mp;
+          } catch(e) { throw new Error('unwrap_failed'); }
+          try {
+            var migrated = await migrateToPassphrase(uid1, jwt, pwd1, mp, unwrappedBytes, d.data.public_key);
+            if(migrated) usedMaster = migrated;
+          } catch(e){ /* keep working with the legacy master this session */ }
+        }
       }
-      _identitySk = unwrapped;
+      _identitySk = await importPriv(unwrappedBytes);
       _identityPk = d.data.public_key;
       _lastMaster = usedMaster;
       // Provision prekeys if this device hasn't yet (best-effort).
@@ -37265,15 +37366,16 @@ info@blocksocial.eu</address>
     // injected wallet we prefer wallet sign (matches the rest of the
     // app's Web3 identity); otherwise fall back to password.
     if(promptMessage && !confirm(promptMessage)) throw new Error('setup_declined');
-    var master2, setupPwd = null;
+    var master2, setupKdf;
     if(hasInjectedWallet()){
       master2 = await deriveMasterKeyFromWallet();
+      setupKdf = 'wallet-v1';
     } else {
       var uid = await fetchOwnUserId();
-      var pwd = await promptPassword((window.t? window.t('dm.enableSetup') : 'Enter your account password to derive an encryption key. Use the same password you log in with.'));
-      if(pwd === null || pwd.length < 1) throw new Error('aborted');
-      master2 = await deriveMasterKeyFromPassword(pwd, uid);
-      setupPwd = pwd;
+      var pp2 = await promptNewPassphrase((window.t? window.t('dm.passphraseSetup') : 'Choose a passphrase for your encrypted messages. It is never sent to the server and cannot be recovered.'));
+      if(pp2 === null) throw new Error('aborted');
+      master2 = await deriveMasterKeyFromPassphrase(pp2, uid);
+      setupKdf = 'passphrase-v2';
     }
     var kp = await genIdentityKeypair();
     var spki = await exportPubSpki(kp.publicKey);
@@ -37282,9 +37384,9 @@ info@blocksocial.eu</address>
     var ur = await fetch('/api/v1/me/e2ee/keys', {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
-      // Replacing an existing identity needs proof of possession on the
-      // server (audit MSG-H4); the password just entered doubles as that.
-      body: JSON.stringify({ public_key: spki, encrypted_private_key: wrapped, reauth: setupPwd ? { password: setupPwd } : null })
+      // First-time setup: no key exists yet, so no proof of possession is
+      // needed (replacing one goes through migrateToPassphrase).
+      body: JSON.stringify({ public_key: spki, encrypted_private_key: wrapped, kdf: setupKdf })
     });
     var ud = await ur.json();
     if(!ur.ok || !ud.success) throw new Error('upload_failed');
@@ -37298,6 +37400,32 @@ info@blocksocial.eu</address>
       await provisionPrekeysWithMaster(master2, jwt, suid, {});
     } catch(e){ /* additive; never block setup */ }
     return { sk: _identitySk, pk: _identityPk };
+  }
+
+  // MSG-H5 migration: re-wrap the identity key under a passphrase-derived
+  // master and replace it on the server (proof of possession = the login
+  // password that just unlocked it). Returns the new master, or null when
+  // the user cancelled or the upload failed (the legacy master keeps
+  // working; the offer repeats at the next unlock).
+  async function migrateToPassphrase(uid, jwt, loginPwd, oldMaster, pkcs8, pubB64){
+    var tr = window.t || function(k){ return k; };
+    var pp = await promptNewPassphrase(tr('dm.passphraseMigrate'));
+    if(pp === null) return null;
+    var newMaster = await deriveMasterKeyFromPassphrase(pp, uid);
+    var wrapped = await wrapPrivateKey(newMaster, pkcs8);
+    var r = await fetch('/api/v1/me/e2ee/keys', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+      body: JSON.stringify({ public_key: pubB64, encrypted_private_key: wrapped, kdf:'passphrase-v2', reauth:{ password: loginPwd } })
+    });
+    var d = await r.json().catch(function(){ return {}; });
+    if(!r.ok || !d.success){
+      if(window.showToast) window.showToast((d.error && d.error.message) || tr('common.error'), 'error');
+      return null;
+    }
+    await rewrapLocalState(uid, oldMaster, newMaster);
+    if(window.showToast) window.showToast(tr('dm.passphraseMigrated'), 'success');
+    return newMaster;
   }
 
   function clearIdentityCache(){ _identitySk = null; _identityPk = null; _lastMaster = null; }
