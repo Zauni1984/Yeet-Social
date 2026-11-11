@@ -82,6 +82,35 @@ pub async fn send_verification_email(
     Ok(())
 }
 
+/// Audit A-M4: registration no longer tells the caller whether an address is
+/// taken. The existing account's owner gets this note instead, so a real
+/// person who forgot they signed up still finds their way back.
+pub async fn send_account_exists_email(cfg: &EmailConfig, to_email: &str) -> anyhow::Result<()> {
+    let base = cfg.public_base_url.trim_end_matches('/');
+    let from: Mailbox = format!("YEET Social <{}>", cfg.from).parse()?;
+    let to: Mailbox = to_email.parse()?;
+    let html = format!(
+        r#"<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:24px">
+<div style="max-width:520px;margin:0 auto;background:#16181c;border:1px solid #2a2a2a;border-radius:16px;padding:32px">
+<h1 style="color:#c6f135;margin:0 0 16px;font-size:22px">You already have a YEET account</h1>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px">Someone just tried to sign up with this email address — most likely you. An account with this address already exists, so no new one was created.</p>
+<p style="margin:24px 0"><a href="{base}/" style="display:inline-block;background:#c6f135;color:#000;padding:12px 28px;border-radius:24px;text-decoration:none;font-weight:700">Log in</a></p>
+<p style="color:#888;font-size:13px">Forgot your password? Use "Forgot password" on the login screen.</p>
+<p style="color:#666;font-size:12px;margin-top:24px">If this wasn't you, you can ignore this email — nothing has changed on your account.</p>
+</div></body></html>"#,
+        base = base
+    );
+    let email = Message::builder()
+        .from(from)
+        .to(to)
+        .subject("You already have a YEET Social account")
+        .header(ContentType::TEXT_HTML)
+        .body(html)?;
+    let mailer = transport(cfg)?;
+    mailer.send(email).await?;
+    Ok(())
+}
+
 /// F7 — confirmation of a pay-per-view purchase on a durable medium
 /// (§ 312f BGB): restates the consent the buyer gave (immediate performance,
 /// loss of the right of withdrawal), the price and the time.
