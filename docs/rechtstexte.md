@@ -71,3 +71,22 @@ in `conversion_rates`; der Admin-Endpoint lehnt Änderungen mit weniger als
 Kurs; der Dialog zeigt angekündigte Änderungen mit Datum an (docs/mica/09 §6.3).
 **Anwalt:** Ist eine 14-Tage-Frist angemessen, und genügt die Anzeige im Dialog plus
 Changelog-Post als „Ankündigung“, oder ist eine E-Mail an alle Nutzer mit Punkteguthaben nötig?
+
+## Datenschutzerklärung § 4.6/4.7, § 5, § 9, § 11: Altersverifikation und optionale Altersschätzung (2026-11-12)
+
+Anlass: Die bisherige Fassung beschrieb die Altersverifikation als „in der Sitzung verarbeitete“
+Aufnahme, von der nur das Ergebnis bleibt. Seit der Umstellung auf menschliche Prüfung werden
+Gesichtsfoto und optionales Ausweisfoto verschlüsselt gespeichert (7 Tage nach Freigabe, 30 Tage
+nach Ablehnung, sofort bei Rücknahme), und seit dem 12. November gibt es die optionale
+KI-Altersschätzung als Hinweis für das Prüfpersonal. Geändert (DE und EN):
+
+- § 4.6 beschreibt jetzt Speicherung, Verschlüsselung, Zugriff und Fristen der Fotos korrekt.
+- Neuer § 4.7 „Altersschätzung (optional)“: gesonderte Einwilligung, Verarbeitung nur auf dem
+  eigenen Server, Hinweis statt Entscheidung, Löschung mit dem Foto, Widerruf durch Rücknahme.
+- § 5: zusätzlicher Zweck mit Rechtsgrundlage Art. 9 Abs. 2 lit. a DSGVO.
+- § 9: Speicherdauer der Fotos und der Schätzwerte ergänzt.
+- § 11: klargestellt, dass keine automatisierte Entscheidung stattfindet (Mensch entscheidet).
+- Stand-Datum auf 12. November 2026.
+
+Die zugehörige Datenschutz-Folgenabschätzung liegt als Entwurf unter
+`docs/dsfa-altersverifikation.md`; offene organisatorische Punkte stehen dort in Abschnitt 6.

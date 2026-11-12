@@ -35468,7 +35468,7 @@ Email: info@blocksocial.eu</address>
 
     <article id="legal-privacy">
       <h1>Privacy Policy</h1>
-      <p class="legal-meta">Last updated: 8 May 2026.</p>
+      <p class="legal-meta">Last updated: 12 November 2026.</p>
 
       <h2>1. Controller</h2>
       <p>The controller within the meaning of Article 4 (7) of the General Data Protection Regulation (GDPR) is:</p>
@@ -35532,7 +35532,9 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
       </ul>
 
       <h3>4.6 Age-verification data</h3>
-      <p>If you choose to access 18+ content, we process biometric data (a one-time face image used to estimate your age via an automated process). The image is processed in-session; only the result &mdash; a &ldquo;verified &ge;&nbsp;18&rdquo; flag against your account &mdash; is retained. This processing requires your explicit consent under Article 9 (2) (a) GDPR.</p>
+      <p>If you choose to access 18+ content, you submit a face photo and, optionally, a photo of an identity document. These are biometric and identity data. They are stored encrypted on our own servers (AES-256-GCM, one key per file, never on a public path), are visible only to our review staff, and are deleted 7 days after an approval or 30 days after a rejection (the appeal window), or immediately if you withdraw the request. Only the result &mdash; a &ldquo;verified &ge;&nbsp;18&rdquo; flag on your account, the reviewer&rsquo;s note and the review log &mdash; is retained after that. This processing requires your explicit consent under Article 9 (2) (a) GDPR.</p>
+      <h3>4.7 Age estimate (optional)</h3>
+      <p>When you submit your photo you can additionally allow us to estimate your age from it. This is a separate, optional consent (checkbox, off by default); without it nothing changes and a person reviews your request as before. If you consent, our own server runs two open-source models on the photo (face detection and an age-bracket classifier). The photo never leaves our server for this, no third party is involved, and no profile is built. The result &mdash; an age bracket, probabilities and a hint such as &ldquo;likely adult&rdquo; or &ldquo;uncertain&rdquo; &mdash; is shown to our reviewer as a hint only; the decision is always taken by a person. The probabilities are deleted together with your photo; the hint remains part of the review log. You can withdraw this consent at any time by withdrawing the request (Settings &rarr; Age verification); consent already acted on remains lawful until withdrawal. Details: <a href="https://github.com/Zauni1984/Yeet-Social/blob/main/docs/age-estimation.md" target="_blank" rel="noopener">docs/age-estimation.md</a>.</p>
 
       <h2>5. Purposes and legal bases for processing</h2>
       <ul>
@@ -35540,6 +35542,7 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
         <li><strong>Email verification, password reset, transactional notifications.</strong> Legal basis: Article 6 (1) (b) GDPR.</li>
         <li><strong>Wallet-based authentication.</strong> Legal basis: Article 6 (1) (b) GDPR. We verify possession of a private key by asking you to sign a one-time challenge. We never receive your private key.</li>
         <li><strong>Age verification for 18+ content.</strong> Legal basis: Article 6 (1) (c) GDPR (legal obligation under the German Youth Protection Act, JuSchG) in combination with Article 9 (2) (a) GDPR (your explicit consent for biometric data).</li>
+        <li><strong>Optional age estimate</strong> as a hint for the reviewer (see &sect;&nbsp;4.7). Legal basis: Article 9 (2) (a) GDPR (your separate explicit consent); without it no estimate is made.</li>
         <li><strong>Security, fraud prevention, abuse mitigation.</strong> Legal basis: Article 6 (1) (f) GDPR &mdash; our legitimate interest in keeping the Service safe and stable.</li>
         <li><strong>Improving and analysing the Service.</strong> Legal basis: Article 6 (1) (f) GDPR. We use only minimal, aggregated data and do not sell or share your personal data with advertisers.</li>
       </ul>
@@ -35574,7 +35577,7 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
         <li>Account data: stored until you delete your account.</li>
         <li>Tip records and paper-wallet records: retained for up to ten years to satisfy German commercial and tax retention obligations (HGB, AO).</li>
         <li>Server access logs: rotated and purged after 14&nbsp;days.</li>
-        <li>Age-verification result flag: stored for as long as your account exists.</li>
+        <li>Age-verification photos (face, optional ID): 7 days after approval, 30 days after rejection, or immediately on withdrawal; the age-estimate probabilities are deleted at the same time. The result flag, the reviewer&rsquo;s note and the review log (including the estimate hint) are stored for as long as your account exists.</li>
       </ul>
 
       <h2>10. Your rights as a data subject</h2>
@@ -35592,7 +35595,7 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
       <p>To exercise any of these rights, email info@blocksocial.eu. We respond within one month (Art. 12 (3) GDPR).</p>
 
       <h2>11. Automated decision-making</h2>
-      <p>We do not engage in automated decision-making with legal or similarly significant effects (Art. 22 GDPR), with the exception of the optional age-verification check, which exists to comply with German youth-protection law and which you may decline (in which case you cannot access 18+ content).</p>
+      <p>We do not engage in automated decision-making with legal or similarly significant effects (Art. 22 GDPR). Age-verification requests, including those with the optional age estimate, are always decided by a person; the estimate is a hint to the reviewer and never decides on its own. You may decline age verification altogether (in which case you cannot access 18+ content).</p>
 
       <h2>12. Changes to this policy</h2>
       <p>We may revise this policy. The current version, including the date last updated, is always available at this URL. Material changes will be highlighted in-app.</p>
@@ -35820,7 +35823,7 @@ E-Mail: info@blocksocial.eu</address>
 
     <article id="legal-privacy-de" lang="de">
       <h1>Datenschutzerklärung</h1>
-      <p class="legal-meta">Stand: 8. Mai 2026.</p>
+      <p class="legal-meta">Stand: 12. November 2026.</p>
 
       <h2>1. Verantwortlicher</h2>
       <p>Verantwortlicher im Sinne von Art. 4 Nr. 7 der Datenschutz-Grundverordnung (DSGVO) ist:</p>
@@ -35884,14 +35887,16 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
       </ul>
 
       <h3>4.6 Daten zur Altersverifikation</h3>
-      <p>Wenn Sie auf 18+-Inhalte zugreifen möchten, verarbeiten wir biometrische Daten (eine einmalige Gesichtsaufnahme, anhand derer Ihr Alter in einem automatisierten Verfahren geschätzt wird). Die Aufnahme wird innerhalb der Sitzung verarbeitet; nur das Ergebnis – eine Kennzeichnung „verifiziert ≥ 18“ in Ihrem Konto – wird gespeichert. Diese Verarbeitung erfordert Ihre ausdrückliche Einwilligung gemäß Art. 9 Abs. 2 lit. a DSGVO.</p>
-
+      <p>Wenn Sie auf 18+-Inhalte zugreifen möchten, reichen Sie ein Gesichtsfoto und optional ein Foto eines Ausweisdokuments ein. Das sind biometrische Daten und Identitätsdaten. Sie werden verschlüsselt auf unseren eigenen Servern gespeichert (AES-256-GCM, ein Schlüssel je Datei, nie unter einem öffentlich erreichbaren Pfad), sind nur für unser Prüfpersonal einsehbar und werden 7 Tage nach einer Freigabe bzw. 30 Tage nach einer Ablehnung (Einspruchsfrist) gelöscht, bei Rücknahme des Antrags sofort. Danach bleibt nur das Ergebnis – die Kennzeichnung „verifiziert ≥ 18“ in Ihrem Konto, der Prüfvermerk und das Prüfprotokoll. Diese Verarbeitung erfordert Ihre ausdrückliche Einwilligung gemäß Art. 9 Abs. 2 lit. a DSGVO.</p>
+      <h3>4.7 Altersschätzung (optional)</h3>
+      <p>Beim Einreichen Ihres Fotos können Sie uns zusätzlich erlauben, Ihr Alter daraus zu schätzen. Das ist eine eigene, freiwillige Einwilligung (Checkbox, standardmäßig aus); ohne sie ändert sich nichts, und ein Mensch prüft Ihren Antrag wie bisher. Mit Ihrer Einwilligung führt unser eigener Server zwei Open-Source-Modelle auf dem Foto aus (Gesichtserkennung und Altersklassen-Schätzung). Das Foto verlässt dafür unseren Server nicht, es ist kein Dritter beteiligt, und es wird kein Profil gebildet. Das Ergebnis – eine Altersklasse, Wahrscheinlichkeiten und ein Hinweis wie „wahrscheinlich volljährig“ oder „unsicher“ – wird unserem Prüfpersonal nur als Hinweis angezeigt; die Entscheidung trifft immer ein Mensch. Die Wahrscheinlichkeiten werden zusammen mit Ihrem Foto gelöscht, der Hinweis bleibt Teil des Prüfprotokolls. Sie können diese Einwilligung jederzeit widerrufen, indem Sie den Antrag zurücknehmen (Einstellungen → Altersverifikation); die bis zum Widerruf erfolgte Verarbeitung bleibt rechtmäßig. Einzelheiten: <a href="https://github.com/Zauni1984/Yeet-Social/blob/main/docs/age-estimation.md" target="_blank" rel="noopener">docs/age-estimation.md</a>.</p>
       <h2>5. Zwecke und Rechtsgrundlagen der Verarbeitung</h2>
       <ul>
         <li><strong>Betrieb Ihres Kontos und Bereitstellung des Dienstes.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO – Erfüllung eines Vertrags.</li>
         <li><strong>E-Mail-Verifizierung, Zurücksetzen des Passworts, transaktionsbezogene Benachrichtigungen.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.</li>
         <li><strong>Wallet-basierte Authentifizierung.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO. Wir prüfen den Besitz eines privaten Schlüssels, indem wir Sie auffordern, eine einmalige Challenge zu signieren. Ihren privaten Schlüssel erhalten wir zu keinem Zeitpunkt.</li>
         <li><strong>Altersverifikation für 18+-Inhalte.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. c DSGVO (rechtliche Verpflichtung nach dem Jugendschutzgesetz, JuSchG) in Verbindung mit Art. 9 Abs. 2 lit. a DSGVO (Ihre ausdrückliche Einwilligung in die Verarbeitung biometrischer Daten).</li>
+        <li><strong>Optionale Altersschätzung</strong> als Hinweis für das Prüfpersonal (siehe § 4.7). Rechtsgrundlage: Art. 9 Abs. 2 lit. a DSGVO (Ihre gesonderte ausdrückliche Einwilligung); ohne sie findet keine Schätzung statt.</li>
         <li><strong>Sicherheit, Betrugsprävention, Missbrauchsabwehr.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO – unser berechtigtes Interesse an einem sicheren und stabilen Betrieb des Dienstes.</li>
         <li><strong>Verbesserung und Analyse des Dienstes.</strong> Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Wir verwenden ausschließlich minimale, aggregierte Daten und verkaufen Ihre personenbezogenen Daten nicht an Werbetreibende und geben sie nicht an diese weiter.</li>
       </ul>
@@ -35926,7 +35931,7 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
         <li>Kontodaten: werden gespeichert, bis Sie Ihr Konto löschen.</li>
         <li>Trinkgeld- und Paper-Wallet-Datensätze: werden bis zu zehn Jahre aufbewahrt, um die handels- und steuerrechtlichen Aufbewahrungspflichten (HGB, AO) zu erfüllen.</li>
         <li>Server-Zugriffsprotokolle: werden rotiert und nach 14 Tagen gelöscht.</li>
-        <li>Ergebniskennzeichnung der Altersverifikation: wird gespeichert, solange Ihr Konto besteht.</li>
+        <li>Fotos der Altersverifikation (Gesicht, optional Ausweis): 7 Tage nach Freigabe, 30 Tage nach Ablehnung, bei Rücknahme sofort; die Wahrscheinlichkeiten der Altersschätzung werden zum selben Zeitpunkt gelöscht. Ergebniskennzeichnung, Prüfvermerk und Prüfprotokoll (einschließlich des Hinweises der Schätzung) werden gespeichert, solange Ihr Konto besteht.</li>
       </ul>
 
       <h2>10. Ihre Rechte als betroffene Person</h2>
@@ -35944,7 +35949,7 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
       <p>Zur Ausübung dieser Rechte wenden Sie sich bitte per E-Mail an info@blocksocial.eu. Wir antworten innerhalb eines Monats (Art. 12 Abs. 3 DSGVO).</p>
 
       <h2>11. Automatisierte Entscheidungsfindung</h2>
-      <p>Wir führen keine automatisierte Entscheidungsfindung mit rechtlicher Wirkung oder ähnlich erheblicher Beeinträchtigung durch (Art. 22 DSGVO), mit Ausnahme der optionalen Altersverifikation, die der Einhaltung des deutschen Jugendschutzrechts dient und die Sie ablehnen können (in diesem Fall können Sie nicht auf 18+-Inhalte zugreifen).</p>
+      <p>Wir führen keine automatisierte Entscheidungsfindung mit rechtlicher Wirkung oder ähnlich erheblicher Beeinträchtigung durch (Art. 22 DSGVO). Über Anträge auf Altersverifikation – auch mit optionaler Altersschätzung – entscheidet immer ein Mensch; die Schätzung ist ein Hinweis für das Prüfpersonal und entscheidet nie allein. Sie können die Altersverifikation insgesamt ablehnen (in diesem Fall können Sie nicht auf 18+-Inhalte zugreifen).</p>
 
       <h2>12. Änderungen dieser Datenschutzerklärung</h2>
       <p>Wir können diese Datenschutzerklärung überarbeiten. Die jeweils aktuelle Fassung einschließlich des Datums der letzten Aktualisierung ist stets unter dieser URL abrufbar. Wesentliche Änderungen werden in der App hervorgehoben.</p>
