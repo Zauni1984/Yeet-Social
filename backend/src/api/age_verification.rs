@@ -128,6 +128,7 @@ pub async fn submit(
     let me = caller_user_id(&state, &auth).await?;
 
     let mut face_bytes: Option<Vec<u8>> = None;
+    let mut ai_consent = false;
     let mut id_bytes: Option<Vec<u8>> = None;
     let mut id_type: Option<String> = None;
 
@@ -158,6 +159,10 @@ pub async fn submit(
                     return Err(AppError::Validation("id_document size out of range".into()));
                 }
                 id_bytes = Some(b.to_vec());
+            }
+            "ai_consent" => {
+                let v = field.text().await.unwrap_or_default();
+                ai_consent = matches!(v.trim(), "1" | "true" | "on" | "yes");
             }
             "id_type" => {
                 let txt = field.text().await
@@ -212,9 +217,34 @@ pub async fn submit(
     // Encrypt + persist the blobs.
     let face_path = pii_vault::write_blob(case_id, "face", &face).await
         .map_err(AppError::Internal)?;
-    sqlx::query("UPDATE age_verification_cases SET face_scan_path = $2 WHERE id = $1")
-        .bind(case_id).bind(&face_path)
+    sqlx::query("UPDATE age_verification_cases SET face_scan_path = $2, ai_consent_at = CASE WHEN $3 THEN NOW() ELSE NULL END WHERE id = $1")
+        .bind(case_id).bind(&face_path).bind(ai_consent)
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    // AI pre-sorting hint (docs/age-estimation.md): only with explicit
+    // consent, only on our own server, in the background so the response
+    // does not wait for the model. The reviewer decides either way.
+    if ai_consent && crate::services::age_estimate::available() {
+        let st = state.clone();
+        tokio::spawn(async move {
+            let res = crate::services::age_estimate::estimate(face).await;
+            let q = match res {
+                Ok(e) => sqlx::query(
+                    "UPDATE age_verification_cases
+                        SET ai_verdict = $2, ai_adult_prob = $3, ai_child_prob = $4, ai_age_bucket = $5,
+                            ai_face_score = $6, ai_faces = $7, ai_model = $8, ai_ran_at = NOW(), ai_error = NULL
+                      WHERE id = $1")
+                    .bind(case_id).bind(e.verdict).bind(e.p_adult).bind(e.p_child).bind(&e.bucket)
+                    .bind(e.face_score).bind(e.faces as i32).bind(crate::services::age_estimate::MODEL_TAG),
+                Err(err) => {
+                    tracing::warn!("age-ai: case {case_id}: {err}");
+                    sqlx::query("UPDATE age_verification_cases SET ai_error = $2, ai_ran_at = NOW() WHERE id = $1")
+                        .bind(case_id).bind(err.chars().take(300).collect::<String>())
+                }
+            };
+            if let Err(e) = q.execute(st.db.pool()).await { tracing::warn!("age-ai: could not store estimate for {case_id}: {e}"); }
+        });
+    }
     if let Some(id_blob) = id_bytes {
         let id_path = pii_vault::write_blob(case_id, "id", &id_blob).await
             .map_err(AppError::Internal)?;
@@ -297,6 +327,14 @@ pub struct AdminCaseRow {
     pub reviewed_at: Option<DateTime<Utc>>,
     pub decision_note: Option<String>,
     pub blobs_purged_at: Option<DateTime<Utc>>,
+    /// AI pre-sorting hint: 'likely_adult' | 'likely_minor' | 'uncertain' |
+    /// 'no_face' | 'multi_face'; None when not run (no consent / off / pending).
+    pub ai_verdict: Option<String>,
+    pub ai_adult_prob: Option<f32>,
+    pub ai_age_bucket: Option<String>,
+    pub ai_faces: Option<i32>,
+    pub ai_consented: bool,
+    pub ai_error: Option<String>,
 }
 
 /// GET /api/v1/admin/age-verification?secret=...
@@ -312,41 +350,50 @@ pub async fn admin_list(
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
     let offset = q.offset.unwrap_or(0).max(0);
 
-    let rows: Vec<(Uuid, Uuid, Option<String>, String, Option<String>, Option<String>, Option<String>,
-                   DateTime<Utc>, Option<DateTime<Utc>>, Option<String>, Option<DateTime<Utc>>)> =
-        if status_filter == "all" {
-            sqlx::query_as(
-                "SELECT c.id, c.user_id, u.username, c.status,
+    #[derive(sqlx::FromRow)]
+    struct Row {
+        id: Uuid, user_id: Uuid, username: Option<String>, status: String,
+        id_document_type: Option<String>, face_scan_path: Option<String>, id_document_path: Option<String>,
+        submitted_at: DateTime<Utc>, reviewed_at: Option<DateTime<Utc>>, decision_note: Option<String>,
+        blobs_purged_at: Option<DateTime<Utc>>,
+        ai_verdict: Option<String>, ai_adult_prob: Option<f32>, ai_age_bucket: Option<String>,
+        ai_faces: Option<i32>, ai_consent_at: Option<DateTime<Utc>>, ai_error: Option<String>,
+    }
+    const COLS: &str = "c.id, c.user_id, u.username, c.status,
                         c.id_document_type, c.face_scan_path, c.id_document_path,
-                        c.submitted_at, c.reviewed_at, c.decision_note, c.blobs_purged_at
-                   FROM age_verification_cases c
+                        c.submitted_at, c.reviewed_at, c.decision_note, c.blobs_purged_at,
+                        c.ai_verdict, c.ai_adult_prob, c.ai_age_bucket, c.ai_faces, c.ai_consent_at, c.ai_error";
+    // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only the constant
+    // column list is interpolated; the status filter is bound.
+    let rows: Vec<Row> =
+        if status_filter == "all" {
+            sqlx::query_as(sqlx::AssertSqlSafe(format!(
+                "SELECT {COLS} FROM age_verification_cases c
                    LEFT JOIN users u ON u.id = c.user_id
                   ORDER BY c.submitted_at DESC
-                  LIMIT $1 OFFSET $2"
-            )
+                  LIMIT $1 OFFSET $2")))
             .bind(limit).bind(offset)
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
         } else {
-            sqlx::query_as(
-                "SELECT c.id, c.user_id, u.username, c.status,
-                        c.id_document_type, c.face_scan_path, c.id_document_path,
-                        c.submitted_at, c.reviewed_at, c.decision_note, c.blobs_purged_at
-                   FROM age_verification_cases c
+            sqlx::query_as(sqlx::AssertSqlSafe(format!(
+                "SELECT {COLS} FROM age_verification_cases c
                    LEFT JOIN users u ON u.id = c.user_id
                   WHERE c.status = $3
                   ORDER BY c.submitted_at DESC
-                  LIMIT $1 OFFSET $2"
-            )
+                  LIMIT $1 OFFSET $2")))
             .bind(limit).bind(offset).bind(&status_filter)
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
         };
 
     let out = rows.into_iter().map(|r| AdminCaseRow {
-        id: r.0, user_id: r.1, username: r.2, status: r.3,
-        id_document_type: r.4,
-        has_face_blob: r.5.is_some(),
-        has_id_blob: r.6.is_some(),
-        submitted_at: r.7, reviewed_at: r.8, decision_note: r.9, blobs_purged_at: r.10,
+        id: r.id, user_id: r.user_id, username: r.username, status: r.status,
+        id_document_type: r.id_document_type,
+        has_face_blob: r.face_scan_path.is_some(),
+        has_id_blob: r.id_document_path.is_some(),
+        submitted_at: r.submitted_at, reviewed_at: r.reviewed_at, decision_note: r.decision_note,
+        blobs_purged_at: r.blobs_purged_at,
+        ai_verdict: r.ai_verdict, ai_adult_prob: r.ai_adult_prob, ai_age_bucket: r.ai_age_bucket,
+        ai_faces: r.ai_faces, ai_consented: r.ai_consent_at.is_some(), ai_error: r.ai_error,
     }).collect();
     Ok(Json(ApiResponse::ok(out)))
 }

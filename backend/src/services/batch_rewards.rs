@@ -663,6 +663,7 @@ pub async fn start_message_cleanup_job(state: AppState) {
                 "UPDATE age_verification_cases
                     SET face_scan_path = NULL,
                         id_document_path = NULL,
+                        ai_adult_prob = NULL, ai_child_prob = NULL, ai_face_score = NULL,
                         blobs_purged_at = NOW()
                   WHERE id = $1"
             ).bind(cid).execute(&state.db.pool).await {

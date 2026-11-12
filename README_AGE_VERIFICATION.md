@@ -85,3 +85,14 @@ turns out to be wrong.
 - Once the grace window has passed, the on-disk file is overwritten
   with zeros before unlinking so a later raw-block recovery yields
   nothing.
+
+## AI pre-sorting (optional, opt-in)
+
+With the user's explicit consent (checkbox in the submit modal, off by
+default) the backend estimates the age from the face photo on our own
+server and shows the result as a hint next to the case in the admin
+queue: *likely adult (xx %)*, *possibly a minor*, *uncertain*, *no face*,
+*n faces*. The decision stays with the human reviewer. Models (UltraFace +
+age_googlenet, ONNX, run with tract) ship in the Docker image under
+`/app/models`; `AGE_AI_ENABLED=false` switches the feature off. Details,
+thresholds and the GDPR notes: [`docs/age-estimation.md`](docs/age-estimation.md).

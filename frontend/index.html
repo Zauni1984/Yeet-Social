@@ -1395,7 +1395,7 @@ html.ld-on body{overflow:hidden}
       // 18+ verify
       'verify.title':'Age verification','verify.subtitle':'18+ area. Face scan + optional ID — reviewed by our team.',
       'verify.cameraStarting':'Camera starting...','verify.center':'Center your face, then take photo',
-      'verify.start':'Take photo','verify.analyzing':'Uploading...','verify.success':'Submitted! Review usually within 24 h.',
+      'verify.start':'Take photo','verify.analyzing':'Uploading...','verify.aiConsent':'Optional: let our server estimate my age from this photo to speed up the review. The estimate is computed only on the Yeet server, never shared, and is only a hint for the human reviewer. It is deleted together with the photo.','verify.success':'Submitted! Review usually within 24 h.',
       'verify.cameraDenied':'Camera access denied. Allow camera or upload a photo below.',
       'verify.cameraNone':'No camera found. Upload a photo below.',
       'verify.cameraBusy':'Camera is busy. Close other apps using the camera, or upload a photo.',
@@ -1833,7 +1833,7 @@ html.ld-on body{overflow:hidden}
       'verify.withdrawn':'Einreichung zurückgezogen.','verify.badgeUpdated':'Badge-Einstellung aktualisiert.',
       'verify.openSettings':'Verifikation öffnen',
       'verify.cameraStarting':'Kamera startet...','verify.center':'Gesicht zentrieren, dann Foto aufnehmen',
-      'verify.start':'Foto aufnehmen','verify.analyzing':'Wird hochgeladen...','verify.success':'Eingereicht! Prüfung üblicherweise innerhalb von 24 h.',
+      'verify.start':'Foto aufnehmen','verify.analyzing':'Wird hochgeladen...','verify.aiConsent':'Optional: Unser Server darf mein Alter aus diesem Foto schätzen, um die Prüfung zu beschleunigen. Die Schätzung läuft nur auf dem Yeet-Server, wird nie weitergegeben und ist nur ein Hinweis für den menschlichen Prüfer. Sie wird zusammen mit dem Foto gelöscht.','verify.success':'Eingereicht! Prüfung üblicherweise innerhalb von 24 h.',
       'verify.cameraDenied':'Kamerazugriff verweigert. Kamera erlauben oder Foto unten hochladen.',
       'verify.cameraNone':'Keine Kamera gefunden. Foto unten hochladen.',
       'verify.cameraBusy':'Kamera ist belegt. Andere Apps schließen oder Foto hochladen.',
@@ -32730,6 +32730,11 @@ function openAgeVerificationSubmit(){
     +'<button onclick="document.getElementById(\'idDocFile\').click()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:8px;cursor:pointer;font-size:12px"><span class="yi yi-folder"></span> '+window.t('verify.usePhoto')+'</button>'
     +'<div id="idDocFileName" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:center"></div>'
     +'</div>'
+    // Optional AI pre-sorting (docs/age-estimation.md): explicit opt-in,
+    // off by default; without it the case is reviewed by a human only.
+    +'<label id="aiConsentRow" style="display:none;align-items:flex-start;gap:8px;text-align:left;font-size:12px;color:var(--muted);margin-bottom:12px;cursor:pointer">'
+    +'<input type="checkbox" id="aiConsentChk" style="margin-top:2px;accent-color:#7c3aed;flex-shrink:0">'
+    +'<span>'+window.t('verify.aiConsent')+'</span></label>'
     +'<button id="submitVerifyBtn" onclick="submitAgeVerification()" style="display:none;width:100%;padding:12px;background:#7c3aed;border:none;color:var(--text);font-weight:700;border-radius:10px;cursor:pointer;margin-bottom:10px">'+window.t('verify.submitNow')+'</button>'
     +'<p style="color:var(--dim);font-size:11px;margin-top:6px">'+window.t('verify.imageNotStored')+'</p>'
     +'</div>';
@@ -32852,6 +32857,7 @@ async function doFaceScan(){
   var im2=document.getElementById('faceImg');
   if(!useImg && im2){ im2.src = c.toDataURL('image/jpeg', 0.85); im2.style.display='block'; }
   document.getElementById('idDocSection').style.display='block';
+  var aiRow=document.getElementById('aiConsentRow'); if(aiRow) aiRow.style.display='flex';
   document.getElementById('submitVerifyBtn').style.display='block';
   btn.style.display='none';
 }
@@ -32886,6 +32892,8 @@ async function submitAgeVerification(){
 
   var fd = new FormData();
   fd.append('face_scan', window._faceBlob, 'face.jpg');
+  var aiChk=document.getElementById('aiConsentChk');
+  if(aiChk && aiChk.checked) fd.append('ai_consent', '1');
   if(window._idDocBlob){
     fd.append('id_document', window._idDocBlob, window._idDocBlob.name || 'id.bin');
     fd.append('id_type', document.getElementById('idDocType').value || 'other');
@@ -36263,6 +36271,7 @@ info@blocksocial.eu</address>
       'age.empty': 'Keine Fälle ({status}).',
       'age.id': 'Ausweis: ', 'age.noId': 'kein Ausweis',
       'btn.viewFace': 'Gesicht ansehen', 'age.noFace': 'kein Gesichtsbild', 'btn.viewId': 'Ausweis ansehen',
+      'age.aiAdult': 'KI: wahrscheinlich volljährig ({pct})', 'age.aiMinor': 'KI: Hinweis — möglicherweise minderjährig', 'age.aiUncertain': 'KI: unsicher ({pct} volljährig)', 'age.aiNoFace': 'KI: kein Gesicht erkannt', 'age.aiMulti': 'KI: {n} Gesichter', 'age.aiError': 'KI: Fehler bei der Schätzung', 'age.aiPending': 'KI: Schätzung läuft', 'age.aiNoConsent': 'KI: keine Einwilligung',
       'btn.approve': 'Genehmigen', 'btn.reject': 'Ablehnen',
       'age.submitted': 'Eingereicht {when}', 'age.reviewed': 'Geprüft {when}', 'age.purged': 'PII gelöscht',
       'prompt.decisionNote': 'Entscheidungsnotiz (optional, wird dem Nutzer angezeigt):',
@@ -36316,6 +36325,7 @@ info@blocksocial.eu</address>
       'age.empty': 'No cases ({status}).',
       'age.id': 'ID: ', 'age.noId': 'no ID',
       'btn.viewFace': 'View face', 'age.noFace': 'no face blob', 'btn.viewId': 'View ID',
+      'age.aiAdult': 'AI: likely adult ({pct})', 'age.aiMinor': 'AI: flag — possibly a minor', 'age.aiUncertain': 'AI: uncertain ({pct} adult)', 'age.aiNoFace': 'AI: no face found', 'age.aiMulti': 'AI: {n} faces', 'age.aiError': 'AI: estimate failed', 'age.aiPending': 'AI: estimating', 'age.aiNoConsent': 'AI: no consent',
       'btn.approve': 'Approve', 'btn.reject': 'Reject',
       'age.submitted': 'Submitted {when}', 'age.reviewed': 'Reviewed {when}', 'age.purged': 'PII purged',
       'prompt.decisionNote': 'Decision note (optional, shown to the user):',
@@ -36746,12 +36756,26 @@ info@blocksocial.eu</address>
         var idBtn = hasId
           ? ' <button onclick="window._adminViewBlob(\''+ c.id +'\',\'id\')" style="background:transparent;border:1px solid var(--border-3);color:var(--text-2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;margin-left:4px">'+ at('btn.viewId') +'</button>'
           : '';
+        // AI pre-sorting hint (a hint, never a decision)
+        var ai = '';
+        if(c.ai_verdict){
+          var pct = (typeof c.ai_adult_prob === 'number') ? Math.round(c.ai_adult_prob * 100) + ' %' : '';
+          var aiMap = { likely_adult:['#22c55e', at('age.aiAdult', {pct: pct})], likely_minor:['#e63946', at('age.aiMinor')], uncertain:['#f59e0b', at('age.aiUncertain', {pct: pct})], no_face:['#888', at('age.aiNoFace')], multi_face:['#f59e0b', at('age.aiMulti', {n: c.ai_faces || 0})] };
+          var m = aiMap[c.ai_verdict] || ['#888', esc(c.ai_verdict)];
+          ai = '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;color:#000;background:'+ m[0] +'">'+ m[1] + (c.ai_age_bucket ? ' · ' + esc(c.ai_age_bucket) : '') +'</span>';
+        } else if(c.ai_error){
+          ai = '<span style="margin-left:6px;font-size:11px;color:var(--muted)">'+ at('age.aiError') +'</span>';
+        } else if(c.ai_consented){
+          ai = '<span style="margin-left:6px;font-size:11px;color:var(--muted)">'+ at('age.aiPending') +'</span>';
+        } else {
+          ai = '<span style="margin-left:6px;font-size:11px;color:var(--muted)">'+ at('age.aiNoConsent') +'</span>';
+        }
         var actions = (c.status === 'pending')
           ? '<div style="display:flex;gap:6px;margin-top:8px"><button onclick="window._adminAgeDecide(\''+ c.id +'\',\'approve\')" style="background:#22c55e;color:var(--on-accent);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">'+ at('btn.approve') +'</button>'
             +'<button onclick="window._adminAgeDecide(\''+ c.id +'\',\'reject\')" style="background:#e63946;color:var(--text);border:none;border-radius:6px;padding:6px 12px;font-weight:700;cursor:pointer;font-size:12px">'+ at('btn.reject') +'</button></div>'
           : '';
         return '<div style="background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:12px;margin-bottom:10px">'
-          + '<div style="font-size:13px;color:var(--text)">'+ esc(c.username || c.user_id) +' &middot; <span style="color:var(--muted)">'+ esc(c.status) +'</span>'+ idType +'</div>'
+          + '<div style="font-size:13px;color:var(--text)">'+ esc(c.username || c.user_id) +' &middot; <span style="color:var(--muted)">'+ esc(c.status) +'</span>'+ idType + ai +'</div>'
           + '<div style="font-size:11px;color:var(--muted);margin-top:2px">'+ at('age.submitted', {when: esc(when)}) + (rwhen?' &middot; '+ at('age.reviewed', {when: esc(rwhen)}):'') + (c.blobs_purged_at?' &middot; '+ at('age.purged'):'') +'</div>'
           + (c.decision_note ? '<div style="font-size:12px;color:#bbb;margin-top:6px;white-space:pre-wrap">'+ esc(c.decision_note) +'</div>' : '')
           + '<div style="margin-top:8px">'+ faceBtn + idBtn +'</div>'

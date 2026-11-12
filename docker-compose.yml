@@ -89,6 +89,8 @@ services:
       # Age verification vault (encrypted ID/face blobs): key + persistent dir.
       AGE_VERIFY_KEY: ${AGE_VERIFY_KEY:-}
       PRIVATE_DIR: /app/private
+      # 18+ queue pre-sorting (on-server age estimate, opt-in per user; docs/age-estimation.md)
+      AGE_AI_ENABLED: ${AGE_AI_ENABLED:-true}
       # Web push (VAPID) and live streaming (LiveKit): optional features.
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}

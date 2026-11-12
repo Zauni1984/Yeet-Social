@@ -50,6 +50,12 @@ k256             = { version = "0.13", features = ["ecdsa"] }
 p256             = { version = "0.13", features = ["ecdsa"] }
 base64           = "0.22"
 
+# 18+ queue pre-sorting: on-server face detection + age bucket estimate
+# (ONNX via tract, pure Rust). Models are optional files under
+# AGE_AI_MODEL_DIR; without them the feature is off.
+tract-onnx       = "0.23"
+image            = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+
 # Types
 uuid             = { version = "1", features = ["v4", "serde"] }
 chrono           = { version = "0.4", features = ["serde"] }

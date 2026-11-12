@@ -387,6 +387,14 @@
       "tags": [
         "#Security"
       ]
+    },
+    {
+      "id": "2026-11-12-41-age-ai-presort",
+      "text": "18+ verification: when you submit your photo you can now optionally let our own server estimate your age to speed up the review. The estimate is computed only on the Yeet server, never shared, shown to the reviewer as a hint only, and deleted together with your photo. Without the checkbox nothing changes: a human reviews as before.",
+      "tags": [
+        "#Feature",
+        "#Privacy"
+      ]
     }
   ]
 }
