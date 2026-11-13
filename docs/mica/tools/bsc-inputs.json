@@ -1,0 +1,25 @@
+{
+  "_comment": "BNB Smart Chain (Testnet-Phase: Chain 97; Mainnet 56). Alle Werte TODO(verify) — Platzhalter nach Größenordnung, vor Veröffentlichung durch CCRI-Daten oder eigene Erhebung ersetzen.",
+  "validators_active": 45,
+  "validators_standby": 11,
+  "full_nodes_public": 0,
+  "watts_per_node": 350,
+  "pue": 1.5,
+  "tx_per_day": 4000000,
+  "locations": [
+    { "region": "EU",          "share": 0.30, "kg_co2e_per_kwh": 0.23, "renewable_share": 0.45 },
+    { "region": "Nordamerika", "share": 0.30, "kg_co2e_per_kwh": 0.37, "renewable_share": 0.22 },
+    { "region": "Asien",       "share": 0.40, "kg_co2e_per_kwh": 0.55, "renewable_share": 0.25 }
+  ],
+  "scope1_t_co2e": 0.0,
+  "project_share_of_network": 0.00001,
+  "sources": {
+    "validators": "TODO(verify): aktuelle Validator- und Kandidatenzahl aus dem BSC-Staking-Dashboard (bscscan.com/validators) zum Stichtag",
+    "watts_per_node": "TODO(verify): Hardware-Profil nach BNB-Chain-Validator-Anforderungen (16 Kerne, 64 GB, NVMe) — CCRI-Methodik: gemessene Leistungsaufnahme vergleichbarer Server",
+    "pue": "Rechenzentrums-PUE, Branchendurchschnitt (Uptime Institute Global Survey, TODO(verify) Jahr)",
+    "tx_per_day": "TODO(verify): Tagesdurchschnitt aus bscscan.com/chart/tx (12-Monats-Mittel)",
+    "grid_factors": "TODO(verify): EU — EEA 2023; USA — EPA eGRID 2022; Asien — IEA 2023 Länderfaktoren, gewichtet nach Validator-Standorten",
+    "project_share": "Anteil der von Yeet verursachten Transaktionen am Netz (Mint-Batches, Swaps) — aus eigenen Zählern, TODO(verify)",
+    "methodik": "ESMA RTS zu Art. 6(1)(j) MiCA (Delegierte VO (EU) 2025/422, Anhang) · CCRI 'Energy consumption of PoS networks' Bottom-up-Verfahren"
+  }
+}

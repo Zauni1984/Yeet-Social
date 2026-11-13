@@ -327,7 +327,9 @@ async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
     let status = if db_ok && cache_ok { StatusCode::OK } else { StatusCode::SERVICE_UNAVAILABLE };
     (status, Json(json!({
         "status": if db_ok && cache_ok { "ok" } else { "degraded" },
-        "checks": { "database": db_ok, "cache": cache_ok },
+        "checks": { "database": db_ok, "cache": cache_ok,
+                    // 18+ queue pre-sorting models present and loaded (informational).
+                    "age_ai": services::age_estimate::loaded() },
         "version": env!("CARGO_PKG_VERSION"),
         "platforms": ["web", "android", "ios"]
     })))
