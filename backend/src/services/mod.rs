@@ -15,3 +15,4 @@ pub mod translate;
 pub mod changelog_bot;
 pub mod sanctions;
 pub mod age_estimate;
+pub mod totp;

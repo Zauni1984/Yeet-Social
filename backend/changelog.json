@@ -417,6 +417,14 @@
       "tags": [
         "#Compliance"
       ]
+    },
+    {
+      "id": "2026-11-13-45-two-factor-auth",
+      "text": "New: two-factor authentication. Turn it on under Settings to protect your account with an authenticator app (Google Authenticator, Aegis, 1Password and similar), with one-time recovery codes for a lost phone. With 2FA on, login asks for a 6-digit code after your password, and sensitive actions can be confirmed with a code too.",
+      "tags": [
+        "#Security",
+        "#Feature"
+      ]
     }
   ]
 }

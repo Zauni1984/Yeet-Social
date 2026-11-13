@@ -233,11 +233,21 @@ pub async fn register(
     Ok(Json(ApiResponse::ok(RegisterResponse { status: "verification_sent", email_verified: false })))
 }
 
+/// Either a completed login (tokens) or a 2FA challenge the client must
+/// answer at `/auth/mfa`. Serialized untagged so existing clients still see
+/// `access_token`/`refresh_token`; 2FA clients see `mfa_required: true`.
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum LoginResult {
+    Mfa { mfa_required: bool, mfa_token: String },
+    Tokens(Box<TokenResponse>),
+}
+
 pub async fn login(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(req): Json<EmailLoginRequest>,
-) -> AppResult<Json<ApiResponse<TokenResponse>>> {
+) -> AppResult<Json<ApiResponse<LoginResult>>> {
     if req.email.is_empty() || req.password.is_empty() {
         return Err(AppError::Validation("Email and password required".into()));
     }
@@ -278,19 +288,67 @@ pub async fn login(
         }
     }
 
+    // Second factor (audit: 2FA): the password step alone does not issue
+    // tokens once 2FA is on. Hand out a short-lived challenge instead; the
+    // client completes it at /auth/mfa.
+    if crate::api::twofa::is_enabled(state.db.pool(), user_id).await {
+        let mfa_token = auth::generate_nonce();
+        state.cache.set_nonce("mfa_login", &mfa_token, &user_id.to_string(), std::time::Duration::from_secs(300)).await
+            .map_err(|e| AppError::Cache(e.to_string()))?;
+        return Ok(Json(ApiResponse::ok(LoginResult::Mfa { mfa_required: true, mfa_token })));
+    }
+
+    let tokens = issue_login_tokens(&state, user_id, &username, verified_at.is_some()).await?;
+    Ok(Json(ApiResponse::ok(LoginResult::Tokens(Box::new(tokens)))))
+}
+
+/// Mint the token pair and record the session. Shared by password login and
+/// the 2FA completion endpoint.
+#[derive(Debug, Deserialize)]
+pub struct MfaRequest { pub mfa_token: String, pub code: String }
+
+/// Complete a 2FA login: consume the challenge, verify the second factor,
+/// issue tokens. Rate-limited per IP; the challenge is one-shot.
+pub async fn mfa(
+    State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
+    Json(req): Json<MfaRequest>,
+) -> AppResult<Json<ApiResponse<TokenResponse>>> {
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "mfa_ip", &ip, 60, 10, 3600, 100).await?;
+    let uid_str = state.cache.consume_nonce("mfa_login", &req.mfa_token).await
+        .map_err(|e| AppError::Cache(e.to_string()))?
+        .ok_or_else(|| AppError::Unauthorised("MFA challenge expired — log in again".into()))?;
+    let user_id = Uuid::parse_str(&uid_str).map_err(|_| AppError::Unauthorised("bad challenge".into()))?;
+    crate::api::middleware::limit(&state, "mfa_user", &uid_str, 60, 6, 3600, 40).await?;
+    if !crate::api::twofa::verify_second_factor(&state, user_id, &req.code).await? {
+        // Re-arm a fresh challenge so a mistyped code does not force a full
+        // re-login, but the old token is already consumed.
+        let again = auth::generate_nonce();
+        state.cache.set_nonce("mfa_login", &again, &uid_str, std::time::Duration::from_secs(300)).await
+            .map_err(|e| AppError::Cache(e.to_string()))?;
+        return Err(AppError::Unauthorised(format!("Code is not valid|retry:{again}")));
+    }
+    let row: Option<(Option<String>, Option<chrono::DateTime<Utc>>)> = sqlx::query_as(
+        "SELECT username, email_verified_at FROM users WHERE id = $1"
+    ).bind(user_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let (username, verified_at) = row.unwrap_or((None, None));
+    let tokens = issue_login_tokens(&state, user_id, &username.unwrap_or_else(|| "user".into()), verified_at.is_some()).await?;
+    Ok(Json(ApiResponse::ok(tokens)))
+}
+
+pub(crate) async fn issue_login_tokens(state: &AppState, user_id: Uuid, username: &str, email_verified: bool) -> AppResult<TokenResponse> {
     let subject = format!("email:{}", user_id);
     let family_id = Uuid::new_v4();
     let (access_token, refresh_token) = auth::issue_token_pair(&subject, family_id, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    record_session(&state, user_id, &refresh_token, family_id).await?;
-
-    Ok(Json(ApiResponse::ok(TokenResponse {
+    record_session(state, user_id, &refresh_token, family_id).await?;
+    Ok(TokenResponse {
         access_token, refresh_token,
         token_type: "Bearer".into(),
-        username,
-        email_verified: verified_at.is_some(),
-    })))
+        username: username.to_string(),
+        email_verified,
+    })
 }
 
 /// Decode the freshly-issued refresh token's JTI and insert a session
@@ -300,7 +358,7 @@ pub async fn login(
 /// Record the refresh JTI for the new session. Fatal (audit A-L1): a
 /// session we cannot record could neither be listed nor revoked, and its
 /// refresh-token reuse would go undetected — better to fail the login.
-async fn record_session(state: &AppState, user_id: Uuid, refresh_token: &str, family_id: Uuid) -> AppResult<()> {
+pub(crate) async fn record_session(state: &AppState, user_id: Uuid, refresh_token: &str, family_id: Uuid) -> AppResult<()> {
     let claims = auth::verify_refresh_token(refresh_token, &state.jwt)
         .map_err(|e| AppError::Internal(format!("fresh refresh token did not verify: {e}")))?;
     crate::api::sessions::record_login(state.db.pool(), user_id, &claims.jti, family_id, None, None).await

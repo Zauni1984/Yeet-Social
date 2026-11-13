@@ -816,6 +816,12 @@ html.ld-on body{overflow:hidden}
         <div style="font-size:11px;color:var(--muted);margin-top:6px" data-i18n="dm.resetIdentityNote">Creates new keys. Old messages stay locked; contacts will be asked to confirm your new key.</div>
       </div>
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-shield"></span> <span data-i18n="twofa.title">Two-factor authentication</span></div>
+        <div id="twofaStatusLine" style="font-size:13px;color:var(--muted);margin-bottom:10px" data-i18n="twofa.loading">…</div>
+        <button id="twofaEnableBtn" onclick="window.open2FASetup && window.open2FASetup()" style="display:none;width:100%;background:#22c55e22;color:#22c55e;border:1px solid #22c55e44;border-radius:8px;padding:10px;cursor:pointer;font-size:14px"><span class="yi yi-lock"></span> <span data-i18n="twofa.enable">Enable 2FA (authenticator app)</span></button>
+        <button id="twofaDisableBtn" onclick="window.disable2FA && window.disable2FA()" style="display:none;width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px"><span class="yi yi-lock-open"></span> <span data-i18n="twofa.disable">Disable 2FA</span></button>
+      </div>
+            <div style="background:var(--card-2);border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.gdpr">Privacy (GDPR)</div>
         <button onclick="exportMyData()" style="width:100%;background:#1e88e522;color:#64b5f6;border:1px solid #1e88e544;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;margin-bottom:8px"><span class="yi yi-save"></span> <span data-i18n="settings.exportData">Export my data (JSON)</span></button>
         <button onclick="deleteMyAccount()" style="width:100%;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:10px;cursor:pointer;font-size:14px"><span class="yi yi-trash"></span> <span data-i18n="settings.deleteAccount">Delete account permanently</span></button>
@@ -1232,6 +1238,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Notifications enabled on this device',
       'settings.pushUnregistered':'Notifications disabled on this device',
       'settings.verifySeed':'Verify recovery phrase',
+      'twofa.title':'Two-factor authentication','twofa.loading':'…','twofa.on':'Enabled','twofa.off':'Not enabled — recommended for account safety.','twofa.enable':'Enable 2FA (authenticator app)','twofa.disable':'Disable 2FA','twofa.recoveryLeft':'{n} recovery codes left','twofa.scanHint':'Scan this with an authenticator app (Google Authenticator, Aegis, 1Password …), then enter the 6-digit code.','twofa.manualEntry':'Or enter this key manually:','twofa.verify':'Verify & enable','twofa.badCode':'That code is not valid.','twofa.enabledTitle':'Two-factor authentication is on','twofa.recoveryHint':'Save these one-time recovery codes somewhere safe. Each works once if you lose your authenticator. They are shown only now.','twofa.saved':'I saved them','twofa.disablePrompt':'Enter a current 6-digit code (or a recovery code) to turn 2FA off:','twofa.disabledToast':'Two-factor authentication disabled.','twofa.enterCode':'Enter your 6-digit authenticator code (or a recovery code):','twofa.needed':'Two-factor code required to finish signing in.',
       'settings.gdpr':'Privacy (GDPR)','settings.exportData':'Export my data (JSON)',
       'settings.deleteAccount':'Delete account permanently','settings.language':'Language','settings.mood':'Color mood',
       'settings.langEnglish':'English','settings.langGerman':'German','settings.langItalian':'Italian','settings.langFrench':'French','settings.langSpanish':'Spanish','settings.langPortuguese':'Portuguese','settings.langFinnish':'Finnish','settings.langSwedish':'Swedish','settings.langNorwegian':'Norwegian','settings.langIcelandic':'Icelandic','settings.langCzech':'Czech','settings.langDanish':'Danish','settings.langDutch':'Dutch','settings.langPolish':'Polish','settings.langCroatian':'Croatian','settings.langSerbian':'Serbian','settings.langTurkish':'Turkish','settings.langLatvian':'Latvian','settings.langGreek':'Greek','settings.langHungarian':'Hungarian','settings.langRomanian':'Romanian','settings.langBulgarian':'Bulgarian','settings.langSlovak':'Slovak','settings.langSlovenian':'Slovenian','settings.langLithuanian':'Lithuanian','settings.langEstonian':'Estonian','settings.langIrish':'Irish','settings.langMaltese':'Maltese','settings.langUkrainian':'Ukrainian','settings.langRussian':'Russian','settings.langCatalan':'Catalan','settings.langAlbanian':'Albanian','settings.langBosnian':'Bosnian','settings.langMacedonian':'Macedonian','settings.langBasque':'Basque','settings.langGalician':'Galician','settings.langWelsh':'Welsh','settings.langLuxembourgish':'Luxembourgish','settings.langChinese':'Chinese','settings.langJapanese':'Japanese','settings.langKorean':'Korean','settings.langHindi':'Hindi',
@@ -1673,6 +1680,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Benachrichtigungen auf diesem Gerät aktiviert',
       'settings.pushUnregistered':'Benachrichtigungen auf diesem Gerät deaktiviert',
       'settings.verifySeed':'Recovery-Phrase prüfen',
+      'twofa.title':'Zwei-Faktor-Authentifizierung','twofa.loading':'…','twofa.on':'Aktiv','twofa.off':'Nicht aktiv — für die Kontosicherheit empfohlen.','twofa.enable':'2FA aktivieren (Authenticator-App)','twofa.disable':'2FA deaktivieren','twofa.recoveryLeft':'{n} Wiederherstellungscodes übrig','twofa.scanHint':'Scanne dies mit einer Authenticator-App (Google Authenticator, Aegis, 1Password …) und gib dann den 6-stelligen Code ein.','twofa.manualEntry':'Oder diesen Schlüssel manuell eingeben:','twofa.verify':'Prüfen & aktivieren','twofa.badCode':'Dieser Code ist ungültig.','twofa.enabledTitle':'Zwei-Faktor-Authentifizierung ist aktiv','twofa.recoveryHint':'Bewahre diese einmaligen Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du deinen Authenticator verlierst. Sie werden nur jetzt angezeigt.','twofa.saved':'Gespeichert','twofa.disablePrompt':'Gib einen aktuellen 6-stelligen Code (oder einen Wiederherstellungscode) ein, um 2FA zu deaktivieren:','twofa.disabledToast':'Zwei-Faktor-Authentifizierung deaktiviert.','twofa.enterCode':'Gib deinen 6-stelligen Authenticator-Code (oder einen Wiederherstellungscode) ein:','twofa.needed':'Zwei-Faktor-Code nötig, um die Anmeldung abzuschließen.',
       'settings.gdpr':'Datenschutz (DSGVO)','settings.exportData':'Daten exportieren (JSON)',
       'settings.deleteAccount':'Konto endgültig löschen','settings.language':'Sprache','settings.mood':'Farbstimmung',
       'settings.langEnglish':'Englisch','settings.langGerman':'Deutsch','settings.langItalian':'Italienisch','settings.langFrench':'Französisch','settings.langSpanish':'Spanisch','settings.langPortuguese':'Portugiesisch','settings.langFinnish':'Finnisch','settings.langSwedish':'Schwedisch','settings.langNorwegian':'Norwegisch','settings.langIcelandic':'Isländisch','settings.langCzech':'Tschechisch','settings.langDanish':'Dänisch','settings.langDutch':'Niederländisch','settings.langPolish':'Polnisch','settings.langCroatian':'Kroatisch','settings.langSerbian':'Serbisch','settings.langTurkish':'Türkisch','settings.langLatvian':'Lettisch','settings.langGreek':'Griechisch','settings.langHungarian':'Ungarisch','settings.langRomanian':'Rumänisch','settings.langBulgarian':'Bulgarisch','settings.langSlovak':'Slowakisch','settings.langSlovenian':'Slowenisch','settings.langLithuanian':'Litauisch','settings.langEstonian':'Estnisch','settings.langIrish':'Irisch','settings.langMaltese':'Maltesisch','settings.langUkrainian':'Ukrainisch','settings.langRussian':'Russisch','settings.langCatalan':'Katalanisch','settings.langAlbanian':'Albanisch','settings.langBosnian':'Bosnisch','settings.langMacedonian':'Mazedonisch','settings.langBasque':'Baskisch','settings.langGalician':'Galicisch','settings.langWelsh':'Walisisch','settings.langLuxembourgish':'Luxemburgisch','settings.langChinese':'Chinesisch','settings.langJapanese':'Japanisch','settings.langKorean':'Koreanisch','settings.langHindi':'Hindi',
@@ -31814,6 +31822,88 @@ async function uploadProfileImage(input, kind){
   window.linkWalletToEmailUser = linkWalletToEmailUser;
   window.exportMyData = exportMyData;
   window.deleteMyAccount = deleteMyAccount;
+
+  // ----- Two-factor authentication (TOTP) -----
+  window.refresh2FAStatus = async function(){
+    var line=document.getElementById('twofaStatusLine');
+    var en=document.getElementById('twofaEnableBtn');
+    var dis=document.getElementById('twofaDisableBtn');
+    if(!line) return;
+    var jwt=localStorage.getItem('yeet_jwt');
+    if(!jwt){ line.textContent=window.t('common.pleaseLogin'); if(en)en.style.display='none'; if(dis)dis.style.display='none'; return; }
+    try{
+      var r=await fetch('/api/v1/me/2fa/status',{headers:{Authorization:'Bearer '+jwt}});
+      var d=await r.json(); var st=(d&&d.data)||{};
+      if(st.enabled){
+        line.innerHTML='<span style="color:#22c55e"><span class="yi yi-check"></span> '+window.t('twofa.on')+'</span> · '+window.t('twofa.recoveryLeft',{n:st.recovery_remaining});
+        if(en)en.style.display='none'; if(dis)dis.style.display='block';
+      } else {
+        line.textContent=window.t('twofa.off');
+        if(en)en.style.display='block'; if(dis)dis.style.display='none';
+      }
+    }catch(e){ line.textContent=window.t('common.networkError'); }
+  };
+
+  window.open2FASetup = async function(){
+    var jwt=localStorage.getItem('yeet_jwt'); if(!jwt){ showLoginGate&&showLoginGate(); return; }
+    var r=await fetch('/api/v1/me/2fa/setup',{method:'POST',headers:{Authorization:'Bearer '+jwt}});
+    var d=await r.json();
+    if(!r.ok||!d.success){ showToast((d.error&&d.error.message)||window.t('common.error')); return; }
+    var s=d.data;
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+    var box=document.createElement('div');
+    box.style.cssText='background:var(--card);border:1px solid var(--border-2);border-radius:14px;padding:22px;width:420px;max-width:94vw;max-height:90vh;overflow:auto;color:var(--text)';
+    box.innerHTML='<h3 style="margin:0 0 10px"><span class="yi yi-shield"></span> '+window.t('twofa.title')+'</h3>'
+      +'<p style="color:var(--muted);font-size:13px;margin:0 0 12px">'+window.t('twofa.scanHint')+'</p>'
+      +'<div style="text-align:center;margin-bottom:12px"><img alt="QR" src="data:image/png;base64,'+s.qr_png_base64+'" style="width:200px;height:200px;background:#fff;border-radius:8px"/></div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:4px">'+window.t('twofa.manualEntry')+'</div>'
+      +'<div style="font-family:monospace;font-size:14px;letter-spacing:2px;word-break:break-all;background:var(--card-2);border-radius:8px;padding:8px;margin-bottom:12px">'+escapeHtml(s.secret)+'</div>'
+      +'<input id="twofaCodeIn" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:10px 14px;color:var(--text);font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:12px"/>'
+      +'<div id="twofaErr" style="color:#ff7f7f;font-size:12px;min-height:16px;margin-bottom:8px"></div>'
+      +'<div style="display:flex;gap:8px"><button id="twofaOk" style="flex:1;padding:11px;background:var(--accent);color:var(--on-accent);border:none;border-radius:10px;font-weight:700;cursor:pointer">'+window.t('twofa.verify')+'</button>'
+      +'<button id="twofaCancel" style="padding:11px 14px;background:var(--card-2);border:1px solid var(--border-2);color:var(--muted);border-radius:10px;cursor:pointer">'+window.t('common.cancel')+'</button></div>';
+    ov.appendChild(box); document.body.appendChild(ov);
+    var inp=box.querySelector('#twofaCodeIn'); setTimeout(function(){inp.focus();},40);
+    function close(){ ov.remove(); }
+    box.querySelector('#twofaCancel').onclick=close;
+    ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+    box.querySelector('#twofaOk').onclick=async function(){
+      var code=(inp.value||'').trim();
+      var ar=await fetch('/api/v1/me/2fa/activate',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},body:JSON.stringify({code:code})});
+      var ad=await ar.json();
+      if(!ar.ok||!ad.success){ box.querySelector('#twofaErr').textContent=(ad.error&&ad.error.message)||window.t('twofa.badCode'); return; }
+      // Show recovery codes (once).
+      box.innerHTML='<h3 style="margin:0 0 10px"><span class="yi yi-check" style="color:#22c55e"></span> '+window.t('twofa.enabledTitle')+'</h3>'
+        +'<p style="color:var(--muted);font-size:13px;margin:0 0 10px">'+window.t('twofa.recoveryHint')+'</p>'
+        +'<div style="font-family:monospace;font-size:14px;background:var(--card-2);border-radius:8px;padding:12px;margin-bottom:12px;line-height:1.9">'+ad.data.recovery_codes.map(escapeHtml).join('<br/>')+'</div>'
+        +'<button id="twofaDone" style="width:100%;padding:11px;background:var(--accent);color:var(--on-accent);border:none;border-radius:10px;font-weight:700;cursor:pointer">'+window.t('twofa.saved')+'</button>';
+      box.querySelector('#twofaDone').onclick=function(){ close(); window.refresh2FAStatus&&window.refresh2FAStatus(); };
+    };
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter') box.querySelector('#twofaOk').click(); });
+  };
+
+  window.disable2FA = async function(){
+    var jwt=localStorage.getItem('yeet_jwt'); if(!jwt) return;
+    var code=prompt(window.t('twofa.disablePrompt')); if(code===null) return;
+    var r=await fetch('/api/v1/me/2fa/disable',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},body:JSON.stringify({code:(code||'').trim()})});
+    var d=await r.json().catch(function(){return {};});
+    if(!r.ok||!d.success){ showToast((d.error&&d.error.message)||window.t('twofa.badCode')); return; }
+    showToast(window.t('twofa.disabledToast'),'success'); window.refresh2FAStatus&&window.refresh2FAStatus();
+  };
+
+  // Complete a login that returned mfa_required. Returns the token payload or null.
+  window.completeMfaLogin = async function(mfaToken){
+    for(;;){
+      var code=prompt(window.t('twofa.enterCode')); if(code===null) return null;
+      var r=await fetch('/api/v1/auth/mfa',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mfa_token:mfaToken,code:(code||'').trim()})});
+      var d=await r.json().catch(function(){return {};});
+      if(r.ok&&d.success) return d.data;
+      var msg=(d.error&&d.error.message)||'';
+      var m=msg.match(/\|retry:([A-Za-z0-9-]+)/); if(m) mfaToken=m[1];
+      showToast(window.t('twofa.badCode'),'error');
+    }
+  };
   window.resetEncryptionIdentity = async function(){
     if(!confirm(window.t('dm.resetIdentityConfirm'))) return;
     var reauth = await collectReauth();
@@ -32969,7 +33059,8 @@ function closeFaceScan(){
 }
 
 // Settings-modal row: status + badge toggle.
-window.refreshAgeVerificationStatus = async function(){
+window.refresh2FAStatus && window.refresh2FAStatus();
+  window.refreshAgeVerificationStatus = async function(){
   var line = document.getElementById('ageVerifyStatusLine');
   var btn  = document.getElementById('ageVerifyActionBtn');
   var row  = document.getElementById('ageBadgeToggleRow');
@@ -34580,6 +34671,10 @@ function showExternalLinkWarning(e,url){
       var d=await r.json();
       if(!r.ok)throw new Error((d.error&&d.error.message)||d.message||window.t('auth.loginFailed'));
       var payload=d.data||d;
+      if(payload&&payload.mfa_required){
+        payload=await window.completeMfaLogin(payload.mfa_token);
+        if(!payload){ _showErr(window.t('twofa.needed')); return; }
+      }
       var tok=payload.access_token||payload.token||'';
       if(payload.refresh_token) try{localStorage.setItem('yeet_refresh', payload.refresh_token);}catch(e){}
       var usr={username:payload.username||'user',email_verified:payload.email_verified===true};

@@ -99,6 +99,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/link-wallet/nonce",  post(api::email_auth::link_wallet_nonce))
         .route("/api/v1/auth/link-wallet/verify", post(api::email_auth::link_wallet_verify))
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
+        .route("/api/v1/auth/mfa",         post(api::email_auth::mfa))
         .route("/api/v1/auth/logout",      post(api::auth::logout))
         // Feed
         .route("/api/v1/feed",             get(api::feed::get_feed))
@@ -195,6 +196,10 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/e2ee/keys",            post(api::e2ee::upload_keys))
         .route("/api/v1/me/e2ee/reauth-nonce",    post(api::reauth::nonce_endpoint))
         .route("/api/v1/me/reauth-nonce",         post(api::reauth::nonce_endpoint))
+        .route("/api/v1/me/2fa/status",           get(api::twofa::status))
+        .route("/api/v1/me/2fa/setup",            post(api::twofa::setup))
+        .route("/api/v1/me/2fa/activate",         post(api::twofa::activate))
+        .route("/api/v1/me/2fa/disable",          post(api::twofa::disable))
         .route("/api/v1/users/:address/e2ee/pubkey", get(api::e2ee::get_peer_pubkey))
         .route("/api/v1/me/e2ee/prekeys",         post(api::e2ee::upload_prekeys))
         .route("/api/v1/me/e2ee/prekeys/count",   get(api::e2ee::prekey_count))
