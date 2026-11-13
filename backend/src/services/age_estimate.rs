@@ -69,6 +69,10 @@ fn models() -> Option<&'static Models> { MODELS.get_or_init(load).as_ref() }
 /// True when the models are loaded and the feature is on.
 pub fn available() -> bool { models().is_some() }
 
+/// Like `available()` but never triggers a load: for the health endpoint,
+/// which must stay cheap. `warm_up()` at startup fills the cell.
+pub fn loaded() -> bool { MODELS.get().map(|m| m.is_some()).unwrap_or(false) }
+
 /// Warm the models at startup so the first submission does not pay the
 /// load time (and so a broken model file shows up in the log right away).
 pub async fn warm_up() {

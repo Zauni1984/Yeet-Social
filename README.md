@@ -13,6 +13,7 @@ YEET Social is a Web3-native social network: post, comment, like and tip each ot
 - Posts (text, image, video, permanent posts, pay-per-view), comments, likes, reposts, tips, trending
 - **Audio Stories** — record in the browser, 24 h or permanent, optional 18+
 - Email login (Argon2id, GDPR double opt-in) and MetaMask login; email users can link a wallet later
+- **Two-factor authentication** (TOTP authenticator apps) with encrypted secret at rest and one-time recovery codes; step-up for account deletion and encryption reset
 - Points economy: registration bonus (first 100k), posting reward (≥120 chars, daily cap), conversion queue with **manual admin approval**, hash-chained ledger, public explorer
 - **Forty-two UI languages** (EN, DE, IT, FR, ES, PT, FI, SV, NB, IS, CS, DA, NL, PL, HR, SR, TR, LV, EL, HU, RO, BG, SK, SL, LT, ET, GA, MT, UK, RU, CA, SQ, BS, MK, EU, GL, CY, LB, ZH, JA, KO, HI) with browser auto-detect
 - **Accessibility**: screen-reader mode, high contrast, large text, keyboard shortcuts, built-in audio reader

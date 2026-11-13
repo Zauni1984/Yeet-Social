@@ -18,6 +18,10 @@ pub struct Reauth {
     pub nonce: Option<String>,
     #[serde(default)]
     pub signature: Option<String>,
+    /// A current 2FA code (or recovery code), accepted when the account has
+    /// 2FA enabled — a hijacked session without the authenticator fails.
+    #[serde(default)]
+    pub totp: Option<String>,
 }
 
 const NONCE_SCOPE: &str = "reauth";
@@ -47,6 +51,12 @@ pub async fn verify(state: &AppState, user_id: Uuid, r: Option<&Reauth>) -> AppR
     ).bind(user_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     let (pw_hash, pw_salt, wallet) = row.unwrap_or_default();
     let mut ok = false;
+    if let Some(code) = r.totp.as_deref() {
+        if crate::api::twofa::verify_second_factor(state, user_id, code).await.unwrap_or(false) {
+            ok = true;
+        }
+    }
+    if !ok {
     if let (Some(pw), Some(h)) = (r.password.as_deref(), pw_hash.as_deref()) {
         ok = crate::api::email_auth::verify_password(pw, h, pw_salt.as_deref().unwrap_or("")).0;
     }
@@ -61,7 +71,8 @@ pub async fn verify(state: &AppState, user_id: Uuid, r: Option<&Reauth>) -> AppR
             }
         }
     }
+    }
     if ok { Ok(()) } else {
-        Err(AppError::Unauthorised("REAUTH_FAILED: password or wallet signature did not verify".into()))
+        Err(AppError::Unauthorised("REAUTH_FAILED: password, 2FA code or wallet signature did not verify".into()))
     }
 }

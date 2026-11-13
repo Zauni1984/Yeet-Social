@@ -49,6 +49,8 @@ k256             = { version = "0.13", features = ["ecdsa"] }
 # in OpenSSL.
 p256             = { version = "0.13", features = ["ecdsa"] }
 base64           = "0.22"
+# TOTP two-factor auth (RFC 6238) with otpauth QR generation.
+totp-rs          = { version = "6", default-features = false, features = ["std", "gen_secret", "otpauth", "qr"] }
 
 # 18+ queue pre-sorting: on-server face detection + age bucket estimate
 # (ONNX via tract, pure Rust). Models are optional files under

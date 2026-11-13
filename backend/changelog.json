@@ -410,6 +410,21 @@
         "#Security",
         "#Messages"
       ]
+    },
+    {
+      "id": "2026-11-13-44-sustainability-health",
+      "text": "Behind the scenes: we prepared the MiCA sustainability indicators for the token whitepaper (energy and emissions of the chain, with a calculator and sourced method) and the health check now reports whether the 18+ age-estimate models are loaded. No user-facing change.",
+      "tags": [
+        "#Compliance"
+      ]
+    },
+    {
+      "id": "2026-11-13-45-two-factor-auth",
+      "text": "New: two-factor authentication. Turn it on under Settings to protect your account with an authenticator app (Google Authenticator, Aegis, 1Password and similar), with one-time recovery codes for a lost phone. With 2FA on, login asks for a 6-digit code after your password, and sensitive actions can be confirmed with a code too.",
+      "tags": [
+        "#Security",
+        "#Feature"
+      ]
     }
   ]
 }
