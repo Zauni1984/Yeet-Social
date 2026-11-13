@@ -17,7 +17,7 @@ YEET Social is a Web3-native social network: post, comment, like and tip each ot
 - **Forty-two UI languages** (EN, DE, IT, FR, ES, PT, FI, SV, NB, IS, CS, DA, NL, PL, HR, SR, TR, LV, EL, HU, RO, BG, SK, SL, LT, ET, GA, MT, UK, RU, CA, SQ, BS, MK, EU, GL, CY, LB, ZH, JA, KO, HI) with browser auto-detect
 - **Accessibility**: screen-reader mode, high contrast, large text, keyboard shortcuts, built-in audio reader
 - **Post translation** (provider-neutral: Azure / Google / DeepL / LibreTranslate) and **feed filter** by language and country
-- Moods (color themes), user-composable Webboards (RSS), paper wallets, 18+ gate with age verification
+- Moods (color themes), user-composable Webboards (RSS), paper wallets, 18+ gate with human-reviewed age verification and optional on-server **AI age estimate** as a reviewer hint (opt-in, no third party)
 - **Encrypted direct messages**: end-to-end with forward secrecy (X3DH + double ratchet, multi-device), a dedicated **message passphrase** that never reaches the server, key pinning with safety numbers (changed keys and new devices need your OK), per-viewer delete and server-side retention
 - **Developer API** (`/api.html`, DE/EN docs, OpenAPI) for autoposters and AI agents, keys approved by us, posts labelled AUTO/AI
 - **Hardening**: enforced Content-Security-Policy, SRI on every CDN script, session families with instant revocation, enumeration-safe registration and login, non-root backend container, SHA-pinned CI actions

@@ -40,6 +40,8 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(addr).await.expect("Bind failed");
     // Start background jobs
     tokio::spawn(services::batch_rewards::start_reward_batch_job(state.clone()));
+    // 18+ queue pre-sorting: load the ONNX models once (no-op without files).
+    tokio::spawn(services::age_estimate::warm_up());
     tokio::spawn(services::batch_rewards::start_cleanup_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_message_cleanup_job(state.clone()));
     tokio::spawn(services::batch_rewards::start_scheduled_publish_job(state.clone()));
