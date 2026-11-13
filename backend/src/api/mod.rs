@@ -31,6 +31,7 @@ pub mod uploads;
 pub mod paper_wallets;
 pub mod blocks;
 pub mod e2ee;
+pub mod reauth;
 pub mod conversations;
 pub mod messages;
 pub mod invitations;

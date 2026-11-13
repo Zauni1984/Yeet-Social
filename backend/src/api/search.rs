@@ -81,7 +81,7 @@ pub async fn search(
     // ILIKE pattern with the user's term wrapped in %. Strip a leading
     // @ or # so 'searching for @alice' or '#yeet' Just Works.
     let clean = term.trim_start_matches(['@', '#']);
-    let pat = format!("%{}%", clean);
+    let pat = format!("%{}%", crate::api::middleware::like_escape(clean));
 
     let users: Vec<UserHit> = if want_users {
         let rows: Vec<(Uuid, Option<String>, Option<String>, Option<String>, Option<String>, bool)> =

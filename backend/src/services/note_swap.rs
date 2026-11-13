@@ -107,16 +107,49 @@ pub async fn start_swap_watcher(state: AppState) {
     let mut tick = interval(Duration::from_secs(60));
     loop {
         tick.tick().await;
+        // One watcher at a time, cluster-wide (audit M-L6): the advisory
+        // lock lives on this connection for the duration of the pass, so
+        // a second backend instance simply skips the tick.
+        let mut conn = match state.db.pool().acquire().await {
+            Ok(c) => c,
+            Err(e) => { error!("note-swap: no DB connection: {e}"); continue; }
+        };
+        let got: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock($1)")
+            .bind(SWAP_LOCK_KEY).fetch_one(&mut *conn).await.unwrap_or(false);
+        if !got { continue; }
         if let Err(e) = scan(&state, &cfg).await { error!("note-swap: scan failed: {e}"); }
         if let Err(e) = credit_confirmed(&state, &cfg).await { error!("note-swap: credit failed: {e}"); }
+        let _ = sqlx::query("SELECT pg_advisory_unlock($1)").bind(SWAP_LOCK_KEY).execute(&mut *conn).await;
     }
 }
+
+/// Advisory lock key for the swap watcher (arbitrary, fixed).
+const SWAP_LOCK_KEY: i64 = 0x5945_4554_5357_4150; // "YEETSWAP"
+/// `listtransactions` page size and the number of pages scanned per tick.
+const SCAN_PAGE: i64 = 500;
+const SCAN_MAX_PAGES: i64 = 20;
 
 /// Bitcoin-Core `listtransactions "*" count skip include_watchonly` →
 /// "receive" entries carry address / txid / vout / amount / confirmations.
 async fn scan(state: &AppState, cfg: &SwapConfig) -> anyhow::Result<()> {
-    let txs = rpc(cfg, "listtransactions", serde_json::json!(["*", 500, 0, true])).await?;
-    let Some(list) = txs.as_array() else { return Ok(()); };
+    // Page through the wallet's history (audit M-L5): a single 500-entry
+    // window could miss deposits after a long outage or a burst. Stop at
+    // the first page where every entry is already past the confirmation
+    // threshold — nothing older can still change.
+    let mut skip = 0i64;
+    for _ in 0..SCAN_MAX_PAGES {
+        let txs = rpc(cfg, "listtransactions", serde_json::json!(["*", SCAN_PAGE, skip, true])).await?;
+        let Some(list) = txs.as_array() else { return Ok(()); };
+        if list.is_empty() { return Ok(()); }
+        let all_settled = list.iter().all(|t| t.get("confirmations").and_then(|v| v.as_i64()).unwrap_or(0) >= cfg.confirmations);
+        scan_page(state, list).await?;
+        if list.len() < SCAN_PAGE as usize || all_settled { return Ok(()); }
+        skip += SCAN_PAGE;
+    }
+    Ok(())
+}
+
+async fn scan_page(state: &AppState, list: &[serde_json::Value]) -> anyhow::Result<()> {
     for t in list {
         if t.get("category").and_then(|c| c.as_str()) != Some("receive") { continue; }
         let (Some(addr), Some(txid)) = (t.get("address").and_then(|a| a.as_str()), t.get("txid").and_then(|a| a.as_str())) else { continue; };

@@ -169,9 +169,13 @@ pub enum RefreshOutcome {
     Unknown,
 }
 
+/// How long after a rotation the previous refresh token may still be
+/// presented once more without counting as reuse (parallel tabs, retries).
+const REUSE_GRACE_SECS: f64 = 30.0;
+
 /// Atomic refresh-token rotation. Looks up the presented JTI, refuses
-/// reuse, otherwise marks the old row rotated_to_jti=new_jti and
-/// inserts a new row in the same family.
+/// reuse (outside the grace window), otherwise marks the old row
+/// rotated_to_jti=new_jti and inserts a new row in the same family.
 pub async fn rotate_refresh(
     pool: &PgPool,
     presented_jti: &str,
@@ -180,28 +184,38 @@ pub async fn rotate_refresh(
     let mut tx = pool.begin().await.map_err(AppError::Database)?;
 
     // FOR UPDATE so two concurrent refresh attempts can't both pass.
-    let row: Option<(Uuid, Uuid, Uuid, Option<String>, Option<DateTime<Utc>>)> = sqlx::query_as(
-        "SELECT id, user_id, family_id, rotated_to_jti, revoked_at
+    let row: Option<(Uuid, Uuid, Uuid, Option<String>, Option<DateTime<Utc>>, bool)> = sqlx::query_as(
+        "SELECT id, user_id, family_id, rotated_to_jti, revoked_at,
+                (rotated_to_jti IS NOT NULL AND last_seen_at > NOW() - make_interval(secs => $2)) AS in_grace
            FROM user_sessions
           WHERE jti = $1
           FOR UPDATE"
     )
-    .bind(presented_jti)
+    .bind(presented_jti).bind(REUSE_GRACE_SECS)
     .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
 
-    let Some((session_id, user_id, family_id, rotated_to_jti, revoked_at)) = row else {
+    let Some((session_id, user_id, family_id, rotated_to_jti, revoked_at, in_grace)) = row else {
         tx.rollback().await.map_err(AppError::Database)?;
         return Ok(RefreshOutcome::Unknown);
     };
 
-    if rotated_to_jti.is_some() || revoked_at.is_some() {
+    if revoked_at.is_some() {
         tx.rollback().await.map_err(AppError::Database)?;
         return Ok(RefreshOutcome::Reuse { family_id });
     }
+    if rotated_to_jti.is_some() && !in_grace {
+        tx.rollback().await.map_err(AppError::Database)?;
+        return Ok(RefreshOutcome::Reuse { family_id });
+    }
+    // Inside the grace window a second presentation of a just-rotated
+    // token is a benign race (two tabs refreshing at once, a retried
+    // request), not an attack (audit A-L2): hand out another child in the
+    // same family instead of revoking everything. The window is short and
+    // the row keeps pointing at its first successor.
 
     sqlx::query(
         "UPDATE user_sessions
-            SET rotated_to_jti = $2, last_seen_at = NOW()
+            SET rotated_to_jti = COALESCE(rotated_to_jti, $2), last_seen_at = NOW()
           WHERE id = $1"
     )
     .bind(session_id).bind(new_jti)

@@ -812,6 +812,8 @@ html.ld-on body{overflow:hidden}
           <option value="7" data-i18n="dm.day7">7 days</option>
           <option value="30" data-i18n="dm.day30">30 days</option>
         </select>
+        <button onclick="window.resetEncryptionIdentity && window.resetEncryptionIdentity()" style="width:100%;margin-top:12px;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:9px;cursor:pointer;font-size:13px"><span class="yi yi-lock"></span> <span data-i18n="dm.resetIdentity">Reset message encryption (forgot passphrase)</span></button>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px" data-i18n="dm.resetIdentityNote">Creates new keys. Old messages stay locked; contacts will be asked to confirm your new key.</div>
       </div>
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px" data-i18n="settings.gdpr">Privacy (GDPR)</div>
@@ -1387,6 +1389,8 @@ html.ld-on body{overflow:hidden}
       'bn.serial':'Serial','bn.issued':'Issued','bn.code':'Claim code (backup)',
       'bn.notTransferable':'Treat this bill like cash. Whoever holds it can redeem it.',
       // delete account
+      'reauth.title':'Confirm it is you','reauth.password':'Enter your account password to confirm this action.','reauth.walletMissing':'Connect your wallet to confirm this action.',
+      'dm.resetIdentity':'Reset message encryption (forgot passphrase)','dm.resetIdentityNote':'Creates new keys. Old messages stay locked; contacts will be asked to confirm your new key.','dm.resetIdentityConfirm':'Reset your message encryption?\n\nYou will get new keys and choose a new passphrase. Messages encrypted with the old keys can no longer be read. Your contacts will be asked to confirm your new key.','dm.resetIdentityDone':'Message encryption reset. New keys are active.',
       'delete.prompt':'Delete account permanently?\n\nAll posts, follows and settings will be deleted. This action cannot be undone.\n\nType "DELETE" to confirm:',
       'delete.keyword':'DELETE',
       // report
@@ -1819,6 +1823,8 @@ html.ld-on body{overflow:hidden}
       'bn.step2':'2. Scan this QR code or visit the URL below','bn.step3':'3. Tokens are credited to your wallet',
       'bn.serial':'Serial','bn.issued':'Issued','bn.code':'Claim code (backup)',
       'bn.notTransferable':'Treat this bill like cash. Whoever holds it can redeem it.',
+      'reauth.title':'Bestätige, dass du es bist','reauth.password':'Gib dein Kontopasswort ein, um diese Aktion zu bestätigen.','reauth.walletMissing':'Verbinde deine Wallet, um diese Aktion zu bestätigen.',
+      'dm.resetIdentity':'Nachrichten-Verschlüsselung zurücksetzen (Passphrase vergessen)','dm.resetIdentityNote':'Erzeugt neue Schlüssel. Alte Nachrichten bleiben gesperrt; Kontakte werden gebeten, deinen neuen Schlüssel zu bestätigen.','dm.resetIdentityConfirm':'Nachrichten-Verschlüsselung zurücksetzen?\n\nDu bekommst neue Schlüssel und wählst eine neue Passphrase. Mit den alten Schlüsseln verschlüsselte Nachrichten sind danach nicht mehr lesbar. Deine Kontakte werden gebeten, deinen neuen Schlüssel zu bestätigen.','dm.resetIdentityDone':'Verschlüsselung zurückgesetzt. Neue Schlüssel sind aktiv.',
       'delete.prompt':'Konto endgültig löschen?\n\nAlle Posts, Follows und Einstellungen werden gelöscht. Diese Aktion ist unwiderruflich.\n\nTippe "LÖSCHEN" zur Bestätigung:',
       'delete.keyword':'LÖSCHEN',
       'report.title':'Post melden','report.detailsPlaceholder':'Details (optional)','report.submit':'Melden',
@@ -31263,13 +31269,37 @@ async function exportMyData(){
   }catch(e){showToast(window.t('toast.exportFailed'));}
 }
 
+// Proof of possession for sensitive actions (audit A-L6): email accounts
+// confirm with their password, wallet accounts sign a one-shot nonce.
+// Resolves with the `reauth` object for the request body, or null.
+async function collectReauth(){
+  const jwt=localStorage.getItem('yeet_jwt'); if(!jwt) return null;
+  const addr=(localStorage.getItem('yeet_address')||'');
+  if(/^0x[0-9a-f]{40}$/i.test(addr)){
+    try{
+      const nr=await fetch('/api/v1/me/reauth-nonce',{method:'POST',headers:{'Authorization':'Bearer '+jwt}});
+      const nd=await nr.json(); if(!nr.ok||!nd.success) return null;
+      const prov=(window.YeetWallet&&await window.YeetWallet.getProvider())||window.ethereum;
+      if(!prov){ showToast(window.t('reauth.walletMissing'),'error'); return null; }
+      const sig=await prov.request({method:'personal_sign',params:[nd.data.message,addr]});
+      return { nonce: nd.data.nonce, signature: sig };
+    }catch(e){ return null; }
+  }
+  if(!window.YeetE2EE||!window.YeetE2EE.promptPassword) return null;
+  const pw=await window.YeetE2EE.promptPassword(window.t('reauth.password'), { title: window.t('reauth.title') });
+  return pw ? { password: pw } : null;
+}
+window.collectReauth = collectReauth;
+
 async function deleteMyAccount(){
   const jwt=localStorage.getItem('yeet_jwt');
   if(!jwt){showToast(window.t('common.notLoggedIn'));return;}
   const phrase=prompt(window.t('delete.prompt'));
   if(phrase!==window.t('delete.keyword')){showToast(window.t('common.aborted'));return;}
+  const reauth=await collectReauth();
+  if(!reauth){showToast(window.t('common.aborted'));return;}
   try{
-    const r=await fetch('/api/v1/users/me',{method:'DELETE',headers:{'Authorization':'Bearer '+jwt}});
+    const r=await fetch('/api/v1/users/me',{method:'DELETE',headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'},body:JSON.stringify({reauth:reauth})});
     const d=await r.json();
     if(!d.success){showToast(window.t('common.error')+': '+(d.error&&d.error.message||'delete'));return;}
     localStorage.clear();
@@ -31784,6 +31814,18 @@ async function uploadProfileImage(input, kind){
   window.linkWalletToEmailUser = linkWalletToEmailUser;
   window.exportMyData = exportMyData;
   window.deleteMyAccount = deleteMyAccount;
+  window.resetEncryptionIdentity = async function(){
+    if(!confirm(window.t('dm.resetIdentityConfirm'))) return;
+    var reauth = await collectReauth();
+    if(!reauth){ showToast(window.t('common.aborted')); return; }
+    try {
+      await window.YeetE2EE.resetIdentity(reauth);
+      showToast(window.t('dm.resetIdentityDone'),'success');
+    } catch(e){
+      var m = (e && e.message) || '';
+      if(m !== 'aborted') showToast((window.t('common.error')+': '+m), 'error');
+    }
+  };
     window.toggleNav = toggleNav;
   window.showGlobalFeed = showGlobalFeed;
   window.loadFollowingFeed = loadFollowingFeed;
@@ -34937,7 +34979,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
 
   function pwRenderResult(bill){
     var box = document.getElementById('pwResult');
-    var redeemUrl = location.origin + '/?redeem=' + encodeURIComponent(bill.claim_secret);
+    var redeemUrl = location.origin + '/#redeem=' + encodeURIComponent(bill.claim_secret);
     box.style.display = '';
     box.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="color:var(--yeet)">'+ Number(bill.amount).toLocaleString() +' YEET</b><span class="pw-meta" style="font-family:monospace;font-size:12px;color:var(--muted)">'+ pwEsc(bill.serial) +'</span></div>'
@@ -35051,13 +35093,16 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
   // Auto-trigger redeem from deep link ?redeem=...
   function autoRedeemFromUrl(){
     try {
+      // The secret travels in the fragment (never sent to the server or
+      // logged; audit FE-L2). Legacy ?redeem= links still work.
       var p = new URLSearchParams(location.search);
-      var code = p.get('redeem');
+      var h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      var code = h.get('redeem') || p.get('redeem');
       if(!code) return;
       // Strip from URL so a refresh doesn't loop
-      p.delete('redeem');
-      var qs = p.toString();
-      history.replaceState(null, '', location.pathname + (qs ? '?'+qs : '') + location.hash);
+      p.delete('redeem'); h.delete('redeem');
+      var qs = p.toString(); var hs = h.toString();
+      history.replaceState(null, '', location.pathname + (qs ? '?'+qs : '') + (hs ? '#'+hs : ''));
       var open = function(){
         if(authJwt()){
           openRedeemModal(code);
@@ -35118,7 +35163,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
     var jsPDF = window.jspdf.jsPDF;
     var W = 160, H = 75; // slightly larger for a more banknote-like 2:1 ratio
     var doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [W, H] });
-    var redeemUrl = location.origin + '/?redeem=' + encodeURIComponent(bill.claim_secret);
+    var redeemUrl = location.origin + '/#redeem=' + encodeURIComponent(bill.claim_secret);
     var amtStr = String(Number(bill.amount).toLocaleString());
 
     // ---- palette ----
@@ -37460,8 +37505,49 @@ info@blocksocial.eu</address>
   function clearIdentityCache(){ _identitySk = null; _identityPk = null; _lastMaster = null; }
 
   // Expose a deliberately small surface.
+  // Forgotten passphrase (or compromised device): start over with a new
+  // identity key. Needs proof of possession (audit A-L6); old messages
+  // stay unreadable, peers see a key change and confirm it (pinning).
+  async function resetIdentity(reauth){
+    var jwt = localStorage.getItem('yeet_jwt');
+    if(!jwt) throw new Error('not_logged_in');
+    var uid = await fetchOwnUserId();
+    var master, kdf;
+    if(hasInjectedWallet()){
+      master = await deriveMasterKeyFromWallet(); kdf = 'wallet-v1';
+    } else {
+      var pp = await promptNewPassphrase((window.t? window.t('dm.passphraseSetup') : 'Choose a passphrase for your encrypted messages.'));
+      if(pp === null) throw new Error('aborted');
+      master = await deriveMasterKeyFromPassphrase(pp, uid); kdf = 'passphrase-v2';
+    }
+    var kp = await genIdentityKeypair();
+    var spki = await exportPubSpki(kp.publicKey);
+    var wrapped = await wrapPrivateKey(master, await exportPriv(kp.privateKey));
+    var r = await fetch('/api/v1/me/e2ee/keys', {
+      method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+jwt },
+      body: JSON.stringify({ public_key: spki, encrypted_private_key: wrapped, kdf: kdf, reauth: reauth })
+    });
+    var d = await r.json().catch(function(){ return {}; });
+    if(!r.ok || !d.success) throw new Error((d.error && d.error.message) || 'upload_failed');
+    // Retire this device's old prekeys/signing key server-side and locally,
+    // then come back as a fresh device under the new identity.
+    var oldDev = localStorage.getItem('yeet_device_id');
+    if(oldDev){ try { await fetch('/api/v1/me/devices/'+ encodeURIComponent(oldDev), { method:'DELETE', headers:{ Authorization:'Bearer '+jwt } }); } catch(e){} }
+    try {
+      var drop = [];
+      for(var i=0;i<localStorage.length;i++){ var k = localStorage.key(i); if(k && (k.indexOf('yeet_prekeys_')===0 || k.indexOf('yeet_ratchet_')===0 || k.indexOf('yeet_sent_')===0 || k === 'yeet_device_id' || k === 'yeet_pin_'+uid+'_'+uid)) drop.push(k); }
+      drop.forEach(function(k){ localStorage.removeItem(k); });
+    } catch(e){}
+    try { if(window.YeetRatchet && window.YeetRatchet._wipe) window.YeetRatchet._wipe(); } catch(e){}
+    _identitySk = kp.privateKey; _identityPk = spki; _lastMaster = master;
+    try { await provisionPrekeysWithMaster(master, jwt, uid, {}); } catch(e){}
+    return { pk: spki };
+  }
+
   window.YeetE2EE = {
     ensureIdentity: ensureIdentity,
+    resetIdentity: resetIdentity,
+    promptPassword: promptPassword,
     clearCache: clearIdentityCache,
     importPubSpki: importPubSpki,
     deriveConvKey: deriveConvKey,

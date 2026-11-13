@@ -142,3 +142,15 @@ pub async fn abuse_guard(State(state): State<AppState>, mut req: Request, next: 
     }
     Ok(next.run(req).await)
 }
+
+/// Escape a user term for use inside a LIKE/ILIKE pattern (audit A-L7):
+/// `%`, `_` and the backslash lose their wildcard meaning. Postgres uses
+/// the backslash as the default escape character.
+pub fn like_escape(term: &str) -> String {
+    let mut out = String::with_capacity(term.len() + 4);
+    for c in term.chars() {
+        if matches!(c, '%' | '_' | '\\') { out.push('\\'); }
+        out.push(c);
+    }
+    out
+}

@@ -11,6 +11,10 @@ use uuid::Uuid;
 use crate::{AppError, AppResult, AppState, models::ApiResponse};
 use crate::api::middleware::AuthUser;
 
+/// Smallest tip accepted (audit M-L3): below this the 10 % platform share
+/// rounds to nothing at 8 decimals and the ledger fills with noise.
+pub const MIN_TIP_AMOUNT: f64 = 0.01;
+
 #[derive(Debug, Deserialize)]
 pub struct SendTipRequest {
     pub to_address: String,
@@ -59,6 +63,11 @@ pub(crate) async fn send_tip_tx(
         .map(|v| (v * 1e8).round() / 1e8)
         .filter(|v| *v > 0.0 && *v <= 1e9)
         .ok_or_else(|| AppError::Validation("Amount must be a positive number".into()))?;
+    // Dust floor (audit M-L3): below 0.01 the 10 % platform share rounds
+    // to nothing at 8 decimals and the ledger fills with noise.
+    if amount_val < MIN_TIP_AMOUNT {
+        return Err(AppError::Validation(format!("Minimum tip is {MIN_TIP_AMOUNT}")));
+    }
     if from_id == to_id {
         return Err(AppError::Validation("Cannot tip yourself".into()));
     }
