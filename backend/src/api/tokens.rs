@@ -71,13 +71,17 @@ pub async fn get_rewards(
     auth: AuthUser,
 ) -> AppResult<Json<ApiResponse<RewardsResponse>>> {
     let user_id = caller_user_id(&state, &auth).await?;
+    // Lifetime reward points come from the reward journal (the former
+    // users.total_yeet_earned column never existed in the migrated schema,
+    // so this endpoint answered 500 — found while closing audit M-L2).
     let total_earned: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(total_yeet_earned, 0) FROM users WHERE id = $1"
+        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards WHERE user_id = $1 AND kind = 'reward'"
     )
     .bind(user_id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
+    // Daily cap counts only granted rewards, never conversions (audit M-L2).
     let today_earned: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(amount), 0) FROM token_rewards WHERE user_id = $1 AND created_at >= CURRENT_DATE"
+        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards WHERE user_id = $1 AND created_at >= CURRENT_DATE AND kind = 'reward'"
     )
     .bind(user_id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 

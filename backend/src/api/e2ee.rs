@@ -37,18 +37,7 @@ async fn resolve_user(state: &AppState, address_or_id: &str) -> AppResult<Uuid> 
     crate::api::conversations::resolve_user(state.db.pool(), address_or_id).await
 }
 
-/// Proof of possession for replacing an existing identity key (audit
-/// MSG-H4): either the account password, or a wallet signature over the
-/// nonce issued by `reauth_nonce`.
-#[derive(Debug, Deserialize, Default)]
-pub struct Reauth {
-    #[serde(default)]
-    pub password: Option<String>,
-    #[serde(default)]
-    pub nonce: Option<String>,
-    #[serde(default)]
-    pub signature: Option<String>,
-}
+pub use crate::api::reauth::Reauth;
 
 #[derive(Debug, Deserialize)]
 pub struct UploadKeysRequest {
@@ -64,20 +53,6 @@ pub struct UploadKeysRequest {
 }
 
 const KDFS: [&str; 3] = ["login-v1", "passphrase-v2", "wallet-v1"];
-
-/// POST /api/v1/me/e2ee/reauth-nonce — a one-shot nonce (10 min) a wallet
-/// account signs to prove possession before replacing its identity key.
-pub async fn reauth_nonce(
-    State(state): State<AppState>,
-    auth: AuthUser,
-) -> AppResult<Json<ApiResponse<crate::api::auth::NonceResponse>>> {
-    let me = caller_user_id(&state, &auth).await?;
-    let nonce = crate::services::auth::generate_nonce();
-    let message = crate::services::auth::sign_message(&nonce);
-    state.cache.set_nonce("e2ee_reauth", &me.to_string(), &nonce, std::time::Duration::from_secs(600)).await
-        .map_err(|e| AppError::Cache(e.to_string()))?;
-    Ok(Json(ApiResponse::ok(crate::api::auth::NonceResponse { nonce, message })))
-}
 
 #[derive(Debug, Serialize)]
 pub struct MyKeysResponse {
@@ -135,31 +110,11 @@ pub async fn upload_keys(
     // possession: a stolen session token alone must not be able to re-key
     // the account (audit MSG-H4). Password guesses share the 5/h budget
     // above. First-time setup (no key yet) needs nothing extra.
-    let cur: Option<(Option<String>, Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
-        "SELECT e2ee_public_key, password_hash, password_salt, wallet_address FROM users WHERE id = $1"
+    let existing: Option<Option<String>> = sqlx::query_scalar(
+        "SELECT e2ee_public_key FROM users WHERE id = $1"
     ).bind(me).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-    let (existing, pw_hash, pw_salt, wallet) = cur.unwrap_or_default();
-    if existing.as_deref().map(|k| !k.is_empty()).unwrap_or(false) {
-        let r = req.reauth.as_ref().ok_or_else(|| AppError::Unauthorised(
-            "REAUTH_REQUIRED: replacing your encryption identity needs your password or a wallet signature".into()))?;
-        let mut ok = false;
-        if let (Some(pw), Some(h)) = (r.password.as_deref(), pw_hash.as_deref()) {
-            ok = crate::api::email_auth::verify_password(pw, h, pw_salt.as_deref().unwrap_or("")).0;
-        }
-        if !ok {
-            if let (Some(n), Some(sig), Some(w)) = (r.nonce.as_deref(), r.signature.as_deref(), wallet.as_deref()) {
-                let stored = state.cache.consume_nonce("e2ee_reauth", &me.to_string()).await
-                    .map_err(|e| AppError::Cache(e.to_string()))?;
-                if stored.as_deref() == Some(n) {
-                    let msg = crate::services::auth::sign_message(n);
-                    ok = crate::services::auth::recover_signer(&msg, sig)
-                        .map(|a| a.eq_ignore_ascii_case(w)).unwrap_or(false);
-                }
-            }
-        }
-        if !ok {
-            return Err(AppError::Unauthorised("REAUTH_FAILED: password or wallet signature did not verify".into()));
-        }
+    if existing.flatten().map(|k| !k.is_empty()).unwrap_or(false) {
+        crate::api::reauth::verify(&state, me, req.reauth.as_ref()).await?;
     }
 
     sqlx::query(

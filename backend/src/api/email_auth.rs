@@ -12,6 +12,10 @@ use crate::{AppError, AppResult, AppState, api::middleware::AuthUser, models::Ap
 pub struct EmailRegisterRequest {
     pub email: String,
     pub password: String,
+    /// Chosen handle (3–32 chars, a–z 0–9 _). Without it a neutral
+    /// placeholder is generated — never the email's local part (audit A-L4).
+    #[serde(default)]
+    pub username: Option<String>,
     pub display_name: Option<String>,
     pub consent: Option<bool>,
     /// Client-derived wallet address (lower-case 0x...). Optional, since
@@ -202,9 +206,12 @@ pub async fn register(
     // Argon2 PHC strings embed their own salt; the legacy per-row salt column is
     // stored empty for new accounts (kept only for un-upgraded legacy hashes).
     let salt = String::new();
-    let username_base = email_lower.split('@').next().unwrap_or("user")
-        .chars().filter(|c| c.is_alphanumeric() || *c == '_').take(20).collect::<String>();
-    let username = unique_username(&state, &username_base).await?;
+    let username_base = match req.username.as_deref() {
+        Some(raw) if !raw.trim().is_empty() => crate::api::users::clean_username(raw)
+            .ok_or_else(|| AppError::Validation("Username: 3-32 characters, letters, digits and underscore".into()))?,
+        _ => crate::api::users::placeholder_username(),
+    };
+    let username = crate::api::users::unique_username(state.db.pool(), &username_base).await?;
 
     // Non-custodial model (docs/mica/05): email accounts are created WITHOUT
     // a wallet. The platform no longer generates or accepts a wallet at
@@ -276,7 +283,7 @@ pub async fn login(
     let (access_token, refresh_token) = auth::issue_token_pair(&subject, family_id, &state.jwt)
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
-    record_session_best_effort(&state, user_id, &refresh_token, family_id).await;
+    record_session(&state, user_id, &refresh_token, family_id).await?;
 
     Ok(Json(ApiResponse::ok(TokenResponse {
         access_token, refresh_token,
@@ -290,14 +297,14 @@ pub async fn login(
 /// row so /me/sessions surfaces this login and refresh-rotation can
 /// detect reuse. Failure is logged but never blocks the auth flow —
 /// the access-token blacklist still protects active sessions.
-async fn record_session_best_effort(state: &AppState, user_id: Uuid, refresh_token: &str, family_id: Uuid) {
-    if let Ok(claims) = auth::verify_refresh_token(refresh_token, &state.jwt) {
-        if let Err(e) = crate::api::sessions::record_login(
-            state.db.pool(), user_id, &claims.jti, family_id, None, None,
-        ).await {
-            tracing::warn!(error = %e, "Failed to record session row");
-        }
-    }
+/// Record the refresh JTI for the new session. Fatal (audit A-L1): a
+/// session we cannot record could neither be listed nor revoked, and its
+/// refresh-token reuse would go undetected — better to fail the login.
+async fn record_session(state: &AppState, user_id: Uuid, refresh_token: &str, family_id: Uuid) -> AppResult<()> {
+    let claims = auth::verify_refresh_token(refresh_token, &state.jwt)
+        .map_err(|e| AppError::Internal(format!("fresh refresh token did not verify: {e}")))?;
+    crate::api::sessions::record_login(state.db.pool(), user_id, &claims.jti, family_id, None, None).await
+        .map_err(|e| AppError::Internal(format!("could not record session: {e}")))
 }
 
 /// Core verification: validate + consume the token, mark the user verified.
@@ -537,18 +544,6 @@ pub async fn link_wallet_verify(
         .execute(state.db.pool()).await.map_err(AppError::Database)?;
 
     Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
-}
-
-async fn unique_username(state: &AppState, base: &str) -> AppResult<String> {
-    let base = if base.is_empty() { "user".to_string() } else { base.to_string() };
-    for i in 0..20 {
-        let candidate = if i == 0 { base.clone() } else { format!("{}{}", base, i) };
-        let taken: Option<Uuid> = sqlx::query_scalar("SELECT id FROM users WHERE username = $1")
-            .bind(&candidate)
-            .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-        if taken.is_none() { return Ok(candidate); }
-    }
-    Ok(format!("{}-{}", base, Uuid::new_v4().simple().to_string().chars().take(6).collect::<String>()))
 }
 
 #[cfg(test)]

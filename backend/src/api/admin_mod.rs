@@ -504,7 +504,7 @@ pub async fn list_users(
         // whitelisted identifiers are interpolated; every user-supplied value is bound.
         sqlx::query_as(sqlx::AssertSqlSafe(sql.as_str()))
             .bind(offset)
-            .bind(format!("%{}%", term))
+            .bind(format!("%{}%", crate::api::middleware::like_escape(term)))
             .fetch_all(state.db.pool()).await.map_err(AppError::Database)?
     } else {
         sqlx::query_as(sqlx::AssertSqlSafe(sql.as_str()))

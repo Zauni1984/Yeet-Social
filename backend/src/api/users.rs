@@ -280,11 +280,25 @@ pub async fn export_my_data(
     })))
 }
 
+#[derive(Debug, serde::Deserialize, Default)]
+pub struct DeleteAccountRequest {
+    #[serde(default)]
+    pub reauth: Option<crate::api::reauth::Reauth>,
+}
+
+/// DELETE /api/v1/users/me — needs proof of possession (password or wallet
+/// signature, audit A-L6): a stolen session token must not be able to
+/// destroy the account. The body is optional only so that an old client
+/// gets a clear REAUTH_REQUIRED instead of a parse error.
 pub async fn delete_my_account(
     State(state): State<AppState>,
     auth: AuthUser,
+    body: Option<Json<DeleteAccountRequest>>,
 ) -> AppResult<Json<ApiResponse<serde_json::Value>>> {
     let user_id = resolve_user_id(&state, &auth.address).await?;
+    crate::api::middleware::limit(&state, "delete_account", &auth.address, 3600, 5, 86400, 10).await?;
+    let req = body.map(|b| b.0).unwrap_or_default();
+    crate::api::reauth::verify(&state, user_id, req.reauth.as_ref()).await?;
     // Audit A-M1: every access token of this account dies with it.
     let _ = crate::api::sessions::revoke_all_for_user(
         state.db.pool(), &state.cache, user_id, state.jwt.refresh_ttl_secs,
@@ -330,4 +344,32 @@ pub async fn list_following(
     .bind(target_id)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(rows)))
+}
+
+/// First free username for `base` (`base`, `base1`, … then a random
+/// suffix). Shared by email signup and wallet first-login (audit A-L3).
+pub(crate) async fn unique_username(pool: &sqlx::PgPool, base: &str) -> AppResult<String> {
+    let base = if base.is_empty() { "user".to_string() } else { base.to_string() };
+    for i in 0..20 {
+        let candidate = if i == 0 { base.clone() } else { format!("{}{}", base, i) };
+        let taken: Option<Uuid> = sqlx::query_scalar("SELECT id FROM users WHERE username = $1")
+            .bind(&candidate)
+            .fetch_optional(pool).await.map_err(AppError::Database)?;
+        if taken.is_none() { return Ok(candidate); }
+    }
+    Ok(format!("{}-{}", base, Uuid::new_v4().simple().to_string().chars().take(6).collect::<String>()))
+}
+
+/// Neutral placeholder username that reveals nothing about the account
+/// (audit A-L4): no email local part, no wallet prefix.
+pub(crate) fn placeholder_username() -> String {
+    format!("yeeter_{}", Uuid::new_v4().simple().to_string().chars().take(6).collect::<String>())
+}
+
+/// Validate a user-chosen username: 3–32 chars of a–z, 0–9, underscore.
+pub(crate) fn clean_username(raw: &str) -> Option<String> {
+    let u = raw.trim().to_lowercase();
+    let ok = (3..=32).contains(&u.chars().count())
+        && u.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+    if ok { Some(u) } else { None }
 }

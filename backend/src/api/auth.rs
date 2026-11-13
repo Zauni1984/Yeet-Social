@@ -84,7 +84,10 @@ pub async fn verify_signature(
     }
     // Upsert user. For first-time wallet logins we generate a placeholder
     // username that the onboarding modal will replace.
-    let fallback_username = format!("w_{}", &address[2..10]);
+    // Neutral, collision-free placeholder (audit A-L3/A-L4); onboarding
+    // lets the user pick a real handle.
+    let fallback_username = crate::api::users::unique_username(
+        state.db.pool(), &crate::api::users::placeholder_username()).await?;
     sqlx::query(
         "INSERT INTO users (wallet_address, username)
          VALUES ($1, $2)
@@ -114,15 +117,13 @@ pub async fn verify_signature(
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Record the refresh-token JTI server-side so subsequent rotations
-    // can detect reuse. Best-effort: a DB hiccup here doesn't fail the
-    // login; the worst case is we lose reuse-detection for this
-    // session (the access-token blacklist still works).
-    if let Ok(claims) = auth::verify_refresh_token(&refresh_token, &state.jwt) {
-        let label = sanitize_device_label(req.device_label.as_deref());
-        let _ = sessions::record_login(
-            state.db.pool(), user_id, &claims.jti, family_id, label.as_deref(), None,
-        ).await;
-    }
+    // can detect reuse. Fatal (audit A-L1): an unrecorded session could
+    // neither be listed nor revoked.
+    let claims = auth::verify_refresh_token(&refresh_token, &state.jwt)
+        .map_err(|e| AppError::Internal(format!("fresh refresh token did not verify: {e}")))?;
+    let label = sanitize_device_label(req.device_label.as_deref());
+    sessions::record_login(state.db.pool(), user_id, &claims.jti, family_id, label.as_deref(), None).await
+        .map_err(|e| AppError::Internal(format!("could not record session: {e}")))?;
 
     Ok(Json(ApiResponse::ok(TokenResponse {
         access_token, refresh_token, token_type: "Bearer".into(),
@@ -231,12 +232,11 @@ pub async fn refresh_token(
 
     match sessions::rotate_refresh(state.db.pool(), &claims.jti, &new_claims.jti).await? {
         RefreshOutcome::Ok { .. } => {
-            // Blacklist the consumed refresh so concurrent attempts
-            // immediately bounce on the access-middleware path too.
-            let _ = state.cache.blacklist_token(
-                &claims.jti,
-                Duration::from_secs(state.jwt.refresh_ttl_secs)
-            ).await;
+            // The consumed refresh JTI is NOT blacklisted here: the session
+            // row (rotated_to_jti) is the source of truth, and the short
+            // grace window in rotate_refresh (audit A-L2) must still be
+            // able to accept a parallel tab's retry. A refresh JTI never
+            // doubles as an access token, so nothing else relies on it.
             Ok(Json(ApiResponse::ok(TokenResponse {
                 access_token, refresh_token: refresh_token_new,
                 token_type: "Bearer".into(), needs_email: None,

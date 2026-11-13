@@ -402,6 +402,14 @@
       "tags": [
         "#Privacy"
       ]
+    },
+    {
+      "id": "2026-11-13-43-account-safety",
+      "text": "Account safety: deleting your account now asks for your password (or a wallet signature) so a stolen login cannot do it. New: Settings → Messages → \"Reset message encryption\" if you forgot your passphrase — you get new keys, old messages stay locked and contacts confirm your new key. Also: the username you pick at signup is used as is, and tiny tips below 0.01 are no longer accepted.",
+      "tags": [
+        "#Security",
+        "#Messages"
+      ]
     }
   ]
 }
