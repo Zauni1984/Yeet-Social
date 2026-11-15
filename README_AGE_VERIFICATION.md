@@ -96,3 +96,6 @@ queue: *likely adult (xx %)*, *possibly a minor*, *uncertain*, *no face*,
 age_googlenet, ONNX, run with tract) ship in the Docker image under
 `/app/models`; `AGE_AI_ENABLED=false` switches the feature off. Details,
 thresholds and the GDPR notes: [`docs/age-estimation.md`](docs/age-estimation.md).
+
+`GET /api/v1/health` reports `checks.age_ai: true` once the models are loaded,
+so you can confirm the feature on a live deploy without reading container logs.

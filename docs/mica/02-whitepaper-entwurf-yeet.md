@@ -208,6 +208,8 @@ Energieintensität je Transaktion, THG-Emissionen.
 | THG-Emissionen (Scope-Angabe) | ⟦…⟧ | ⟦…⟧ |
 
 → Vorbereitete Daten je Chain-Kandidat: siehe [03-chain-assessment.md](03-chain-assessment.md).
+→ Methodik, Pflicht-/Zusatzindikatoren und Rechner: [11-nachhaltigkeitsindikatoren.md](11-nachhaltigkeitsindikatoren.md)
+(`tools/sustainability.py` erzeugt diese Tabelle aus `tools/bsc-inputs.json`, sobald die Werte erhoben sind).
 
 ## Teil J — Tokenomics-Eckdaten
 

@@ -51,11 +51,11 @@ Funktionsanpassungen F1–F8 sind in [06-leitplanken-validierung.md](06-leitplan
 | ☐ | Aufgabe | Owner | Status |
 | --- | --- | --- | --- |
 | ◐ | Whitepaper finalisieren (Dokument 02, alle ⟦Platzhalter⟧) | Anwalt + Gründer | Dev-Teil erledigt (v0.2, 2026-10-27: Teil F/G/H/J mit Contract-Rollen, Punktesystem, Testnet-Phase); offen: Anbieterdaten, Team/Roadmap, Rechtsfragen, Nachhaltigkeit, Adressen nach Deploy |
-| ☐ | Nachhaltigkeitsindikatoren erheben (CCRI/ESMA-Methodik, gewählte Chain) | Dev | offen |
+| ◐ | Nachhaltigkeitsindikatoren erheben (CCRI/ESMA-Methodik, gewählte Chain) | Dev | Dev-Teil erledigt (13. Nov.): Methodik, Indikatorliste und Rechner in [11-nachhaltigkeitsindikatoren.md](11-nachhaltigkeitsindikatoren.md) + `tools/`; offen: Werte erheben (CCRI-API-Key oder eigene Erhebung, Anleitung Abschnitt 4) |
 | ☐ | iXBRL-Fassung erstellen (ESMA-RTS maschinenlesbares Format) | Anwalt/Dienstleister | offen |
 | ☐ | NCA-Notifizierung ≥ 20 Arbeitstage vor Veröffentlichung (Art. 8) | Anwalt | offen |
-| ☐ | Whitepaper auf Website veröffentlichen; ESMA-Register | Dev | offen |
-| ☐ | Widerrufsprozess für Kleinanleger (14 Tage, Art. 13) implementieren | Dev | offen |
+| ☐ | Whitepaper auf Website veröffentlichen; ESMA-Register | Dev | offen — erst nach Finalisierung und NCA-Notifizierung (Zeilen oben); technisch: statische Seite wie `/api.html`, CD-Kopie in den Docroot (ein PR) |
+| ☐ | Widerrufsprozess für Kleinanleger (14 Tage, Art. 13) implementieren | Dev | offen — nur relevant, falls YEET vom Anbieter verkauft wird (`TODO(strategie)`); im Punkte-Modell ohne Verkauf entfällt Art. 13, dann als „n/a“ dokumentieren |
 | ☐ | Haftungs-/Interessenkonflikt-Disclosures (10 %-Tip-Cut!) | Anwalt | offen |
 
 ## D. Falls CASP-Weg gewählt wird (Ledger bleibt custodial)
