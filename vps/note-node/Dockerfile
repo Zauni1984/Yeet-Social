@@ -16,6 +16,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone --depth 1 --branch "${NOTE_TAG}" https://github.com/note-llc/NoteBlockchain.git /src \
     && cd /src && test "$(git rev-parse HEAD)" = "${NOTE_COMMIT}"
 WORKDIR /src
+# Project patch (operator decision, Nov 2026): nobody mines Note any more and
+# the chain is only kept alive for the NOTE -> YEET swap, so from the first
+# block after the published bootstrap the block subsidy is 0.0001 NOTE
+# (10000 base units). This is a stricter rule than upstream (a soft fork):
+# unpatched wallets still accept these blocks; this node rejects blocks that
+# claim more.
+ARG NOTE_LOW_REWARD_HEIGHT=4621933
+RUN sed -i '/^CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)$/{n;s/^{$/{\n    if (nHeight >= '"${NOTE_LOW_REWARD_HEIGHT}"') return 10000; \/\/ Yeet: 0.0001 NOTE/}' src/validation.cpp \
+    && grep -n -A2 '^CAmount GetBlockSubsidy' src/validation.cpp \
+    && grep -q "if (nHeight >= ${NOTE_LOW_REWARD_HEIGHT}) return 10000;" src/validation.cpp
 # Berkeley DB 4.8 (wallet format) from the repo's own helper, which verifies
 # the tarball checksum.
 RUN chmod +x contrib/install_db4.sh autogen.sh share/genbuild.sh 2>/dev/null; ./contrib/install_db4.sh /src
