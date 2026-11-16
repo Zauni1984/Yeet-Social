@@ -114,7 +114,7 @@ die CD, bevorzugt als `deploy`, sonst als root.
 | `status` | Konten, Platte/RAM, Container, Health |
 | `setup-deploy-user` | legt `deploy` an und kopiert den Zustand nach `/opt/yeet` (als root) |
 | `finalize-deploy-user` | entfernt den CD-Key aus roots `authorized_keys` — nur wenn der letzte Deploy als `deploy` lief. `PermitRootLogin` bleibt unangetastet (eigener Zugang!) |
-| `note-install` | baut den Note-Daemon aus gepinntem Quellcode (v1.1.0.0, Hintergrund, ~20–40 min), erzeugt RPC-Zugang in `.env`, startet `yeet-note` |
+| `note-install` (erneut ausführen nach Änderungen an `vps/note-node`: baut das neue Image im Hintergrund und stellt erst danach um) | baut den Note-Daemon aus gepinntem Quellcode (v1.1.0.0, Hintergrund, ~20–40 min), erzeugt RPC-Zugang in `.env`, startet `yeet-note` |
 | `note-status` | Build-Log, Container, Blockhöhe/Peers, Plattenverbrauch |
 | `note-import` | spielt eine Chain-Sicherung ein; `arg` = URL oder absoluter Server-Pfad (optional gefolgt von ` sha256=<hex>`) zu `.7z`/`.tar.gz`/`.zip` mit `blocks/`+`chainstate/` oder `bootstrap.dat`. Alte Daten bleiben als `*.old`, die Wallet wird nicht angefasst |
 | `note-addnodes` | setzt zusätzliche Peers (`arg` = `ip:port,ip:port`) in `.env` und startet den Dienst neu |

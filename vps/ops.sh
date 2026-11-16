@@ -12,13 +12,18 @@ if [ "$(id -u)" = "0" ]; then APP=/root/yeet-social; else APP=/opt/yeet/app; fi
 [ -f /opt/yeet/app/.last_deploy_user ] && [ "$(cat /opt/yeet/app/.last_deploy_user)" = "deploy" ] && APP=/opt/yeet/app
 ENVF="$APP/.env"
 NOTE_VOL=yeet-social_note_data
-NOTE_IMG=yeet/note-node:1.1.0.0
-LOG=/tmp/yeet-note-build.log
+# Image tag of the current build recipe (vps/note-node). The compose file
+# takes the tag from NOTE_IMAGE in .env, which note-install only switches
+# after the new image has been built — a deploy never waits for a build.
+NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1
+BUILD_DIR="$HOME/yeet-note-build"
+LOG="$HOME/yeet-note-build.log"
 CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
 
 env_has(){ grep -q "^$1=" "$ENVF" 2>/dev/null; }
 env_set(){ if env_has "$1"; then sed -i "s|^$1=.*|$1=$2|" "$ENVF"; else echo "$1=$2" >> "$ENVF"; fi; }
 env_get(){ grep "^$1=" "$ENVF" 2>/dev/null | head -1 | cut -d= -f2-; }
+NOTE_IMG=$(env_get NOTE_IMAGE); NOTE_IMG=${NOTE_IMG:-yeet/note-node:1.1.0.0}
 cli(){ docker exec yeet-note notecoin-cli -datadir=/data "$@"; }
 
 case "$TASK" in
@@ -57,31 +62,35 @@ case "$TASK" in
     env_has NOTE_RPC_USER || env_set NOTE_RPC_USER yeetswap
     env_has NOTE_RPC_PASS || env_set NOTE_RPC_PASS "$(openssl rand -hex 32)"
     env_has NOTE_RPC_URL  || env_set NOTE_RPC_URL  "http://yeet-note:9332"
-    mkdir -p /tmp/yeet-note-build && cd /tmp/yeet-note-build
+    mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
     for f in Dockerfile entrypoint.sh; do curl -fsSL "$RAW/vps/note-node/$f" -o "$f"; done
     cat > build.sh <<'BUILD'
 #!/bin/bash
+# build.sh <app dir> <image tag>
 set -e
-cd /tmp/yeet-note-build
-echo "[note] build started $(date)"
-nice -n 15 docker build --cpu-shares 256 -t yeet/note-node:1.1.0.0 .
-APP="$1"; cd "$APP"
-grep -q '^COMPOSE_PROFILES=' .env && sed -i 's|^COMPOSE_PROFILES=.*|COMPOSE_PROFILES=note|' .env || echo 'COMPOSE_PROFILES=note' >> .env
+cd "$(dirname "$0")"
+echo "[note] build of $2 started $(date)"
+nice -n 15 docker build --cpu-shares 256 -t "$2" .
+cd "$1"
+for kv in "COMPOSE_PROFILES=note" "NOTE_IMAGE=$2"; do
+  k=${kv%%=*}
+  if grep -q "^$k=" .env; then sed -i "s|^$k=.*|$kv|" .env; else echo "$kv" >> .env; fi
+done
 docker compose up -d note-node
-echo "[note] BUILD_AND_START_OK $(date)"
+echo "[note] BUILD_AND_START_OK $2 $(date)"
 BUILD
     chmod +x build.sh
-    if docker image inspect "$NOTE_IMG" >/dev/null 2>&1; then
-      echo "image exists — (re)starting service"; cd "$APP"; env_set COMPOSE_PROFILES note; docker compose up -d note-node
+    if docker image inspect "$NOTE_IMG_NEW" >/dev/null 2>&1; then
+      echo "image $NOTE_IMG_NEW exists — (re)starting service"; cd "$APP"; env_set COMPOSE_PROFILES note; env_set NOTE_IMAGE "$NOTE_IMG_NEW"; docker compose up -d note-node
     else
-      nohup ./build.sh "$APP" > "$LOG" 2>&1 &
-      echo "build started in the background (≈20–40 min). Check with task note-status."
+      nohup ./build.sh "$APP" "$NOTE_IMG_NEW" > "$LOG" 2>&1 &
+      echo "build of $NOTE_IMG_NEW started in the background (≈10–40 min); the running node stays up until it is done. Check with task note-status."
     fi
     ;;
 
   note-status)
     echo "--- build log tail"; tail -n 12 "$LOG" 2>/dev/null || echo "(no build log)"
-    echo "--- container"; docker ps -a --filter name=yeet-note --format '{{.Names}}\t{{.Status}}'
+    echo "--- container"; docker ps -a --filter name=yeet-note --format '{{.Names}}\t{{.Status}}\t{{.Image}}'
     echo "--- chain"; cli getblockchaininfo 2>&1 | grep -E '"chain"|"blocks"|"headers"|"difficulty"|"mediantime"|"verificationprogress"|"initialblockdownload"|"size_on_disk"|error' || true
     echo "--- tip time: $(date -u -d "@$(cli getblockchaininfo 2>/dev/null | grep -oE '"mediantime": *[0-9]+' | grep -oE '[0-9]+$')" 2>/dev/null || echo '?')"
     echo "--- wallet: $(cli getwalletinfo 2>&1 | grep -E '"balance"|"immature_balance"' | tr -d ' \n')"

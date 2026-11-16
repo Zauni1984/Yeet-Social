@@ -124,7 +124,7 @@ services:
   # is reachable only for the backend inside yeet-net. The volume holds the
   # chain AND wallet.dat (deposit keys) — include it in backups.
   note-node:
-    image: yeet/note-node:1.1.0.0
+    image: ${NOTE_IMAGE:-yeet/note-node:1.1.0.0}
     pull_policy: never
     profiles: ["note"]
     container_name: yeet-note
