@@ -121,6 +121,21 @@ BUILD
     docker start yeet-note; sleep 8; docker logs --tail 8 yeet-note 2>&1 | cut -c1-200
     ;;
 
+  note-addnodes)
+    # Extra peers when the seeds do not answer. ARG: comma-separated ip:port.
+    echo "$ARG" | grep -qE '^[0-9a-zA-Z.:-]+:[0-9]+(,[0-9a-zA-Z.:-]+:[0-9]+)*$' || { echo "usage: note-addnodes ip:port[,ip:port…]"; exit 1; }
+    # Both locations during the root → deploy transition, so the setting
+    # survives whichever account deploys next.
+    for f in /root/yeet-social/.env /opt/yeet/app/.env; do
+      [ -w "$f" ] || continue
+      if grep -q '^NOTE_ADDNODES=' "$f"; then sed -i "s|^NOTE_ADDNODES=.*|NOTE_ADDNODES=$ARG|" "$f"; else echo "NOTE_ADDNODES=$ARG" >> "$f"; fi
+    done
+    cd "$APP"; docker compose up -d --force-recreate note-node; sleep 45
+    echo "--- peers: $(cli getconnectioncount 2>&1 | tail -1)"
+    cli getblockchaininfo 2>&1 | grep -E '"blocks"|"headers"|error' || true
+    docker logs --tail 12 yeet-note 2>&1 | cut -c1-200
+    ;;
+
   note-restart) cd "$APP"; docker compose up -d --force-recreate note-node; sleep 5; docker logs --tail 8 yeet-note 2>&1 | cut -c1-200 ;;
 
   *) echo "unknown task: $TASK"; exit 1 ;;
