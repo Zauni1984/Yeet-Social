@@ -14,6 +14,7 @@ ENVF="$APP/.env"
 NOTE_VOL=yeet-social_note_data
 NOTE_IMG=yeet/note-node:1.1.0.0
 LOG=/tmp/yeet-note-build.log
+CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
 
 env_has(){ grep -q "^$1=" "$ENVF" 2>/dev/null; }
 env_set(){ if env_has "$1"; then sed -i "s|^$1=.*|$1=$2|" "$ENVF"; else echo "$1=$2" >> "$ENVF"; fi; }
@@ -24,7 +25,7 @@ case "$TASK" in
   status)
     echo "user: $(id -un) · app dir: $APP · last deploy by: $(cat "$APP/.last_deploy_user" 2>/dev/null || echo '?')"
     echo "deploy account: $(id deploy 2>/dev/null || echo 'absent')"
-    echo "root has CD key: $(grep -c github-actions-deploy /root/.ssh/authorized_keys 2>/dev/null || echo '?')"
+    echo "root has CD key: $(grep -cE "$CD_KEY_RE" /root/.ssh/authorized_keys 2>/dev/null || true)"
     df -h / | tail -1; free -m | sed -n 2p; nproc
     docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}'
     curl -s http://127.0.0.1:8080/api/v1/health || true; echo
@@ -45,7 +46,7 @@ case "$TASK" in
     [ "$(id -u)" = "0" ] || { echo "needs root"; exit 1; }
     [ "$(cat /opt/yeet/app/.last_deploy_user 2>/dev/null)" = "deploy" ] || { echo "REFUSED: the last deploy did not run as 'deploy' yet"; exit 1; }
     cp -a /root/.ssh/authorized_keys "/root/.ssh/authorized_keys.bak-$(date +%Y%m%d-%H%M%S)"
-    sed -i '/github-actions-deploy/d' /root/.ssh/authorized_keys
+    sed -i -E "/$CD_KEY_RE/d" /root/.ssh/authorized_keys
     echo "removed CD key from root; remaining root keys: $(grep -c . /root/.ssh/authorized_keys || true)"
     ;;
 
