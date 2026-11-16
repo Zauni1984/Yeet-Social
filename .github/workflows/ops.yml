@@ -1,0 +1,82 @@
+name: Ops — server tasks (manual)
+
+# One-off server tasks run by hand from the Actions tab (or the API), with the
+# same SSH key CD uses. Nothing here runs on push.
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task to run on the VPS'
+        required: true
+        type: choice
+        options:
+          - status
+          - setup-deploy-user
+          - finalize-deploy-user
+          - note-install
+          - note-status
+          - note-import
+          - note-restart
+      arg:
+        description: 'Optional argument (note-import: URL or absolute server path of a blocks backup / bootstrap.dat)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ops-production
+  cancel-in-progress: false
+
+jobs:
+  ops:
+    name: ${{ inputs.task }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      # Tasks that change accounts need root; everything else prefers the
+      # unprivileged deploy account and falls back to root while it does not
+      # exist yet.
+      - name: Run as deploy
+        id: as_deploy
+        if: inputs.task != 'setup-deploy-user' && inputs.task != 'finalize-deploy-user'
+        continue-on-error: true
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+        env:
+          OPS_SHA: ${{ github.sha }}
+          OPS_TASK: ${{ inputs.task }}
+          OPS_ARG: ${{ inputs.arg }}
+        with:
+          host: 76.13.150.206
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 25m
+          envs: OPS_SHA,OPS_TASK,OPS_ARG
+          script: |
+            set -e
+            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${OPS_SHA}/vps/ops.sh" -o /tmp/yeet-ops.sh
+            OPS_SHA="${OPS_SHA}" bash /tmp/yeet-ops.sh "${OPS_TASK}" "${OPS_ARG}"
+
+      - name: Run as root
+        if: inputs.task == 'setup-deploy-user' || inputs.task == 'finalize-deploy-user' || steps.as_deploy.outcome == 'failure'
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+        env:
+          OPS_SHA: ${{ github.sha }}
+          OPS_TASK: ${{ inputs.task }}
+          OPS_ARG: ${{ inputs.arg }}
+        with:
+          host: 76.13.150.206
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 25m
+          envs: OPS_SHA,OPS_TASK,OPS_ARG
+          script: |
+            set -e
+            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${OPS_SHA}/vps/ops.sh" -o /tmp/yeet-ops.sh
+            OPS_SHA="${OPS_SHA}" bash /tmp/yeet-ops.sh "${OPS_TASK}" "${OPS_ARG}"

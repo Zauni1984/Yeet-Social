@@ -38,6 +38,7 @@ pub mod messages;
 pub mod invitations;
 pub mod search;
 pub mod admin_mod;
+pub mod admin_2fa;
 pub mod lives;
 pub mod scheduled_posts;
 pub mod message_reports;

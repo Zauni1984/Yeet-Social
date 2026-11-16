@@ -103,3 +103,39 @@ Die CD loggt sich standardmäßig noch als `root` ein. Umstellung auf das unpriv
 Rückweg: Variable `DEPLOY_USER` löschen → die CD läuft wieder als root mit den `/root`-Pfaden.
 Hinweis: Mitglied der Docker-Gruppe zu sein ist auf dem Host root-äquivalent; der Gewinn ist eine
 eigene, widerrufbare Identität ohne Root-Shell. Rootless Docker wäre der nächste Schritt.
+
+## Ops-Workflow (Server-Aufgaben per Knopfdruck)
+
+Actions → „Ops — server tasks (manual)" → *Run workflow* → Task wählen. Läuft mit demselben Key wie
+die CD, bevorzugt als `deploy`, sonst als root.
+
+| Task | Wirkung |
+| --- | --- |
+| `status` | Konten, Platte/RAM, Container, Health |
+| `setup-deploy-user` | legt `deploy` an und kopiert den Zustand nach `/opt/yeet` (als root) |
+| `finalize-deploy-user` | entfernt den CD-Key aus roots `authorized_keys` — nur wenn der letzte Deploy als `deploy` lief. `PermitRootLogin` bleibt unangetastet (eigener Zugang!) |
+| `note-install` | baut den Note-Daemon aus gepinntem Quellcode (v1.1.0.0, Hintergrund, ~20–40 min), erzeugt RPC-Zugang in `.env`, startet `yeet-note` |
+| `note-status` | Build-Log, Container, Blockhöhe/Peers, Plattenverbrauch |
+| `note-import` | spielt eine Chain-Sicherung ein; `arg` = URL oder absoluter Server-Pfad zu `.tar.gz`/`.zip` mit `blocks/`+`chainstate/` oder `bootstrap.dat`. Alte Daten bleiben als `*.old`, die Wallet wird nicht angefasst |
+| `note-restart` | Dienst neu erstellen (z. B. nach `NOTE_ADDNODES=ip:port,…` in `.env`) |
+
+Die CD versucht seit dem 16. Nov. zuerst `deploy` und fällt auf root zurück; nach
+`setup-deploy-user` wechselt sie also von selbst, eine Repo-Variable ist nicht mehr nötig.
+Nach dem Wechsel ist `/opt/yeet/app/.env` maßgeblich.
+
+## Note-Node
+
+Dienst `note-node` (Container `yeet-note`) im Compose-Profil `note`; RPC nur im internen Netz
+(`http://yeet-note:9332`), kein Host-Port. Volume `yeet-social_note_data` enthält Chain **und
+`wallet.dat`** (Einzahlungsschlüssel des Swaps) → ins Backup aufnehmen. `SWAP_ENABLED` bleibt
+`false`, bis der Token-Contract steht; der Node kann vorher synchronisieren. Lädt die Chain nicht:
+Peers per `NOTE_ADDNODES` setzen und `note-restart`, sonst Sicherung per `note-import`.
+
+## Admin-2FA
+
+Der Admin-Bereich verlangt zusätzlich zum Secret einen Authenticator-Code. Beim ersten Öffnen
+nach dem Deploy zeigt das Panel den QR-Code zur Einrichtung — **sofort erledigen**, bis dahin kann
+jeder mit dem Secret den Authenticator einrichten. Verlorener Authenticator ohne
+Wiederherstellungscodes: `docker exec yeet-postgres psql -U yeet yeet -c "UPDATE admin_totp SET
+secret_enc=NULL, pending_enc=NULL, enabled_at=NULL, recovery_hashes='{}' WHERE id=1"` und neu
+einrichten.

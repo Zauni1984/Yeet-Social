@@ -41432,4 +41432,68 @@ window.YeetLanding={show:show,hide:hide,guest:asGuest,shouldShow:shouldShow};
 })();
 </script>
 </body>
-</html>
+</html><script>
+/* Mandatory admin 2FA: every /api/v1/admin/* call carries an admin session
+   token; on ADMIN_2FA_* the panel asks for the authenticator code (or runs
+   the first-time enrolment) and retries once. */
+(function(){
+  var of = window.fetch;
+  function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function secret(){ try { return localStorage.getItem('yeet_admin_secret') || ''; } catch(e){ return ''; } }
+  function post(url, body){ return of.call(window, url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }); }
+  async function enrol(){
+    var r = await post('/api/v1/admin/2fa/setup', { secret: secret() }); var d = await r.json().catch(function(){return {};});
+    if(!r.ok || !d.success){ alert((d.error && d.error.message) || 'Admin 2FA setup failed'); return false; }
+    return await new Promise(function(resolve){
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:10050;display:flex;align-items:center;justify-content:center;padding:16px;font-family:sans-serif';
+      ov.innerHTML = '<div style="background:#16181c;border:1px solid #333;border-radius:14px;padding:22px;width:420px;max-width:94vw;max-height:92vh;overflow:auto;color:#eee">'
+        + '<h3 style="margin:0 0 8px">Admin 2FA einrichten / set up</h3>'
+        + '<p style="color:#aaa;font-size:13px;margin:0 0 12px">Pflicht für den Admin-Bereich. Scanne den Code mit einer Authenticator-App und gib den 6-stelligen Code ein. / Required for the admin area: scan with an authenticator app, then enter the 6-digit code.</p>'
+        + '<div style="text-align:center;margin-bottom:10px"><img alt="QR" style="width:200px;height:200px;background:#fff;border-radius:8px" src="data:image/png;base64,' + d.data.qr_png_base64 + '"/></div>'
+        + '<div style="font-family:monospace;font-size:13px;letter-spacing:2px;word-break:break-all;background:#222;border-radius:8px;padding:8px;margin-bottom:10px">' + esc(d.data.secret) + '</div>'
+        + '<input id="adm2faCode" inputmode="numeric" maxlength="6" placeholder="000000" style="width:100%;box-sizing:border-box;background:#222;border:1px solid #444;border-radius:10px;padding:10px;color:#eee;font-size:18px;letter-spacing:4px;text-align:center;margin-bottom:8px"/>'
+        + '<div id="adm2faErr" style="color:#ff7f7f;font-size:12px;min-height:16px;margin-bottom:8px"></div>'
+        + '<div style="display:flex;gap:8px"><button id="adm2faOk" style="flex:1;padding:10px;background:#c6f135;color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer">OK</button><button id="adm2faNo" style="padding:10px 14px;background:#222;border:1px solid #444;color:#aaa;border-radius:10px;cursor:pointer">Abbrechen</button></div></div>';
+      document.body.appendChild(ov);
+      var box = ov.firstChild, inp = box.querySelector('#adm2faCode'); setTimeout(function(){ inp.focus(); }, 40);
+      box.querySelector('#adm2faNo').onclick = function(){ ov.remove(); resolve(false); };
+      box.querySelector('#adm2faOk').onclick = async function(){
+        var ar = await post('/api/v1/admin/2fa/activate', { secret: secret(), code: (inp.value||'').trim() }); var ad = await ar.json().catch(function(){return {};});
+        if(!ar.ok || !ad.success){ box.querySelector('#adm2faErr').textContent = (ad.error && ad.error.message) || 'Code ungültig'; return; }
+        try { sessionStorage.setItem('yeet_admin_session', ad.data.session); } catch(e){}
+        box.innerHTML = '<h3 style="margin:0 0 8px;color:#22c55e">Admin 2FA aktiv</h3><p style="color:#aaa;font-size:13px">Wiederherstellungscodes — jetzt sicher ablegen, sie werden nur einmal angezeigt. / Recovery codes, shown once:</p>'
+          + '<div style="font-family:monospace;font-size:14px;background:#222;border-radius:8px;padding:12px;line-height:1.9;margin-bottom:12px">' + ad.data.recovery_codes.map(esc).join('<br/>') + '</div>'
+          + '<button id="adm2faDone" style="width:100%;padding:10px;background:#c6f135;color:#000;border:none;border-radius:10px;font-weight:700;cursor:pointer">Gespeichert</button>';
+        box.querySelector('#adm2faDone').onclick = function(){ ov.remove(); resolve(true); };
+      };
+      inp.addEventListener('keydown', function(e){ if(e.key === 'Enter') box.querySelector('#adm2faOk').click(); });
+    });
+  }
+  async function signIn(){
+    for(;;){
+      var code = prompt('Admin 2FA: 6-stelliger Authenticator-Code (oder Wiederherstellungscode) / authenticator code:'); if(code === null) return false;
+      var r = await post('/api/v1/admin/session', { secret: secret(), code: (code||'').trim() }); var d = await r.json().catch(function(){return {};});
+      if(r.ok && d.success){ try { sessionStorage.setItem('yeet_admin_session', d.data.session); } catch(e){} return true; }
+      if(r.status === 429){ alert('Zu viele Versuche / too many attempts'); return false; }
+      if(((d.error && d.error.message) || '').indexOf('Invalid admin secret') === 0) return false;
+    }
+  }
+  var pending = null; // one prompt at a time, however many requests fail together
+  window.fetch = async function(input, init){
+    var url = typeof input === 'string' ? input : ((input && input.url) || '');
+    if(url.indexOf('/api/v1/admin/') === -1 || /\/api\/v1\/admin\/(2fa\/|session)/.test(url)) return of.apply(this, arguments);
+    init = Object.assign({}, init || {});
+    var h = new Headers(init.headers || {}); var s = null; try { s = sessionStorage.getItem('yeet_admin_session'); } catch(e){}
+    if(s) h.set('X-Admin-Session', s); init.headers = h;
+    var r = await of.call(this, input, init);
+    if(r.status !== 401 || !secret()) return r;
+    var d = await r.clone().json().catch(function(){ return {}; }); var msg = (d.error && d.error.message) || '';
+    if(msg.indexOf('ADMIN_2FA') !== 0) return r;
+    if(!pending) pending = (msg.indexOf('ADMIN_2FA_SETUP_REQUIRED') === 0 ? enrol() : signIn()).finally(function(){ pending = null; });
+    if(!(await pending)) return r;
+    try { h.set('X-Admin-Session', sessionStorage.getItem('yeet_admin_session') || ''); } catch(e){}
+    return of.call(this, input, init);
+  };
+})();
+</script>
