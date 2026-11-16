@@ -96,7 +96,7 @@ Die CD loggt sich standardmäßig noch als `root` ein. Umstellung auf das unpriv
 3. Einen Deploy auslösen (Merge oder „Re-run" der CD) und im Log `Starting deploy … as deploy` sowie
    die Health-Zeile prüfen. Der Compose-Projektname ist auf `yeet-social` gepinnt, deshalb benutzt
    der Stack unter `/opt/yeet/app` dieselben Volumes wie zuvor (keine leere zweite Datenbank).
-4. Danach aufräumen: Zeile `github-actions-deploy` aus `/root/.ssh/authorized_keys` löschen und in
+4. Danach aufräumen: CD-Schlüssel-Zeile (`github-cd`) aus `/root/.ssh/authorized_keys` löschen und in
    `/etc/ssh/sshd_config` `PermitRootLogin no` setzen (`systemctl reload sshd`). `backup.sh` per
    `BACKUP_DIR=/opt/yeet/backups` betreiben bzw. den Cron auf den `deploy`-User umziehen.
 

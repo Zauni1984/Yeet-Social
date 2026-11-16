@@ -76,14 +76,18 @@ impl FromRequestParts<AppState> for OptionalAuth {
 /// appends to `X-Forwarded-For`; the first forwarded hop is the client.
 /// Without a proxy header (local dev) every caller shares the "direct" bucket.
 pub fn client_ip(headers: &HeaderMap) -> String {
-    if let Some(v) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
-        if let Some(first) = v.split(',').next().map(str::trim).filter(|s| !s.is_empty()) {
-            return first.chars().take(64).collect();
-        }
-    }
+    // X-Real-IP is set by our nginx from the TCP peer and cannot be supplied
+    // by the client. X-Forwarded-For is only a fallback, and then its LAST
+    // element (the hop our proxy appended) — the first one is whatever the
+    // client claimed, which would let anyone dodge the per-IP limits.
     if let Some(v) = headers.get("x-real-ip").and_then(|v| v.to_str().ok()) {
         let v = v.trim();
         if !v.is_empty() { return v.chars().take(64).collect(); }
+    }
+    if let Some(v) = headers.get("x-forwarded-for").and_then(|v| v.to_str().ok()) {
+        if let Some(last) = v.split(',').next_back().map(str::trim).filter(|s| !s.is_empty()) {
+            return last.chars().take(64).collect();
+        }
     }
     "direct".into()
 }

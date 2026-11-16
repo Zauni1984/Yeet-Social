@@ -16,7 +16,7 @@
 # Afterwards (manual, see vps/DEPLOY.md → "Deploy-User statt root"):
 #   - set the repository variable DEPLOY_USER=deploy; the next deploy logs in
 #     as `deploy` and uses /opt/yeet;
-#   - once a deploy went through, delete the github-actions-deploy line from
+#   - once a deploy went through, delete the CD key line (github-cd) from
 #     /root/.ssh/authorized_keys and set `PermitRootLogin no` in sshd_config.
 #
 # Note: membership in the `docker` group is root-equivalent on the host (it
@@ -30,7 +30,10 @@ OLD_DIR=/root/yeet-social
 OLD_HTML=/root/yeet-html
 OLD_CONF=/root/yeet-nginx.conf
 OLD_BACKUPS=/root/yeet-backups
-DEPLOY_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDzuDAis6M5T4NdVli/tfPrE4JVE+HxXBS7q6LdKWV25 github-actions-deploy"
+# The CD public key is taken from root's authorized_keys (the line whose
+# comment is github-cd or github-actions-deploy), so it is always the key the
+# VPS_SSH_KEY secret really belongs to.
+CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
 
 [ "$(id -u)" = "0" ] || { echo "run as root"; exit 1; }
 command -v docker >/dev/null || { echo "docker is not installed (run vps/setup.sh first)"; exit 1; }
@@ -45,8 +48,14 @@ usermod -aG docker "$DEPLOY_USER"
 HOME_DIR=$(getent passwd "$DEPLOY_USER" | cut -d: -f6)
 install -d -m 700 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$HOME_DIR/.ssh"
 touch "$HOME_DIR/.ssh/authorized_keys"
-grep -qF "github-actions-deploy" "$HOME_DIR/.ssh/authorized_keys" || \
-  echo "no-port-forwarding,no-agent-forwarding,no-X11-forwarding $DEPLOY_KEY" >> "$HOME_DIR/.ssh/authorized_keys"
+CD_KEYS=$(grep -E "$CD_KEY_RE" /root/.ssh/authorized_keys 2>/dev/null | grep -oE '(ssh-(ed25519|rsa)|ecdsa-[a-z0-9-]+) [A-Za-z0-9+/=]+ .*$' || true)
+[ -n "$CD_KEYS" ] || { echo "no CD key (comment github-cd / github-actions-deploy) in /root/.ssh/authorized_keys"; exit 1; }
+while IFS= read -r K; do
+  BLOB=$(echo "$K" | awk '{print $2}')
+  grep -qF "$BLOB" "$HOME_DIR/.ssh/authorized_keys" || \
+    echo "no-port-forwarding,no-agent-forwarding,no-X11-forwarding $K" >> "$HOME_DIR/.ssh/authorized_keys"
+done <<< "$CD_KEYS"
+echo "deploy has $(grep -c . "$HOME_DIR/.ssh/authorized_keys") CD key(s)"
 chmod 600 "$HOME_DIR/.ssh/authorized_keys"
 chown -R "$DEPLOY_USER:$DEPLOY_USER" "$HOME_DIR/.ssh"
 grep -q "^PubkeyAuthentication" /etc/ssh/sshd_config || echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
@@ -80,5 +89,5 @@ echo "=== done ==="
 echo "Next: set the GitHub repository variable DEPLOY_USER=$DEPLOY_USER"
 echo "      (Settings → Secrets and variables → Actions → Variables),"
 echo "      then push or re-run CD. After the first successful deploy as"
-echo "      $DEPLOY_USER, remove the github-actions-deploy line from"
+echo "      $DEPLOY_USER, remove the CD key line (github-cd) from"
 echo "      /root/.ssh/authorized_keys and set PermitRootLogin no."

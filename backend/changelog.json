@@ -432,6 +432,14 @@
       "tags": [
         "#Security"
       ]
+    },
+    {
+      "id": "2026-11-16-47-firewall-ip-throttle",
+      "text": "Security: the server now sits behind a network firewall that only lets web and maintenance traffic through. A live security and load check passed without a single server error. It also turned up one gap, now closed: the per-IP login throttle could be sidestepped with a forged forwarding header.",
+      "tags": [
+        "#Security",
+        "#Changelog"
+      ]
     }
   ]
 }

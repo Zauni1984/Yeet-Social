@@ -79,3 +79,10 @@ ausdrücklicher Freigabe. Empfehlung für den geplanten Angriff:
 - **Live-Test**: `scripts/pentest-live.sh` (unauthentifiziert, nicht destruktiv, begrenzte Last);
   Ergebnis des Laufs gegen justyeet.it steht im PR bzw. Changelog.
 - **Deploy-User**: CD versucht `deploy` zuerst, Ops-Workflow richtet das Konto ein.
+
+## Nachtrag 16.11.2026 — Live-Test und Firewall
+
+- **Hostinger-Firewall aktiv** (Gruppe „Standard"): eingehend nur SSH 22, HTTP 80, HTTPS 443, ICMP/ICMPv6; alles andere wird verworfen.
+- **Live-Pentest** (`scripts/pentest-live.sh https://justyeet.it 15 5`): 25/28 bestanden, 0 Serverfehler, 0 Timeouts unter Last. Zwei Abweichungen waren Fehler im Skript (Traversal antwortet 400 statt 404; zu große Kommandozeile) und sind korrigiert.
+- **Befund (behoben): Per-IP-Drossel umgehbar.** nginx hängte die Peer-Adresse an einen vom Client gelieferten `X-Forwarded-For` an, das Backend nahm das *erste* Element. Ein Angreifer konnte so je Anfrage eine neue „IP" vortäuschen und die IP-Limits (Login, Registrierung, MFA) umgehen. Die Per-Konto-Limits griffen weiterhin (live bestätigt: 429 ab dem 6. Versuch). Fix: nginx überschreibt `X-Forwarded-For` mit `$remote_addr`; das Backend nimmt `X-Real-IP`, ersatzweise das *letzte* XFF-Element.
+- Der Per-IP-Test braucht eine feste Quell-IP; aus der Testumgebung (wechselnde Ausgangsadressen) war er nicht aussagekräftig und sollte nach dem Deploy einmal von einem festen Anschluss wiederholt werden.
