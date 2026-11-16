@@ -22,7 +22,7 @@ CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
 
 env_has(){ grep -q "^$1=" "$ENVF" 2>/dev/null; }
 env_set(){ if env_has "$1"; then sed -i "s|^$1=.*|$1=$2|" "$ENVF"; else echo "$1=$2" >> "$ENVF"; fi; }
-env_get(){ grep "^$1=" "$ENVF" 2>/dev/null | head -1 | cut -d= -f2-; }
+env_get(){ { grep "^$1=" "$ENVF" 2>/dev/null || true; } | head -1 | cut -d= -f2-; }
 NOTE_IMG=$(env_get NOTE_IMAGE); NOTE_IMG=${NOTE_IMG:-yeet/note-node:1.1.0.0}
 cli(){ docker exec yeet-note notecoin-cli -datadir=/data "$@"; }
 
