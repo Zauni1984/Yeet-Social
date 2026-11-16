@@ -70,3 +70,12 @@ ausdrücklicher Freigabe. Empfehlung für den geplanten Angriff:
 - 2FA als Pflicht für Admin-Konten erwägen (derzeit optional für alle).
 - Live-Last-/Pentest beauftragen (Abschnitt 5).
 - WebAuthn/Passkeys als zweiter Faktor als späterer Ausbau (stärker als TOTP gegen Phishing).
+
+## Nachtrag 2026-11-16
+
+- **Admin-2FA ist Pflicht**: kein `/api/v1/admin/*`-Endpunkt antwortet mehr ohne
+  `X-Admin-Session`; eine Sitzung (30 min) gibt es nur gegen Secret + Authenticator-Code oder
+  einmaligen Wiederherstellungscode. Durchgesetzt zentral in `abuse_guard`, Einrichtung im Panel.
+- **Live-Test**: `scripts/pentest-live.sh` (unauthentifiziert, nicht destruktiv, begrenzte Last);
+  Ergebnis des Laufs gegen justyeet.it steht im PR bzw. Changelog.
+- **Deploy-User**: CD versucht `deploy` zuerst, Ops-Workflow richtet das Konto ein.

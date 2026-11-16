@@ -129,6 +129,27 @@ pub async fn abuse_guard(State(state): State<AppState>, mut req: Request, next: 
         }
     }
     let path = req.uri().path();
+    // Mandatory admin 2FA: beyond the enrolment/session endpoints, no admin
+    // route answers without a valid X-Admin-Session (see api::admin_2fa).
+    // Checked after the per-IP throttle below would be too late for the
+    // message, so throttle first for admin paths, then gate.
+    if path.starts_with("/api/v1/admin/")
+        && !path.starts_with("/api/v1/admin/2fa/")
+        && path != "/api/v1/admin/session"
+    {
+        let ip = client_ip(req.headers());
+        limit(&state, "admin_ip", &ip, 60, 60, 3600, 600).await?;
+        let tok = req.headers().get("x-admin-session").and_then(|v| v.to_str().ok()).unwrap_or("").trim().to_string();
+        if !crate::api::admin_2fa::session_valid(&state, &tok).await {
+            let msg = if crate::api::admin_2fa::enrolled(&state).await {
+                "ADMIN_2FA_REQUIRED: admin session missing or expired"
+            } else {
+                "ADMIN_2FA_SETUP_REQUIRED: enrol an authenticator for the admin panel"
+            };
+            return Err(AppError::Unauthorised(msg.into()));
+        }
+        return Ok(next.run(req).await);
+    }
     let class = if path.starts_with("/api/v1/admin/") {
         Some(("admin_ip", 60u64, 60i64, 3600u64, 600i64))
     } else if path.starts_with("/api/v1/auth/") {

@@ -118,6 +118,33 @@ services:
       driver: json-file
       options: { max-size: "20m", max-file: "5" }
 
+  # Note full node for the NOTE→YEET swap (docs/swap-note-to-yeet.md). Opt-in
+  # via COMPOSE_PROFILES=note in .env (set by the ops task note-install, which
+  # also builds the image locally from pinned source). No host port: the RPC
+  # is reachable only for the backend inside yeet-net. The volume holds the
+  # chain AND wallet.dat (deposit keys) — include it in backups.
+  note-node:
+    image: yeet/note-node:1.1.0.0
+    pull_policy: never
+    profiles: ["note"]
+    container_name: yeet-note
+    restart: unless-stopped
+    environment:
+      NOTE_RPC_USER: ${NOTE_RPC_USER:-}
+      NOTE_RPC_PASS: ${NOTE_RPC_PASS:-}
+      NOTE_ADDNODES: ${NOTE_ADDNODES:-}
+      NOTE_DBCACHE: ${NOTE_DBCACHE:-200}
+    volumes:
+      - note_data:/data
+    networks: [yeet-net]
+    expose: ["9332"]
+    mem_limit: 1500m
+    cpus: 1.0
+    stop_grace_period: 2m
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
+
   nginx:
     image: nginx:1.31.8-alpine
     container_name: yeet-nginx
@@ -145,3 +172,4 @@ volumes:
   redis_data:
   yeet_uploads:
   yeet_private:
+  note_data:

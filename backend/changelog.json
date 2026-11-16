@@ -425,6 +425,13 @@
         "#Security",
         "#Feature"
       ]
+    },
+    {
+      "id": "2026-11-16-46-admin-2fa-ops",
+      "text": "Security: the admin area now requires an authenticator code on top of the admin secret, with short-lived admin sessions. Behind the scenes we prepared deploys under an unprivileged server account and the Note full node needed for the upcoming NOTE to YEET swap.",
+      "tags": [
+        "#Security"
+      ]
     }
   ]
 }
