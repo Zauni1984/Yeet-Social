@@ -118,6 +118,7 @@ die CD, bevorzugt als `deploy`, sonst als root.
 | `note-status` | Build-Log, Container, Blockhöhe/Peers, Plattenverbrauch |
 | `note-import` | spielt eine Chain-Sicherung ein; `arg` = URL oder absoluter Server-Pfad (optional gefolgt von ` sha256=<hex>`) zu `.7z`/`.tar.gz`/`.zip` mit `blocks/`+`chainstate/` oder `bootstrap.dat`. Alte Daten bleiben als `*.old`, die Wallet wird nicht angefasst |
 | `note-addnodes` | setzt zusätzliche Peers (`arg` = `ip:port,ip:port`) in `.env` und startet den Dienst neu |
+| `note-mine` | lässt den Knoten selbst Blöcke erzeugen (`arg` = Anzahl oder `stop`); läuft im Hintergrund, Fortschritt per `note-status`, Belohnung an eine Adresse der Knoten-Wallet |
 | `note-restart` | Dienst neu erstellen (z. B. nach `NOTE_ADDNODES=ip:port,…` in `.env`) |
 
 Die CD versucht seit dem 16. Nov. zuerst `deploy` und fällt auf root zurück; nach

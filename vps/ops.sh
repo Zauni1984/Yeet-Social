@@ -82,7 +82,10 @@ BUILD
   note-status)
     echo "--- build log tail"; tail -n 12 "$LOG" 2>/dev/null || echo "(no build log)"
     echo "--- container"; docker ps -a --filter name=yeet-note --format '{{.Names}}\t{{.Status}}'
-    echo "--- chain"; cli getblockchaininfo 2>&1 | grep -E '"chain"|"blocks"|"headers"|"verificationprogress"|"initialblockdownload"|"size_on_disk"|error' || true
+    echo "--- chain"; cli getblockchaininfo 2>&1 | grep -E '"chain"|"blocks"|"headers"|"difficulty"|"mediantime"|"verificationprogress"|"initialblockdownload"|"size_on_disk"|error' || true
+    echo "--- tip time: $(date -u -d "@$(cli getblockchaininfo 2>/dev/null | grep -oE '"mediantime": *[0-9]+' | grep -oE '[0-9]+$')" 2>/dev/null || echo '?')"
+    echo "--- wallet: $(cli getwalletinfo 2>&1 | grep -E '"balance"|"immature_balance"' | tr -d ' \n')"
+    echo "--- mining log tail"; docker exec yeet-note tail -n 6 /data/mine.log 2>/dev/null || echo "(not mining)"
     echo "--- peers: $(cli getconnectioncount 2>&1 | tail -1)"
     echo "--- disk"; df -h / | tail -1; docker run --rm -v $NOTE_VOL:/d alpine du -sh /d 2>/dev/null || true
     echo "--- daemon log tail"; docker logs --tail 15 yeet-note 2>&1 | cut -c1-200 || true
@@ -147,6 +150,33 @@ BUILD
     echo "--- peers: $(cli getconnectioncount 2>&1 | tail -1)"
     cli getblockchaininfo 2>&1 | grep -E '"blocks"|"headers"|error' || true
     docker logs --tail 12 yeet-note 2>&1 | cut -c1-200
+    ;;
+
+  note-mine)
+    # The network no longer produces blocks, so the node mines them itself
+    # (built-in CPU miner, scrypt, one thread — it occupies one CPU core while running).
+    #   ARG = <number of blocks> | stop
+    # Runs detached inside the container; progress: task note-status.
+    # Rewards go to an address of the node's own wallet (kept in the volume).
+    if [ "$ARG" = "stop" ]; then docker exec yeet-note touch /data/.mine-stop; echo "stop requested (takes effect after the current attempt)"; exit 0; fi
+    echo "$ARG" | grep -qE '^[0-9]{1,5}$' || { echo "usage: note-mine <blocks>|stop"; exit 1; }
+    if docker exec yeet-note bash -c 'kill -0 "$(cat /data/.mine-running 2>/dev/null)" 2>/dev/null'; then echo "a mining run is already active — stop it first"; exit 1; fi
+    docker exec -d -e N="$ARG" yeet-note bash -c '
+      cli(){ notecoin-cli -datadir=/data "$@"; }
+      echo $$ > /data/.mine-running; rm -f /data/.mine-stop; trap "rm -f /data/.mine-running" EXIT
+      A=$(cat /data/.mining-address 2>/dev/null); [ -n "$A" ] || { A=$(cli getnewaddress); echo "$A" > /data/.mining-address; }
+      echo "[$(date -u +%F\ %T)] start: $N block(s) to $A, difficulty $(cli getdifficulty)" >> /data/mine.log
+      found=0; tries=0
+      while [ "$found" -lt "$N" ] && [ ! -f /data/.mine-stop ]; do
+        R=$(notecoin-cli -datadir=/data -rpcclienttimeout=0 generatetoaddress 1 "$A" 500000 2>&1); tries=$((tries+1))
+        case "$R" in
+          *rror*) echo "[$(date -u +%F\ %T)] $R" >> /data/mine.log; sleep 30;;
+          *[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) found=$((found+1)); echo "[$(date -u +%F\ %T)] block $found/$N at height $(cli getblockcount), next difficulty $(cli getdifficulty) (after $tries x 500k hashes)" >> /data/mine.log; tries=0;;
+          *) [ $((tries % 20)) -eq 0 ] && echo "[$(date -u +%F\ %T)] still searching: $tries x 500k hashes, difficulty $(cli getdifficulty)" >> /data/mine.log;;
+        esac
+      done
+      echo "[$(date -u +%F\ %T)] finished: $found block(s)" >> /data/mine.log'
+    sleep 5; docker exec yeet-note tail -n 3 /data/mine.log
     ;;
 
   note-restart) cd "$APP"; docker compose up -d --force-recreate note-node; sleep 5; docker logs --tail 8 yeet-note 2>&1 | cut -c1-200 ;;

@@ -17,9 +17,10 @@ on:
           - note-status
           - note-import
           - note-addnodes
+          - note-mine
           - note-restart
       arg:
-        description: 'Optional argument (note-import: URL or absolute server path of a blocks backup / bootstrap.dat; note-addnodes: ip:port,ip:port)'
+        description: 'Optional argument (note-import: URL or absolute server path of a blocks backup / bootstrap.dat; note-addnodes: ip:port,ip:port; note-mine: number of blocks or stop)'
         required: false
         default: ''
 
