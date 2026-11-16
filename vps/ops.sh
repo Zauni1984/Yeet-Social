@@ -89,25 +89,36 @@ BUILD
     ;;
 
   note-import)
-    # Restore a chain backup when the node cannot sync from peers. ARG is a
-    # URL or an absolute path on this server to: a .tar/.tar.gz/.tgz/.zip
-    # containing blocks/ and chainstate/ (a copied datadir), or a
-    # bootstrap.dat. The wallet in the volume is never touched.
-    [ -n "$ARG" ] || { echo "usage: note-import <url-or-absolute-path>"; exit 1; }
+    # Restore a chain backup when the node cannot sync from peers.
+    #   ARG = <url-or-absolute-server-path> [sha256=<hex>]
+    # Accepts .7z / .zip / .tar / .tar.gz / .tgz containing blocks/ and
+    # chainstate/ (a copied datadir), or a bootstrap.dat. The wallet in the
+    # volume is never touched; the previous chain data is kept as *.old.
+    SRCARG="${ARG%% *}"; WANT=""
+    case "$ARG" in *" sha256="*) WANT="${ARG##* sha256=}";; esac
+    [ -n "$SRCARG" ] || { echo "usage: note-import <url-or-absolute-path> [sha256=<hex>]"; exit 1; }
+    NOTE_UID=$(docker run --rm --entrypoint id "$NOTE_IMG" -u note)
     docker stop yeet-note 2>/dev/null || true
-    SRCMOUNT=""; SRC="$ARG"
-    case "$ARG" in /*) [ -f "$ARG" ] || { echo "no such file: $ARG"; exit 1; }; SRCMOUNT="-v $(dirname "$ARG"):/in:ro"; SRC="/in/$(basename "$ARG")";; esac
-    docker run --rm -u 0 -v $NOTE_VOL:/data $SRCMOUNT --entrypoint /bin/bash "$NOTE_IMG" -c '
+    # Whatever happens below, the daemon comes back up.
+    trap 'docker start yeet-note >/dev/null 2>&1 || true' EXIT
+    SRCMOUNT=""; SRC="$SRCARG"
+    case "$SRCARG" in /*) [ -f "$SRCARG" ] || { echo "no such file: $SRCARG"; exit 1; }; SRCMOUNT="-v $(dirname "$SRCARG"):/in:ro"; SRC="/in/$(basename "$SRCARG")";; esac
+    docker run --rm -u 0 -v $NOTE_VOL:/data $SRCMOUNT -e WANT="$WANT" -e NOTE_UID="$NOTE_UID" alpine:3.20 sh -c '
       set -e; SRC="$0"; W=/data/.import; rm -rf "$W"; mkdir -p "$W"; cd "$W"
-      case "$SRC" in http*) echo "downloading…"; curl -fL --retry 3 -o payload "$SRC";; *) ln -s "$SRC" payload;; esac
+      apk add --no-cache curl unzip 7zip tar >/dev/null
+      case "$SRC" in http*) echo "downloading…"; curl -fsSL --retry 3 -o payload "$SRC";; *) ln -s "$SRC" payload;; esac
+      GOT=$(sha256sum payload | cut -d" " -f1); echo "sha256: $GOT ($(du -h payload | cut -f1))"
+      if [ -n "$WANT" ] && [ "$GOT" != "$WANT" ]; then echo "CHECKSUM MISMATCH — nothing changed"; rm -rf "$W"; exit 1; fi
       NAME=$(echo "$SRC" | tr A-Z a-z)
       case "$NAME" in
         *bootstrap.dat) cp payload /data/bootstrap.dat; echo "bootstrap.dat placed (imported on next start)";;
+        *.7z) 7z x -y -ox payload >/dev/null;;
         *.zip) unzip -q payload -d x;;
         *.tar.gz|*.tgz) mkdir x; tar -xzf payload -C x;;
         *.tar) mkdir x; tar -xf payload -C x;;
         *) echo "unknown backup format: $SRC"; exit 1;;
       esac
+      rm -f payload
       if [ -d x ]; then
         B=$(find x -type d -name blocks | head -1); C=$(find x -type d -name chainstate | head -1); BS=$(find x -type f -name bootstrap.dat | head -1)
         if [ -n "$B" ] && [ -n "$C" ]; then
@@ -115,10 +126,12 @@ BUILD
           [ -d /data/blocks ] && mv /data/blocks /data/blocks.old; [ -d /data/chainstate ] && mv /data/chainstate /data/chainstate.old
           mv "$B" /data/blocks; mv "$C" /data/chainstate; echo "blocks + chainstate restored (previous kept as *.old)"
         elif [ -n "$BS" ]; then mv "$BS" /data/bootstrap.dat; echo "bootstrap.dat placed"
-        else echo "archive has neither blocks/+chainstate/ nor bootstrap.dat"; exit 1; fi
+        else echo "archive has neither blocks/+chainstate/ nor bootstrap.dat:"; find x -maxdepth 2 | head -20; rm -rf "$W"; exit 1; fi
       fi
-      rm -rf "$W"; chown -R note:note /data' "$SRC"
-    docker start yeet-note; sleep 8; docker logs --tail 8 yeet-note 2>&1 | cut -c1-200
+      rm -rf "$W"; chown -R "$NOTE_UID:$NOTE_UID" /data; du -sh /data' "$SRC"
+    docker start yeet-note; trap - EXIT; sleep 20
+    cli getblockchaininfo 2>&1 | grep -E '"blocks"|"headers"|error' || true
+    docker logs --tail 8 yeet-note 2>&1 | cut -c1-200
     ;;
 
   note-addnodes)
