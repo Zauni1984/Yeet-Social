@@ -59,8 +59,10 @@ jobs:
           envs: OPS_SHA,OPS_TASK,OPS_ARG
           script: |
             set -e
-            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${OPS_SHA}/vps/ops.sh" -o /tmp/yeet-ops.sh
-            OPS_SHA="${OPS_SHA}" bash /tmp/yeet-ops.sh "${OPS_TASK}" "${OPS_ARG}"
+            # Per-run temp file: a fixed /tmp name left by root is not writable for deploy.
+            F=$(mktemp)
+            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${OPS_SHA}/vps/ops.sh" -o "$F"
+            OPS_SHA="${OPS_SHA}" bash "$F" "${OPS_TASK}" "${OPS_ARG}"; rm -f "$F"
 
       - name: Run as root
         if: inputs.task == 'setup-deploy-user' || inputs.task == 'finalize-deploy-user' || steps.as_deploy.outcome == 'failure'
@@ -79,5 +81,7 @@ jobs:
           envs: OPS_SHA,OPS_TASK,OPS_ARG
           script: |
             set -e
-            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${OPS_SHA}/vps/ops.sh" -o /tmp/yeet-ops.sh
-            OPS_SHA="${OPS_SHA}" bash /tmp/yeet-ops.sh "${OPS_TASK}" "${OPS_ARG}"
+            # Per-run temp file: a fixed /tmp name left by root is not writable for deploy.
+            F=$(mktemp)
+            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${OPS_SHA}/vps/ops.sh" -o "$F"
+            OPS_SHA="${OPS_SHA}" bash "$F" "${OPS_TASK}" "${OPS_ARG}"; rm -f "$F"

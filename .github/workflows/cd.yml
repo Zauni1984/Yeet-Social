@@ -45,8 +45,10 @@ jobs:
           envs: DEPLOY_SHA
           script: |
             set -e
-            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${DEPLOY_SHA}/vps/cd-deploy.sh" -o /tmp/yeet-cd-deploy.sh
-            DEPLOY_SHA="${DEPLOY_SHA}" bash /tmp/yeet-cd-deploy.sh
+            # Per-run temp file: a fixed /tmp name left by root is not writable for deploy.
+            F=$(mktemp)
+            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${DEPLOY_SHA}/vps/cd-deploy.sh" -o "$F"
+            DEPLOY_SHA="${DEPLOY_SHA}" bash "$F"; rm -f "$F"
 
       - name: Deploy via SSH (root fallback)
         if: steps.as_deploy.outcome == 'failure'
@@ -63,5 +65,7 @@ jobs:
           envs: DEPLOY_SHA
           script: |
             set -e
-            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${DEPLOY_SHA}/vps/cd-deploy.sh" -o /tmp/yeet-cd-deploy.sh
-            DEPLOY_SHA="${DEPLOY_SHA}" bash /tmp/yeet-cd-deploy.sh
+            # Per-run temp file: a fixed /tmp name left by root is not writable for deploy.
+            F=$(mktemp)
+            curl -fsSL "https://raw.githubusercontent.com/Zauni1984/Yeet-Social/${DEPLOY_SHA}/vps/cd-deploy.sh" -o "$F"
+            DEPLOY_SHA="${DEPLOY_SHA}" bash "$F"; rm -f "$F"
