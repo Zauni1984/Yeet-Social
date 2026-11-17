@@ -18,6 +18,14 @@ umask 077
   echo "rpcport=9332"
   echo "dbcache=${NOTE_DBCACHE:-200}"
   echo "maxconnections=${NOTE_MAXCONN:-24}"
+  # Treat an old tip as current (seconds). Needed while the chain is being
+  # revived: getblocktemplate refuses to work during "initial block download".
+  [ -n "${NOTE_MAXTIPAGE:-}" ] && echo "maxtipage=${NOTE_MAXTIPAGE}"
+  # Optional second RPC login for an external miner (ops task
+  # note-miner-access). Only salt and HMAC are stored here, never the password.
+  if [ -n "${NOTE_MINER_RPC_SALT:-}" ] && [ -n "${NOTE_MINER_RPC_HASH:-}" ]; then
+    echo "rpcauth=yeetminer:${NOTE_MINER_RPC_SALT}\$${NOTE_MINER_RPC_HASH}"
+  fi
   # Extra peers when the network's seeds do not answer (comma separated).
   IFS=',' read -ra NODES <<< "${NOTE_ADDNODES:-}"
   for n in "${NODES[@]}"; do [ -n "$n" ] && echo "addnode=$n"; done

@@ -15,7 +15,7 @@ NOTE_VOL=yeet-social_note_data
 # Image tag of the current build recipe (vps/note-node). The compose file
 # takes the tag from NOTE_IMAGE in .env, which note-install only switches
 # after the new image has been built — a deploy never waits for a build.
-NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1
+NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1b
 BUILD_DIR="$HOME/yeet-note-build"
 LOG="$HOME/yeet-note-build.log"
 CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
@@ -193,6 +193,43 @@ BUILD
       done
       echo "[$(date -u +%F\ %T)] finished: $found block(s)" >> /data/mine.log'
     sleep 5; docker exec yeet-note tail -n 3 /data/mine.log
+    ;;
+
+  note-miner-access)
+    # Lets an external computer mine through the node:
+    #   ARG = on <rpc-salt> <rpc-hmac> <ssh-public-key…> | off
+    # "on" adds a second RPC login (only salt + HMAC are stored), keeps the
+    # node out of "initial block download" so getblocktemplate works, and
+    # allows the given SSH key to open a tunnel to the node's RPC port —
+    # nothing else (no shell, no other forwarding). "off" removes all of it.
+    AK="$HOME/.ssh/authorized_keys"; TAG=yeet-miner-tunnel
+    MODE="${ARG%% *}"
+    strip_tunnel_key(){ if [ -f "$AK" ]; then grep -v " $TAG\$" "$AK" > "$AK.new" || true; cat "$AK.new" > "$AK"; fi; }
+    case "$MODE" in
+      on)
+        read -r _ SALT HASH KEYTYPE KEYBLOB _ <<< "$ARG"
+        echo "${SALT:-}" | grep -qE '^[0-9a-f]{16,64}$' || { echo "bad salt"; exit 1; }
+        echo "${HASH:-}" | grep -qE '^[0-9a-f]{64}$' || { echo "bad hmac"; exit 1; }
+        [ "${KEYTYPE:-}" = "ssh-ed25519" ] && echo "${KEYBLOB:-}" | grep -qE '^[A-Za-z0-9+/=]{60,}$' || { echo "bad ssh key (ed25519 expected)"; exit 1; }
+        docker image inspect "$NOTE_IMG_NEW" >/dev/null 2>&1 || { echo "image $NOTE_IMG_NEW not built yet — run note-install first"; exit 1; }
+        env_set NOTE_MINER_RPC_SALT "$SALT"; env_set NOTE_MINER_RPC_HASH "$HASH"; env_set NOTE_MAXTIPAGE 315360000
+        mkdir -p "$HOME/.ssh"; touch "$AK"; chmod 600 "$AK"
+        strip_tunnel_key
+        echo "restrict,port-forwarding,permitopen=\"127.0.0.1:9332\",command=\"echo tunnel only\" $KEYTYPE $KEYBLOB $TAG" >> "$AK"
+        docker exec yeet-note touch /data/.mine-stop 2>/dev/null || true
+        cd "$APP"; docker compose up -d --force-recreate note-node; sleep 25
+        echo "tunnel key installed: $(grep -c " $TAG\$" "$AK")"
+        echo "rpc on host loopback: $(docker port yeet-note 9332 2>/dev/null || echo '?')"
+        cli getblockchaininfo 2>&1 | grep -E '"blocks"|"initialblockdownload"|error' || true
+        ;;
+      off)
+        strip_tunnel_key
+        env_set NOTE_MINER_RPC_SALT ""; env_set NOTE_MINER_RPC_HASH ""
+        cd "$APP"; docker compose up -d --force-recreate note-node; sleep 10
+        echo "miner access removed"
+        ;;
+      *) echo "usage: note-miner-access on <salt> <hmac> <ssh-public-key> | off"; exit 1 ;;
+    esac
     ;;
 
   note-restart) cd "$APP"; docker compose up -d --force-recreate note-node; sleep 5; docker logs --tail 8 yeet-note 2>&1 | cut -c1-200 ;;

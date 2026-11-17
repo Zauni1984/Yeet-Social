@@ -119,6 +119,7 @@ die CD, bevorzugt als `deploy`, sonst als root.
 | `note-import` | spielt eine Chain-Sicherung ein; `arg` = URL oder absoluter Server-Pfad (optional gefolgt von ` sha256=<hex>`) zu `.7z`/`.tar.gz`/`.zip` mit `blocks/`+`chainstate/` oder `bootstrap.dat`. Alte Daten bleiben als `*.old`, die Wallet wird nicht angefasst |
 | `note-addnodes` | setzt zusätzliche Peers (`arg` = `ip:port,ip:port`) in `.env` und startet den Dienst neu |
 | `note-mine` | lässt den Knoten selbst Blöcke erzeugen (`arg` = Anzahl oder `stop`); läuft im Hintergrund, Fortschritt per `note-status`, Belohnung an eine Adresse der Knoten-Wallet |
+| `note-miner-access` | externer Miner: `arg` = `on <salt> <hmac> <ssh-public-key>` richtet einen zweiten RPC-Zugang (nur Salt+HMAC gespeichert), `maxtipage` und einen SSH-Schlüssel ein, der ausschließlich den Tunnel zu `127.0.0.1:9332` öffnen darf; `off` entfernt alles wieder. Vorher `note-install` (Image `-lr1b`) |
 | `note-restart` | Dienst neu erstellen (z. B. nach `NOTE_ADDNODES=ip:port,…` in `.env`) |
 
 Die CD versucht seit dem 16. Nov. zuerst `deploy` und fällt auf root zurück; nach
