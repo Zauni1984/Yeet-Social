@@ -17,13 +17,14 @@ RUN git clone --depth 1 --branch "${NOTE_TAG}" https://github.com/note-llc/NoteB
     && cd /src && test "$(git rev-parse HEAD)" = "${NOTE_COMMIT}"
 WORKDIR /src
 # Project patch (operator decision, Nov 2026): nobody mines Note any more and
-# the chain is only kept alive for the NOTE -> YEET swap, so from the first
-# block after the last block the network ever produced (4817735) the block
-# subsidy is 0.0001 NOTE
-# (10000 base units). This is a stricter rule than upstream (a soft fork):
-# unpatched wallets still accept these blocks; this node rejects blocks that
-# claim more.
-ARG NOTE_LOW_REWARD_HEIGHT=4817736
+# the chain is only kept alive for the NOTE -> YEET swap. The project
+# continues it from the published bootstrap (block 4621932) with its own
+# node; from the next block on the block subsidy is 0.0001 NOTE (10000 base
+# units). Stricter than upstream (a soft fork): unpatched wallets accept
+# these blocks, while this node rejects any block from that height that
+# claims more — including the network's own later blocks, which the operator
+# decided not to carry over. Image tag for this height: -lr1.
+ARG NOTE_LOW_REWARD_HEIGHT=4621933
 RUN sed -i '/^CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)$/{n;s/^{$/{\n    if (nHeight >= '"${NOTE_LOW_REWARD_HEIGHT}"') return 10000; \/\/ Yeet: 0.0001 NOTE/}' src/validation.cpp \
     && grep -n -A2 '^CAmount GetBlockSubsidy' src/validation.cpp \
     && grep -q "if (nHeight >= ${NOTE_LOW_REWARD_HEIGHT}) return 10000;" src/validation.cpp
