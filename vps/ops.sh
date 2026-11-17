@@ -15,7 +15,7 @@ NOTE_VOL=yeet-social_note_data
 # Image tag of the current build recipe (vps/note-node). The compose file
 # takes the tag from NOTE_IMAGE in .env, which note-install only switches
 # after the new image has been built — a deploy never waits for a build.
-NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1
+NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr2
 BUILD_DIR="$HOME/yeet-note-build"
 LOG="$HOME/yeet-note-build.log"
 CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
