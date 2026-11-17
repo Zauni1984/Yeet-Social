@@ -134,10 +134,18 @@ services:
       NOTE_RPC_PASS: ${NOTE_RPC_PASS:-}
       NOTE_ADDNODES: ${NOTE_ADDNODES:-}
       NOTE_DBCACHE: ${NOTE_DBCACHE:-200}
+      NOTE_MAXTIPAGE: ${NOTE_MAXTIPAGE:-}
+      NOTE_MINER_RPC_SALT: ${NOTE_MINER_RPC_SALT:-}
+      NOTE_MINER_RPC_HASH: ${NOTE_MINER_RPC_HASH:-}
     volumes:
       - note_data:/data
     networks: [yeet-net]
     expose: ["9332"]
+    # RPC on the host's loopback only (never public; the provider firewall
+    # blocks the port as well). An external miner reaches it through an SSH
+    # tunnel that the ops task note-miner-access sets up.
+    ports:
+      - "127.0.0.1:9332:9332"
     mem_limit: 1500m
     cpus: 1.0
     stop_grace_period: 2m
