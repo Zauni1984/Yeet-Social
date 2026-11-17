@@ -15,7 +15,7 @@ NOTE_VOL=yeet-social_note_data
 # Image tag of the current build recipe (vps/note-node). The compose file
 # takes the tag from NOTE_IMAGE in .env, which note-install only switches
 # after the new image has been built — a deploy never waits for a build.
-NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr2
+NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1
 BUILD_DIR="$HOME/yeet-note-build"
 LOG="$HOME/yeet-note-build.log"
 CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
@@ -96,6 +96,8 @@ BUILD
     echo "--- wallet: $(cli getwalletinfo 2>&1 | grep -E '"balance"|"immature_balance"' | tr -d ' \n')"
     echo "--- mining log tail"; docker exec yeet-note tail -n 6 /data/mine.log 2>/dev/null || echo "(not mining)"
     echo "--- peers: $(cli getconnectioncount 2>&1 | tail -1)"
+    # Which peer actually serves the chain: address, its height, how far it has given us headers/blocks.
+    cli getpeerinfo 2>/dev/null | grep -E '"addr"|"startingheight"|"synced_headers"|"synced_blocks"|"banscore"' | tr -d ' ",' | paste -d' ' - - - - - || true
     echo "--- disk"; df -h / | tail -1; docker run --rm -v $NOTE_VOL:/d alpine du -sh /d 2>/dev/null || true
     echo "--- daemon log tail"; docker logs --tail 15 yeet-note 2>&1 | cut -c1-200 || true
     ;;
