@@ -24,7 +24,8 @@ env_has(){ grep -q "^$1=" "$ENVF" 2>/dev/null; }
 env_set(){ if env_has "$1"; then sed -i "s|^$1=.*|$1=$2|" "$ENVF"; else echo "$1=$2" >> "$ENVF"; fi; }
 env_get(){ { grep "^$1=" "$ENVF" 2>/dev/null || true; } | head -1 | cut -d= -f2-; }
 NOTE_IMG=$(env_get NOTE_IMAGE); NOTE_IMG=${NOTE_IMG:-yeet/note-node:1.1.0.0}
-cli(){ docker exec yeet-note notecoin-cli -datadir=/data "$@"; }
+# Short client timeout: a status query must never hang on a busy daemon.
+cli(){ docker exec yeet-note notecoin-cli -datadir=/data -rpcclienttimeout=20 "$@"; }
 
 case "$TASK" in
   status)
@@ -179,11 +180,15 @@ BUILD
       echo "[$(date -u +%F\ %T)] start: $N block(s) to $A, difficulty $(cli getdifficulty)" >> /data/mine.log
       found=0; tries=0
       while [ "$found" -lt "$N" ] && [ ! -f /data/.mine-stop ]; do
-        R=$(notecoin-cli -datadir=/data -rpcclienttimeout=0 generatetoaddress 1 "$A" 500000 2>&1); tries=$((tries+1))
+        # One call = 100k hashes (well under a minute). The client timeout must be
+        # longer than that: when the client gives up, the daemon keeps hashing and
+        # the next call piles on top until every RPC worker is busy (seen on the
+        # first run, where timeout 0 meant the 50 s library default).
+        R=$(notecoin-cli -datadir=/data -rpcclienttimeout=900 generatetoaddress 1 "$A" 100000 2>&1); tries=$((tries+1))
         case "$R" in
-          *rror*) echo "[$(date -u +%F\ %T)] $R" >> /data/mine.log; sleep 30;;
-          *[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) found=$((found+1)); echo "[$(date -u +%F\ %T)] block $found/$N at height $(cli getblockcount), next difficulty $(cli getdifficulty) (after $tries x 500k hashes)" >> /data/mine.log; tries=0;;
-          *) [ $((tries % 20)) -eq 0 ] && echo "[$(date -u +%F\ %T)] still searching: $tries x 500k hashes, difficulty $(cli getdifficulty)" >> /data/mine.log;;
+          *rror*) echo "[$(date -u +%F\ %T)] $R" >> /data/mine.log; sleep 120;;
+          *[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*) found=$((found+1)); echo "[$(date -u +%F\ %T)] block $found/$N at height $(cli getblockcount), next difficulty $(cli getdifficulty) (after $tries x 100k hashes)" >> /data/mine.log; tries=0;;
+          *) [ $((tries % 50)) -eq 0 ] && echo "[$(date -u +%F\ %T)] still searching: $tries x 100k hashes, difficulty $(cli getdifficulty)" >> /data/mine.log;;
         esac
       done
       echo "[$(date -u +%F\ %T)] finished: $found block(s)" >> /data/mine.log'
