@@ -572,6 +572,15 @@ pub async fn add_comment(
     if post_author != user_id && crate::api::blocks::either_blocks(state.db.pool(), user_id, post_author).await? {
         return Err(AppError::Forbidden("You cannot comment on this post".into()));
     }
+    // Reward rule (same idea as reshares, audit C-M1): a comment earns the
+    // point only on someone else's post and only the first time this user
+    // comments on it — otherwise the daily cap could be filled by talking to
+    // oneself or by one-character replies under a single post.
+    let already_commented: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM comments WHERE post_id = $1 AND author_id = $2)"
+    )
+    .bind(id).bind(user_id)
+    .fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
     let comment_id: Uuid = sqlx::query_scalar(
         "INSERT INTO comments (post_id, author_id, content) VALUES ($1, $2, $3) RETURNING id"
     )
@@ -581,7 +590,9 @@ pub async fn add_comment(
     sqlx::query("UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1")
         .bind(id).execute(state.db.pool()).await.map_err(AppError::Database)?;
 
-    let _ = tokens::grant_reward(&state.db, user_id, RewardAction::CommentPosted, rewards::COMMENT_POSTED).await;
+    if post_author != user_id && !already_commented {
+        let _ = tokens::grant_reward(&state.db, user_id, RewardAction::CommentPosted, rewards::COMMENT_POSTED).await;
+    }
 
     // Notify the post author so they know someone replied.
     if let Some(author_id) = sqlx::query_scalar::<_, Uuid>(

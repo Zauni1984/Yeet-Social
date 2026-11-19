@@ -248,10 +248,12 @@ pub async fn grant_reward(db: &Database, user_id: Uuid, action: RewardAction, am
     };
     if amount <= 0 { return Ok(0); }
 
-    // Daily cap counts today's granted reward points, regardless of status.
+    // Daily cap counts today's granted engagement points, regardless of status.
+    // The one-time signup bonus is a separate allowance and does not use it up.
     let today_total: i64 = sqlx::query_scalar(
         "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards
-         WHERE user_id = $1 AND created_at >= CURRENT_DATE AND kind = 'reward'"
+         WHERE user_id = $1 AND created_at >= CURRENT_DATE AND kind = 'reward'
+           AND action <> 'registration_bonus'"
     )
     .bind(user_id).fetch_one(db.pool()).await.map_err(AppError::Database)?;
 

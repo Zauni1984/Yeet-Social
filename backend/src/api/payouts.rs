@@ -127,33 +127,43 @@ pub async fn admin_reject(
     // Lock the row and confirm it is refundable (never a 'pending' one — the
     // minter may be paying it out right now — and never a 'minted' one); grab
     // the amount + user so we can refund exactly and atomically.
-    let row: Option<(Uuid, f64)> = sqlx::query_as(
-        "SELECT user_id, COALESCE(points_debited, amount)::float8 FROM token_rewards
+    // `points_debited` is NULL for payouts that never cost the user points
+    // (NOTE swap credits, action='note_swap'). Those must not be "refunded":
+    // crediting the YEET amount as points would hand out points nobody spent.
+    // Legacy point conversions from before migration 0052 were backfilled, so
+    // a NULL here always means "nothing was debited".
+    let row: Option<(Uuid, Option<f64>, String)> = sqlx::query_as(
+        "SELECT user_id, points_debited::float8, action FROM token_rewards
           WHERE id = $1 AND kind = 'conversion' AND status IN ('awaiting_approval', 'failed') FOR UPDATE"
     )
     .bind(id)
     .fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
-    let (user_id, amount) = row.ok_or_else(||
+    let (user_id, debited, action) = row.ok_or_else(||
         AppError::Validation("payout not found or not refundable (must be awaiting_approval or failed)".into()))?;
+    let amount = debited.unwrap_or(0.0).max(0.0);
 
     sqlx::query("UPDATE token_rewards SET status = 'rejected' WHERE id = $1")
         .bind(id).execute(&mut *tx).await.map_err(AppError::Database)?;
 
-    // Refund the debited points back to the user.
-    sqlx::query("UPDATE users SET yeet_token_balance = COALESCE(yeet_token_balance, 0) + $1 WHERE id = $2")
-        .bind(amount).bind(user_id)
-        .execute(&mut *tx).await.map_err(AppError::Database)?;
+    if amount > 0.0 {
+        // Refund the debited points back to the user.
+        sqlx::query("UPDATE users SET yeet_token_balance = COALESCE(yeet_token_balance, 0) + $1 WHERE id = $2")
+            .bind(amount).bind(user_id)
+            .execute(&mut *tx).await.map_err(AppError::Database)?;
 
-    crate::services::ledger::record_in_tx(&mut tx, crate::services::ledger::NewEntry {
-        tx_type: crate::services::ledger::tx_type::PAYOUT_REFUND.into(),
-        asset: crate::services::ledger::asset::POINTS.into(),
-        amount, // positive: credited back to the user
-        user_id: Some(user_id),
-        reference_type: Some("payout".into()),
-        reference_id: Some(id.to_string()),
-        description: Some(format!("payout {id} rejected by admin — {amount} points refunded")),
-        ..Default::default()
-    }).await?;
+        crate::services::ledger::record_in_tx(&mut tx, crate::services::ledger::NewEntry {
+            tx_type: crate::services::ledger::tx_type::PAYOUT_REFUND.into(),
+            asset: crate::services::ledger::asset::POINTS.into(),
+            amount, // positive: credited back to the user
+            user_id: Some(user_id),
+            reference_type: Some("payout".into()),
+            reference_id: Some(id.to_string()),
+            description: Some(format!("payout {id} rejected by admin — {amount} points refunded")),
+            ..Default::default()
+        }).await?;
+    } else {
+        tracing::info!(target: "yeet_server", "payout {id} ({action}) rejected — no points were debited, nothing refunded");
+    }
 
     tx.commit().await.map_err(AppError::Database)?;
 

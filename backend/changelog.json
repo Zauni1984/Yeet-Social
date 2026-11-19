@@ -440,6 +440,14 @@
         "#Security",
         "#Changelog"
       ]
+    },
+    {
+      "id": "2026-11-19-48-rewards-guide",
+      "text": "New: a public guide to the YEET rewards system (PDF, linked in the footer) explains how points are earned, used and converted. Rules tightened to match it: a comment earns its point once per post and only on other people's posts, the welcome bonus no longer uses up the daily limit, and converting points to YEET now requires a completed age verification.",
+      "tags": [
+        "#Rewards",
+        "#Changelog"
+      ]
     }
   ]
 }

@@ -90,3 +90,15 @@ KI-Altersschätzung als Hinweis für das Prüfpersonal. Geändert (DE und EN):
 
 Die zugehörige Datenschutz-Folgenabschätzung liegt als Entwurf unter
 `docs/dsfa-altersverifikation.md`; offene organisatorische Punkte stehen dort in Abschnitt 6.
+
+## 19. November 2026 — Umwandlung setzt Altersverifikation voraus
+
+Nutzungsbedingungen § 6 (DE und EN), Absatz „Umwandlung von Punkten in YEET“: ergänzt um den
+Satz, dass eine abgeschlossene Altersverifikation Voraussetzung ist. Hintergrund: Das Whitepaper
+nennt die Verifikation seit jeher als Voraussetzung der Auszahlung; der Server hat sie bisher nur
+beim NOTE-Swap geprüft und prüft sie jetzt auch bei `POST /api/v1/points/convert`
+(Fehlercode `KYC_REQUIRED`).
+
+Gleichzeitig veröffentlicht: der Leitfaden „Das YEET-Belohnungssystem“ (DE/EN) als PDF, verlinkt
+im Footer. Er erklärt die Regeln, ersetzt die Nutzungsbedingungen aber nicht; Quelle unter
+`docs/rewards/`, Erzeugung mit `node scripts/build-rewards-pdf.cjs`.

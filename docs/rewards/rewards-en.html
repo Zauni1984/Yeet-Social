@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The YEET Rewards System</title>
+<meta name="author" content="BlockSocial UG (haftungsbeschränkt)">
+<meta name="description" content="How to earn, use and convert points on Yeet – every rule and number.">
+<link rel="stylesheet" href="rewards.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <span class="brand">YEET</span>
+    <h1 style="margin-top:26pt">The YEET<br>Rewards System</h1>
+    <p class="lead">How you earn points on Yeet, what you can do with them, and how points become YEET tokens. Every rule, number and limit in one place.</p>
+  </div>
+  <div class="meta">
+    <p><b>Version 1.0</b> · As of 19 November 2026</p>
+    <p>Published by BlockSocial UG (haftungsbeschränkt), Beilngries, Germany · justyeet.it · info@blocksocial.eu</p>
+    <p>This document explains the rules in plain language. The legally binding text is the Terms of Service (section 6) on justyeet.it. The numbers given here are those at the time of publication; the values currently in force are available in machine-readable form at <code>justyeet.it/api/v1/tokens/params</code>.</p>
+  </div>
+</section>
+
+<h2 style="margin-top:0">Contents</h2>
+<ol class="toc">
+  <li>At a glance</li>
+  <li>Points and YEET – two different things</li>
+  <li>Earning points</li>
+  <li>Daily limit and pool protection</li>
+  <li>Using points</li>
+  <li>The platform fee</li>
+  <li>Converting points to YEET</li>
+  <li>The YEET token in numbers</li>
+  <li>NOTE → YEET (swap)</li>
+  <li>Transparency and protection against abuse</li>
+  <li>Worked examples</li>
+  <li>Frequently asked questions</li>
+  <li>Important notices</li>
+</ol>
+
+<h2>1. At a glance</h2>
+<p>Yeet rewards contributions to the community with <b>points</b>. Points can be used inside the platform – for example to tip other people – and, once the requirements are met, can be converted one-way into the <b>YEET token</b>.</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">10</div><div class="l">points for a post of 120 characters or more</div></div>
+  <div class="kpi"><div class="v">2</div><div class="l">points for resharing someone else's post</div></div>
+  <div class="kpi"><div class="v">1</div><div class="l">point for your first comment on someone else's post</div></div>
+  <div class="kpi"><div class="v">1,000</div><div class="l">points welcome bonus (once)</div></div>
+  <div class="kpi"><div class="v">1,000</div><div class="l">points daily limit per account</div></div>
+  <div class="kpi"><div class="v">90 / 10</div><div class="l">split of tips and pay-per-view: recipient / platform</div></div>
+  <div class="kpi"><div class="v">100</div><div class="l">points minimum per conversion</div></div>
+  <div class="kpi"><div class="v">1 : 1</div><div class="l">current rate, point to YEET</div></div>
+</div>
+
+<div class="box warn">
+  <p class="t">Test phase</p>
+  <p>The YEET token is in its test phase on the BNB Smart Chain testnet. Testnet tokens have no value and cannot be traded. It has not been decided when the token will be available on the main network, and there is no entitlement to it.</p>
+</div>
+
+<h2>2. Points and YEET – two different things</h2>
+<table>
+  <tr><th style="width:24%"></th><th>Points</th><th>YEET token</th></tr>
+  <tr><td><b>What it is</b></td><td>A balance in your Yeet account, kept by the platform.</td><td>A token (BEP-20) on the BNB Smart Chain that sits in your own wallet.</td></tr>
+  <tr><td><b>Where it comes from</b></td><td>Only from activity on Yeet or from other users (tips, pay-per-view, paper wallets).</td><td>Only from converting points – or from the NOTE swap (section 9).</td></tr>
+  <tr><td><b>Buying</b></td><td>Not possible. Points are not sold.</td><td>Yeet does not sell tokens.</td></tr>
+  <tr><td><b>Monetary value</b></td><td>None. Points are not money, not e-money and not a crypto-asset, and are never paid out in money.</td><td>No assured value. Worthless on the testnet.</td></tr>
+  <tr><td><b>Use</b></td><td>Tips, pay-per-view, paper wallets, live promotions, conversion to YEET.</td><td>Yours to dispose of, outside the platform.</td></tr>
+  <tr><td><b>Converting back</b></td><td colspan="2">Conversion is a one-way street: points become YEET, never the other way round.</td></tr>
+</table>
+<p>Points have up to eight decimal places. Rewards are always credited in whole points; fractions only arise from tips and pay-per-view.</p>
+
+<h2>3. Earning points</h2>
+<table>
+  <tr><th>Action</th><th class="n">Points</th><th>Conditions</th></tr>
+  <tr><td><b>Publishing a post</b></td><td class="n">10</td><td>The text has at least 120 characters (not counting leading and trailing whitespace). Shorter posts are welcome but earn no points.</td></tr>
+  <tr><td><b>Resharing a post</b></td><td class="n">2</td><td>Only other people's posts, only while the post is visible, and only once per post.</td></tr>
+  <tr><td><b>Commenting</b></td><td class="n">1</td><td>Only your first comment on someone else's post. Further comments on the same post and comments on your own posts earn no points.</td></tr>
+  <tr><td><b>Welcome bonus</b></td><td class="n">1,000</td><td>Once per person, as soon as <i>both</i> are done: e-mail address confirmed and age verification completed. Only for the first 100,000 eligible accounts.</td></tr>
+</table>
+
+<h3>What does not earn points</h3>
+<ul>
+  <li><b>Likes</b> – neither giving nor receiving them.</li>
+  <li><b>Logging in daily</b> or simply being present.</li>
+  <li><b>Following, inviting, referring</b> – there is no referral programme.</li>
+  <li><b>Tips you receive</b> are not a reward from the platform but another user's points; they do not count towards the daily limit.</li>
+</ul>
+
+<div class="box">
+  <p class="t">Good to know</p>
+  <ul>
+    <li>The welcome bonus does not count towards the daily limit and is not reduced by the pool rule (section 4).</li>
+    <li>The number of bonus places still available is shown as <code>registration_bonus_remaining</code> at <code>justyeet.it/api/v1/tokens/params</code>.</li>
+    <li>Anyone who breaches the Terms of Service (spam, multiple accounts, automated collecting) may be suspended; conversions requested by such accounts may be refused.</li>
+  </ul>
+</div>
+
+<h2>4. Daily limit and pool protection</h2>
+<h3>Daily limit</h3>
+<p>Each account is credited at most <b>1,000 points</b> in rewards per calendar day (UTC). Once the limit is reached you can keep using Yeet, but further actions earn no points that day. If a reward would exceed the limit, only the remainder up to the limit is credited. Nothing carries over to the next day.</p>
+
+<h3>The conversion pool</h3>
+<p>Points can only be converted to YEET while the part of the token supply reserved for this still holds YEET. That reserve is <b>15.75 billion YEET</b> (75 % of the total supply) and technically cannot be exceeded. Its current state is public: <code>justyeet.it/api/v1/tokens/pool</code>.</p>
+
+<h3>Reduced rewards when the pool runs low</h3>
+<p>If the remaining pool falls below <b>10 %</b>, rewards are halved and rounded down to whole points:</p>
+<table>
+  <tr><th>Action</th><th class="n">normal</th><th class="n">reduced</th></tr>
+  <tr><td>Post of 120 characters or more</td><td class="n">10</td><td class="n">5</td></tr>
+  <tr><td>Reshare</td><td class="n">2</td><td class="n">1</td></tr>
+  <tr><td>Comment</td><td class="n">1</td><td class="n">0</td></tr>
+  <tr><td>Welcome bonus</td><td class="n">1,000</td><td class="n">1,000 (exempt)</td></tr>
+</table>
+<p>This keeps the platform from permanently creating more points than could ever be converted to YEET. Whether the reduction is active is shown by the field <code>tapered</code> at both addresses mentioned above.</p>
+
+<h2>5. Using points</h2>
+
+<h3>Tips</h3>
+<p>You can give points to other users as a tip – on a post, in a direct message or during a live stream.</p>
+<ul>
+  <li>Minimum amount: <b>0.01 points</b>.</li>
+  <li>The recipient receives <b>90 %</b>; <b>10 %</b> goes to Yeet as the platform fee.</li>
+  <li>You cannot tip yourself, and tips are not possible between accounts that have blocked each other.</li>
+  <li>A tip is final and cannot be taken back.</li>
+</ul>
+
+<h3>Pay-per-view</h3>
+<p>When publishing a post, the author can set a price in points. Others unlock the post for that price.</p>
+<ul>
+  <li>Same split as tips: <b>90 %</b> to the author, <b>10 %</b> platform fee.</li>
+  <li>Once unlocked, always unlocked; you are never charged twice.</li>
+  <li>Before buying, you confirm that you want the digital content immediately and that your right of withdrawal ends as a result (Terms of Service, section 6).</li>
+</ul>
+
+<h3>Paper wallets</h3>
+<p>A paper wallet is a voucher for points that you create and then print or pass on as a code. Whoever redeems the code receives the points.</p>
+<ul>
+  <li>You can issue one once your e-mail address is confirmed. Maximum per paper wallet: 1,000,000 points.</li>
+  <li>The points are deducted from your balance and set aside when you issue it. <b>No fee</b> – the full amount arrives.</li>
+  <li>You can void a paper wallet that has not been redeemed yet; the points then return to you. You cannot redeem your own paper wallet.</li>
+  <li>Like cash: whoever holds the code can redeem it. Keep it safe accordingly.</li>
+</ul>
+
+<h3>Live promotion</h3>
+<p>Where the live feature is enabled, hosts can promote their stream:</p>
+<table>
+  <tr><th>Package</th><th class="n">Price</th><th>What you get</th></tr>
+  <tr><td>Basic</td><td class="n">10 points</td><td>An automatic announcement post when the stream starts.</td></tr>
+  <tr><td>Boost</td><td class="n">50 points</td><td>As Basic, plus pinned to the top of the feed for 60 minutes.</td></tr>
+</table>
+<p>The price goes to the platform in full (advertising, not a tip). If the stream is cancelled or never starts, the points are refunded.</p>
+
+<h2>6. The platform fee</h2>
+<p>Yeet charges <b>10 %</b> on tips and pay-per-view purchases. The fee is withheld from the amount sent; the sender pays nothing on top. There is <b>no</b> fee on rewards, paper wallets or the conversion to YEET.</p>
+<p>The fees collected are booked in points to a platform account and logged for every single transaction. They can arithmetically replenish the conversion pool – but never beyond the fixed token reserve of 15.75 billion YEET.</p>
+
+<h2>7. Converting points to YEET</h2>
+
+<h3>Requirements</h3>
+<ol>
+  <li><b>Your own wallet is linked.</b> You connect an external wallet to your account and confirm it with a signature. Yeet does not hold tokens for you; payouts always go straight to your wallet.</li>
+  <li><b>Age verification completed.</b></li>
+  <li><b>At least 100 points</b>, in whole points.</li>
+  <li><b>Sanctions screening.</b> The destination address must not be on a sanctions list.</li>
+  <li><b>Pool available.</b> The conversion pool must cover the amount.</li>
+</ol>
+
+<h3>How it works</h3>
+<div class="flow">
+  <div><b>1 · Request</b>Points are deducted at once.</div>
+  <div><b>2 · Review</b>Yeet reviews the request by hand.</div>
+  <div><b>3 · Release</b>The request waits for the next batch run.</div>
+  <div class="hl"><b>4 · Payout</b>YEET are minted to your wallet.</div>
+</div>
+<ul>
+  <li><b>Rate:</b> currently 1 point = 1 YEET. The rate at the moment of your request applies; it is stored with the request.</li>
+  <li><b>Changes to the rate</b> apply to future requests only and are announced at least <b>14 days</b> in advance. Current and announced rates: <code>justyeet.it/api/v1/points/rate</code>.</li>
+  <li><b>Batch runs</b> take place hourly. The token contract additionally limits how many YEET may be minted per day in total; once that limit is reached, the remaining requests wait. No processing time is guaranteed.</li>
+  <li><b>Costs:</b> Yeet charges no fee and pays the network costs of the payout.</li>
+  <li><b>Refusal:</b> if a request is refused or cannot be completed, the points return to your balance.</li>
+  <li><b>Final:</b> a completed conversion cannot be reversed. There is no entitlement to a payment in money.</li>
+</ul>
+
+<h2>8. The YEET token in numbers</h2>
+<table>
+  <tr><th>Property</th><th>Value</th></tr>
+  <tr><td>Standard / network</td><td>BEP-20 on the BNB Smart Chain – currently testnet (chain ID 97)</td></tr>
+  <tr><td>Maximum supply</td><td>21,000,000,000 YEET, fixed; more can never be created</td></tr>
+  <tr><td>Decimals</td><td>18</td></tr>
+  <tr><td>Burning</td><td>Holders can destroy their own tokens; this does not raise the amount available for payouts again</td></tr>
+</table>
+<table>
+  <tr><th>Share</th><th class="n">%</th><th class="n">YEET</th><th>Created</th></tr>
+  <tr><td><b>Rewards / community</b></td><td class="n">75</td><td class="n">15,750,000,000</td><td>Only at payout, piece by piece, exclusively through conversions and the NOTE swap</td></tr>
+  <tr><td>Development</td><td class="n">10</td><td class="n">2,100,000,000</td><td rowspan="3">When the token contract is launched</td></tr>
+  <tr><td>Team</td><td class="n">10</td><td class="n">2,100,000,000</td></tr>
+  <tr><td>Reserve</td><td class="n">5</td><td class="n">1,050,000,000</td></tr>
+</table>
+<p>The 75 % for the community can only come into existence through the contract's payout function. That function is limited to at most 200 recipients per transaction and an adjustable daily amount, and can be paused in an emergency. Lock-up rules for the remaining 25 % will be published before the launch on the main network.</p>
+
+<h2>9. NOTE → YEET (swap)</h2>
+<p>Separately from the rewards system, an exchange of the former NOTE coins into YEET has been prepared. <b>The swap is currently locked</b>; its start will be announced separately.</p>
+<table>
+  <tr><th>Rule</th><th>Value</th></tr>
+  <tr><td>Rate</td><td>100 NOTE = 1 YEET</td></tr>
+  <tr><td>Overall cap</td><td>500,000,000 YEET</td></tr>
+  <tr><td>Confirmations</td><td>120 blocks on the NOTE chain before a deposit counts</td></tr>
+  <tr><td>Requirements</td><td>Age verification completed and your own wallet linked</td></tr>
+  <tr><td>Payout</td><td>Through the same review and the same batch runs as the conversion of points</td></tr>
+</table>
+<p>NOTE deposits are final and are not sent back. Current state: <code>justyeet.it/api/v1/swap/status</code>.</p>
+
+<h2>10. Transparency and protection against abuse</h2>
+<div class="two">
+  <div class="box">
+    <p class="t">Publicly visible</p>
+    <ul>
+      <li><code>/api/v1/tokens/params</code> – all reward rules with their current values</li>
+      <li><code>/api/v1/tokens/pool</code> – state of the conversion pool</li>
+      <li><code>/api/v1/points/rate</code> – conversion rate, including announced changes</li>
+      <li><code>/api/v1/swap/status</code> – state of the NOTE swap</li>
+    </ul>
+  </div>
+  <div class="box">
+    <p class="t">Safeguards</p>
+    <ul>
+      <li>Every movement of points is recorded in an immutable, hash-chained journal.</li>
+      <li>Conversions are reviewed by hand before anything is paid out.</li>
+      <li>Sanctions screening at the request and again at payout.</li>
+      <li>Daily limit, minimum length and "once per post" against collecting without a real contribution.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>11. Worked examples</h2>
+<h3>An active day</h3>
+<table>
+  <tr><th>Activity</th><th class="n">Calculation</th><th class="n">Points</th></tr>
+  <tr><td>3 posts of more than 120 characters each</td><td class="n">3 × 10</td><td class="n">30</td></tr>
+  <tr><td>1 short post (80 characters)</td><td class="n">–</td><td class="n">0</td></tr>
+  <tr><td>5 posts by others reshared</td><td class="n">5 × 2</td><td class="n">10</td></tr>
+  <tr><td>8 comments on 6 different posts by others</td><td class="n">6 × 1</td><td class="n">6</td></tr>
+  <tr><td><b>Total</b></td><td class="n"></td><td class="n"><b>46</b></td></tr>
+</table>
+
+<h3>A tip of 50 points</h3>
+<table>
+  <tr><th>Who</th><th class="n">Points</th></tr>
+  <tr><td>Sender</td><td class="n">− 50</td></tr>
+  <tr><td>Recipient (90 %)</td><td class="n">+ 45</td></tr>
+  <tr><td>Platform (10 %)</td><td class="n">+ 5</td></tr>
+</table>
+
+<h3>Converting 500 points</h3>
+<p>At the current rate of 1 : 1, 500 points are deducted and, after review and the batch run, 500 YEET are minted to the linked wallet. No fee is charged. If the rate were changed to 0.5 in future, 500 points would yield 250 YEET for requests made from the effective date – requests made earlier keep their rate.</p>
+
+<h2>12. Frequently asked questions</h2>
+<h3>Can I buy or sell points?</h3>
+<p>No. Points only arise from activity and can only be passed on through the platform's features (tips, pay-per-view, paper wallets).</p>
+<h3>Do points expire?</h3>
+<p>There is currently no expiry. Changes to the rules are announced with reasonable notice.</p>
+<h3>What happens to my points if I delete a post?</h3>
+<p>Rewards already credited are not reversed when you delete a post. Publishing posts only to collect points and deleting them again breaches the Terms of Service and may lead to a suspension.</p>
+<h3>Why did I get no points for my post?</h3>
+<p>The most common reasons: the text was shorter than 120 characters, the daily limit had been reached, or it was not your first comment on that post.</p>
+<h3>Why do I need age verification to convert, but not to collect points?</h3>
+<p>Points stay on the platform. Conversion creates a freely transferable token – for that we must make sure an entitled adult stands behind every payout.</p>
+<h3>How long does a conversion take?</h3>
+<p>That depends on the review and on demand. Batch runs take place hourly; we do not promise a fixed time.</p>
+<h3>Can I still get the welcome bonus later?</h3>
+<p>Yes, as long as some of the first 100,000 places are left – as soon as e-mail confirmation and age verification are complete.</p>
+
+<h2>13. Important notices</h2>
+<div class="box warn">
+  <ul>
+    <li><b>Not an investment product.</b> This document is not investment advice and not an offer to acquire tokens. Neither points nor YEET promise a return or a particular value.</li>
+    <li><b>Rules may change.</b> Yeet may adjust rewards, limits and rates or discontinue the points programme. Material changes are announced in advance; the conversion rate with at least 14 days' notice.</li>
+    <li><b>Your wallet, your responsibility.</b> Tokens that have been paid out sit solely in your wallet. If you lose access, Yeet cannot restore them.</li>
+    <li><b>Taxes.</b> Whether and how rewards or tokens are taxed depends on your personal circumstances. Please clarify this yourself.</li>
+    <li><b>The Terms of Service prevail.</b> Where this document and the Terms of Service differ, the Terms of Service apply.</li>
+  </ul>
+</div>
+
+<footer class="end">
+  <p>The YEET Rewards System · Version 1.0 · 19 November 2026 · BlockSocial UG (haftungsbeschränkt), Beilngries, Germany · info@blocksocial.eu</p>
+  <p>Change history: 1.0 – first public edition.</p>
+</footer>
+
+</body>
+</html>

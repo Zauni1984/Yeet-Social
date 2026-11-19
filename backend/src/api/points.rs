@@ -13,7 +13,7 @@ use crate::{AppError, AppResult, AppState, models::ApiResponse};
 use crate::api::middleware::AuthUser;
 
 /// Minimum points per conversion (keeps on-chain gas economical + avoids dust).
-const MIN_CONVERT_POINTS: i64 = 100;
+pub const MIN_CONVERT_POINTS: i64 = 100;
 /// Advisory-lock key serialising pool-check + queue-insert across requests.
 const CONVERT_LOCK_KEY: i64 = 0x59_45_45_54_43_4e_56; // "YEETCNV"
 
@@ -150,14 +150,22 @@ pub async fn convert(
     // The payout target MUST be a verified EXTERNAL wallet the user linked via
     // the signature-challenge flow (email_auth::link_wallet_verify). Email
     // users without a linked wallet cannot convert — they connect one first.
-    let (balance, wallet): (f64, Option<String>) = sqlx::query_as(
-        "SELECT COALESCE(yeet_token_balance, 0)::float8, wallet_address
+    let (balance, wallet, age_verified): (f64, Option<String>, bool) = sqlx::query_as(
+        "SELECT COALESCE(yeet_token_balance, 0)::float8, wallet_address, age_verified_at IS NOT NULL
            FROM users WHERE id = $1 FOR UPDATE"
     )
     .bind(user_id)
     .fetch_one(&mut *tx)
     .await
     .map_err(AppError::Database)?;
+
+    // Turning points into a transferable token is the step the whitepaper ties
+    // to a completed identity/age verification (docs/mica/02 §payout); the
+    // NOTE swap has required it all along. One verified person, one payout
+    // identity — this is also what keeps multi-account farming from paying.
+    if !age_verified {
+        return Err(AppError::Forbidden("KYC_REQUIRED".into()));
+    }
 
     let wallet = wallet.ok_or_else(|| {
         AppError::Forbidden("NO_WALLET_LINKED".into())
