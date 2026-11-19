@@ -305,6 +305,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/tokens/balance",   get(api::tokens::get_balance))
         .route("/api/v1/tokens/rewards",   get(api::tokens::get_rewards))
         .route("/api/v1/tokens/pool",      get(api::tokens::get_pool))
+        .route("/api/v1/tokens/params",    get(api::tokens::get_params))
         // NOTE→YEET swap (status public; address/deposits locked until live)
         .route("/api/v1/swap/status",      get(api::swap::status))
         .route("/api/v1/swap/address",     post(api::swap::address))

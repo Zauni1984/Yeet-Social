@@ -81,7 +81,7 @@ pub async fn get_rewards(
 
     // Daily cap counts only granted rewards, never conversions (audit M-L2).
     let today_earned: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards WHERE user_id = $1 AND created_at >= CURRENT_DATE AND kind = 'reward'"
+        "SELECT COALESCE(SUM(amount), 0)::bigint FROM token_rewards WHERE user_id = $1 AND created_at >= CURRENT_DATE AND kind = 'reward' AND action <> 'registration_bonus'"
     )
     .bind(user_id).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
 
@@ -99,4 +99,65 @@ pub async fn get_pool(
     State(state): State<AppState>,
 ) -> AppResult<Json<ApiResponse<tokens::PoolStatus>>> {
     Ok(Json(ApiResponse::ok(tokens::pool_status(&state.db).await?)))
+}
+
+/// Public reward rules as the server applies them right now. The numbers are
+/// tunable at runtime (env), so documentation and clients read them here
+/// instead of hard-coding them.
+#[derive(Debug, Serialize)]
+pub struct RewardParams {
+    pub post_reward: i64,
+    pub post_min_chars: usize,
+    pub comment_reward: i64,
+    pub reshare_reward: i64,
+    pub daily_cap: i64,
+    pub registration_bonus: i64,
+    pub registration_bonus_max_recipients: i64,
+    pub registration_bonus_granted: i64,
+    pub registration_bonus_remaining: i64,
+    pub tip_min: f64,
+    pub platform_fee_pct: f64,
+    pub convert_min_points: i64,
+    pub convert_requires_verification: bool,
+    pub conversion_rate: f64,
+    pub rate_notice_days: i64,
+    pub taper_threshold_pct: f64,
+    pub taper_factor: f64,
+    pub tapered: bool,
+    pub live_promotion_basic: i64,
+    pub live_promotion_boost: i64,
+}
+
+/// GET /api/v1/tokens/params — public, aggregate only.
+pub async fn get_params(
+    State(state): State<AppState>,
+) -> AppResult<Json<ApiResponse<RewardParams>>> {
+    let granted: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM users WHERE registration_bonus_granted_at IS NOT NULL"
+    ).fetch_one(state.db.pool()).await.map_err(AppError::Database)?;
+    let max = tokens::registration_bonus_max();
+    let pool = tokens::pool_status(&state.db).await?;
+    let rate = tokens::current_conversion_rate(&state.db).await?;
+    Ok(Json(ApiResponse::ok(RewardParams {
+        post_reward: tokens::post_reward(),
+        post_min_chars: tokens::post_min_chars(),
+        comment_reward: tokens::rewards::COMMENT_POSTED,
+        reshare_reward: tokens::rewards::POST_RESHARED,
+        daily_cap: tokens::daily_cap(),
+        registration_bonus: tokens::registration_bonus_points(),
+        registration_bonus_max_recipients: max,
+        registration_bonus_granted: granted,
+        registration_bonus_remaining: (max - granted).max(0),
+        tip_min: crate::api::tips::MIN_TIP_AMOUNT,
+        platform_fee_pct: crate::api::tips::PLATFORM_FEE_PCT,
+        convert_min_points: crate::api::points::MIN_CONVERT_POINTS,
+        convert_requires_verification: true,
+        conversion_rate: rate.rate,
+        rate_notice_days: tokens::rate_notice_days(),
+        taper_threshold_pct: tokens::taper_threshold_pct(),
+        taper_factor: tokens::taper_factor(),
+        tapered: pool.tapered,
+        live_promotion_basic: 10,
+        live_promotion_boost: 50,
+    })))
 }

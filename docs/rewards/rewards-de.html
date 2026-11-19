@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Das YEET-Belohnungssystem</title>
+<meta name="author" content="BlockSocial UG (haftungsbeschränkt)">
+<meta name="description" content="Wie man auf Yeet Punkte verdient, verwendet und in YEET umwandelt – alle Regeln und Zahlen.">
+<link rel="stylesheet" href="rewards.css">
+</head>
+<body>
+
+<section class="cover">
+  <div>
+    <span class="brand">YEET</span>
+    <h1 style="margin-top:26pt">Das YEET-<br>Belohnungssystem</h1>
+    <p class="lead">Wie man auf Yeet Punkte verdient, wofür man sie verwenden kann und wie aus Punkten YEET-Token werden. Alle Regeln, Zahlen und Grenzen an einem Ort.</p>
+  </div>
+  <div class="meta">
+    <p><b>Version 1.0</b> · Stand: 19. November 2026</p>
+    <p>Herausgeber: BlockSocial UG (haftungsbeschränkt), Beilngries, Deutschland · justyeet.it · info@blocksocial.eu</p>
+    <p>Dieses Dokument erklärt die Regeln in verständlicher Form. Rechtlich maßgeblich sind die Nutzungsbedingungen (§ 6) auf justyeet.it. Die hier genannten Zahlen entsprechen dem Stand der Veröffentlichung; die jeweils aktuell geltenden Werte stehen maschinenlesbar unter <code>justyeet.it/api/v1/tokens/params</code>.</p>
+  </div>
+</section>
+
+<h2 style="margin-top:0">Inhalt</h2>
+<ol class="toc">
+  <li>Auf einen Blick</li>
+  <li>Punkte und YEET – zwei verschiedene Dinge</li>
+  <li>Punkte verdienen</li>
+  <li>Tageslimit und Schutz des Pools</li>
+  <li>Punkte verwenden</li>
+  <li>Die Plattformgebühr</li>
+  <li>Punkte in YEET umwandeln</li>
+  <li>Der YEET-Token in Zahlen</li>
+  <li>NOTE → YEET (Swap)</li>
+  <li>Transparenz und Schutz vor Missbrauch</li>
+  <li>Rechenbeispiele</li>
+  <li>Häufige Fragen</li>
+  <li>Wichtige Hinweise</li>
+</ol>
+
+<h2>1. Auf einen Blick</h2>
+<p>Auf Yeet werden Beiträge zur Gemeinschaft mit <b>Punkten</b> belohnt. Punkte lassen sich innerhalb der Plattform einsetzen – etwa als Trinkgeld für andere – und können, sobald die Voraussetzungen erfüllt sind, einseitig in den <b>YEET-Token</b> umgewandelt werden.</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="v">10</div><div class="l">Punkte für einen Beitrag ab 120 Zeichen</div></div>
+  <div class="kpi"><div class="v">2</div><div class="l">Punkte für das Teilen eines fremden Beitrags</div></div>
+  <div class="kpi"><div class="v">1</div><div class="l">Punkt für den ersten Kommentar unter einem fremden Beitrag</div></div>
+  <div class="kpi"><div class="v">1.000</div><div class="l">Punkte Willkommensbonus (einmalig)</div></div>
+  <div class="kpi"><div class="v">1.000</div><div class="l">Punkte Tageslimit je Konto</div></div>
+  <div class="kpi"><div class="v">90 / 10</div><div class="l">Aufteilung von Trinkgeld und Pay-per-View: Empfänger / Plattform</div></div>
+  <div class="kpi"><div class="v">100</div><div class="l">Punkte Mindestmenge je Umwandlung</div></div>
+  <div class="kpi"><div class="v">1 : 1</div><div class="l">aktuelles Verhältnis Punkt zu YEET</div></div>
+</div>
+
+<div class="box warn">
+  <p class="t">Testphase</p>
+  <p>Der YEET-Token befindet sich in der Testphase auf dem Testnetz der BNB Smart Chain. Token im Testnetz haben keinen Wert und sind nicht handelbar. Wann der Token im Hauptnetz verfügbar wird, steht noch nicht fest; ein Anspruch darauf besteht nicht.</p>
+</div>
+
+<h2>2. Punkte und YEET – zwei verschiedene Dinge</h2>
+<table>
+  <tr><th style="width:24%"></th><th>Punkte</th><th>YEET-Token</th></tr>
+  <tr><td><b>Was es ist</b></td><td>Ein Guthaben in deinem Yeet-Konto, geführt von der Plattform.</td><td>Ein Token (BEP-20) auf der BNB Smart Chain, der in deiner eigenen Wallet liegt.</td></tr>
+  <tr><td><b>Woher es kommt</b></td><td>Ausschließlich durch Aktivität auf Yeet oder von anderen Nutzern (Trinkgeld, Pay-per-View, Paper Wallet).</td><td>Ausschließlich durch Umwandlung von Punkten – oder durch den NOTE-Swap (Abschnitt 9).</td></tr>
+  <tr><td><b>Kaufen</b></td><td>Nicht möglich. Punkte werden nicht verkauft.</td><td>Yeet verkauft keine Token.</td></tr>
+  <tr><td><b>Geldwert</b></td><td>Keiner. Punkte sind kein Geld, kein E-Geld und kein Kryptowert und werden nicht in Geld ausgezahlt.</td><td>Kein zugesicherter Wert. Im Testnetz wertlos.</td></tr>
+  <tr><td><b>Verwendung</b></td><td>Trinkgelder, Pay-per-View, Paper Wallets, Live-Promotionen, Umwandlung in YEET.</td><td>Liegt in deiner Verfügung, außerhalb der Plattform.</td></tr>
+  <tr><td><b>Zurücktauschen</b></td><td colspan="2">Die Umwandlung ist eine Einbahnstraße: aus Punkten wird YEET, nie umgekehrt.</td></tr>
+</table>
+<p>Punkte haben bis zu acht Nachkommastellen. Belohnungen werden immer in ganzen Punkten gutgeschrieben; Bruchteile entstehen nur durch Trinkgelder und Pay-per-View.</p>
+
+<h2>3. Punkte verdienen</h2>
+<table>
+  <tr><th>Aktion</th><th class="n">Punkte</th><th>Bedingungen</th></tr>
+  <tr><td><b>Beitrag veröffentlichen</b></td><td class="n">10</td><td>Der Text hat mindestens 120 Zeichen (ohne Leerraum am Anfang und Ende). Kürzere Beiträge sind willkommen, bringen aber keine Punkte.</td></tr>
+  <tr><td><b>Beitrag teilen</b> (Reshare)</td><td class="n">2</td><td>Nur fremde Beiträge, nur solange der Beitrag sichtbar ist, und nur einmal je Beitrag.</td></tr>
+  <tr><td><b>Kommentieren</b></td><td class="n">1</td><td>Nur der erste eigene Kommentar unter einem fremden Beitrag. Weitere Kommentare im selben Beitrag und Kommentare unter eigenen Beiträgen bringen keine Punkte.</td></tr>
+  <tr><td><b>Willkommensbonus</b></td><td class="n">1.000</td><td>Einmalig je Person, sobald <i>beides</i> erledigt ist: E-Mail-Adresse bestätigt und Altersverifikation abgeschlossen. Nur für die ersten 100.000 berechtigten Konten.</td></tr>
+</table>
+
+<h3>Was keine Punkte bringt</h3>
+<ul>
+  <li><b>Likes</b> – weder das Vergeben noch das Erhalten.</li>
+  <li><b>Tägliches Einloggen</b> oder bloße Anwesenheit.</li>
+  <li><b>Folgen, Einladen, Empfehlen</b> – es gibt kein Empfehlungsprogramm.</li>
+  <li><b>Erhaltene Trinkgelder</b> sind keine Belohnung der Plattform, sondern Punkte eines anderen Nutzers; sie zählen nicht zum Tageslimit.</li>
+</ul>
+
+<div class="box">
+  <p class="t">Gut zu wissen</p>
+  <ul>
+    <li>Der Willkommensbonus zählt nicht zum Tageslimit und wird durch die Pool-Regel (Abschnitt 4) nicht gekürzt.</li>
+    <li>Wie viele Bonus-Plätze noch frei sind, zeigt <code>registration_bonus_remaining</code> unter <code>justyeet.it/api/v1/tokens/params</code>.</li>
+    <li>Wer gegen die Nutzungsbedingungen verstößt (Spam, Mehrfachkonten, automatisiertes Sammeln), kann gesperrt werden; Umwandlungen solcher Konten können abgelehnt werden.</li>
+  </ul>
+</div>
+
+<h2>4. Tageslimit und Schutz des Pools</h2>
+<h3>Tageslimit</h3>
+<p>Je Konto werden pro Kalendertag (UTC) höchstens <b>1.000 Punkte</b> an Belohnungen gutgeschrieben. Ist das Limit erreicht, bleiben weitere Aktionen möglich, bringen an diesem Tag aber keine Punkte mehr. Würde eine Belohnung das Limit überschreiten, wird nur der Rest bis zum Limit gutgeschrieben. Es wird nichts auf den nächsten Tag übertragen.</p>
+
+<h3>Der Umwandlungs-Pool</h3>
+<p>Punkte können nur so lange in YEET umgewandelt werden, wie im dafür reservierten Kontingent des Tokens noch YEET vorhanden sind. Dieses Kontingent beträgt <b>15,75 Milliarden YEET</b> (75 % der Gesamtmenge) und kann technisch nicht überschritten werden. Der aktuelle Stand ist öffentlich: <code>justyeet.it/api/v1/tokens/pool</code>.</p>
+
+<h3>Drosselung bei knappem Pool</h3>
+<p>Sinkt der verbleibende Pool unter <b>10 %</b>, werden Belohnungen halbiert und auf ganze Punkte abgerundet:</p>
+<table>
+  <tr><th>Aktion</th><th class="n">normal</th><th class="n">gedrosselt</th></tr>
+  <tr><td>Beitrag ab 120 Zeichen</td><td class="n">10</td><td class="n">5</td></tr>
+  <tr><td>Teilen</td><td class="n">2</td><td class="n">1</td></tr>
+  <tr><td>Kommentar</td><td class="n">1</td><td class="n">0</td></tr>
+  <tr><td>Willkommensbonus</td><td class="n">1.000</td><td class="n">1.000 (ausgenommen)</td></tr>
+</table>
+<p>So entstehen nicht dauerhaft mehr Punkte, als jemals in YEET umgewandelt werden könnten. Ob die Drosselung gerade aktiv ist, zeigt das Feld <code>tapered</code> unter den beiden genannten Adressen.</p>
+
+<h2>5. Punkte verwenden</h2>
+
+<h3>Trinkgeld</h3>
+<p>Du kannst anderen Nutzern Punkte als Trinkgeld geben – unter einem Beitrag, in einer Direktnachricht oder während eines Live-Streams.</p>
+<ul>
+  <li>Mindestbetrag: <b>0,01 Punkte</b>.</li>
+  <li>Der Empfänger erhält <b>90 %</b>, <b>10 %</b> gehen als Plattformgebühr an Yeet.</li>
+  <li>Kein Trinkgeld an sich selbst und nicht zwischen Konten, die sich blockiert haben.</li>
+  <li>Ein Trinkgeld ist endgültig und kann nicht zurückgeholt werden.</li>
+</ul>
+
+<h3>Pay-per-View</h3>
+<p>Wer einen Beitrag veröffentlicht, kann dafür einen Preis in Punkten festlegen. Andere schalten den Beitrag gegen diesen Preis frei.</p>
+<ul>
+  <li>Aufteilung wie beim Trinkgeld: <b>90 %</b> an die Autorin oder den Autor, <b>10 %</b> Plattformgebühr.</li>
+  <li>Einmal freigeschaltet bleibt freigeschaltet; es wird nie doppelt abgebucht.</li>
+  <li>Vor dem Kauf bestätigst du, dass du den digitalen Inhalt sofort erhalten möchtest und damit dein Widerrufsrecht erlischt (Nutzungsbedingungen § 6).</li>
+</ul>
+
+<h3>Paper Wallets</h3>
+<p>Eine Paper Wallet ist ein Gutschein über Punkte, den du erzeugst, ausdruckst oder als Code weitergibst. Wer den Code einlöst, erhält die Punkte.</p>
+<ul>
+  <li>Ausstellen kann, wer seine E-Mail-Adresse bestätigt hat. Höchstbetrag je Paper Wallet: 1.000.000 Punkte.</li>
+  <li>Die Punkte werden beim Ausstellen von deinem Guthaben abgezogen und reserviert. <b>Keine Gebühr</b> – der volle Betrag kommt an.</li>
+  <li>Eine noch nicht eingelöste Paper Wallet kannst du für ungültig erklären; die Punkte kommen dann zurück. Die eigene Paper Wallet selbst einzulösen ist nicht möglich.</li>
+  <li>Wie Bargeld: Wer den Code hat, kann einlösen. Bewahre ihn entsprechend sorgfältig auf.</li>
+</ul>
+
+<h3>Live-Promotion</h3>
+<p>Soweit die Live-Funktion freigeschaltet ist, können Gastgeber ihren Stream bewerben:</p>
+<table>
+  <tr><th>Paket</th><th class="n">Preis</th><th>Leistung</th></tr>
+  <tr><td>Basic</td><td class="n">10 Punkte</td><td>Automatischer Ankündigungs-Beitrag zum Start des Streams.</td></tr>
+  <tr><td>Boost</td><td class="n">50 Punkte</td><td>Wie Basic, zusätzlich 60 Minuten oben im Feed angeheftet.</td></tr>
+</table>
+<p>Der Preis geht vollständig an die Plattform (Werbung, kein Trinkgeld). Wird der Stream abgesagt oder startet nicht, werden die Punkte erstattet.</p>
+
+<h2>6. Die Plattformgebühr</h2>
+<p>Auf Trinkgelder und Pay-per-View-Käufe erhebt Yeet <b>10 %</b>. Die Gebühr wird vom gesendeten Betrag einbehalten; der Sender zahlt nichts zusätzlich. Auf Belohnungen, Paper Wallets und die Umwandlung in YEET fällt <b>keine</b> Gebühr an.</p>
+<p>Die eingenommenen Gebühren werden in Punkten auf einem Plattformkonto verbucht und für jeden Vorgang einzeln protokolliert. Sie können den Umwandlungs-Pool rechnerisch wieder auffüllen – allerdings nie über das feste Token-Kontingent von 15,75 Milliarden YEET hinaus.</p>
+
+<h2>7. Punkte in YEET umwandeln</h2>
+
+<h3>Voraussetzungen</h3>
+<ol>
+  <li><b>Eigene Wallet verknüpft.</b> Du verbindest eine externe Wallet mit deinem Konto und bestätigst sie durch eine Signatur. Yeet verwahrt keine Token für dich; ausgezahlt wird immer direkt in deine Wallet.</li>
+  <li><b>Altersverifikation abgeschlossen.</b></li>
+  <li><b>Mindestens 100 Punkte</b>, in ganzen Punkten.</li>
+  <li><b>Sanktionsprüfung.</b> Die Zieladresse darf auf keiner Sanktionsliste stehen.</li>
+  <li><b>Pool vorhanden.</b> Der Umwandlungs-Pool muss den Betrag decken.</li>
+</ol>
+
+<h3>Ablauf</h3>
+<div class="flow">
+  <div><b>1 · Antrag</b>Punkte werden sofort abgezogen.</div>
+  <div><b>2 · Prüfung</b>Yeet prüft den Antrag von Hand.</div>
+  <div><b>3 · Freigabe</b>Der Antrag wartet auf den nächsten Sammellauf.</div>
+  <div class="hl"><b>4 · Auszahlung</b>YEET werden in deine Wallet geprägt.</div>
+</div>
+<ul>
+  <li><b>Verhältnis:</b> derzeit 1 Punkt = 1 YEET. Maßgeblich ist das Verhältnis im Moment des Antrags; es wird mit dem Antrag gespeichert.</li>
+  <li><b>Änderungen des Verhältnisses</b> gelten nur für künftige Anträge und werden mindestens <b>14 Tage</b> vorher angekündigt. Aktuelles und angekündigtes Verhältnis: <code>justyeet.it/api/v1/points/rate</code>.</li>
+  <li><b>Sammelläufe</b> finden stündlich statt. Der Token-Vertrag begrenzt zusätzlich, wie viele YEET pro Tag insgesamt geprägt werden dürfen; ist die Grenze erreicht, warten die übrigen Anträge. Eine Bearbeitungszeit wird nicht zugesichert.</li>
+  <li><b>Kosten:</b> Yeet berechnet keine Gebühr und trägt die Netzwerkkosten der Auszahlung.</li>
+  <li><b>Ablehnung:</b> Wird ein Antrag abgelehnt oder kann er nicht ausgeführt werden, kommen die Punkte auf dein Guthaben zurück.</li>
+  <li><b>Endgültig:</b> Eine ausgeführte Umwandlung lässt sich nicht rückgängig machen. Es gibt keinen Anspruch auf Auszahlung in Geld.</li>
+</ul>
+
+<h2>8. Der YEET-Token in Zahlen</h2>
+<table>
+  <tr><th>Eigenschaft</th><th>Wert</th></tr>
+  <tr><td>Standard / Netzwerk</td><td>BEP-20 auf der BNB Smart Chain – derzeit Testnetz (Chain-ID 97)</td></tr>
+  <tr><td>Höchstmenge</td><td>21.000.000.000 YEET, fest; es können nie mehr entstehen</td></tr>
+  <tr><td>Nachkommastellen</td><td>18</td></tr>
+  <tr><td>Verbrennen</td><td>Inhaber können eigene Token vernichten; die Höchstmenge für Auszahlungen erhöht sich dadurch nicht wieder</td></tr>
+</table>
+<table>
+  <tr><th>Anteil</th><th class="n">%</th><th class="n">YEET</th><th>Entstehung</th></tr>
+  <tr><td><b>Belohnungen / Gemeinschaft</b></td><td class="n">75</td><td class="n">15.750.000.000</td><td>Entstehen erst bei der Auszahlung, Stück für Stück, ausschließlich durch Umwandlungen und den NOTE-Swap</td></tr>
+  <tr><td>Entwicklung</td><td class="n">10</td><td class="n">2.100.000.000</td><td rowspan="3">Entstehen beim Start des Token-Vertrags</td></tr>
+  <tr><td>Team</td><td class="n">10</td><td class="n">2.100.000.000</td></tr>
+  <tr><td>Rücklage</td><td class="n">5</td><td class="n">1.050.000.000</td></tr>
+</table>
+<p>Die 75 % für die Gemeinschaft können nur über die Auszahlungsfunktion des Vertrags entstehen. Diese Funktion ist auf höchstens 200 Empfänger je Vorgang und eine einstellbare Tagesmenge begrenzt und lässt sich im Notfall anhalten. Regelungen zu Sperrfristen für die übrigen 25 % werden vor dem Start im Hauptnetz veröffentlicht.</p>
+
+<h2>9. NOTE → YEET (Swap)</h2>
+<p>Unabhängig vom Belohnungssystem ist ein Tausch der früheren NOTE-Coins in YEET vorbereitet. <b>Der Swap ist derzeit gesperrt</b>; der Start wird gesondert angekündigt.</p>
+<table>
+  <tr><th>Regel</th><th>Wert</th></tr>
+  <tr><td>Verhältnis</td><td>100 NOTE = 1 YEET</td></tr>
+  <tr><td>Obergrenze insgesamt</td><td>500.000.000 YEET</td></tr>
+  <tr><td>Bestätigungen</td><td>120 Blöcke der NOTE-Chain, bevor eine Einzahlung zählt</td></tr>
+  <tr><td>Voraussetzungen</td><td>Altersverifikation abgeschlossen und eigene Wallet verknüpft</td></tr>
+  <tr><td>Auszahlung</td><td>Über dieselbe Prüfung und dieselben Sammelläufe wie die Umwandlung von Punkten</td></tr>
+</table>
+<p>NOTE-Einzahlungen sind endgültig und werden nicht zurückgesendet. Aktueller Stand: <code>justyeet.it/api/v1/swap/status</code>.</p>
+
+<h2>10. Transparenz und Schutz vor Missbrauch</h2>
+<div class="two">
+  <div class="box">
+    <p class="t">Öffentlich einsehbar</p>
+    <ul>
+      <li><code>/api/v1/tokens/params</code> – alle Belohnungsregeln mit aktuellen Werten</li>
+      <li><code>/api/v1/tokens/pool</code> – Stand des Umwandlungs-Pools</li>
+      <li><code>/api/v1/points/rate</code> – Umwandlungsverhältnis, auch angekündigte Änderungen</li>
+      <li><code>/api/v1/swap/status</code> – Stand des NOTE-Swaps</li>
+    </ul>
+  </div>
+  <div class="box">
+    <p class="t">Schutzmechanismen</p>
+    <ul>
+      <li>Jede Punktebewegung wird in einem unveränderlichen, verketteten Journal festgehalten.</li>
+      <li>Umwandlungen werden von Hand geprüft, bevor etwas ausgezahlt wird.</li>
+      <li>Sanktionslisten-Abgleich bei Antrag und erneut bei Auszahlung.</li>
+      <li>Tageslimit, Mindestlängen und „einmal je Beitrag“ gegen das Sammeln ohne echten Beitrag.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>11. Rechenbeispiele</h2>
+<h3>Ein aktiver Tag</h3>
+<table>
+  <tr><th>Aktivität</th><th class="n">Rechnung</th><th class="n">Punkte</th></tr>
+  <tr><td>3 Beiträge mit je über 120 Zeichen</td><td class="n">3 × 10</td><td class="n">30</td></tr>
+  <tr><td>1 kurzer Beitrag (80 Zeichen)</td><td class="n">–</td><td class="n">0</td></tr>
+  <tr><td>5 fremde Beiträge geteilt</td><td class="n">5 × 2</td><td class="n">10</td></tr>
+  <tr><td>8 Kommentare unter 6 verschiedenen fremden Beiträgen</td><td class="n">6 × 1</td><td class="n">6</td></tr>
+  <tr><td><b>Summe</b></td><td class="n"></td><td class="n"><b>46</b></td></tr>
+</table>
+
+<h3>Ein Trinkgeld über 50 Punkte</h3>
+<table>
+  <tr><th>Wer</th><th class="n">Punkte</th></tr>
+  <tr><td>Sender</td><td class="n">− 50</td></tr>
+  <tr><td>Empfänger (90 %)</td><td class="n">+ 45</td></tr>
+  <tr><td>Plattform (10 %)</td><td class="n">+ 5</td></tr>
+</table>
+
+<h3>Umwandlung von 500 Punkten</h3>
+<p>Beim aktuellen Verhältnis 1 : 1 werden 500 Punkte abgezogen und nach Prüfung und Sammellauf 500 YEET in die verknüpfte Wallet geprägt. Es fällt keine Gebühr an. Würde das Verhältnis künftig auf 0,5 geändert, ergäben 500 Punkte bei Anträgen ab dem Stichtag 250 YEET – früher gestellte Anträge behalten ihr Verhältnis.</p>
+
+<h2>12. Häufige Fragen</h2>
+<h3>Kann ich Punkte kaufen oder verkaufen?</h3>
+<p>Nein. Punkte entstehen nur durch Aktivität und lassen sich nur über die Funktionen der Plattform weitergeben (Trinkgeld, Pay-per-View, Paper Wallet).</p>
+<h3>Verfallen Punkte?</h3>
+<p>Derzeit gibt es keine Verfallsfrist. Änderungen der Regeln werden angemessen im Voraus angekündigt.</p>
+<h3>Was passiert mit Punkten, wenn ich einen Beitrag lösche?</h3>
+<p>Bereits gutgeschriebene Belohnungen werden beim Löschen nicht zurückgebucht. Wer Beiträge nur zum Punktesammeln veröffentlicht und wieder löscht, verstößt gegen die Nutzungsbedingungen und riskiert eine Sperre.</p>
+<h3>Warum habe ich für meinen Beitrag keine Punkte bekommen?</h3>
+<p>Die häufigsten Gründe: Der Text hatte weniger als 120 Zeichen, das Tageslimit war erreicht, oder es war nicht dein erster Kommentar unter diesem Beitrag.</p>
+<h3>Warum brauche ich für die Umwandlung eine Altersverifikation, fürs Punktesammeln aber nicht?</h3>
+<p>Punkte bleiben auf der Plattform. Mit der Umwandlung entsteht ein frei übertragbarer Token – dafür müssen wir sicherstellen, dass hinter jeder Auszahlung eine berechtigte, volljährige Person steht.</p>
+<h3>Wie lange dauert eine Umwandlung?</h3>
+<p>Das hängt von der Prüfung und der Auslastung ab. Sammelläufe finden stündlich statt; eine feste Frist sichern wir nicht zu.</p>
+<h3>Bekomme ich den Willkommensbonus auch später noch?</h3>
+<p>Solange unter den ersten 100.000 Plätzen noch welche frei sind, ja – sobald E-Mail-Bestätigung und Altersverifikation abgeschlossen sind.</p>
+
+<h2>13. Wichtige Hinweise</h2>
+<div class="box warn">
+  <ul>
+    <li><b>Kein Anlageprodukt.</b> Dieses Dokument ist keine Anlageberatung und kein Angebot zum Erwerb von Token. Weder Punkte noch YEET versprechen einen Ertrag oder einen bestimmten Wert.</li>
+    <li><b>Regeln können sich ändern.</b> Yeet kann Belohnungen, Limits und Verhältnisse anpassen oder das Punkteprogramm einstellen. Wesentliche Änderungen werden vorab angekündigt; das Umwandlungsverhältnis mit mindestens 14 Tagen Vorlauf.</li>
+    <li><b>Eigene Verantwortung für die Wallet.</b> Ausgezahlte Token liegen allein in deiner Wallet. Geht der Zugang verloren, kann Yeet sie nicht wiederherstellen.</li>
+    <li><b>Steuern.</b> Ob und wie Belohnungen oder Token bei dir steuerlich zu behandeln sind, hängt von deiner persönlichen Situation ab. Bitte kläre das selbst.</li>
+    <li><b>Vorrang der Nutzungsbedingungen.</b> Bei Abweichungen zwischen diesem Dokument und den Nutzungsbedingungen gelten die Nutzungsbedingungen.</li>
+  </ul>
+</div>
+
+<footer class="end">
+  <p>Das YEET-Belohnungssystem · Version 1.0 · 19. November 2026 · BlockSocial UG (haftungsbeschränkt), Beilngries, Deutschland · info@blocksocial.eu</p>
+  <p>Änderungshistorie: 1.0 – erste öffentliche Fassung.</p>
+</footer>
+
+</body>
+</html>

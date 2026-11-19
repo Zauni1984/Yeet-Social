@@ -14,6 +14,8 @@ use crate::api::middleware::AuthUser;
 /// Smallest tip accepted (audit M-L3): below this the 10 % platform share
 /// rounds to nothing at 8 decimals and the ledger fills with noise.
 pub const MIN_TIP_AMOUNT: f64 = 0.01;
+/// Platform share of every tip and pay-per-view purchase, in percent.
+pub const PLATFORM_FEE_PCT: f64 = 10.0;
 
 #[derive(Debug, Deserialize)]
 pub struct SendTipRequest {
@@ -85,7 +87,7 @@ pub(crate) async fn send_tip_tx(
     }
 
     // Split in 8-decimal units so creator + platform == amount exactly.
-    let creator_amount = (amount_val * 0.9 * 1e8).round() / 1e8;
+    let creator_amount = (amount_val * (1.0 - PLATFORM_FEE_PCT / 100.0) * 1e8).round() / 1e8;
     let platform_cut   = ((amount_val - creator_amount) * 1e8).round() / 1e8;
 
     let tip_id: Uuid = sqlx::query_scalar(

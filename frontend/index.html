@@ -441,6 +441,7 @@ html.ld-on body{overflow:hidden}
     <a href="/legal/terms" data-legal="terms" data-i18n="footer.terms">Terms of Service</a>
     <a href="/legal/cookies" data-legal="cookies" data-i18n="footer.cookies">Cookies</a>
     <a href="/legal/disclaimer" data-legal="disclaimer" data-i18n="footer.disclaimer">Disclaimer</a>
+    <a href="/yeet-rewards-en.pdf" data-rewards-doc target="_blank" rel="noopener noreferrer" data-i18n="footer.rewards">Rewards guide</a>
     <a href="/api.html">API</a>
     <span>&copy; 2026 BlockSocial UG (haftungsbeschr&auml;nkt)</span>
   </div>
@@ -1140,7 +1141,7 @@ html.ld-on body{overflow:hidden}
       'mail.sent':'Verification email sent. Check your inbox.','mail.loginFirst':'Please log in first','mail.resent':'Verification email re-sent',
       'mail.resendFailed':'Failed to resend','mail.failed':'Verification failed','mail.done':'Email verified! Welcome to YEET.','mail.failedPrefix':'Verify failed: {error}',
       // --- footer / explorer / dm ---
-      'footer.imprint':'Imprint','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.cookies':'Cookies','footer.disclaimer':'Disclaimer',
+      'footer.rewards':'Rewards guide','footer.imprint':'Imprint','footer.privacy':'Privacy Policy','footer.terms':'Terms of Service','footer.cookies':'Cookies','footer.disclaimer':'Disclaimer',
       'explorer.richlist':'Richlist','explorer.transfers':'Recent transfers','explorer.note':'Public read-only data from the YEET token indexer. Values in YEET (18 decimals). API:',
       'dm.tooLong':'Too long','dm.groupNameRequired':'Group name required','dm.decryptFailed':'Could not decrypt message','dm.safetyNumber':'Safety number',
       // generic
@@ -1192,7 +1193,7 @@ html.ld-on body{overflow:hidden}
       'toast.linkCopied':'Link copied','toast.alreadyFollowing':'Already following',
       'toast.followed':'Following!','toast.unfollowed':'Unfollowed','toast.cantFollowSelf':"You can't follow yourself",
       'toast.userNotFound':'User not found','toast.reported':'Reported','toast.reportFailed':'Report failed',
-      'toast.unlocked':'Unlocked! {price} YEET sent (incl. 10% network fee)',
+      'toast.unlocked':'Unlocked! {price} YEET sent (incl. 10% platform fee)',
       'toast.unlockFailed':'Unlock failed','toast.unlocking':'Unlocking...',
       'toast.repostSuccess':'Reposted!','toast.maxRepost':'Max 1 repost allowed',
       'toast.visibilityPublic':'Visibility: Public','toast.visibilityFollowers':'Visibility: Followers only',
@@ -1347,7 +1348,7 @@ html.ld-on body{overflow:hidden}
       'tips.unknown':'Unknown',
       'settings.convertPoints':'Convert points to YEET',
       'settings.verifyRetired':'Recovery phrases are managed by your own wallet app.',
-      'convert.needWallet':'Connect a payout wallet first (Settings → Connect payout wallet).','convert.sanctioned':'This wallet address is on a sanctions list and cannot be used for payouts.',
+      'convert.needWallet':'Connect a payout wallet first (Settings → Connect payout wallet).','convert.needKyc':'Converting points to YEET requires a completed age verification (Settings → Age verification).','convert.sanctioned':'This wallet address is on a sanctions list and cannot be used for payouts.',
       'convert.prompt':'How many points do you want to convert to YEET? (1 point = {rate} YEET)',
       'convert.oneway':'One-way: points become on-chain YEET and cannot be converted back.','convert.rateChange':'From {date}: 1 point = {rate} YEET.',
       'convert.min':'Minimum 100 points.',
@@ -1589,7 +1590,7 @@ html.ld-on body{overflow:hidden}
       'mail.sent':'Bestätigungs-E-Mail gesendet. Bitte Posteingang prüfen.','mail.loginFirst':'Bitte zuerst anmelden','mail.resent':'Bestätigungs-E-Mail erneut gesendet',
       'mail.resendFailed':'Erneutes Senden fehlgeschlagen','mail.failed':'Bestätigung fehlgeschlagen','mail.done':'E-Mail bestätigt! Willkommen bei YEET.','mail.failedPrefix':'Bestätigung fehlgeschlagen: {error}',
       // --- footer / explorer / dm ---
-      'footer.imprint':'Impressum','footer.privacy':'Datenschutz','footer.terms':'Nutzungsbedingungen','footer.cookies':'Cookies','footer.disclaimer':'Haftungsausschluss',
+      'footer.rewards':'Belohnungssystem','footer.imprint':'Impressum','footer.privacy':'Datenschutz','footer.terms':'Nutzungsbedingungen','footer.cookies':'Cookies','footer.disclaimer':'Haftungsausschluss',
       'explorer.richlist':'Richlist','explorer.transfers':'Letzte Transfers','explorer.note':'Öffentliche, schreibgeschützte Daten aus dem YEET-Token-Indexer. Werte in YEET (18 Dezimalstellen). API:',
       'dm.tooLong':'Zu lang','dm.groupNameRequired':'Gruppenname erforderlich','dm.decryptFailed':'Nachricht konnte nicht entschlüsselt werden','dm.safetyNumber':'Sicherheitsnummer',
       'common.cancel':'Abbrechen','common.confirm':'Bestätigen','common.save':'Speichern',
@@ -1635,7 +1636,7 @@ html.ld-on body{overflow:hidden}
       'toast.linkCopied':'Link kopiert','toast.alreadyFollowing':'Bereits gefolgt',
       'toast.followed':'Gefolgt!','toast.unfollowed':'Entfolgt','toast.cantFollowSelf':'Du kannst dir nicht selbst folgen',
       'toast.userNotFound':'Benutzer nicht gefunden','toast.reported':'Gemeldet','toast.reportFailed':'Fehler beim Melden',
-      'toast.unlocked':'Entsperrt! {price} YEET gesendet (inkl. 10% Netzwerkgebühr)',
+      'toast.unlocked':'Entsperrt! {price} YEET gesendet (inkl. 10% Plattformgebühr)',
       'toast.unlockFailed':'Entsperren fehlgeschlagen','toast.unlocking':'Wird entsperrt...',
       'toast.repostSuccess':'Repost erfolgreich!','toast.maxRepost':'Max. 1 Repost erlaubt',
       'toast.visibilityPublic':'Sichtbarkeit: Öffentlich','toast.visibilityFollowers':'Sichtbarkeit: Nur Follower',
@@ -1787,7 +1788,7 @@ html.ld-on body{overflow:hidden}
       'tips.unknown':'Unbekannt',
       'settings.convertPoints':'Punkte in YEET umwandeln',
       'settings.verifyRetired':'Wiederherstellungsphrasen verwaltet deine eigene Wallet-App.',
-      'convert.needWallet':'Verbinde zuerst eine Auszahl-Wallet (Einstellungen → Auszahl-Wallet verbinden).','convert.sanctioned':'Diese Wallet-Adresse steht auf einer Sanktionsliste und kann nicht für Auszahlungen verwendet werden.',
+      'convert.needWallet':'Verbinde zuerst eine Auszahl-Wallet (Einstellungen → Auszahl-Wallet verbinden).','convert.needKyc':'Für die Umwandlung von Punkten in YEET ist eine abgeschlossene Altersverifikation nötig (Einstellungen → Altersverifikation).','convert.sanctioned':'Diese Wallet-Adresse steht auf einer Sanktionsliste und kann nicht für Auszahlungen verwendet werden.',
       'convert.prompt':'Wie viele Punkte möchtest du in YEET umwandeln? (1 Punkt = {rate} YEET)',
       'convert.oneway':'Einbahnstraße: Punkte werden zu On-Chain-YEET und können nicht zurückgewandelt werden.','convert.rateChange':'Ab {date}: 1 Punkt = {rate} YEET.',
       'convert.min':'Mindestens 100 Punkte.',
@@ -31251,6 +31252,7 @@ async function openConvertPoints(){
     if(!r.ok){
       const code=(d.error&&d.error.message)||'';
       if(code.indexOf('NO_WALLET_LINKED')>=0){ showToast(window.t('convert.needWallet'),'error'); return; }
+      if(code.indexOf('KYC_REQUIRED')>=0){ showToast(window.t('convert.needKyc'),'error'); return; }
       if(code.indexOf('SANCTIONED_ADDRESS')>=0){ showToast(window.t('convert.sanctioned'),'error'); return; }
       showToast((code||window.t('common.error')),'error'); return;
     }
@@ -33464,6 +33466,14 @@ var PPV_CONSENT_TEXT = {
   de: 'Ich verlange ausdrücklich, dass YEET Social sofort – vor Ablauf der 14-tägigen Widerrufsfrist – mit der Bereitstellung dieses digitalen Inhalts beginnt, und nehme zur Kenntnis, dass ich damit mein Widerrufsrecht verliere, sobald der Inhalt bereitgestellt wurde. Preis: {price} YEET, abgebucht von meinem Punkteguthaben (davon 90 % an den Creator, 10 % Plattformgebühr).',
   en: 'I expressly request that YEET Social begins supplying this digital content immediately, before the 14-day withdrawal period has expired, and I acknowledge that I thereby lose my right of withdrawal once the content has been made available. Price: {price} YEET, debited from my points balance (90 % to the creator, 10 % platform fee).'
 };
+// The rewards guide exists in German and English; every other UI language
+// gets the English one.
+document.addEventListener('click',function(ev){
+  var a=ev.target&&ev.target.closest?ev.target.closest('a[data-rewards-doc]'):null;
+  if(!a) return;
+  var de=false; try{ de=(window.getLang&&window.getLang()==='de'); }catch(e){}
+  a.setAttribute('href', de?'/yeet-rewards-de.pdf':'/yeet-rewards-en.pdf');
+},true);
 function _ppvLegalLang(){ try{ var o=localStorage.getItem('yeet_legal_lang'); if(o==='de'||o==='en') return o; }catch(e){} return (window.getLang&&window.getLang()==='de')?'de':'en'; }
 function unlockPPV(postId, authorId, price, imgEl, overlayEl) {
   var jwt = localStorage.getItem('yeet_jwt');
@@ -35449,6 +35459,7 @@ async function _doTip(postId,toAddr){var jwt=localStorage.getItem('yeet_jwt');if
       <a href="/legal/cookies" data-legal="cookies" data-i18n="footer.cookies">Cookies</a>
       <a href="/legal/disclaimer" data-legal="disclaimer" data-i18n="footer.disclaimer">Disclaimer</a>
       <a href="/api.html"><span class="yi yi-link"></span> API</a>
+      <a href="/yeet-rewards-en.pdf" data-rewards-doc target="_blank" rel="noopener noreferrer"><span class="yi yi-doc"></span> <span data-i18n="footer.rewards">Rewards guide</span></a>
       <a href="/api/v1/whitepaper.pdf" target="_blank" rel="noopener noreferrer"><span class="yi yi-doc"></span> Whitepaper</a>
       <a href="#" onclick="openExplorer();return false;"><span class="yi yi-link"></span> YEET Explorer</a>
     </div>
@@ -35786,7 +35797,7 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
       <ul>
         <li><strong>Points:</strong> activity on the Service (for example publishing posts, receiving tips or completing registration) can earn you points, which are credited to your account. Points are platform points &mdash; not a crypto-asset, not electronic money and not a deposit. They cannot be bought with money or crypto-assets, have no cash value, cannot be paid out in money and are not transferable (section&nbsp;3). You can use them inside the Service for tips, pay-per-view unlocks, paper wallets and promotions. We keep a tamper-evident record of every points movement. We may change the rules for earning points, cap them or discontinue the points programme for the future with reasonable notice; points already earned remain usable under these Terms.</li>
         <li><strong>YEET token:</strong> YEET is a utility token on the BNB Smart Chain. We do not hold, manage or control YEET on your behalf at any time: any YEET you receive from us is minted directly into a wallet whose keys only you control. We do not sell YEET, we operate no exchange, and we do not accept YEET or any other crypto-asset in return for points or balances. <strong>The on-chain YEET token is not available yet</strong> (test phase on the BNB Smart Chain testnet); converting points into on-chain YEET will be switched on in a later version and announced in advance. Until then, points stay points.</li>
-        <li><strong>Converting points to YEET:</strong> you may ask us to convert points into YEET, paid directly to an external wallet you have linked to your account by signing a verification message. The conversion is one-way and in whole points, with a minimum of 100&nbsp;points per request, currently at a rate of 1&nbsp;point&nbsp;=&nbsp;1&nbsp;YEET; we may change the rate for future conversions only and will announce such a change in advance. Requests are reviewed before release, processed in batches and subject to sanctions screening of the destination address and to the availability of the token pool reserved for conversions; we do not guarantee a processing time. If a request is refused or cannot be completed, the points are returned to your balance. There is no entitlement to a payment in money instead of YEET.</li>
+        <li><strong>Converting points to YEET:</strong> you may ask us to convert points into YEET, paid directly to an external wallet you have linked to your account by signing a verification message. A conversion requires that you have completed the age verification. The conversion is one-way and in whole points, with a minimum of 100&nbsp;points per request, currently at a rate of 1&nbsp;point&nbsp;=&nbsp;1&nbsp;YEET; we may change the rate for future conversions only and will announce such a change in advance. Requests are reviewed before release, processed in batches and subject to sanctions screening of the destination address and to the availability of the token pool reserved for conversions; we do not guarantee a processing time. If a request is refused or cannot be completed, the points are returned to your balance. There is no entitlement to a payment in money instead of YEET.</li>
         <li><strong>Platform fee:</strong> a platform fee of up to 10&nbsp;% of each tip (and of each pay-per-view purchase, see below) is collected to fund the operation of the Service. The exact rate is displayed before you confirm any transaction.</li>
         <li><strong>No financial advice:</strong> nothing on the Service constitutes investment advice, a recommendation to buy or sell any token, or an offer of securities.</li>
         <li><strong>No guarantee of value:</strong> tokens may lose all value. Past performance is not indicative of future returns.</li>
@@ -36140,7 +36151,7 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
       <ul>
         <li><strong>Punkte:</strong> Für Aktivitäten im Dienst (z.&nbsp;B. das Veröffentlichen von Beiträgen, den Empfang von Trinkgeldern oder den Abschluss der Registrierung) können Sie Punkte erhalten, die Ihrem Konto gutgeschrieben werden. Punkte sind Plattform-Punkte &ndash; kein Kryptowert, kein E-Geld und keine Einlage. Sie können nicht gegen Geld oder Kryptowerte erworben werden, haben keinen Geldwert, werden nicht in Geld ausgezahlt und sind nicht übertragbar (Abschnitt&nbsp;3). Sie können sie innerhalb des Dienstes für Trinkgelder, Pay-per-View-Freischaltungen, Paper Wallets und Promotions einsetzen. Jede Punktebewegung wird von uns manipulationssicher protokolliert. Wir können die Regeln für den Erwerb von Punkten mit angemessener Ankündigung für die Zukunft ändern, begrenzen oder das Punkteprogramm einstellen; bereits erworbene Punkte bleiben nach diesen Bedingungen nutzbar.</li>
         <li><strong>YEET-Token:</strong> YEET ist ein Utility-Token auf der BNB Smart Chain. Wir halten, verwalten oder kontrollieren zu keinem Zeitpunkt YEET für Sie: YEET, die Sie von uns erhalten, werden unmittelbar in eine Wallet gemintet, deren Schlüssel allein Sie kontrollieren. Wir verkaufen keine YEET, betreiben keinen Tausch und nehmen weder YEET noch andere Kryptowerte im Gegenzug für Punkte oder Guthaben an. <strong>Der On-Chain-YEET-Token ist derzeit noch nicht verfügbar</strong> (Testphase auf dem BNB-Smart-Chain-Testnet); die Umwandlung von Punkten in On-Chain-YEET wird in einer späteren Version freigeschaltet und vorab angekündigt. Bis dahin bleiben Punkte Punkte.</li>
-        <li><strong>Umwandlung von Punkten in YEET:</strong> Sie können verlangen, dass wir Punkte in YEET umwandeln; die Auszahlung erfolgt unmittelbar an eine externe Wallet, die Sie durch Signatur einer Verifizierungsnachricht mit Ihrem Konto verknüpft haben. Die Umwandlung ist einseitig und erfolgt in ganzen Punkten, mindestens 100&nbsp;Punkte je Antrag, derzeit im Verhältnis 1&nbsp;Punkt&nbsp;=&nbsp;1&nbsp;YEET; eine Änderung des Verhältnisses gilt nur für künftige Umwandlungen und wird vorab angekündigt. Anträge werden vor der Freigabe geprüft, in Sammelvorgängen ausgeführt und stehen unter dem Vorbehalt eines Sanktionslisten-Abgleichs der Zieladresse sowie der Verfügbarkeit des für Umwandlungen reservierten Token-Kontingents; eine Bearbeitungszeit wird nicht zugesichert. Wird ein Antrag abgelehnt oder kann er nicht ausgeführt werden, werden die Punkte Ihrem Guthaben wieder gutgeschrieben. Ein Anspruch auf Zahlung in Geld anstelle von YEET besteht nicht.</li>
+        <li><strong>Umwandlung von Punkten in YEET:</strong> Sie können verlangen, dass wir Punkte in YEET umwandeln; die Auszahlung erfolgt unmittelbar an eine externe Wallet, die Sie durch Signatur einer Verifizierungsnachricht mit Ihrem Konto verknüpft haben. Voraussetzung ist eine abgeschlossene Altersverifikation. Die Umwandlung ist einseitig und erfolgt in ganzen Punkten, mindestens 100&nbsp;Punkte je Antrag, derzeit im Verhältnis 1&nbsp;Punkt&nbsp;=&nbsp;1&nbsp;YEET; eine Änderung des Verhältnisses gilt nur für künftige Umwandlungen und wird vorab angekündigt. Anträge werden vor der Freigabe geprüft, in Sammelvorgängen ausgeführt und stehen unter dem Vorbehalt eines Sanktionslisten-Abgleichs der Zieladresse sowie der Verfügbarkeit des für Umwandlungen reservierten Token-Kontingents; eine Bearbeitungszeit wird nicht zugesichert. Wird ein Antrag abgelehnt oder kann er nicht ausgeführt werden, werden die Punkte Ihrem Guthaben wieder gutgeschrieben. Ein Anspruch auf Zahlung in Geld anstelle von YEET besteht nicht.</li>
         <li><strong>Plattformgebühr:</strong> Zur Finanzierung des Betriebs des Dienstes wird eine Plattformgebühr von bis zu 10&nbsp;% jedes Trinkgelds (und jedes Pay-per-View-Kaufs, siehe unten) erhoben. Der genaue Satz wird Ihnen angezeigt, bevor Sie eine Transaktion bestätigen.</li>
         <li><strong>Keine Finanzberatung:</strong> Nichts auf dem Dienst stellt eine Anlageberatung, eine Empfehlung zum Kauf oder Verkauf eines Tokens oder ein Angebot von Wertpapieren dar.</li>
         <li><strong>Keine Wertgarantie:</strong> Token können ihren gesamten Wert verlieren. Die Wertentwicklung in der Vergangenheit ist kein Indikator für zukünftige Erträge.</li>

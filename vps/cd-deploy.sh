@@ -57,7 +57,9 @@ ls -la $HTML_DIR/swap.html
 
 # Developer API page + OpenAPI spec (docs/api). Without these
 # copies nginx's SPA fallback serves index.html for /api.html.
-for f in api.html openapi.json; do
+# The public rewards guide (docs/rewards → scripts/build-rewards-pdf.cjs) is
+# linked from the footer and must be a real file in the docroot as well.
+for f in api.html openapi.json yeet-rewards-de.pdf yeet-rewards-en.pdf; do
   curl -fsSL "$REPO_RAW/frontend/$f" -o "$HTML_DIR/$f.new"
   mv "$HTML_DIR/$f.new" "$HTML_DIR/$f"
   ls -la "$HTML_DIR/$f"
