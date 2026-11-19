@@ -15,7 +15,7 @@ NOTE_VOL=yeet-social_note_data
 # Image tag of the current build recipe (vps/note-node). The compose file
 # takes the tag from NOTE_IMAGE in .env, which note-install only switches
 # after the new image has been built — a deploy never waits for a build.
-NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1b
+NOTE_IMG_NEW=yeet/note-node:1.1.0.0-lr1c
 BUILD_DIR="$HOME/yeet-note-build"
 LOG="$HOME/yeet-note-build.log"
 CD_KEY_RE='(github-cd|github-actions-deploy)[[:space:]]*$'
@@ -230,6 +230,18 @@ BUILD
         ;;
       *) echo "usage: note-miner-access on <salt> <hmac> <ssh-public-key> | off"; exit 1 ;;
     esac
+    ;;
+
+  note-logs)
+    # Search the node's log of the last hours. ARG = [hours] [regex];
+    # default: 24 hours, everything that looks like a problem.
+    H="${ARG%% *}"; PAT="${ARG#* }"
+    echo "$H" | grep -qE '^[0-9]{1,3}$' || { H=24; PAT="$ARG"; }
+    [ -n "$PAT" ] && [ "$PAT" != "$H" ] || PAT='ERROR|error|invalid|reject|bad-|Misbehav|ban|disconnect|not connected|work queue|UpdateTip'
+    echo "$PAT" | grep -qE '^[A-Za-z0-9 _.:|()*+?-]{1,200}$' || { echo "pattern has unsupported characters"; exit 1; }
+    echo "--- last ${H}h, pattern: $PAT"
+    docker logs --since "${H}h" yeet-note 2>&1 | grep -E "$PAT" | grep -v 'connect() to' | tail -n 60 | cut -c1-230
+    echo "--- peers now: $(cli getconnectioncount 2>&1 | tail -1) · banned: $(cli listbanned 2>/dev/null | grep -c '"address"')"
     ;;
 
   note-restart) cd "$APP"; docker compose up -d --force-recreate note-node; sleep 5; docker logs --tail 8 yeet-note 2>&1 | cut -c1-200 ;;

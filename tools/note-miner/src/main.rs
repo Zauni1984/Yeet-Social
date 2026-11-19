@@ -10,6 +10,31 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
+/// Appends a UTC-stamped line to miner.log next to the program, so a refusal
+/// by the node can still be read after the window has been closed. A message
+/// that just repeats is written at most once every five minutes.
+fn log_line(msg: &str) {
+    use std::io::Write;
+    use std::sync::Mutex;
+    static LAST: Mutex<Option<(String, Instant)>> = Mutex::new(None);
+    {
+        let mut last = LAST.lock().unwrap();
+        if let Some((m, t)) = last.as_ref() {
+            if m == msg && t.elapsed() < Duration::from_secs(300) { return; }
+        }
+        *last = Some((msg.to_string(), Instant::now()));
+    }
+    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let (d, r) = (secs / 86400, secs % 86400);
+    // civil-from-days (Howard Hinnant)
+    let z = d as i64 + 719468; let era = z.div_euclid(146097); let doe = z.rem_euclid(146097);
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153; let day = doy - (153 * mp + 2) / 5 + 1; let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + if month <= 2 { 1 } else { 0 };
+    let line = format!("{year:04}-{month:02}-{day:02} {:02}:{:02}:{:02} UTC  {msg}\n", r / 3600, r % 3600 / 60, r % 60);
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("miner.log") { let _ = f.write_all(line.as_bytes()); }
+}
+
 fn sha256d(d: &[u8]) -> [u8; 32] {
     let a = Sha256::digest(d);
     let b = Sha256::digest(a);
@@ -234,6 +259,7 @@ fn self_test() -> Result<(), String> {
 
 fn main() {
     if let Err(e) = run() {
+        log_line(&format!("stopped with error: {e}"));
         eprintln!("\nERROR: {e}");
         std::process::exit(1);
     }
@@ -267,6 +293,7 @@ fn run() -> Result<(), String> {
     let va = rpc.call("validateaddress", json!([address]))?;
     if va["isvalid"].as_bool() != Some(true) { return Err(format!("address {address} is not valid")); }
     let payout_script = hex::decode(va["scriptPubKey"].as_str().ok_or("no scriptPubKey")?).map_err(|e| e.to_string())?;
+    log_line(&format!("started: height {}, difficulty {}, {threads} thread(s)", info["blocks"], info["difficulty"]));
     println!("rewards go to {address}; {threads} thread(s); {}", if max_blocks > 0 { format!("stopping after {max_blocks} block(s)") } else { "running until closed".into() });
 
     let job = Arc::new(RwLock::new(fetch_job(&rpc, &payout_script, 1)?));
@@ -305,9 +332,9 @@ fn run() -> Result<(), String> {
                         if solved.swap(j.id, Ordering::SeqCst) == j.id { break; } // another thread was first
                         let hex_block = j.block_hex(&h, &cb);
                         match rpc.call("submitblock", json!([hex_block])) {
-                            Ok(Value::Null) => { let n = found.fetch_add(1, Ordering::SeqCst) + 1; println!("\n*** BLOCK FOUND: height {} accepted (block {n} of this session) ***", j.height); }
-                            Ok(v) => println!("\nblock at height {} not accepted: {v}", j.height),
-                            Err(e) => println!("\nsubmit failed: {e}"),
+                            Ok(Value::Null) => { let n = found.fetch_add(1, Ordering::SeqCst) + 1; println!("\n*** BLOCK FOUND: height {} accepted (block {n} of this session) ***", j.height); log_line(&format!("block found: height {} accepted", j.height)); }
+                            Ok(v) => { println!("\nblock at height {} not accepted: {v}", j.height); log_line(&format!("block at height {} NOT accepted: {v}", j.height)); }
+                            Err(e) => { println!("\nsubmit failed: {e}"); log_line(&format!("submit failed: {e}")); }
                         }
                         break;
                     }
@@ -331,13 +358,13 @@ fn run() -> Result<(), String> {
         let f = found.load(Ordering::SeqCst);
         let tip_changed = match rpc.call("getbestblockhash", json!([])) {
             Ok(v) => rev_hex(v.as_str().unwrap_or("")).map(|p| p != job.read().unwrap().prev).unwrap_or(false),
-            Err(e) => { println!("\nnode not reachable: {e} (is the tunnel window still open?)"); false }
+            Err(e) => { println!("\nnode not reachable: {e} (is the tunnel window still open?)"); log_line(&format!("node not reachable: {e}")); false }
         };
         if f != last_found || tip_changed || solved.load(Ordering::SeqCst) == id || last_template.elapsed() > Duration::from_secs(30) {
             id += 1;
             match fetch_job(&rpc, &payout_script, id) {
                 Ok(j) => { if tip_changed || f != last_found { println!("\nnew work: height {}, difficulty target {}...", j.height, &hex::encode(j.target_be)[..16]); } *job.write().unwrap() = j; last_template = Instant::now(); }
-                Err(e) => println!("\ncould not get new work: {e}"),
+                Err(e) => { println!("\ncould not get new work: {e}"); log_line(&format!("could not get new work: {e}")); }
             }
             last_found = f;
         }
