@@ -28,6 +28,15 @@ ARG NOTE_LOW_REWARD_HEIGHT=4621933
 RUN sed -i '/^CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)$/{n;s/^{$/{\n    if (nHeight >= '"${NOTE_LOW_REWARD_HEIGHT}"') return 10000; \/\/ Yeet: 0.0001 NOTE/}' src/validation.cpp \
     && grep -n -A2 '^CAmount GetBlockSubsidy' src/validation.cpp \
     && grep -q "if (nHeight >= ${NOTE_LOW_REWARD_HEIGHT}) return 10000;" src/validation.cpp
+# Second project patch: this node is the chain's only miner. Upstream refuses
+# getblocktemplate while it has no peer connection or considers itself in
+# initial block download; both are meaningless here and would stop block
+# production the moment the few remaining third-party peers go away.
+RUN sed -i \
+      -e 's/^    if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0)$/    if (false \&\& g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0) \/\/ Yeet: sole miner, peers optional/' \
+      -e 's/^    if (IsInitialBlockDownload())$/    if (false \&\& IsInitialBlockDownload()) \/\/ Yeet: sole miner/' \
+      src/rpc/mining.cpp \
+    && test "$(grep -c 'if (false && ' src/rpc/mining.cpp)" = 2
 # Berkeley DB 4.8 (wallet format) from the repo's own helper, which verifies
 # the tarball checksum.
 RUN chmod +x contrib/install_db4.sh autogen.sh share/genbuild.sh 2>/dev/null; ./contrib/install_db4.sh /src
