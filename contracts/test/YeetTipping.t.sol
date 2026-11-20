@@ -18,7 +18,7 @@ contract YeetTippingTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        token   = new YeetToken(owner, owner, 0);
+        token   = new YeetToken(owner, owner, owner, 1_000_000 ether);
         tipping = new YeetTipping(address(token), platform, owner);
 
         // Fund alice with 1000 YEET

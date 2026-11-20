@@ -10,12 +10,14 @@ contract YeetTokenTest is Test {
     address minter = address(0x2);
     address alice  = address(0x3);
     address bob    = address(0x4);
+    address treasury = address(0x5);
+    address guardian = address(0x6);
     uint256 constant CAP = 1_000_000 ether; // daily cap used in these tests
 
     function setUp() public {
         vm.warp(1_700_000_000); // a fixed "now" so day boundaries are deterministic
         vm.prank(owner);
-        token = new YeetToken(owner, minter, CAP);
+        token = new YeetToken(owner, treasury, minter, CAP);
     }
 
     // ── Supply model (docs/mica/02 Teil J) ────────────────────────────────
@@ -27,7 +29,8 @@ contract YeetTokenTest is Test {
     function test_InitialSupplyIsNonRewardTranches() public view {
         uint256 expected = (token.MAX_SUPPLY() * 25) / 100; // 10 % dev + 10 % team + 5 % reserve
         assertEq(token.totalSupply(), expected);
-        assertEq(token.balanceOf(owner), expected);
+        assertEq(token.balanceOf(treasury), expected);
+        assertEq(token.balanceOf(owner), 0); // the owner key never holds the tranches
     }
 
     function test_RewardReserveIs75Percent() public view {
@@ -56,13 +59,13 @@ contract YeetTokenTest is Test {
     // ── ERC-20 basics ─────────────────────────────────────────────────────
 
     function test_Transfer() public {
-        vm.prank(owner);
+        vm.prank(treasury);
         token.transfer(alice, 1000 ether);
         assertEq(token.balanceOf(alice), 1000 ether);
     }
 
     function test_Burn() public {
-        vm.startPrank(owner);
+        vm.startPrank(treasury);
         uint256 before = token.totalSupply();
         token.burn(100 ether);
         assertEq(token.totalSupply(), before - 100 ether);
@@ -131,7 +134,9 @@ contract YeetTokenTest is Test {
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter));
         token.setMinter(minter);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter));
-        token.setDailyMintCap(0);
+        token.setDailyMintCap(1 ether);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter));
+        token.setGuardian(minter);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, minter));
         token.setMintingPaused(false);
         vm.stopPrank();
@@ -171,12 +176,123 @@ contract YeetTokenTest is Test {
         assertEq(token.rewardsMinted(), CAP - 10);
     }
 
-    function test_NoCapWhenZero() public {
-        vm.prank(owner);
+    function test_DailyCapIsMandatoryAndBounded() public {
+        uint256 max = token.MAX_DAILY_MINT_CAP();
+        assertEq(max, token.REWARD_RESERVE() / 200); // 0.5 % of the reserve per day
+        vm.startPrank(owner);
+        vm.expectRevert(abi.encodeWithSelector(YeetToken.InvalidDailyCap.selector, uint256(0), max));
         token.setDailyMintCap(0);
-        assertEq(token.dailyRemaining(), type(uint256).max);
-        _mintReward(alice, 5_000_000 ether); // far above the previous cap
-        assertEq(token.balanceOf(alice), 5_000_000 ether);
+        vm.expectRevert(abi.encodeWithSelector(YeetToken.InvalidDailyCap.selector, max + 1, max));
+        token.setDailyMintCap(max + 1);
+        token.setDailyMintCap(max);
+        vm.stopPrank();
+        assertEq(token.dailyMintCap(), max);
+        assertEq(token.dailyMintCap(), 78_750_000 ether);
+    }
+
+    function test_ConstructorRejectsBadCapAndTreasury() public {
+        uint256 max = token.MAX_DAILY_MINT_CAP();
+        vm.expectRevert(abi.encodeWithSelector(YeetToken.InvalidDailyCap.selector, uint256(0), max));
+        new YeetToken(owner, treasury, minter, 0);
+        vm.expectRevert(abi.encodeWithSelector(YeetToken.InvalidDailyCap.selector, max + 1, max));
+        new YeetToken(owner, treasury, minter, max + 1);
+        vm.expectRevert(YeetToken.ZeroTreasury.selector);
+        new YeetToken(owner, address(0), minter, CAP);
+    }
+
+    /// A stolen minter key gets one day's cap per day, never more — even at the maximum cap
+    /// the reserve lasts 200 days, which is the time the owner has to pause or rotate.
+    function test_LeakedMinterDrainsAtMostTheCapPerDay() public {
+        uint256 max = token.MAX_DAILY_MINT_CAP();
+        vm.prank(owner);
+        token.setDailyMintCap(max);
+        _mintReward(alice, max);
+        address[] memory r = new address[](1);
+        uint256[] memory a = new uint256[](1);
+        string[]  memory s = new string[](1);
+        r[0] = alice; a[0] = 1; s[0] = "x";
+        vm.prank(minter);
+        vm.expectRevert(abi.encodeWithSelector(YeetToken.DailyCapExceeded.selector, uint256(1), uint256(0)));
+        token.batchMintRewards(r, a, s);
+        assertEq(token.rewardsMinted(), max);
+        assertEq(token.rewardsRemaining(), token.REWARD_RESERVE() - max);
+    }
+
+    // ── Guardian: pause only ──────────────────────────────────────────────
+
+    function test_GuardianCanPauseButNotResume() public {
+        vm.prank(guardian); // not appointed yet
+        vm.expectRevert(YeetToken.NotOwnerOrGuardian.selector);
+        token.setMintingPaused(true);
+
+        vm.prank(owner);
+        token.setGuardian(guardian);
+        vm.prank(guardian);
+        token.setMintingPaused(true);
+        assertTrue(token.mintingPaused());
+
+        vm.prank(guardian);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian));
+        token.setMintingPaused(false);
+        assertTrue(token.mintingPaused());
+
+        vm.prank(owner);
+        token.setMintingPaused(false);
+        assertFalse(token.mintingPaused());
+    }
+
+    function test_GuardianHasNoOtherPower() public {
+        vm.prank(owner);
+        token.setGuardian(guardian);
+        vm.startPrank(guardian);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian));
+        token.setMinter(guardian);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian));
+        token.setDailyMintCap(1 ether);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, guardian));
+        token.setGuardian(guardian);
+        address[] memory r = new address[](1);
+        uint256[] memory a = new uint256[](1);
+        string[]  memory s = new string[](1);
+        r[0] = guardian; a[0] = 1; s[0] = "x";
+        vm.expectRevert(YeetToken.NotMinter.selector);
+        token.batchMintRewards(r, a, s);
+        vm.stopPrank();
+    }
+
+    function test_MinterAndStrangerCannotPause() public {
+        vm.prank(minter);
+        vm.expectRevert(YeetToken.NotOwnerOrGuardian.selector);
+        token.setMintingPaused(true);
+        vm.prank(alice);
+        vm.expectRevert(YeetToken.NotOwnerOrGuardian.selector);
+        token.setMintingPaused(true);
+    }
+
+    function test_RenounceOwnershipDisabled() public {
+        vm.prank(owner);
+        vm.expectRevert(YeetToken.RenounceDisabled.selector);
+        token.renounceOwnership();
+        assertEq(token.owner(), owner);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+        token.renounceOwnership();
+    }
+
+    // ── Successor / chain migration path ─────────────────────────────────
+
+    /// A successor contract needs nothing from this token but an allowance: it burns the
+    /// holder's old YEET with `burnFrom` (and would issue the new token 1:1).
+    function test_SuccessorCanBurnWithAllowance() public {
+        _mintReward(alice, 100 ether);
+        address successor = address(0x5CC);
+        uint256 supplyBefore = token.totalSupply();
+        vm.prank(alice);
+        token.approve(successor, 100 ether);
+        vm.prank(successor);
+        token.burnFrom(alice, 100 ether);
+        assertEq(token.balanceOf(alice), 0);
+        assertEq(token.totalSupply(), supplyBefore - 100 ether);
     }
 
     function test_PauseStopsMintingNotTransfers() public {
@@ -189,7 +305,7 @@ contract YeetTokenTest is Test {
         vm.prank(minter);
         vm.expectRevert(YeetToken.MintingIsPaused.selector);
         token.batchMintRewards(r, a, s);
-        vm.prank(owner);
+        vm.prank(treasury);
         token.transfer(alice, 1 ether); // transfers unaffected
         assertEq(token.balanceOf(alice), 1 ether);
         vm.prank(owner);
@@ -200,17 +316,14 @@ contract YeetTokenTest is Test {
     }
 
     function test_FullReserveReachesExactlyMaxSupply() public {
-        vm.prank(owner);
-        token.setDailyMintCap(0);
-        _mintReward(alice, token.REWARD_RESERVE());
+        _mintOverDays(alice, token.REWARD_RESERVE());
         assertEq(token.totalSupply(), token.MAX_SUPPLY());
         assertEq(token.rewardsRemaining(), 0);
     }
 
     function test_BatchMintRewardsCappedAtReserve() public {
-        vm.prank(owner);
-        token.setDailyMintCap(0);
-        _mintReward(alice, token.REWARD_RESERVE() - 1);
+        _mintOverDays(alice, token.REWARD_RESERVE() - 1);
+        vm.warp(block.timestamp + 1 days);
         address[] memory r = new address[](2);
         uint256[] memory a = new uint256[](2);
         string[]  memory s = new string[](2);
@@ -224,9 +337,8 @@ contract YeetTokenTest is Test {
     }
 
     function test_BurnDoesNotReopenReserve() public {
-        vm.prank(owner);
-        token.setDailyMintCap(0);
-        _mintReward(alice, token.REWARD_RESERVE());
+        _mintOverDays(alice, token.REWARD_RESERVE());
+        vm.warp(block.timestamp + 1 days);
         vm.prank(alice);
         token.burn(1_000 ether);
         address[] memory r = new address[](1);
@@ -293,6 +405,21 @@ contract YeetTokenTest is Test {
     }
 
     // ── helpers ───────────────────────────────────────────────────────────
+
+    /// Mint `total` at the maximum daily cap, one UTC day per chunk (no way around the cap).
+    function _mintOverDays(address to, uint256 total) internal {
+        uint256 max = token.MAX_DAILY_MINT_CAP();
+        vm.prank(owner);
+        token.setDailyMintCap(max);
+        uint256 day = block.timestamp;
+        while (total > 0) {
+            uint256 chunk = total > max ? max : total;
+            _mintReward(to, chunk);
+            total -= chunk;
+            day += 1 days;
+            vm.warp(day);
+        }
+    }
 
     function _mintReward(address to, uint256 amount) internal {
         address[] memory r = new address[](1);

@@ -1,7 +1,7 @@
 # 10 — Ein Contract reicht: `YeetToken` auf dem BSC-Testnet, Punktesystem ohne Chain
 
 **Status: ENTWURF (Dev)** · Stand 2026-10-27 · Quellen: `contracts/src/YeetToken.sol`,
-`contracts/script/DeployToken.s.sol`, `contracts/test/YeetToken.t.sol` (**`forge test`: 54/54 grün**),
+`contracts/script/DeployToken.s.sol`, `contracts/test/YeetToken.t.sol` (**`forge test`: 61/61 grün**),
 `backend/src/services/batch_rewards.rs`, `backend/src/api/points.rs`, `backend/src/api/tips.rs`.
 
 Dieses Dokument beantwortet zwei Fragen:
@@ -83,23 +83,24 @@ Nutzen, solange Zahlungen nicht on-chain stattfinden.
 | Eigenschaft | Umsetzung |
 | --- | --- |
 | Standard | BEP-20 (ERC-20) + `ERC20Burnable` + `ERC20Permit`, 18 Dezimalen |
-| Angebot | `MAX_SUPPLY` 21 000 000 000 fest. 25 % (Dev 10 / Team 10 / Reserve 5) beim Deploy an `owner`; **75 % (`REWARD_RESERVE` 15,75 Mrd.)** nur über `batchMintRewards`, kumulativ gedeckelt (`rewardsMinted`), **Burns öffnen die Reserve nicht wieder** |
-| Rollen | `owner` (später Multisig, `Ownable2Step`): setzt Minter, Tages-Cap, Pause — **mintet nie selbst**. `minter` (Backend-Hot-Key): kann **nur** `batchMintRewards` |
-| Grenzen pro Mint | ≤ `MAX_BATCH` 200 Empfänger · Summe ≤ `REWARD_RESERVE` · Summe ≤ `dailyMintCap` pro UTC-Tag (`dailyRemaining()`) · kein Null-Empfänger · atomar (ein Fehler → ganzer Batch zurück) |
-| Not-Aus | `setMintingPaused(true)` stoppt Mints, **nie Transfers** |
-| Events | `RewardMinted(recipient, amount, action)`, `MinterUpdated`, `DailyMintCapUpdated`, `MintingPaused` |
+| Angebot | `MAX_SUPPLY` 21 000 000 000 fest. 25 % (Dev 10 / Team 10 / Reserve 5) beim Deploy an `treasury` (getrennt vom Owner-Schlüssel); **75 % (`REWARD_RESERVE` 15,75 Mrd.)** nur über `batchMintRewards`, kumulativ gedeckelt (`rewardsMinted`), **Burns öffnen die Reserve nicht wieder** |
+| Rollen | `owner` (später Multisig, `Ownable2Step`): setzt Minter, Guardian, Tages-Cap, Pause — **mintet nie selbst**, `renounceOwnership` ist gesperrt. `minter` (Backend-Hot-Key): kann **nur** `batchMintRewards`. `guardian` (optional): kann **nur** pausieren, nicht fortsetzen |
+| Grenzen pro Mint | ≤ `MAX_BATCH` 200 Empfänger · Summe ≤ `REWARD_RESERVE` · Summe ≤ `dailyMintCap` pro UTC-Tag (`dailyRemaining()`; Pflicht, höchstens `MAX_DAILY_MINT_CAP` = 0,5 % der Reserve = 78,75 Mio.) · kein Null-Empfänger · atomar (ein Fehler → ganzer Batch zurück) |
+| Not-Aus | `setMintingPaused(true)` (Owner oder Guardian) stoppt Mints, **nie Transfers**; Fortsetzen nur Owner |
+| Events | `RewardMinted(recipient, amount, action)`, `MinterUpdated`, `GuardianUpdated`, `DailyMintCapUpdated`, `MintingPaused` |
 | Bewusst **nicht** enthalten | kein Verkauf/Presale, keine Transfer-Gebühr, keine Blacklist, keine Upgradeability/Proxy, kein Admin-Zugriff auf Nutzerguthaben, keine Vesting-Logik (separater Vertrag/Multisig-Policy, [02](02-whitepaper-entwurf-yeet.md) Teil J) |
 
 **Schadensbegrenzung:** Ein geleakter Minter-Key kann höchstens *einen Tages-Cap* an Reward-YEET
-minten (nicht die 25 % des Owners, keine fremden Guthaben), bevor der Owner pausiert oder
-`setMinter` rotiert. Deshalb ist die Trennung Owner ≠ Minter auf Mainnet **Pflicht** (das
+minten (nicht die 25 % der Treasury, keine fremden Guthaben), bevor Owner oder Guardian pausieren
+oder der Owner `setMinter` rotiert. Selbst ein kompromittierter Owner kann den Cap nicht über
+0,5 % der Reserve pro Tag heben, die Reserve also frühestens in 200 Tagen ausschöpfen. Deshalb ist die Trennung Owner ≠ Minter auf Mainnet **Pflicht** (das
 Deploy-Skript erzwingt sie bei Chain-ID 56).
 
-### 2.3 Tests (`forge test`, 54/54)
+### 2.3 Tests (`forge test`, 61/61)
 
-`YeetToken.t.sol` (24): Tranchen summieren auf `MAX_SUPPLY`; Minter mintet; Owner und Fremde
+`YeetToken.t.sol` (31): Tranchen summieren auf `MAX_SUPPLY`; Minter mintet; Owner und Fremde
 werden mit `NotMinter` abgewiesen; Minter-Rotation; nur Owner verwaltet Rollen; Tages-Cap
-greift, ist atomar und setzt sich am nächsten UTC-Tag zurück; Cap 0 = unbegrenzt; Pause stoppt
+greift, ist atomar und setzt sich am nächsten UTC-Tag zurück; Cap 0 und Cap über der Obergrenze werden abgewiesen; Guardian pausiert, setzt aber nicht fort und hat sonst keine Rechte; `renounceOwnership` gesperrt; Nachfolge-Vertrag kann per `burnFrom` tauschen; Pause stoppt
 Mints, nicht Transfers; Reserve exakt bis `MAX_SUPPLY`; Burn öffnet Reserve nicht; Längen-,
 Batch-, Null-Adress-Checks; Event; zweistufige Ownership-Übergabe.
 
@@ -169,9 +170,11 @@ Voraussetzungen (Checkliste [04](04-compliance-checkliste.md) B1/F8, keine davon
 
 1. Rechts-/Strategiefreigabe (Whitepaper-Status, kein Verkauf, Marketing-Regeln).
 2. **Externes Audit** des Contracts in seiner finalen Fassung (Commit-Hash festhalten).
-3. **Multisig** (z. B. Safe) als Owner: Deploy mit `OWNER_ADDRESS=<Safe>`, dann
-   `acceptOwnership()` aus dem Safe. `MINTER_ADDRESS` = dedizierte Hot-Wallet ≠ Deployer
-   (das Skript bricht auf Chain 56 sonst ab); `DAILY_MINT_CAP` aus dem erwarteten
+3. **Multisig** (z. B. Safe) als Owner und Treasury: Deploy mit `OWNER_ADDRESS=<Safe>`
+   (die 25 % gehen direkt an `TREASURY_ADDRESS`, Standard = der Safe), dann
+   `acceptOwnership()` aus dem Safe. `MINTER_ADDRESS` = dedizierte Hot-Wallet ≠ Deployer,
+   Owner und Treasury (das Skript bricht auf Chain 56 sonst ab, ebenso wenn Owner oder
+   Treasury kein Contract sind); optional `GUARDIAN_ADDRESS` für den schnellen Not-Aus; `DAILY_MINT_CAP` aus dem erwarteten
    Umtauschvolumen ableiten (eher klein starten; Owner kann erhöhen).
 4. Umtausch während der Umstellung pausieren (Admin: keine Freigaben), alle Testnet-Zeilen in
    `token_rewards` sind damit abgeschlossen und nicht übertragbar.

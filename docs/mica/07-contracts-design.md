@@ -2,8 +2,8 @@
 
 **Status: ENTWURF** · Solidity 0.8.24, OpenZeppelin v5.1.0, Foundry.
 Quellen: `contracts/src/YeetPayments.sol`, `contracts/src/PaperWalletEscrow.sol`,
-Tests: `contracts/test/*.t.sol` — **`forge test`: 54/54 grün** (Stand 2026-10-27,
-Forge 1.8.4). **Externes Audit vor Deploy erforderlich (F8).**
+Tests: `contracts/test/*.t.sol` — **`forge test`: 61/61 grün** (Stand 2026-11-20,
+Forge 1.5.1). **Externes Audit vor Deploy erforderlich (F8).**
 
 > **Stand 2026-10-27:** Für das Punktemodell wird **nur `YeetToken`** deployt
 > (zuerst Testnet) — siehe [10-testnet-contract.md](10-testnet-contract.md).

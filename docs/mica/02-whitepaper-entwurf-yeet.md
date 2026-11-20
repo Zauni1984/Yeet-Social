@@ -148,8 +148,9 @@ des Betreibers / danach die Multisig ⟦Adresse⟧⟧.
     **75 %-Rewards-Reserve** (`REWARD_RESERVE`, 15,75 Mrd.) ist die einzige nach dem
     Deploy mintbare Menge, kumulativ gezählt (`rewardsMinted`) — Burns öffnen sie nicht
     wieder. Eine andere Mint-Funktion existiert nicht.
-  - **Rollen:** `owner` (Ownable2Step; Ziel: Multisig) setzt Minter, Tageslimit und Pause,
-    mintet aber **nie selbst**. `minter` (ein Backend-Schlüssel der Plattform) kann
+  - **Rollen:** `owner` (Ownable2Step; Ziel: Multisig) setzt Minter, Guardian, Tageslimit und Pause,
+    mintet aber **nie selbst** und kann das Tageslimit nicht über 0,5 % der Rewards-Reserve heben.
+    `guardian` (optional) kann ausschließlich pausieren. `minter` (ein Backend-Schlüssel der Plattform) kann
     ausschließlich `batchMintRewards(address[], uint256[], string[])` aufrufen: max. 200
     Empfänger je Aufruf, Summe ≤ Rewards-Reserve, Summe ≤ **Tageslimit** `dailyMintCap`
     pro UTC-Tag, kein Null-Empfänger, atomar (ein Fehler verwirft den ganzen Aufruf).
@@ -354,7 +355,7 @@ Punkte sind der Anspruch, die Test-YEET nur der Testlauf; vor Start in AGB und C
 
 ### Offene Punkte (nicht Teil dieses Whitepapers)
 
-- Smart Contract: `YeetToken` ist fertig (Minter-Rolle, Tageslimit, Not-Aus, 54 Tests), **externes Audit und Multisig-Übergabe stehen aus**; Vesting-Verträge für Developer/Team **fehlen noch** (die 25 % liegen nach dem Deploy ungesperrt beim Eigentümer). Entschieden: Rewards werden gemintet (nicht vorgemintet) — es gibt keinen Hot-Bestand des Pools in einer Wallet.
+- Smart Contract: `YeetToken` ist fertig (Minter-Rolle, Pflicht-Tageslimit mit fester Obergrenze, Not-Aus mit Guardian, 61 Tests), **externes Audit und Multisig-Übergabe stehen aus**; Vesting-Verträge für Developer/Team **fehlen noch** (die 25 % liegen nach dem Deploy ungesperrt bei der Treasury-Adresse, auf Mainnet zwingend ein Multisig). Entschieden: Rewards werden gemintet (nicht vorgemintet) — es gibt keinen Hot-Bestand des Pools in einer Wallet.
 - Rechtliche MiCA-Prüfung + NCA-Notifizierung; Einstufung als Utility-Token ist **angestrebt, nicht bestätigt** — kein „fully compliant"-Claim vor Rechtsgutachten.
 - Automatisierte Freigaberegeln für Umwandlungen (Betragsgrenzen, Kontoalter) als Ersatz der manuellen Freigabe; Höhe des Tageslimits für das Mainnet.
 - Umgang mit Testnet-Punkten beim Mainnet-Start (siehe oben).
