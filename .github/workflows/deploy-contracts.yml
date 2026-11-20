@@ -85,8 +85,14 @@ jobs:
           SCRIPT=script/DeployToken.s.sol
           if [ "${{ github.event.inputs.scope }}" = "all" ]; then SCRIPT=script/Deploy.s.sol; fi
           echo "Deploying $SCRIPT to ${{ github.event.inputs.network }}"
+          # pipefail: without it the step took tee's exit code and a failed
+          # broadcast was reported as success. The explicit gas price is
+          # needed because forge's estimate (1 wei tip) is below the chain's
+          # minimum and every transaction was rejected.
+          set -o pipefail
           forge script "$SCRIPT" \
             --rpc-url ${{ github.event.inputs.network }} \
+            --legacy --with-gas-price 1gwei \
             --broadcast --verify -vv 2>&1 | tee deploy-output.txt
           grep -E "YeetToken|YeetPayments|PaperWalletEscrow|YeetNFT|YEET_TOKEN_ADDRESS" deploy-output.txt | grep "0x" || true
       - name: Upload artifact
