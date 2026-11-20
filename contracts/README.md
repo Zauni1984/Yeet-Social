@@ -24,7 +24,7 @@ forge test
 
 Pinned: solc 0.8.24, OpenZeppelin **5.1.0** (≥ 5.2 uses `mcopy` and needs
 `evm_version = "cancun"`), forge-std v1.9.6, remappings in `remappings.txt`.
-Last full run: **54/54 tests green** (2026-10-27).
+Last full run: **61/61 tests green** (2026-11-20).
 
 ## What gets deployed (points model)
 
@@ -59,12 +59,33 @@ Fixed maximum supply **21,000,000,000 YEET** (`MAX_SUPPLY`, docs/mica/02 Teil J)
 
 | Allocation | % | Amount | Issued |
 |---|---|---|---|
-| Developer | 10% | 2.1B YEET | at deploy → `initialOwner` (vesting: separate contract/multisig policy) |
-| Team | 10% | 2.1B YEET | at deploy → `initialOwner` (vesting: separate contract/multisig policy) |
-| Reserve (liquidity, listings) | 5% | 1.05B YEET | at deploy → `initialOwner` |
+| Developer | 10% | 2.1B YEET | at deploy → `treasury` (vesting: separate contract/multisig policy) |
+| Team | 10% | 2.1B YEET | at deploy → `treasury` (vesting: separate contract/multisig policy) |
+| Reserve (liquidity, listings) | 5% | 1.05B YEET | at deploy → `treasury` |
 | Rewards / community (`REWARD_RESERVE`) | 75% | 15.75B YEET | gradually, only via `batchMintRewards` — bounded by `rewardsMinted`, so burns never re-open it; there is no other mint function |
 
 The backend's conversion pool (`YEET_CONVERSION_POOL`, default 15.75B) mirrors `REWARD_RESERVE`; `rewardsRemaining()` exposes the on-chain remainder.
+
+## Who can do what (YeetToken)
+
+| Key | Can | Cannot |
+|---|---|---|
+| `owner` (multisig) | set minter, guardian, daily cap (1 to 78.75M YEET = 0.5 % of the reserve); pause and resume minting | mint; touch balances; raise the cap above the ceiling; renounce ownership |
+| `minter` (backend hot key) | mint reward-tranche YEET, at most `dailyMintCap` per UTC day | anything else |
+| `guardian` (optional) | pause minting | resume, or anything else |
+| `treasury` | holds the 25 % initial tranches | no contract rights |
+
+Worst cases: a stolen minter key mints one day's cap per day until minting is
+paused; a stolen owner cannot mint out the reserve in fewer than 200 days.
+Transfers can never be paused or blocked by anyone.
+
+### Moving to a successor token or another chain
+
+The token is not upgradeable on purpose. A later move (other chain,
+post-quantum accounts) works without any hook here: pause minting, deploy the
+successor, and let holders approve (or `permit`) a swap contract that calls
+`burnFrom` on this token and issues the new one 1:1. Unminted reward reserve
+simply continues in the successor.
 
 ## Setup
 
@@ -90,15 +111,18 @@ Locally:
 ```bash
 cp .env.example .env            # PRIVATE_KEY, BSCSCAN_API_KEY
 export MINTER_ADDRESS=0x...     # address of the backend's REWARDS_MINTER_PRIVKEY (default: deployer — testnet only)
-export DAILY_MINT_CAP=1000000   # whole YEET per UTC day (0 = uncapped)
-# export OWNER_ADDRESS=0x...    # optional multisig; it must call acceptOwnership()
+export DAILY_MINT_CAP=1000000   # whole YEET per UTC day (1..78750000 = 0.5 % of the reward reserve)
+# export OWNER_ADDRESS=0x...    # multisig; it must call acceptOwnership() (required on mainnet)
+# export TREASURY_ADDRESS=0x... # receives the 25 % tranches (default: OWNER_ADDRESS, else deployer)
+# export GUARDIAN_ADDRESS=0x... # optional key that may pause minting, never resume
 
 forge script script/DeployToken.s.sol --rpc-url bsc_testnet --broadcast --verify -vvvv
 ```
 
 The script prints the backend `.env` lines (`YEET_TOKEN_ADDRESS`, `YEET_CHAIN_ID`).
 On **mainnet** (`--rpc-url bsc_mainnet`) it refuses to run unless
-`MINTER_ADDRESS` differs from the deployer and `DAILY_MINT_CAP` is non-zero —
+`OWNER_ADDRESS` and the treasury are contracts (multisig) and `MINTER_ADDRESS`
+is a separate key (not the deployer, owner or treasury) —
 and it belongs after the external audit and the multisig hand-over
 (docs/mica/10 §6). `script/Deploy.s.sol` (token + payments + escrow + NFT,
 workflow `scope: all`) is only for the later on-chain-payments phase.

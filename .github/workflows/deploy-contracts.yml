@@ -28,9 +28,21 @@ on:
         required: false
         default: ''
       daily_mint_cap:
-        description: 'Daily mint cap in whole YEET (0 = uncapped; mainnet requires a value)'
+        description: 'Daily mint cap in whole YEET (1 to 78750000 = 0.5 % of the reward reserve)'
         required: false
         default: '1000000'
+      owner_address:
+        description: 'Multisig that takes over ownership (must call acceptOwnership). Required on mainnet.'
+        required: false
+        default: ''
+      treasury_address:
+        description: 'Receives the 25 % initial tranches. Empty = owner_address, else deployer. Must be a contract on mainnet.'
+        required: false
+        default: ''
+      guardian_address:
+        description: 'Optional key that may pause minting (never resume)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -62,8 +74,14 @@ jobs:
           BSCSCAN_API_KEY: ${{ secrets.BSCSCAN_API_KEY }}
           MINTER_ADDRESS: ${{ github.event.inputs.minter_address }}
           DAILY_MINT_CAP: ${{ github.event.inputs.daily_mint_cap }}
+          OWNER_ADDRESS: ${{ github.event.inputs.owner_address }}
+          TREASURY_ADDRESS: ${{ github.event.inputs.treasury_address }}
+          GUARDIAN_ADDRESS: ${{ github.event.inputs.guardian_address }}
         run: |
           if [ -z "$MINTER_ADDRESS" ]; then unset MINTER_ADDRESS; fi
+          if [ -z "$OWNER_ADDRESS" ]; then unset OWNER_ADDRESS; fi
+          if [ -z "$TREASURY_ADDRESS" ]; then unset TREASURY_ADDRESS; fi
+          if [ -z "$GUARDIAN_ADDRESS" ]; then unset GUARDIAN_ADDRESS; fi
           SCRIPT=script/DeployToken.s.sol
           if [ "${{ github.event.inputs.scope }}" = "all" ]; then SCRIPT=script/Deploy.s.sol; fi
           echo "Deploying $SCRIPT to ${{ github.event.inputs.network }}"
