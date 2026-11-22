@@ -448,6 +448,15 @@
         "#Rewards",
         "#Changelog"
       ]
+    },
+    {
+      "id": "2026-11-21-00-2fa-setup-fix",
+      "text": "Fixed: turning on two-factor authentication in Settings showed \"Network error\" instead of the QR code, so 2FA could not be set up. The setup dialog and the recovery codes now appear as intended. The same bug hid the reviewer's note on a declined age verification; that shows again too.",
+      "tags": [
+        "#Security",
+        "#2FA",
+        "#Bugfix"
+      ]
     }
   ]
 }

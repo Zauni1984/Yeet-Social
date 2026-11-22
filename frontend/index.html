@@ -32664,6 +32664,10 @@ function loadLinkPreview(url, container) {
       container.appendChild(d);
     });
 }
+// Global on purpose: the 2FA dialogs, the verification panel and other code
+// outside the messaging module call escapeHtml; it used to exist only inside
+// that module, so those calls threw and surfaced as "network error".
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 async function loadFollowingFeed() {
