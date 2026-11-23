@@ -816,6 +816,18 @@ html.ld-on body{overflow:hidden}
         <button onclick="window.resetEncryptionIdentity && window.resetEncryptionIdentity()" style="width:100%;margin-top:12px;background:#ff444422;color:#ff6666;border:1px solid #ff444444;border-radius:8px;padding:9px;cursor:pointer;font-size:13px"><span class="yi yi-lock"></span> <span data-i18n="dm.resetIdentity">Reset message encryption (forgot passphrase)</span></button>
         <div style="font-size:11px;color:var(--muted);margin-top:6px" data-i18n="dm.resetIdentityNote">Creates new keys. Old messages stay locked; contacts will be asked to confirm your new key.</div>
       </div>
+      <div id="pwCard" style="background:var(--card-2);border-radius:12px;padding:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-lock"></span> <span data-i18n="pw.title">Password</span></div>
+        <div id="pwWalletNote" style="display:none;font-size:13px;color:var(--muted)" data-i18n="pw.walletOnly">This account signs in with a wallet and has no password.</div>
+        <form id="pwForm" onsubmit="event.preventDefault(); window.changePassword && window.changePassword();" autocomplete="on">
+          <input id="pwCurrent" type="password" autocomplete="current-password" maxlength="256" data-i18n-placeholder="pw.current" placeholder="Current password" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:14px;margin-bottom:8px">
+          <input id="pwNew" type="password" autocomplete="new-password" maxlength="256" data-i18n-placeholder="pw.new" placeholder="New password (at least 8 characters)" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:14px;margin-bottom:8px">
+          <input id="pwRepeat" type="password" autocomplete="new-password" maxlength="256" data-i18n-placeholder="pw.repeat" placeholder="Repeat new password" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:14px;margin-bottom:8px">
+          <input id="pwCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="32" data-i18n-placeholder="pw.code" placeholder="Authenticator code" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:14px;margin-bottom:8px" hidden>
+          <div id="pwErr" style="color:#ff7f7f;font-size:12px;min-height:16px;margin-bottom:6px"></div>
+          <button id="pwBtn" type="submit" style="width:100%;background:var(--accent);color:var(--on-accent);border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;font-weight:700"><span data-i18n="pw.change">Change password</span></button>
+        </form>
+      </div>
       <div style="background:var(--card-2);border-radius:12px;padding:16px">
         <div style="font-weight:700;font-size:13px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px"><span class="yi yi-shield"></span> <span data-i18n="twofa.title">Two-factor authentication</span></div>
         <div id="twofaStatusLine" style="font-size:13px;color:var(--muted);margin-bottom:10px" data-i18n="twofa.loading">…</div>
@@ -1239,6 +1251,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Notifications enabled on this device',
       'settings.pushUnregistered':'Notifications disabled on this device',
       'settings.verifySeed':'Verify recovery phrase',
+      'pw.title':'Password','pw.current':'Current password','pw.new':'New password (at least 8 characters)','pw.repeat':'Repeat new password','pw.code':'Authenticator code','pw.change':'Change password','pw.changed':'Password changed. All other devices were signed out.','pw.mismatch':'The new passwords do not match.','pw.fill':'Please fill in all fields.','pw.walletOnly':'This account signs in with a wallet and has no password.','pw.err.PASSWORD_WRONG':'The current password is not correct.','pw.err.PASSWORD_TOO_SHORT':'The new password needs at least 8 characters.','pw.err.PASSWORD_TOO_LONG':'The password is too long.','pw.err.PASSWORD_SAME':'The new password must differ from the current one.','pw.err.PASSWORD_NOT_SET':'This account signs in with a wallet and has no password.','pw.err.MFA_REQUIRED':'Please enter your authenticator code.','pw.err.MFA_INVALID':'The authenticator code is not valid.','pw.err.rate':'Too many attempts. Please try again later.',
       'twofa.title':'Two-factor authentication','twofa.loading':'…','twofa.on':'Enabled','twofa.off':'Not enabled — recommended for account safety.','twofa.enable':'Enable 2FA (authenticator app)','twofa.disable':'Disable 2FA','twofa.recoveryLeft':'{n} recovery codes left','twofa.scanHint':'Scan this with an authenticator app (Google Authenticator, Aegis, 1Password …), then enter the 6-digit code.','twofa.manualEntry':'Or enter this key manually:','twofa.verify':'Verify & enable','twofa.badCode':'That code is not valid.','twofa.enabledTitle':'Two-factor authentication is on','twofa.recoveryHint':'Save these one-time recovery codes somewhere safe. Each works once if you lose your authenticator. They are shown only now.','twofa.saved':'I saved them','twofa.disablePrompt':'Enter a current 6-digit code (or a recovery code) to turn 2FA off:','twofa.disabledToast':'Two-factor authentication disabled.','twofa.enterCode':'Enter your 6-digit authenticator code (or a recovery code):','twofa.needed':'Two-factor code required to finish signing in.',
       'settings.gdpr':'Privacy (GDPR)','settings.exportData':'Export my data (JSON)',
       'settings.deleteAccount':'Delete account permanently','settings.language':'Language','settings.mood':'Color mood',
@@ -1681,6 +1694,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Benachrichtigungen auf diesem Gerät aktiviert',
       'settings.pushUnregistered':'Benachrichtigungen auf diesem Gerät deaktiviert',
       'settings.verifySeed':'Recovery-Phrase prüfen',
+      'pw.title':'Passwort','pw.current':'Aktuelles Passwort','pw.new':'Neues Passwort (mindestens 8 Zeichen)','pw.repeat':'Neues Passwort wiederholen','pw.code':'Authenticator-Code','pw.change':'Passwort ändern','pw.changed':'Passwort geändert. Alle anderen Geräte wurden abgemeldet.','pw.mismatch':'Die neuen Passwörter stimmen nicht überein.','pw.fill':'Bitte alle Felder ausfüllen.','pw.walletOnly':'Dieses Konto meldet sich per Wallet an und hat kein Passwort.','pw.err.PASSWORD_WRONG':'Das aktuelle Passwort ist nicht korrekt.','pw.err.PASSWORD_TOO_SHORT':'Das neue Passwort braucht mindestens 8 Zeichen.','pw.err.PASSWORD_TOO_LONG':'Das Passwort ist zu lang.','pw.err.PASSWORD_SAME':'Das neue Passwort muss sich vom aktuellen unterscheiden.','pw.err.PASSWORD_NOT_SET':'Dieses Konto meldet sich per Wallet an und hat kein Passwort.','pw.err.MFA_REQUIRED':'Bitte gib deinen Authenticator-Code ein.','pw.err.MFA_INVALID':'Der Authenticator-Code ist nicht gültig.','pw.err.rate':'Zu viele Versuche. Bitte später erneut versuchen.',
       'twofa.title':'Zwei-Faktor-Authentifizierung','twofa.loading':'…','twofa.on':'Aktiv','twofa.off':'Nicht aktiv — für die Kontosicherheit empfohlen.','twofa.enable':'2FA aktivieren (Authenticator-App)','twofa.disable':'2FA deaktivieren','twofa.recoveryLeft':'{n} Wiederherstellungscodes übrig','twofa.scanHint':'Scanne dies mit einer Authenticator-App (Google Authenticator, Aegis, 1Password …) und gib dann den 6-stelligen Code ein.','twofa.manualEntry':'Oder diesen Schlüssel manuell eingeben:','twofa.verify':'Prüfen & aktivieren','twofa.badCode':'Dieser Code ist ungültig.','twofa.enabledTitle':'Zwei-Faktor-Authentifizierung ist aktiv','twofa.recoveryHint':'Bewahre diese einmaligen Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du deinen Authenticator verlierst. Sie werden nur jetzt angezeigt.','twofa.saved':'Gespeichert','twofa.disablePrompt':'Gib einen aktuellen 6-stelligen Code (oder einen Wiederherstellungscode) ein, um 2FA zu deaktivieren:','twofa.disabledToast':'Zwei-Faktor-Authentifizierung deaktiviert.','twofa.enterCode':'Gib deinen 6-stelligen Authenticator-Code (oder einen Wiederherstellungscode) ein:','twofa.needed':'Zwei-Faktor-Code nötig, um die Anmeldung abzuschließen.',
       'settings.gdpr':'Datenschutz (DSGVO)','settings.exportData':'Daten exportieren (JSON)',
       'settings.deleteAccount':'Konto endgültig löschen','settings.language':'Sprache','settings.mood':'Farbstimmung',
@@ -31159,6 +31173,8 @@ function openSettingsModal(){
   if(typeof window.loadMessagingPrefs === 'function') window.loadMessagingPrefs();
   if(typeof window.refreshPushStatus === 'function') window.refreshPushStatus();
   if(typeof window.refreshAgeVerificationStatus === 'function') window.refreshAgeVerificationStatus();
+  if(typeof window.refresh2FAStatus === 'function') window.refresh2FAStatus();
+  if(typeof window.refreshPasswordCard === 'function') window.refreshPasswordCard();
   var _settingsEl = document.getElementById('settingsModal');
   _settingsEl.classList.add('on');
   // Always open at the top — it's a full scrollable page now.
@@ -31824,6 +31840,49 @@ async function uploadProfileImage(input, kind){
   window.linkWalletToEmailUser = linkWalletToEmailUser;
   window.exportMyData = exportMyData;
   window.deleteMyAccount = deleteMyAccount;
+
+  // ----- Change password (email accounts) -----
+  // Wallet-only accounts have no password: the token subject tells them apart.
+  window.refreshPasswordCard = function(){
+    var form=document.getElementById('pwForm'), note=document.getElementById('pwWalletNote'), card=document.getElementById('pwCard');
+    if(!form||!note||!card) return;
+    var jwt=localStorage.getItem('yeet_jwt');
+    if(!jwt){ card.style.display='none'; return; }
+    card.style.display='';
+    var sub='';
+    try{ sub=JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub||''; }catch(e){}
+    var hasPw = sub.indexOf('email:')===0;
+    form.style.display = hasPw ? '' : 'none';
+    note.style.display = hasPw ? 'none' : 'block';
+  };
+  window.changePassword = async function(){
+    var jwt=localStorage.getItem('yeet_jwt'); if(!jwt){ showLoginGate&&showLoginGate(); return; }
+    var cur=document.getElementById('pwCurrent'), nw=document.getElementById('pwNew'), rp=document.getElementById('pwRepeat');
+    var codeIn=document.getElementById('pwCode'), err=document.getElementById('pwErr'), btn=document.getElementById('pwBtn');
+    err.textContent='';
+    if(!cur.value||!nw.value||!rp.value){ err.textContent=window.t('pw.fill'); return; }
+    if(nw.value.length<8){ err.textContent=window.t('pw.err.PASSWORD_TOO_SHORT'); return; }
+    if(nw.value!==rp.value){ err.textContent=window.t('pw.mismatch'); return; }
+    btn.disabled=true;
+    try{
+      var body={current_password:cur.value,new_password:nw.value};
+      if(!codeIn.hidden && codeIn.value.trim()) body.code=codeIn.value.trim();
+      var r=await fetch('/api/v1/me/password',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+jwt},body:JSON.stringify(body)});
+      var d=await r.json().catch(function(){return {};});
+      if(r.ok&&d.success){
+        cur.value=''; nw.value=''; rp.value=''; codeIn.value=''; codeIn.hidden=true;
+        showToast(window.t('pw.changed'),'success');
+        return;
+      }
+      if(r.status===429){ err.textContent=window.t('pw.err.rate'); return; }
+      var msg=(d.error&&d.error.message)||'';
+      var m=/([A-Z_]+):/.exec(msg), code=m?m[1]:'';
+      if(code==='MFA_REQUIRED'||code==='MFA_INVALID'){ codeIn.hidden=false; codeIn.focus(); }
+      var key='pw.err.'+code, tr=code?window.t(key):key;
+      err.textContent = (code && tr!==key) ? tr : (msg||window.t('common.error'));
+    }catch(e){ err.textContent=window.t('common.networkError'); }
+    finally{ btn.disabled=false; }
+  };
 
   // ----- Two-factor authentication (TOTP) -----
   window.refresh2FAStatus = async function(){
@@ -33066,6 +33125,7 @@ function closeFaceScan(){
 
 // Settings-modal row: status + badge toggle.
 window.refresh2FAStatus && window.refresh2FAStatus();
+window.refreshPasswordCard && window.refreshPasswordCard();
   window.refreshAgeVerificationStatus = async function(){
   var line = document.getElementById('ageVerifyStatusLine');
   var btn  = document.getElementById('ageVerifyActionBtn');
