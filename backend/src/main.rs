@@ -98,6 +98,8 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/auth/link-email",      post(api::email_auth::link_email))
         .route("/api/v1/auth/link-wallet/nonce",  post(api::email_auth::link_wallet_nonce))
         .route("/api/v1/auth/link-wallet/verify", post(api::email_auth::link_wallet_verify))
+        .route("/api/v1/auth/password-forgot", post(api::email_auth::forgot_password))
+        .route("/api/v1/auth/password-reset",  post(api::email_auth::reset_password))
         .route("/api/v1/auth/refresh",     post(api::auth::refresh_token))
         .route("/api/v1/auth/mfa",         post(api::email_auth::mfa))
         .route("/api/v1/auth/logout",      post(api::auth::logout))

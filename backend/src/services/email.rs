@@ -95,7 +95,7 @@ pub async fn send_account_exists_email(cfg: &EmailConfig, to_email: &str) -> any
 <h1 style="color:#c6f135;margin:0 0 16px;font-size:22px">You already have a YEET account</h1>
 <p style="color:#e0e0e0;line-height:1.6;font-size:15px">Someone just tried to sign up with this email address — most likely you. An account with this address already exists, so no new one was created.</p>
 <p style="margin:24px 0"><a href="{base}/" style="display:inline-block;background:#c6f135;color:#000;padding:12px 28px;border-radius:24px;text-decoration:none;font-weight:700">Log in</a></p>
-<p style="color:#888;font-size:13px">Forgot your password? Use "Forgot password" on the login screen.</p>
+<p style="color:#888;font-size:13px">Forgot your password? Use "Forgot password?" below the login button.</p>
 <p style="color:#666;font-size:12px;margin-top:24px">If this wasn't you, you can ignore this email — nothing has changed on your account.</p>
 </div></body></html>"#,
         base = base
@@ -104,6 +104,35 @@ pub async fn send_account_exists_email(cfg: &EmailConfig, to_email: &str) -> any
         .from(from)
         .to(to)
         .subject("You already have a YEET Social account")
+        .header(ContentType::TEXT_HTML)
+        .body(html)?;
+    let mailer = transport(cfg)?;
+    mailer.send(email).await?;
+    Ok(())
+}
+
+/// "Forgot password": a link that lets the owner of the mailbox set a new
+/// password. Valid for one hour, works once.
+pub async fn send_password_reset_email(cfg: &EmailConfig, to_email: &str, token: &str) -> anyhow::Result<()> {
+    let url = format!("{}/?reset={}", cfg.public_base_url.trim_end_matches('/'), token);
+    let from: Mailbox = format!("YEET Social <{}>", cfg.from).parse()?;
+    let to: Mailbox = to_email.parse()?;
+    let html = format!(
+        r#"<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:24px">
+<div style="max-width:520px;margin:0 auto;background:#16181c;border:1px solid #2a2a2a;border-radius:16px;padding:32px">
+<h1 style="color:#c6f135;margin:0 0 16px;font-size:22px">Reset your YEET password</h1>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px">Someone asked for a new password for the YEET Social account with this email address. Use the button to choose one.</p>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px">Für das YEET-Social-Konto mit dieser E-Mail-Adresse wurde ein neues Passwort angefordert. Über den Button kannst du eines festlegen.</p>
+<p style="margin:24px 0"><a href="{url}" style="display:inline-block;background:#c6f135;color:#000;padding:12px 28px;border-radius:24px;text-decoration:none;font-weight:700">Set a new password / Neues Passwort festlegen</a></p>
+<p style="color:#888;font-size:13px">Or copy this link: <span style="word-break:break-all;color:#c6f135">{url}</span></p>
+<p style="color:#666;font-size:12px;margin-top:24px">The link works once and expires in 1 hour. If this was not you, ignore this email; your password stays as it is. / Der Link funktioniert einmal und läuft nach 1 Stunde ab. Falls du das nicht warst, ignoriere diese E-Mail; dein Passwort bleibt unverändert.</p>
+</div></body></html>"#,
+        url = url
+    );
+    let email = Message::builder()
+        .from(from)
+        .to(to)
+        .subject("Reset your YEET Social password")
         .header(ContentType::TEXT_HTML)
         .body(html)?;
     let mailer = transport(cfg)?;
