@@ -520,6 +520,115 @@ pub async fn link_email(
     Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
 }
 
+// ---- Password reset by email link ("Forgot password") ----
+
+#[derive(Debug, Deserialize)]
+pub struct ForgotPasswordRequest { pub email: String }
+
+#[derive(Debug, Deserialize)]
+pub struct ResetPasswordRequest { pub token: String, pub new_password: String }
+
+fn reset_token_hash(token: &str) -> String {
+    let mut h = Sha256::new();
+    h.update(token.as_bytes());
+    h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// POST /api/v1/auth/password-forgot — ask for a reset link.
+///
+/// The answer is always the same and does not wait for the mail, so the
+/// endpoint tells nobody whether an address has an account. At most three
+/// links per address and day; the newest link replaces the older ones.
+pub async fn forgot_password(
+    State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
+    Json(req): Json<ForgotPasswordRequest>,
+) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "pwreset_ip", &ip, 600, 5, 3600, 20).await?;
+    let email_lower = req.email.trim().to_lowercase();
+    if email_lower.len() > 320 || !email_lower.contains('@') {
+        return Err(AppError::Validation("Invalid email address".into()));
+    }
+    let done = Ok(Json(ApiResponse::ok(SimpleOk { ok: true })));
+
+    let user_id: Option<Uuid> = sqlx::query_scalar("SELECT id FROM users WHERE email = $1")
+        .bind(&email_lower)
+        .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let Some(user_id) = user_id else { return done; };
+    if !crate::services::rate_limit::check_one_window(&state.cache, "pwreset_mail", &email_lower, 86400, 3).await {
+        return done;
+    }
+
+    let token = gen_token();
+    let expires_at = Utc::now() + ChronoDuration::hours(1);
+    sqlx::query("DELETE FROM password_reset_tokens WHERE user_id = $1 OR expires_at < NOW()")
+        .bind(user_id).execute(state.db.pool()).await.map_err(AppError::Database)?;
+    sqlx::query("INSERT INTO password_reset_tokens (token_hash, user_id, expires_at) VALUES ($1, $2, $3)")
+        .bind(reset_token_hash(&token)).bind(user_id).bind(expires_at)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    match state.email.clone() {
+        // Sent in the background: the response time must not reveal that a mail goes out.
+        Some(cfg) => { tokio::spawn(async move {
+            if let Err(e) = email_svc::send_password_reset_email(&cfg, &email_lower, &token).await {
+                tracing::warn!("SMTP send (password reset) failed: {e}");
+            }
+        }); }
+        None => tracing::warn!("SMTP not configured; password reset link created but no email sent"),
+    }
+    done
+}
+
+/// POST /api/v1/auth/password-reset — set a new password with the token from
+/// the mail. The link works once and for one hour. Every session of the
+/// account is signed out. 2FA stays as it is: the next login still asks for
+/// the code, so a taken-over mailbox alone does not open a 2FA account.
+pub async fn reset_password(
+    State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
+    Json(req): Json<ResetPasswordRequest>,
+) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    let ip = crate::api::middleware::client_ip(&headers);
+    crate::api::middleware::limit(&state, "pwreset_use_ip", &ip, 600, 10, 3600, 40).await?;
+    if req.new_password.len() > 256 {
+        return Err(AppError::Validation("PASSWORD_TOO_LONG: Password too long".into()));
+    }
+    if req.new_password.len() < 8 {
+        return Err(AppError::Validation("PASSWORD_TOO_SHORT: Password must be at least 8 characters".into()));
+    }
+    if req.token.is_empty() || req.token.len() > 128 {
+        return Err(AppError::Validation("RESET_LINK_INVALID: This link is not valid or has expired".into()));
+    }
+    let new_hash = hash_password_argon2(&req.new_password)?;
+
+    // Consuming the token and setting the password is one transaction, so a
+    // link cannot be used twice by two requests arriving together.
+    let mut tx = state.db.pool().begin().await.map_err(AppError::Database)?;
+    let user_id: Option<Uuid> = sqlx::query_scalar(
+        "DELETE FROM password_reset_tokens WHERE token_hash = $1 AND expires_at > NOW() RETURNING user_id"
+    ).bind(reset_token_hash(&req.token)).fetch_optional(&mut *tx).await.map_err(AppError::Database)?;
+    let Some(user_id) = user_id else {
+        return Err(AppError::Validation("RESET_LINK_INVALID: This link is not valid or has expired".into()));
+    };
+    let email: Option<String> = sqlx::query_scalar(
+        "UPDATE users SET password_hash = $2, password_salt = '' WHERE id = $1 RETURNING email"
+    ).bind(user_id).bind(&new_hash).fetch_optional(&mut *tx).await.map_err(AppError::Database)?.flatten();
+    sqlx::query("DELETE FROM password_reset_tokens WHERE user_id = $1")
+        .bind(user_id).execute(&mut *tx).await.map_err(AppError::Database)?;
+    tx.commit().await.map_err(AppError::Database)?;
+
+    crate::api::sessions::revoke_all_for_user(state.db.pool(), &state.cache, user_id, state.jwt.refresh_ttl_secs)
+        .await.map_err(AppError::Database)?;
+
+    if let (Some(cfg), Some(to)) = (state.email.as_ref(), email.filter(|e| !e.is_empty())) {
+        if let Err(e) = email_svc::send_password_changed_email(cfg, &to).await {
+            tracing::warn!("SMTP send (password-changed note) failed: {e}");
+        }
+    }
+    Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
+}
+
 // ---- Password change (Settings) ----
 
 #[derive(Debug, Deserialize)]

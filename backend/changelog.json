@@ -466,6 +466,15 @@
         "#Settings",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-11-23-01-forgot-password",
+      "text": "New: \"Forgot password?\" on the login screen. Enter your email address and we send you a link to set a new password. The link is valid for 1 hour and works once; afterwards all devices are signed out. Two-factor authentication stays on, so the next login still asks for your code.",
+      "tags": [
+        "#Security",
+        "#Login",
+        "#NewFeature"
+      ]
     }
   ]
 }
