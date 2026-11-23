@@ -196,6 +196,7 @@ fn build_router(state: AppState) -> Router {
         .route("/api/v1/me/e2ee/keys",            post(api::e2ee::upload_keys))
         .route("/api/v1/me/e2ee/reauth-nonce",    post(api::reauth::nonce_endpoint))
         .route("/api/v1/me/reauth-nonce",         post(api::reauth::nonce_endpoint))
+        .route("/api/v1/me/password",             post(api::email_auth::change_password))
         .route("/api/v1/me/2fa/status",           get(api::twofa::status))
         .route("/api/v1/me/2fa/setup",            post(api::twofa::setup))
         .route("/api/v1/me/2fa/activate",         post(api::twofa::activate))

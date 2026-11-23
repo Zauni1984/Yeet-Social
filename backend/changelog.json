@@ -457,6 +457,15 @@
         "#2FA",
         "#Bugfix"
       ]
+    },
+    {
+      "id": "2026-11-23-00-change-password",
+      "text": "New: you can now change your password in Settings. Enter your current password and the new one; with two-factor authentication on, your authenticator code is asked for as well. All your other devices are signed out afterwards and you get an email confirming the change.",
+      "tags": [
+        "#Security",
+        "#Settings",
+        "#NewFeature"
+      ]
     }
   ]
 }

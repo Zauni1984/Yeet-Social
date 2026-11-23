@@ -38,9 +38,8 @@ jobs:
         working-directory: bots
         env:
           BASE_URL: ${{ vars.BOT_BASE_URL || 'https://justyeet.it' }}
-          # Set a repo secret BOT_SEED (a BIP-39 mnemonic) to keep the bot
-          # identities private + stable. Without it the script falls back to a
-          # built-in default seed (fine for a quick test, public addresses).
+          # Repo secret BOT_SEED (a BIP-39 mnemonic) is required: the script
+          # exits without it. There is no built-in default seed any more.
           BOT_SEED: ${{ secrets.BOT_SEED }}
           BOT_COUNT: ${{ github.event.inputs.bot_count || '5' }}
         run: npm start

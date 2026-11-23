@@ -19,12 +19,13 @@ post a fresh message, and interact with each other (like / comment / follow).
 ```bash
 cd bots
 npm install
-BASE_URL=https://justyeet.it BOT_COUNT=5 npm start
+BOT_SEED="<your 12/24-word phrase>" BASE_URL=https://justyeet.it BOT_COUNT=5 npm start
 ```
 
-Without `BOT_SEED` set, a built-in default test mnemonic is used (public,
-well-known addresses) so it works out of the box. For a real/shared deployment,
-set your own seed.
+`BOT_SEED` is required; without it the script exits. There is no built-in
+default any more: the old one was the published Hardhat test phrase, so anyone
+could sign in as the bots. Use a phrase generated only for the bots, never a
+published test phrase and never a wallet that holds funds.
 
 ## Daily automation (GitHub Actions)
 
@@ -35,11 +36,11 @@ be triggered manually (Actions → "Test Bots — daily activity" → Run workfl
 
 | Setting | Where | Default |
 | --- | --- | --- |
-| `BOT_SEED` | repo **secret** | built-in test mnemonic |
+| `BOT_SEED` | repo **secret** | none (required; the run fails without it) |
 | `BOT_BASE_URL` | repo **variable** | `https://justyeet.it` |
 | `BOT_COUNT` | workflow input / env | `5` (max 25) |
 
-To set a private, stable bot identity set:
+Set the seed once:
 **Settings → Secrets and variables → Actions → New repository secret** →
 name `BOT_SEED`, value a 12/24-word BIP-39 mnemonic.
 

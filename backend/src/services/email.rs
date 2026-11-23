@@ -111,6 +111,29 @@ pub async fn send_account_exists_email(cfg: &EmailConfig, to_email: &str) -> any
     Ok(())
 }
 
+/// Sent after a password change in Settings, so the owner notices a change
+/// they did not make.
+pub async fn send_password_changed_email(cfg: &EmailConfig, to_email: &str) -> anyhow::Result<()> {
+    let from: Mailbox = format!("YEET Social <{}>", cfg.from).parse()?;
+    let to: Mailbox = to_email.parse()?;
+    let html = r#"<!DOCTYPE html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0a;color:#fff;margin:0;padding:24px">
+<div style="max-width:520px;margin:0 auto;background:#16181c;border:1px solid #2a2a2a;border-radius:16px;padding:32px">
+<h1 style="color:#c6f135;margin:0 0 16px;font-size:22px">Your YEET password was changed</h1>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px">The password of your YEET Social account was just changed in Settings. All other devices were signed out.</p>
+<p style="color:#e0e0e0;line-height:1.6;font-size:15px">Dein Passwort für YEET Social wurde soeben in den Einstellungen geändert. Alle anderen Geräte wurden abgemeldet.</p>
+<p style="color:#888;font-size:13px;margin-top:24px">If this was not you, contact us right away using the address in the legal notice on justyeet.it. / Falls du das nicht warst, melde dich bitte sofort über die Adresse im Impressum auf justyeet.it.</p>
+</div></body></html>"#.to_string();
+    let email = Message::builder()
+        .from(from)
+        .to(to)
+        .subject("Your YEET Social password was changed")
+        .header(ContentType::TEXT_HTML)
+        .body(html)?;
+    let mailer = transport(cfg)?;
+    mailer.send(email).await?;
+    Ok(())
+}
+
 /// F7 — confirmation of a pay-per-view purchase on a durable medium
 /// (§ 312f BGB): restates the consent the buyer gave (immediate performance,
 /// loss of the right of withdrawal), the price and the time.

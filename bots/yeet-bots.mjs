@@ -10,10 +10,10 @@
 //
 // Env:
 //   BASE_URL   API + site base (default https://justyeet.it)
-//   BOT_SEED   BIP-39 mnemonic the bot wallets are derived from. If unset a
-//              built-in default is used so the script works out of the box;
-//              set a real secret (GitHub Actions secret BOT_SEED) to keep the
-//              bot identities private.
+//   BOT_SEED   BIP-39 mnemonic the bot wallets are derived from. Required:
+//              without it the script exits (GitHub Actions secret BOT_SEED).
+//              Whoever knows the phrase can sign in as the bots, so never
+//              use a published test phrase.
 //   BOT_COUNT  how many bots to run (default 5, capped at 25)
 //
 // No external deps beyond `ethers` (v6) — uses Node's global fetch (Node 18+).
@@ -198,9 +198,6 @@ async function fetchFeed(token) {
 async function main() {
   const t0 = Date.now();
   console.log(`[yeet-bots] base=${BASE_URL} bots=${BOT_COUNT}`);
-  if (SEED === DEFAULT_SEED) {
-    console.log('[yeet-bots] WARNING: using built-in default seed. Set BOT_SEED to keep bot identities private.');
-  }
 
   const mnemonic = Mnemonic.fromPhrase(SEED);
   const bots = [];

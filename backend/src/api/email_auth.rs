@@ -520,6 +520,93 @@ pub async fn link_email(
     Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
 }
 
+// ---- Password change (Settings) ----
+
+#[derive(Debug, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub current_password: String,
+    pub new_password: String,
+    /// Authenticator or recovery code; required when 2FA is on.
+    pub code: Option<String>,
+}
+
+/// Change the password of the signed-in account.
+///
+/// Needs the current password (a stolen session alone must not be able to
+/// lock the owner out) and, when 2FA is on, a current code. Every other
+/// session of the account is signed out; the caller's own session stays.
+/// The error messages start with a stable token the app translates.
+pub async fn change_password(
+    State(state): State<AppState>,
+    auth: AuthUser,
+    Json(req): Json<ChangePasswordRequest>,
+) -> AppResult<Json<ApiResponse<SimpleOk>>> {
+    if auth.api_key.is_some() {
+        return Err(AppError::Forbidden("API keys cannot change the password".into()));
+    }
+    crate::api::middleware::limit(&state, "password_change_user", &auth.address, 600, 5, 3600, 20).await?;
+    if req.current_password.len() > 256 || req.new_password.len() > 256 {
+        return Err(AppError::Validation("PASSWORD_TOO_LONG: Password too long".into()));
+    }
+    if req.new_password.len() < 8 {
+        return Err(AppError::Validation("PASSWORD_TOO_SHORT: Password must be at least 8 characters".into()));
+    }
+    let user_id = resolve_user_id(&state, &auth.address).await?;
+    let row: Option<(Option<String>, Option<String>, Option<String>)> = sqlx::query_as(
+        "SELECT password_hash, password_salt, email FROM users WHERE id = $1"
+    ).bind(user_id).fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
+    let Some((Some(stored_hash), salt, email)) = row else {
+        // Wallet-only accounts have no password to change.
+        return Err(AppError::Validation("PASSWORD_NOT_SET: This account signs in with a wallet and has no password".into()));
+    };
+    if stored_hash.is_empty() {
+        return Err(AppError::Validation("PASSWORD_NOT_SET: This account signs in with a wallet and has no password".into()));
+    }
+    let (ok, _) = verify_password(&req.current_password, &stored_hash, salt.as_deref().unwrap_or(""));
+    if !ok {
+        return Err(AppError::Validation("PASSWORD_WRONG: Current password is not correct".into()));
+    }
+    if req.new_password == req.current_password {
+        return Err(AppError::Validation("PASSWORD_SAME: The new password must differ from the current one".into()));
+    }
+    if crate::api::twofa::is_enabled(state.db.pool(), user_id).await {
+        let code = req.code.as_deref().map(str::trim).unwrap_or("");
+        if code.is_empty() {
+            return Err(AppError::Validation("MFA_REQUIRED: Enter your authenticator code".into()));
+        }
+        if !crate::api::twofa::verify_second_factor(&state, user_id, code).await? {
+            return Err(AppError::Validation("MFA_INVALID: Code is not valid".into()));
+        }
+    }
+
+    let new_hash = hash_password_argon2(&req.new_password)?;
+    sqlx::query("UPDATE users SET password_hash = $2, password_salt = '' WHERE id = $1")
+        .bind(user_id).bind(&new_hash)
+        .execute(state.db.pool()).await.map_err(AppError::Database)?;
+
+    // Sign out every other device; whoever knew the old password is out.
+    let keep = auth.sid.unwrap_or(Uuid::nil());
+    let rows: Vec<(String, Uuid)> = sqlx::query_as(
+        "UPDATE user_sessions
+            SET revoked_at = NOW(), revoked_reason = 'password_change'
+          WHERE user_id = $1 AND revoked_at IS NULL AND family_id <> $2
+         RETURNING jti, family_id"
+    ).bind(user_id).bind(keep)
+     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
+    for (jti, family_id) in rows {
+        crate::api::sessions::blacklist_session_jti(&state.cache, &jti, state.jwt.refresh_ttl_secs).await;
+        crate::api::sessions::revoke_family_now(&state.cache, family_id, state.jwt.access_ttl_secs).await;
+    }
+
+    // Tell the owner; if it was not them, this mail is how they find out.
+    if let (Some(cfg), Some(to)) = (state.email.as_ref(), email.filter(|e| !e.is_empty())) {
+        if let Err(e) = email_svc::send_password_changed_email(cfg, &to).await {
+            tracing::warn!("SMTP send (password-changed note) failed: {e}");
+        }
+    }
+    Ok(Json(ApiResponse::ok(SimpleOk { ok: true })))
+}
+
 async fn resolve_user_id(state: &AppState, auth_address: &str) -> AppResult<Uuid> {
     if let Some(uuid_str) = auth_address.strip_prefix("email:") {
         return uuid_str.parse::<Uuid>().map_err(|_| AppError::NotFound("Invalid user ID".into()));
