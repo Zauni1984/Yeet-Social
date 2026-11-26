@@ -475,6 +475,15 @@
         "#Login",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-11-26-00-installable-app",
+      "text": "YEET can now be installed as an app: open justyeet.it in your phone's browser and choose \"Add to home screen\" to get YEET with its own icon, full screen. This is also the groundwork for the Android app in Google Play. Fixed along the way: the privacy policy link in the sign-up form now opens the policy.",
+      "tags": [
+        "#App",
+        "#Android",
+        "#NewFeature"
+      ]
     }
   ]
 }

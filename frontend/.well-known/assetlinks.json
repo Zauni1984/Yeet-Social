@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "it.justyeet.app",
+      "sha256_cert_fingerprints": [
+        "22:AA:C0:B4:40:86:C5:6B:5A:E8:88:5D:D9:5D:E0:4E:A4:F4:40:BE:15:15:DA:84:57:A7:A4:4B:EA:63:1E:DC"
+      ]
+    }
+  }
+]

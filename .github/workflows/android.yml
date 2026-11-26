@@ -1,0 +1,71 @@
+name: Android — build Play Store bundle (manual)
+
+# Builds the signed app bundle (.aab) for Google Play from android/. Nothing
+# is uploaded to Play: download the artifact and upload it in the Play
+# Console. See docs/play-store.md.
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version shown to users, e.g. 1.0.0'
+        required: true
+        default: '1.0.0'
+      version_code:
+        description: 'Whole number; must be higher than the last upload to Play'
+        required: true
+        default: '1'
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    name: Build signed bundle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Upload key from secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::Secret ANDROID_KEYSTORE_B64 is missing (docs/play-store.md, step 2)."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      - name: Accept SDK licences
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - name: Lint and build
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/upload.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code }}
+        run: |
+          case "$VERSION_CODE" in ''|*[!0-9]*) echo "::error::version_code must be a whole number"; exit 1;; esac
+          ./gradlew --no-daemon lintRelease bundleRelease assembleRelease \
+            -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"
+
+      - name: Check the signature
+        run: |
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab | grep -q "jar verified"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk | grep "SHA-256"
+
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: yeet-android-${{ inputs.version_name }}-${{ inputs.version_code }}
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">YEET</string>
+    <string name="launch_url" translatable="false">https://justyeet.it/?source=android</string>
+    <string name="web_manifest_url" translatable="false">https://justyeet.it/manifest.json</string>
+    <string name="provider_authority" translatable="false">it.justyeet.app.fileprovider</string>
+    <string name="shortcut_post">New post</string>
+    <string name="shortcut_feed">Feed</string>
+    <string name="asset_statements" translatable="false">
+        [{
+            \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+            \"target\": {
+                \"namespace\": \"web\",
+                \"site\": \"https://justyeet.it\"
+            }
+        }]
+    </string>
+</resources>
