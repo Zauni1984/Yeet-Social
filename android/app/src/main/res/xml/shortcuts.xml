@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="post"
+        android:shortcutShortLabel="@string/shortcut_post">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://justyeet.it/?compose=1&amp;source=android"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetPackage="it.justyeet.app" />
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="feed"
+        android:shortcutShortLabel="@string/shortcut_feed">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://justyeet.it/?source=android"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:targetPackage="it.justyeet.app" />
+    </shortcut>
+</shortcuts>

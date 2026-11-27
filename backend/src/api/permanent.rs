@@ -196,7 +196,9 @@ pub async fn get_permanent_posts(
     } else { false };
 
     // Hide 18+ posts unless the viewer has completed age verification (owner always sees own).
-    let viewer_age_verified: bool = if is_owner {
+    let viewer_age_verified: bool = if crate::api::middleware::store_safe() {
+        false // Google Play app: no 18+ posts, not even the owner's own
+    } else if is_owner {
         true
     } else if let Some(vid) = viewer_id {
         sqlx::query_scalar::<_, bool>("SELECT age_verified_at IS NOT NULL FROM users WHERE id = $1")
@@ -255,9 +257,10 @@ pub async fn get_my_permanent_posts(
          FROM posts
          WHERE author_id = $1 AND is_permanent = TRUE
            AND is_removed = FALSE AND deleted_at IS NULL
+           AND ($2 = FALSE OR is_adult = FALSE)
          ORDER BY created_at DESC"
     )
-    .bind(user_id)
+    .bind(user_id).bind(crate::api::middleware::store_safe())
     .fetch_all(state.db.pool())
     .await
     .map_err(AppError::Database)?;

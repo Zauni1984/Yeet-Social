@@ -65,6 +65,18 @@ for f in api.html openapi.json yeet-rewards-de.pdf yeet-rewards-en.pdf; do
   ls -la "$HTML_DIR/$f"
 done
 
+# Web app manifest, icons and Android asset links: the installable app and
+# the Play Store wrapper (docs/play-store.md) need them as real files.
+mkdir -p "$HTML_DIR/icons" "$HTML_DIR/.well-known"
+for f in manifest.json .well-known/assetlinks.json \
+         icons/icon-192.png icons/icon-512.png icons/maskable-192.png icons/maskable-512.png \
+         icons/monochrome-512.png icons/splash-512.png icons/apple-touch-icon.png \
+         icons/favicon-32.png icons/favicon-48.png; do
+  curl -fsSL "$REPO_RAW/frontend/$f" -o "$HTML_DIR/$f.new"
+  mv "$HTML_DIR/$f.new" "$HTML_DIR/$f"
+done
+ls -la "$HTML_DIR/manifest.json" "$HTML_DIR/icons" "$HTML_DIR/.well-known"
+
 docker exec yeet-nginx nginx -s reload || \
   docker compose restart nginx
 

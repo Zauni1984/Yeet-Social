@@ -1,0 +1,64 @@
+// YEET Social for Android: a Trusted Web Activity. The app is a thin shell
+// that shows https://justyeet.it full screen in the user's browser engine;
+// there is no app logic here. See docs/play-store.md.
+plugins {
+    id 'com.android.application'
+}
+
+// Version: versionCode must rise with every upload to Play. CI passes both
+// (-PversionCode=…, -PversionName=…); local builds default to 1 / 1.0.0.
+def appVersionCode = (project.findProperty('versionCode') ?: '1').toString().toInteger()
+def appVersionName = (project.findProperty('versionName') ?: '1.0.0').toString()
+
+// Upload key: only from the environment, never from the repository.
+def ksFile = System.getenv('ANDROID_KEYSTORE_FILE')
+def hasSigning = ksFile != null && !ksFile.isEmpty() && file(ksFile).exists()
+
+android {
+    namespace 'it.justyeet.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'it.justyeet.app'
+        minSdk 26
+        targetSdk 36
+        versionCode appVersionCode
+        versionName appVersionName
+    }
+
+    signingConfigs {
+        if (hasSigning) {
+            upload {
+                storeFile file(ksFile)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS') ?: 'upload'
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            if (hasSigning) {
+                signingConfig signingConfigs.upload
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.8.0'
+}

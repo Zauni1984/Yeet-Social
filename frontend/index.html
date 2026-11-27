@@ -2,6 +2,40 @@
 <html lang="de">
 <head>
 <script>
+// Google Play app (android/, docs/play-store.md): the site runs inside a
+// Trusted Web Activity. Play does not allow adult user content in an app, so
+// in that context 18+ content is switched off: every API call carries
+// X-Yeet-Client: android (the server then leaves 18+ content out) and the
+// 18+ controls are hidden. Kept per tab (sessionStorage), because
+// localStorage is shared with the phone's normal browser, which must stay
+// unaffected.
+(function(){
+  try{
+    var inApp = sessionStorage.getItem('yeet_android')==='1'
+      || new URLSearchParams(location.search).get('source')==='android'
+      || /^android-app:\/\/it\.justyeet\.app(\/|$)/.test(document.referrer||'');
+    if(!inApp) return;
+    sessionStorage.setItem('yeet_android','1');
+    window.YEET_ANDROID = true;
+    document.documentElement.classList.add('yeet-android');
+    var nativeFetch = window.fetch;
+    window.fetch = function(input, init){
+      try{
+        var url = typeof input==='string' ? input : ((input && input.url) || '');
+        var own = (url.charAt(0)==='/' && url.charAt(1)!=='/') || url.indexOf(location.origin+'/')===0;
+        if(own && url.indexOf('/api/')!==-1){
+          init = init || {};
+          var h = new Headers(init.headers || ((typeof input!=='string' && input && input.headers) || {}));
+          h.set('X-Yeet-Client','android');
+          init.headers = h;
+        }
+      }catch(e){}
+      return nativeFetch.call(this, input, init);
+    };
+  }catch(e){}
+})();
+</script>
+<script>
 // Moods: apply the saved color mood before CSS parses so there is no
 // flash of the default theme on reload. Namespaced key (yeet_mood) so it
 // can't collide with other apps on the same origin.
@@ -26,6 +60,10 @@ if('serviceWorker' in navigator){
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <title>YEET Social &mdash; Share the moment. Collect points.</title>
 <meta name="description" content="Yeet Social: 24-hour posts, audio stories, live streams and end-to-end encrypted messages. Posting, commenting and tipping run on platform points — no wallet needed. On-chain YEET comes in a later version.">
 <meta property="og:type" content="website">
@@ -35,6 +73,8 @@ if('serviceWorker' in navigator){
 <meta property="og:url" content="https://justyeet.it/">
 <meta name="twitter:card" content="summary">
 <style>
+/* Google Play app: no 18+ controls (see the first script in <head>). */
+.yeet-android #adultToggleLabel,.yeet-android .adult-only-ui,.yeet-android div:has(> #setting18){display:none !important}
 /* ── Moods (Farbstimmungen) ───────────────────────────────────────────────
    Every theme defines the SAME token set — only values change. Switching is
    one data-theme attribute on <html> + localStorage ('yeet_mood').
@@ -1141,7 +1181,7 @@ html.ld-on body{overflow:hidden}
       'auth.welcomeBack':'Welcome back','auth.createAccount':'Create Account','auth.subLogin':'Sign in to YEET Social','auth.subRegister':'Join YEET - get your Web3 wallet instantly',
       'auth.subDefault':'Connect wallet or use email to continue','auth.login':'Login','auth.register':'Register','auth.orEmail':'or use email',
       'auth.email':'Email','auth.password':'Password','auth.username':'Username','auth.passwordMin':'Min. 8 characters','auth.continue':'Continue',
-      'auth.consent':'I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).',
+      'auth.consent':'I agree to the <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Fill all fields','auth.loginFailed':'Login failed','auth.welcomeBackUser':'Welcome back, @{u}','auth.usernameMin':'Username min 3 chars',
       'auth.passwordMinErr':'Password min 8 chars','auth.invalidEmail':'Invalid email','auth.acceptPrivacy':'Please accept the privacy policy (GDPR)',
       'auth.registerFailed':'Registration failed','auth.registerNeutral':'If this address was new, your account was created and a confirmation email is on its way — log in with your password. If you already had an account with this address, use that password or "Forgot password".','auth.welcomeNew':'Welcome to YEET, @{u}','auth.nonceFailed':'Nonce failed','auth.failed':'Auth failed',
@@ -1251,6 +1291,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Notifications enabled on this device',
       'settings.pushUnregistered':'Notifications disabled on this device',
       'settings.verifySeed':'Verify recovery phrase',
+      'auth.age18':'I am at least 18 years old.','auth.age18Required':'YEET Social is for adults only. Please confirm that you are at least 18.',
       'pwr.forgot':'Forgot password?','pwr.needEmail':'Enter your email address above first.','pwr.sent':'If an account exists for this address, we have sent a link to set a new password. It is valid for 1 hour.','pwr.title':'Set a new password','pwr.hint':'Choose a new password for your account. All devices are signed out afterwards.','pwr.save':'Save new password','pwr.done':'Password saved. You can now log in with it.','pwr.err.RESET_LINK_INVALID':'This link is not valid or has expired. Request a new one with "Forgot password?".',
       'pw.title':'Password','pw.current':'Current password','pw.new':'New password (at least 8 characters)','pw.repeat':'Repeat new password','pw.code':'Authenticator code','pw.change':'Change password','pw.changed':'Password changed. All other devices were signed out.','pw.mismatch':'The new passwords do not match.','pw.fill':'Please fill in all fields.','pw.walletOnly':'This account signs in with a wallet and has no password.','pw.err.PASSWORD_WRONG':'The current password is not correct.','pw.err.PASSWORD_TOO_SHORT':'The new password needs at least 8 characters.','pw.err.PASSWORD_TOO_LONG':'The password is too long.','pw.err.PASSWORD_SAME':'The new password must differ from the current one.','pw.err.PASSWORD_NOT_SET':'This account signs in with a wallet and has no password.','pw.err.MFA_REQUIRED':'Please enter your authenticator code.','pw.err.MFA_INVALID':'The authenticator code is not valid.','pw.err.rate':'Too many attempts. Please try again later.',
       'twofa.title':'Two-factor authentication','twofa.loading':'…','twofa.on':'Enabled','twofa.off':'Not enabled — recommended for account safety.','twofa.enable':'Enable 2FA (authenticator app)','twofa.disable':'Disable 2FA','twofa.recoveryLeft':'{n} recovery codes left','twofa.scanHint':'Scan this with an authenticator app (Google Authenticator, Aegis, 1Password …), then enter the 6-digit code.','twofa.manualEntry':'Or enter this key manually:','twofa.verify':'Verify & enable','twofa.badCode':'That code is not valid.','twofa.enabledTitle':'Two-factor authentication is on','twofa.recoveryHint':'Save these one-time recovery codes somewhere safe. Each works once if you lose your authenticator. They are shown only now.','twofa.saved':'I saved them','twofa.disablePrompt':'Enter a current 6-digit code (or a recovery code) to turn 2FA off:','twofa.disabledToast':'Two-factor authentication disabled.','twofa.enterCode':'Enter your 6-digit authenticator code (or a recovery code):','twofa.needed':'Two-factor code required to finish signing in.',
@@ -1592,7 +1633,7 @@ html.ld-on body{overflow:hidden}
       'auth.welcomeBack':'Willkommen zurück','auth.createAccount':'Konto erstellen','auth.subLogin':'Melde dich bei YEET Social an','auth.subRegister':'Werde Teil von YEET – Web3-Wallet inklusive',
       'auth.subDefault':'Wallet verbinden oder mit E-Mail fortfahren','auth.login':'Anmelden','auth.register':'Registrieren','auth.orEmail':'oder mit E-Mail',
       'auth.email':'E-Mail','auth.password':'Passwort','auth.username':'Benutzername','auth.passwordMin':'Mind. 8 Zeichen','auth.continue':'Weiter',
-      'auth.consent':'Ich stimme der <a href="/privacy.html" target="_blank" style="color:var(--yeet)">Datenschutzerklärung</a> zu und willige ein, eine Bestätigungs-E-Mail zu erhalten (DSGVO-Double-Opt-in).',
+      'auth.consent':'Ich stimme der <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">Datenschutzerklärung</a> zu und willige ein, eine Bestätigungs-E-Mail zu erhalten (DSGVO-Double-Opt-in).',
       'auth.fillAll':'Bitte alle Felder ausfüllen','auth.loginFailed':'Anmeldung fehlgeschlagen','auth.welcomeBackUser':'Willkommen zurück, @{u}','auth.usernameMin':'Benutzername: mind. 3 Zeichen',
       'auth.passwordMinErr':'Passwort: mind. 8 Zeichen','auth.invalidEmail':'Ungültige E-Mail-Adresse','auth.acceptPrivacy':'Bitte akzeptiere die Datenschutzerklärung (DSGVO)',
       'auth.registerFailed':'Registrierung fehlgeschlagen','auth.registerNeutral':'Falls diese Adresse neu war, ist dein Konto angelegt und eine Bestätigungs-Mail unterwegs — melde dich mit deinem Passwort an. Falls du mit dieser Adresse schon ein Konto hattest, nutze dessen Passwort oder „Passwort vergessen“.','auth.welcomeNew':'Willkommen bei YEET, @{u}','auth.nonceFailed':'Nonce fehlgeschlagen','auth.failed':'Authentifizierung fehlgeschlagen',
@@ -1695,6 +1736,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Benachrichtigungen auf diesem Gerät aktiviert',
       'settings.pushUnregistered':'Benachrichtigungen auf diesem Gerät deaktiviert',
       'settings.verifySeed':'Recovery-Phrase prüfen',
+      'auth.age18':'Ich bin mindestens 18 Jahre alt.','auth.age18Required':'YEET Social ist nur für Erwachsene. Bitte bestätige, dass du mindestens 18 bist.',
       'pwr.forgot':'Passwort vergessen?','pwr.needEmail':'Gib zuerst oben deine E-Mail-Adresse ein.','pwr.sent':'Falls zu dieser Adresse ein Konto existiert, haben wir einen Link zum Festlegen eines neuen Passworts geschickt. Er ist 1 Stunde gültig.','pwr.title':'Neues Passwort festlegen','pwr.hint':'Wähle ein neues Passwort für dein Konto. Danach werden alle Geräte abgemeldet.','pwr.save':'Neues Passwort speichern','pwr.done':'Passwort gespeichert. Du kannst dich jetzt damit anmelden.','pwr.err.RESET_LINK_INVALID':'Dieser Link ist ungültig oder abgelaufen. Fordere über „Passwort vergessen?“ einen neuen an.',
       'pw.title':'Passwort','pw.current':'Aktuelles Passwort','pw.new':'Neues Passwort (mindestens 8 Zeichen)','pw.repeat':'Neues Passwort wiederholen','pw.code':'Authenticator-Code','pw.change':'Passwort ändern','pw.changed':'Passwort geändert. Alle anderen Geräte wurden abgemeldet.','pw.mismatch':'Die neuen Passwörter stimmen nicht überein.','pw.fill':'Bitte alle Felder ausfüllen.','pw.walletOnly':'Dieses Konto meldet sich per Wallet an und hat kein Passwort.','pw.err.PASSWORD_WRONG':'Das aktuelle Passwort ist nicht korrekt.','pw.err.PASSWORD_TOO_SHORT':'Das neue Passwort braucht mindestens 8 Zeichen.','pw.err.PASSWORD_TOO_LONG':'Das Passwort ist zu lang.','pw.err.PASSWORD_SAME':'Das neue Passwort muss sich vom aktuellen unterscheiden.','pw.err.PASSWORD_NOT_SET':'Dieses Konto meldet sich per Wallet an und hat kein Passwort.','pw.err.MFA_REQUIRED':'Bitte gib deinen Authenticator-Code ein.','pw.err.MFA_INVALID':'Der Authenticator-Code ist nicht gültig.','pw.err.rate':'Zu viele Versuche. Bitte später erneut versuchen.',
       'twofa.title':'Zwei-Faktor-Authentifizierung','twofa.loading':'…','twofa.on':'Aktiv','twofa.off':'Nicht aktiv — für die Kontosicherheit empfohlen.','twofa.enable':'2FA aktivieren (Authenticator-App)','twofa.disable':'2FA deaktivieren','twofa.recoveryLeft':'{n} Wiederherstellungscodes übrig','twofa.scanHint':'Scanne dies mit einer Authenticator-App (Google Authenticator, Aegis, 1Password …) und gib dann den 6-stelligen Code ein.','twofa.manualEntry':'Oder diesen Schlüssel manuell eingeben:','twofa.verify':'Prüfen & aktivieren','twofa.badCode':'Dieser Code ist ungültig.','twofa.enabledTitle':'Zwei-Faktor-Authentifizierung ist aktiv','twofa.recoveryHint':'Bewahre diese einmaligen Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du deinen Authenticator verlierst. Sie werden nur jetzt angezeigt.','twofa.saved':'Gespeichert','twofa.disablePrompt':'Gib einen aktuellen 6-stelligen Code (oder einen Wiederherstellungscode) ein, um 2FA zu deaktivieren:','twofa.disabledToast':'Zwei-Faktor-Authentifizierung deaktiviert.','twofa.enterCode':'Gib deinen 6-stelligen Authenticator-Code (oder einen Wiederherstellungscode) ein:','twofa.needed':'Zwei-Faktor-Code nötig, um die Anmeldung abzuschließen.',
@@ -2078,7 +2120,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nome utente',
       'auth.passwordMin':'Min. 8 caratteri',
       'auth.continue':'Continua',
-      'auth.consent':'Accetto l\'<a href="/privacy.html" target="_blank" style="color:var(--yeet)">informativa sulla privacy</a> e acconsento a ricevere un\'email di verifica (double opt-in GDPR / DSGVO).',
+      'auth.consent':'Accetto l\'<a href="/legal/privacy" target="_blank" style="color:var(--yeet)">informativa sulla privacy</a> e acconsento a ricevere un\'email di verifica (double opt-in GDPR / DSGVO).',
       'auth.fillAll':'Compila tutti i campi',
       'auth.loginFailed':'Accesso fallito',
       'auth.welcomeBackUser':'Bentornato, @{u}',
@@ -2765,7 +2807,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nom d\'utilisateur',
       'auth.passwordMin':'Min. 8 caractères',
       'auth.continue':'Continuer',
-      'auth.consent':'J\'accepte la <a href="/privacy.html" target="_blank" style="color:var(--yeet)">politique de confidentialité</a> et consens à recevoir un e-mail de vérification (double opt-in RGPD).',
+      'auth.consent':'J\'accepte la <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politique de confidentialité</a> et consens à recevoir un e-mail de vérification (double opt-in RGPD).',
       'auth.fillAll':'Remplis tous les champs',
       'auth.loginFailed':'Échec de la connexion',
       'auth.welcomeBackUser':'Content de te revoir, @{u}',
@@ -3452,7 +3494,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nombre de usuario',
       'auth.passwordMin':'Mín. 8 caracteres',
       'auth.continue':'Continuar',
-      'auth.consent':'Acepto la <a href="/privacy.html" target="_blank" style="color:var(--yeet)">política de privacidad</a> y doy mi consentimiento para recibir un email de verificación (doble opt-in RGPD / DSGVO).',
+      'auth.consent':'Acepto la <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">política de privacidad</a> y doy mi consentimiento para recibir un email de verificación (doble opt-in RGPD / DSGVO).',
       'auth.fillAll':'Completa todos los campos',
       'auth.loginFailed':'Error al iniciar sesión',
       'auth.welcomeBackUser':'Hola de nuevo, @{u}',
@@ -4139,7 +4181,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nome de usuário',
       'auth.passwordMin':'Mín. 8 caracteres',
       'auth.continue':'Continuar',
-      'auth.consent':'Concordo com a <a href="/privacy.html" target="_blank" style="color:var(--yeet)">política de privacidade</a> e aceito receber um e-mail de verificação (double opt-in conforme o RGPD).',
+      'auth.consent':'Concordo com a <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">política de privacidade</a> e aceito receber um e-mail de verificação (double opt-in conforme o RGPD).',
       'auth.fillAll':'Preencha todos os campos',
       'auth.loginFailed':'Falha no login',
       'auth.welcomeBackUser':'Que bom ter você de volta, @{u}',
@@ -4824,7 +4866,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Käyttäjänimi',
       'auth.passwordMin':'Väh. 8 merkkiä',
       'auth.continue':'Jatka',
-      'auth.consent':'Hyväksyn <a href="/privacy.html" target="_blank" style="color:var(--yeet)">tietosuojaselosteen</a> ja suostun vastaanottamaan vahvistussähköpostin (GDPR-kaksoisvahvistus).',
+      'auth.consent':'Hyväksyn <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">tietosuojaselosteen</a> ja suostun vastaanottamaan vahvistussähköpostin (GDPR-kaksoisvahvistus).',
       'auth.fillAll':'Täytä kaikki kentät',
       'auth.loginFailed':'Kirjautuminen epäonnistui',
       'auth.welcomeBackUser':'Tervetuloa takaisin, @{u}',
@@ -5513,7 +5555,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Användarnamn',
       'auth.passwordMin':'Minst 8 tecken',
       'auth.continue':'Fortsätt',
-      'auth.consent':'Jag godkänner <a href="/privacy.html" target="_blank" style="color:var(--yeet)">integritetspolicyn</a> och samtycker till att få ett verifieringsmejl (GDPR / DSGVO dubbel opt-in).',
+      'auth.consent':'Jag godkänner <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">integritetspolicyn</a> och samtycker till att få ett verifieringsmejl (GDPR / DSGVO dubbel opt-in).',
       'auth.fillAll':'Fyll i alla fält',
       'auth.loginFailed':'Inloggningen misslyckades',
       'auth.welcomeBackUser':'Välkommen tillbaka, @{u}',
@@ -6202,7 +6244,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Brukernavn',
       'auth.passwordMin':'Min. 8 tegn',
       'auth.continue':'Fortsett',
-      'auth.consent':'Jeg godtar <a href="/privacy.html" target="_blank" style="color:var(--yeet)">personvernerklæringen</a> og samtykker til å motta en bekreftelses-e-post (GDPR / DSGVO dobbel opt-in).',
+      'auth.consent':'Jeg godtar <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">personvernerklæringen</a> og samtykker til å motta en bekreftelses-e-post (GDPR / DSGVO dobbel opt-in).',
       'auth.fillAll':'Fyll ut alle feltene',
       'auth.loginFailed':'Innlogging mislyktes',
       'auth.welcomeBackUser':'Velkommen tilbake, @{u}',
@@ -6891,7 +6933,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Notandanafn',
       'auth.passwordMin':'Minnst 8 stafir',
       'auth.continue':'Áfram',
-      'auth.consent':'Ég samþykki <a href="/privacy.html" target="_blank" style="color:var(--yeet)">persónuverndarstefnuna</a> og samþykki að fá staðfestingarpóst (GDPR tvöföld staðfesting).',
+      'auth.consent':'Ég samþykki <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">persónuverndarstefnuna</a> og samþykki að fá staðfestingarpóst (GDPR tvöföld staðfesting).',
       'auth.fillAll':'Fylltu út alla reiti',
       'auth.loginFailed':'Innskráning mistókst',
       'auth.welcomeBackUser':'Velkomin aftur, @{u}',
@@ -7579,7 +7621,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Uživatelské jméno',
       'auth.passwordMin':'Min. 8 znaků',
       'auth.continue':'Pokračovat',
-      'auth.consent':'Souhlasím se <a href="/privacy.html" target="_blank" style="color:var(--yeet)">zásadami ochrany osobních údajů</a> a se zasláním ověřovacího e-mailu (GDPR double opt-in).',
+      'auth.consent':'Souhlasím se <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">zásadami ochrany osobních údajů</a> a se zasláním ověřovacího e-mailu (GDPR double opt-in).',
       'auth.fillAll':'Vyplň všechna pole',
       'auth.loginFailed':'Přihlášení selhalo',
       'auth.welcomeBackUser':'Vítej zpět, @{u}',
@@ -8271,7 +8313,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Brugernavn',
       'auth.passwordMin':'Min. 8 tegn',
       'auth.continue':'Fortsæt',
-      'auth.consent':'Jeg accepterer <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privatlivspolitikken</a> og giver samtykke til at modtage en bekræftelsesmail (GDPR double opt-in).',
+      'auth.consent':'Jeg accepterer <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privatlivspolitikken</a> og giver samtykke til at modtage en bekræftelsesmail (GDPR double opt-in).',
       'auth.fillAll':'Udfyld alle felter',
       'auth.loginFailed':'Login mislykkedes',
       'auth.welcomeBackUser':'Velkommen tilbage, @{u}',
@@ -8963,7 +9005,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Gebruikersnaam',
       'auth.passwordMin':'Min. 8 tekens',
       'auth.continue':'Doorgaan',
-      'auth.consent':'Ik ga akkoord met het <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacybeleid</a> en geef toestemming voor het ontvangen van een verificatiemail (AVG double opt-in).',
+      'auth.consent':'Ik ga akkoord met het <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privacybeleid</a> en geef toestemming voor het ontvangen van een verificatiemail (AVG double opt-in).',
       'auth.fillAll':'Vul alle velden in',
       'auth.loginFailed':'Inloggen mislukt',
       'auth.welcomeBackUser':'Welkom terug, @{u}',
@@ -9655,7 +9697,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nazwa użytkownika',
       'auth.passwordMin':'Min. 8 znaków',
       'auth.continue':'Dalej',
-      'auth.consent':'Akceptuję <a href="/privacy.html" target="_blank" style="color:var(--yeet)">politykę prywatności</a> i wyrażam zgodę na otrzymanie e-maila weryfikacyjnego (RODO / double opt-in).',
+      'auth.consent':'Akceptuję <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politykę prywatności</a> i wyrażam zgodę na otrzymanie e-maila weryfikacyjnego (RODO / double opt-in).',
       'auth.fillAll':'Wypełnij wszystkie pola',
       'auth.loginFailed':'Logowanie nie powiodło się',
       'auth.welcomeBackUser':'Witaj ponownie, @{u}',
@@ -10347,7 +10389,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Korisničko ime',
       'auth.passwordMin':'Min. 8 znakova',
       'auth.continue':'Nastavi',
-      'auth.consent':'Slažem se s <a href="/privacy.html" target="_blank" style="color:var(--yeet)">pravilima privatnosti</a> i pristajem na primanje e-maila za potvrdu (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Slažem se s <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">pravilima privatnosti</a> i pristajem na primanje e-maila za potvrdu (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Ispuni sva polja',
       'auth.loginFailed':'Prijava nije uspjela',
       'auth.welcomeBackUser':'Lijepo te opet vidjeti, @{u}',
@@ -11043,7 +11085,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Korisničko ime',
       'auth.passwordMin':'Min. 8 znakova',
       'auth.continue':'Nastavi',
-      'auth.consent':'Slažem se sa <a href="/privacy.html" target="_blank" style="color:var(--yeet)">politikom privatnosti</a> i pristajem da primim verifikacioni imejl (GDPR dvostruka potvrda).',
+      'auth.consent':'Slažem se sa <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politikom privatnosti</a> i pristajem da primim verifikacioni imejl (GDPR dvostruka potvrda).',
       'auth.fillAll':'Popuni sva polja',
       'auth.loginFailed':'Prijava nije uspela',
       'auth.welcomeBackUser':'Dobro došao nazad, @{u}',
@@ -11739,7 +11781,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Kullanıcı adı',
       'auth.passwordMin':'En az 8 karakter',
       'auth.continue':'Devam',
-      'auth.consent':'<a href="/privacy.html" target="_blank" style="color:var(--yeet)">Gizlilik politikasını</a> kabul ediyor ve bir doğrulama e-postası almayı onaylıyorum (GDPR/KVKK çift onay).',
+      'auth.consent':'<a href="/legal/privacy" target="_blank" style="color:var(--yeet)">Gizlilik politikasını</a> kabul ediyor ve bir doğrulama e-postası almayı onaylıyorum (GDPR/KVKK çift onay).',
       'auth.fillAll':'Tüm alanları doldur',
       'auth.loginFailed':'Giriş başarısız',
       'auth.welcomeBackUser':'Tekrar hoş geldin, @{u}',
@@ -12435,7 +12477,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Lietotājvārds',
       'auth.passwordMin':'Vismaz 8 rakstzīmes',
       'auth.continue':'Turpināt',
-      'auth.consent':'Piekrītu <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privātuma politikai</a> un apstiprinājuma e-pasta saņemšanai (VDAR / DSGVO dubultā piekrišana).',
+      'auth.consent':'Piekrītu <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privātuma politikai</a> un apstiprinājuma e-pasta saņemšanai (VDAR / DSGVO dubultā piekrišana).',
       'auth.fillAll':'Aizpildi visus laukus',
       'auth.loginFailed':'Pieslēgšanās neizdevās',
       'auth.welcomeBackUser':'Sveiks atkal, @{u}',
@@ -13132,7 +13174,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Όνομα χρήστη',
       'auth.passwordMin':'Τουλ. 8 χαρακτήρες',
       'auth.continue':'Συνέχεια',
-      'auth.consent':'Συμφωνώ με την <a href="/privacy.html" target="_blank" style="color:var(--yeet)">πολιτική απορρήτου</a> και συναινώ στη λήψη email επαλήθευσης (double opt-in κατά GDPR (ΓΚΠΔ)).',
+      'auth.consent':'Συμφωνώ με την <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">πολιτική απορρήτου</a> και συναινώ στη λήψη email επαλήθευσης (double opt-in κατά GDPR (ΓΚΠΔ)).',
       'auth.fillAll':'Συμπλήρωσε όλα τα πεδία',
       'auth.loginFailed':'Η σύνδεση απέτυχε',
       'auth.welcomeBackUser':'Καλώς ήρθες ξανά, @{u}',
@@ -13833,7 +13875,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Felhasználónév',
       'auth.passwordMin':'Min. 8 karakter',
       'auth.continue':'Tovább',
-      'auth.consent':'Elfogadom az <a href="/privacy.html" target="_blank" style="color:var(--yeet)">adatvédelmi tájékoztatót</a>, és hozzájárulok egy megerősítő e-mail fogadásához (GDPR double opt-in).',
+      'auth.consent':'Elfogadom az <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">adatvédelmi tájékoztatót</a>, és hozzájárulok egy megerősítő e-mail fogadásához (GDPR double opt-in).',
       'auth.fillAll':'Tölts ki minden mezőt',
       'auth.loginFailed':'A bejelentkezés sikertelen',
       'auth.welcomeBackUser':'Üdv újra, @{u}',
@@ -14534,7 +14576,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nume de utilizator',
       'auth.passwordMin':'Min. 8 caractere',
       'auth.continue':'Continuă',
-      'auth.consent':'Sunt de acord cu <a href="/privacy.html" target="_blank" style="color:var(--yeet)">politica de confidențialitate</a> și consimt să primesc un email de verificare (double opt-in GDPR / RGPD).',
+      'auth.consent':'Sunt de acord cu <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politica de confidențialitate</a> și consimt să primesc un email de verificare (double opt-in GDPR / RGPD).',
       'auth.fillAll':'Completează toate câmpurile',
       'auth.loginFailed':'Conectarea a eșuat',
       'auth.welcomeBackUser':'Bine ai revenit, @{u}',
@@ -15235,7 +15277,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Потребителско име',
       'auth.passwordMin':'Мин. 8 знака',
       'auth.continue':'Продължи',
-      'auth.consent':'Съгласявам се с <a href="/privacy.html" target="_blank" style="color:var(--yeet)">политиката за поверителност</a> и давам съгласие да получа имейл за потвърждение (GDPR (ОРЗД) двойно потвърждение).',
+      'auth.consent':'Съгласявам се с <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">политиката за поверителност</a> и давам съгласие да получа имейл за потвърждение (GDPR (ОРЗД) двойно потвърждение).',
       'auth.fillAll':'Попълни всички полета',
       'auth.loginFailed':'Входът не успя',
       'auth.welcomeBackUser':'Добре дошъл отново, @{u}',
@@ -15936,7 +15978,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Používateľské meno',
       'auth.passwordMin':'Min. 8 znakov',
       'auth.continue':'Pokračovať',
-      'auth.consent':'Súhlasím so <a href="/privacy.html" target="_blank" style="color:var(--yeet)">zásadami ochrany osobných údajov</a> a so zaslaním overovacieho e-mailu (dvojité potvrdenie podľa GDPR).',
+      'auth.consent':'Súhlasím so <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">zásadami ochrany osobných údajov</a> a so zaslaním overovacieho e-mailu (dvojité potvrdenie podľa GDPR).',
       'auth.fillAll':'Vyplň všetky polia',
       'auth.loginFailed':'Prihlásenie zlyhalo',
       'auth.welcomeBackUser':'Vitaj späť, @{u}',
@@ -16641,7 +16683,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Uporabniško ime',
       'auth.passwordMin':'Najmanj 8 znakov',
       'auth.continue':'Naprej',
-      'auth.consent':'Strinjam se s <a href="/privacy.html" target="_blank" style="color:var(--yeet)">pravilnikom o zasebnosti</a> in soglašam s prejemom potrditvenega e-sporočila (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Strinjam se s <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">pravilnikom o zasebnosti</a> in soglašam s prejemom potrditvenega e-sporočila (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Izpolni vsa polja',
       'auth.loginFailed':'Prijava ni uspela',
       'auth.welcomeBackUser':'Dobrodošli nazaj, @{u}',
@@ -17346,7 +17388,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Vartotojo vardas',
       'auth.passwordMin':'Mažiausiai 8 simboliai',
       'auth.continue':'Tęsti',
-      'auth.consent':'Sutinku su <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privatumo politika</a> ir sutinku gauti patvirtinimo el. laišką (BDAR / GDPR dvigubas patvirtinimas).',
+      'auth.consent':'Sutinku su <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privatumo politika</a> ir sutinku gauti patvirtinimo el. laišką (BDAR / GDPR dvigubas patvirtinimas).',
       'auth.fillAll':'Užpildyk visus laukus',
       'auth.loginFailed':'Prisijungti nepavyko',
       'auth.welcomeBackUser':'Sveiki sugrįžę, @{u}',
@@ -18051,7 +18093,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Kasutajanimi',
       'auth.passwordMin':'Vähemalt 8 tähemärki',
       'auth.continue':'Jätka',
-      'auth.consent':'Nõustun <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privaatsuspoliitikaga</a> ja annan nõusoleku kinnituskirja saamiseks (GDPR / DSGVO topeltnõusolek).',
+      'auth.consent':'Nõustun <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privaatsuspoliitikaga</a> ja annan nõusoleku kinnituskirja saamiseks (GDPR / DSGVO topeltnõusolek).',
       'auth.fillAll':'Täida kõik väljad',
       'auth.loginFailed':'Sisselogimine ebaõnnestus',
       'auth.welcomeBackUser':'Tere tulemast tagasi, @{u}',
@@ -18756,7 +18798,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Ainm úsáideora',
       'auth.passwordMin':'8 gcarachtar ar a laghad',
       'auth.continue':'Lean ar aghaidh',
-      'auth.consent':'Aontaím leis an <a href="/privacy.html" target="_blank" style="color:var(--yeet)">bpolasaí príobháideachais</a> agus toilím le ríomhphost fíoraithe a fháil (rogha dhúbailte GDPR / DSGVO).',
+      'auth.consent':'Aontaím leis an <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">bpolasaí príobháideachais</a> agus toilím le ríomhphost fíoraithe a fháil (rogha dhúbailte GDPR / DSGVO).',
       'auth.fillAll':'Líon isteach gach réimse',
       'auth.loginFailed':'Theip ar an logáil isteach',
       'auth.welcomeBackUser':'Fáilte ar ais, @{u}',
@@ -19465,7 +19507,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Isem tal-utent',
       'auth.passwordMin':'Min. 8 karattri',
       'auth.continue':'Kompli',
-      'auth.consent':'Naqbel mal-<a href="/privacy.html" target="_blank" style="color:var(--yeet)">politika tal-privatezza</a> u nagħti l-kunsens li nirċievi imejl ta\' verifika (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Naqbel mal-<a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politika tal-privatezza</a> u nagħti l-kunsens li nirċievi imejl ta\' verifika (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Imla l-oqsma kollha',
       'auth.loginFailed':'Il-login ma rnexxiex',
       'auth.welcomeBackUser':'Merħba lura, @{u}',
@@ -20174,7 +20216,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Ім\'я користувача',
       'auth.passwordMin':'Мін. 8 символів',
       'auth.continue':'Продовжити',
-      'auth.consent':'Я погоджуюся з <a href="/privacy.html" target="_blank" style="color:var(--yeet)">політикою конфіденційності</a> та даю згоду на отримання листа для підтвердження (GDPR / DSGVO, подвійна згода).',
+      'auth.consent':'Я погоджуюся з <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">політикою конфіденційності</a> та даю згоду на отримання листа для підтвердження (GDPR / DSGVO, подвійна згода).',
       'auth.fillAll':'Заповни всі поля',
       'auth.loginFailed':'Не вдалося ввійти',
       'auth.welcomeBackUser':'З поверненням, @{u}',
@@ -20883,7 +20925,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Имя пользователя',
       'auth.passwordMin':'Мин. 8 символов',
       'auth.continue':'Продолжить',
-      'auth.consent':'Я принимаю <a href="/privacy.html" target="_blank" style="color:var(--yeet)">политику конфиденциальности</a> и согласен(на) получить письмо для подтверждения (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Я принимаю <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">политику конфиденциальности</a> и согласен(на) получить письмо для подтверждения (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Заполни все поля',
       'auth.loginFailed':'Не удалось войти',
       'auth.welcomeBackUser':'С возвращением, @{u}',
@@ -21592,7 +21634,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nom d\'usuari',
       'auth.passwordMin':'Mín. 8 caràcters',
       'auth.continue':'Continua',
-      'auth.consent':'Accepto la <a href="/privacy.html" target="_blank" style="color:var(--yeet)">política de privacitat</a> i consento a rebre un correu de verificació (doble confirmació RGPD / DSGVO).',
+      'auth.consent':'Accepto la <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">política de privacitat</a> i consento a rebre un correu de verificació (doble confirmació RGPD / DSGVO).',
       'auth.fillAll':'Omple tots els camps',
       'auth.loginFailed':'L\'inici de sessió ha fallat',
       'auth.welcomeBackUser':'Hola de nou, @{u}',
@@ -22305,7 +22347,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Emri i përdoruesit',
       'auth.passwordMin':'Min. 8 karaktere',
       'auth.continue':'Vazhdo',
-      'auth.consent':'Pajtohem me <a href="/privacy.html" target="_blank" style="color:var(--yeet)">politikën e privatësisë</a> dhe jap pëlqimin për marrjen e një email-i verifikimi (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Pajtohem me <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politikën e privatësisë</a> dhe jap pëlqimin për marrjen e një email-i verifikimi (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Plotëso të gjitha fushat',
       'auth.loginFailed':'Hyrja dështoi',
       'auth.welcomeBackUser':'Mirë se u ktheve, @{u}',
@@ -23018,7 +23060,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Korisničko ime',
       'auth.passwordMin':'Min. 8 znakova',
       'auth.continue':'Nastavi',
-      'auth.consent':'Slažem se s <a href="/privacy.html" target="_blank" style="color:var(--yeet)">politikom privatnosti</a> i pristajem na primanje e-maila za potvrdu (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Slažem se s <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">politikom privatnosti</a> i pristajem na primanje e-maila za potvrdu (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Popuni sva polja',
       'auth.loginFailed':'Prijava nije uspjela',
       'auth.welcomeBackUser':'Drago nam je što si opet tu, @{u}',
@@ -23731,7 +23773,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Корисничко име',
       'auth.passwordMin':'Мин. 8 знаци',
       'auth.continue':'Продолжи',
-      'auth.consent':'Се согласувам со <a href="/privacy.html" target="_blank" style="color:var(--yeet)">политиката за приватност</a> и прифаќам да добијам е-пошта за потврда (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Се согласувам со <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">политиката за приватност</a> и прифаќам да добијам е-пошта за потврда (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Пополни ги сите полиња',
       'auth.loginFailed':'Најавата не успеа',
       'auth.welcomeBackUser':'Добредојде назад, @{u}',
@@ -24444,7 +24486,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Erabiltzaile-izena',
       'auth.passwordMin':'Gutxienez 8 karaktere',
       'auth.continue':'Jarraitu',
-      'auth.consent':'Onartzen dut <a href="/privacy.html" target="_blank" style="color:var(--yeet)">pribatutasun-politika</a> eta baimena ematen dut egiaztapen-mezu elektroniko bat jasotzeko (GDPR / DSGVO double opt-in).',
+      'auth.consent':'Onartzen dut <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">pribatutasun-politika</a> eta baimena ematen dut egiaztapen-mezu elektroniko bat jasotzeko (GDPR / DSGVO double opt-in).',
       'auth.fillAll':'Bete eremu guztiak',
       'auth.loginFailed':'Saio-hasierak huts egin du',
       'auth.welcomeBackUser':'Ongi etorri berriro, @{u}',
@@ -25161,7 +25203,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Nome de usuario',
       'auth.passwordMin':'Mín. 8 caracteres',
       'auth.continue':'Continuar',
-      'auth.consent':'Acepto a <a href="/privacy.html" target="_blank" style="color:var(--yeet)">política de privacidade</a> e consinto recibir un correo de verificación (dobre confirmación RXPD / GDPR).',
+      'auth.consent':'Acepto a <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">política de privacidade</a> e consinto recibir un correo de verificación (dobre confirmación RXPD / GDPR).',
       'auth.fillAll':'Enche todos os campos',
       'auth.loginFailed':'Fallou o inicio de sesión',
       'auth.welcomeBackUser':'Ola de novo, @{u}',
@@ -25878,7 +25920,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Enw defnyddiwr',
       'auth.passwordMin':'O leiaf 8 nod',
       'auth.continue':'Parhau',
-      'auth.consent':'Rwy\'n cytuno i\'r <a href="/privacy.html" target="_blank" style="color:var(--yeet)">polisi preifatrwydd</a> ac yn cydsynio i dderbyn e-bost dilysu (dewis-i-mewn dwbl GDPR / DSGVO).',
+      'auth.consent':'Rwy\'n cytuno i\'r <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">polisi preifatrwydd</a> ac yn cydsynio i dderbyn e-bost dilysu (dewis-i-mewn dwbl GDPR / DSGVO).',
       'auth.fillAll':'Llenwa bob maes',
       'auth.loginFailed':'Methodd y mewngofnodi',
       'auth.welcomeBackUser':'Croeso\'n ôl, @{u}',
@@ -26595,7 +26637,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'Benotzernumm',
       'auth.passwordMin':'Mind. 8 Zeechen',
       'auth.continue':'Weider',
-      'auth.consent':'Ech sinn averstane mat der <a href="/privacy.html" target="_blank" style="color:var(--yeet)">Dateschutzerklärung</a> an akzeptéieren, eng Verifikatiouns-E-Mail ze kréien (RGPD / DSGVO Double-Opt-in).',
+      'auth.consent':'Ech sinn averstane mat der <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">Dateschutzerklärung</a> an akzeptéieren, eng Verifikatiouns-E-Mail ze kréien (RGPD / DSGVO Double-Opt-in).',
       'auth.fillAll':'Fëll all Felder aus',
       'auth.loginFailed':'Aloggen feelgeschloen',
       'auth.welcomeBackUser':'Wëllkomm zréck, @{u}',
@@ -27312,7 +27354,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'用户名',
       'auth.passwordMin':'至少 8 个字符',
       'auth.continue':'继续',
-      'auth.consent':'我同意<a href="/privacy.html" target="_blank" style="color:var(--yeet)">隐私政策</a>，并同意接收验证邮件（GDPR / DSGVO 双重确认）。',
+      'auth.consent':'我同意<a href="/legal/privacy" target="_blank" style="color:var(--yeet)">隐私政策</a>，并同意接收验证邮件（GDPR / DSGVO 双重确认）。',
       'auth.fillAll':'请填写所有字段',
       'auth.loginFailed':'登录失败',
       'auth.welcomeBackUser':'欢迎回来，@{u}',
@@ -28040,7 +28082,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'ユーザー名',
       'auth.passwordMin':'8 文字以上',
       'auth.continue':'続行',
-      'auth.consent':'<a href="/privacy.html" target="_blank" style="color:var(--yeet)">プライバシーポリシー</a>に同意し、確認メールの受信に同意します（GDPR / DSGVO ダブルオプトイン）。',
+      'auth.consent':'<a href="/legal/privacy" target="_blank" style="color:var(--yeet)">プライバシーポリシー</a>に同意し、確認メールの受信に同意します（GDPR / DSGVO ダブルオプトイン）。',
       'auth.fillAll':'すべての項目を入力してください',
       'auth.loginFailed':'ログインに失敗しました',
       'auth.welcomeBackUser':'おかえりなさい、@{u}',
@@ -28768,7 +28810,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'사용자 이름',
       'auth.passwordMin':'8자 이상',
       'auth.continue':'계속',
-      'auth.consent':'<a href="/privacy.html" target="_blank" style="color:var(--yeet)">개인정보 처리방침</a>에 동의하며 인증 이메일 수신에 동의합니다(GDPR / DSGVO 이중 동의).',
+      'auth.consent':'<a href="/legal/privacy" target="_blank" style="color:var(--yeet)">개인정보 처리방침</a>에 동의하며 인증 이메일 수신에 동의합니다(GDPR / DSGVO 이중 동의).',
       'auth.fillAll':'모든 항목을 입력하세요',
       'auth.loginFailed':'로그인 실패',
       'auth.welcomeBackUser':'다시 오신 것을 환영합니다, @{u}',
@@ -29496,7 +29538,7 @@ html.ld-on body{overflow:hidden}
       'auth.username':'उपयोगकर्ता नाम',
       'auth.passwordMin':'कम से कम 8 अक्षर',
       'auth.continue':'जारी रखें',
-      'auth.consent':'मैं <a href="/privacy.html" target="_blank" style="color:var(--yeet)">गोपनीयता नीति</a> से सहमत हूँ और सत्यापन ईमेल प्राप्त करने की सहमति देता/देती हूँ (GDPR / DSGVO डबल ऑप्ट-इन)।',
+      'auth.consent':'मैं <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">गोपनीयता नीति</a> से सहमत हूँ और सत्यापन ईमेल प्राप्त करने की सहमति देता/देती हूँ (GDPR / DSGVO डबल ऑप्ट-इन)।',
       'auth.fillAll':'सभी फ़ील्ड भरें',
       'auth.loginFailed':'लॉगिन विफल',
       'auth.welcomeBackUser':'वापसी पर स्वागत है, @{u}',
@@ -31357,7 +31399,7 @@ function applySettings(){
 function updateAdultUiVisibility(enabled){
   // Never show 18+ entry points to logged-out visitors, regardless of the cached setting.
   var jwt=localStorage.getItem('yeet_jwt');
-  var show = !!enabled && !!jwt;
+  var show = !!enabled && !!jwt && !window.YEET_ANDROID;
   var navLink=document.querySelector('.sidebar a.nav-link[data-nav="adult"]');
   if(navLink) navLink.style.display = show ? '' : 'none';
   var tabs=document.querySelectorAll('.tabs .tab');
@@ -33884,7 +33926,7 @@ function openCreateLive(scheduled){
         ? ('<label style="font-size:11px;color:var(--muted)">'+window.t('sched.when')+'</label>'
            +'<input id="liveSchedAt" type="datetime-local" value="'+nowLocal+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin:4px 0 10px">')
         : '')
-    + '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;margin:0 0 12px"><input type="checkbox" id="liveAdult" style="accent-color:#f5a623"> 18+</label>'
+    + '<label class="adult-only-ui" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;margin:0 0 12px"><input type="checkbox" id="liveAdult" style="accent-color:#f5a623"> 18+</label>'
     + '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px">'
     +   '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">'+window.t('promo.choose')+'</div>'
     +   '<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid var(--border-2);border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="liveProm" value="" checked style="margin-top:3px"><div><div style="font-size:13px;font-weight:600">'+window.t('promo.none')+'</div></div></label>'
@@ -34440,7 +34482,11 @@ function showExternalLinkWarning(e,url){
     <div class="ff"><label data-i18n="auth.password">Password</label><input type="password" id="rPass" name="new-password" autocomplete="new-password" placeholder="Min. 8 characters" data-i18n-placeholder="auth.passwordMin"></div>
     <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.4;cursor:pointer">
       <input type="checkbox" id="rConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
-      <span data-i18n-html="auth.consent">I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+      <span data-i18n-html="auth.consent">I agree to the <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+    </label>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:-6px 0 14px;line-height:1.4;cursor:pointer">
+      <input type="checkbox" id="rAge18" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
+      <span data-i18n="auth.age18">I am at least 18 years old.</span>
     </label>
     <button id="regNext1Btn" class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()"><span data-i18n="auth.continue">Continue</span> <span class="yi yi-arrowr"></span></button>
   </div>
@@ -34457,7 +34503,7 @@ function showExternalLinkWarning(e,url){
   <div class="ff"><label data-i18n="auth.email">Email</label><input type="email" id="obEmail" placeholder="you@example.com"></div>
   <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:8px 0 14px;line-height:1.4;cursor:pointer">
     <input type="checkbox" id="obConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
-    <span data-i18n-html="auth.consent">I agree to the <a href="/privacy.html" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
+    <span data-i18n-html="auth.consent">I agree to the <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
   </label>
   <button class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="submitOnboarding()" data-i18n="onboard.send">Send verification link</button>
   <button onclick="skipOnboarding()" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;cursor:pointer;text-decoration:underline" data-i18n="onboard.skip">Skip for now</button>
@@ -34844,11 +34890,13 @@ function showExternalLinkWarning(e,url){
     if(p.length<8){_showErr(window.t('auth.passwordMinErr'));return}
     if(!/\S+@\S+\.\S+/.test(e)){_showErr(window.t('auth.invalidEmail'));return}
     if(!c||!c.checked){_showErr(window.t('auth.acceptPrivacy'));return}
+    var a18=document.getElementById('rAge18');
+    if(!a18||!a18.checked){_showErr(window.t('auth.age18Required'));return}
     var btn = document.getElementById('regNext1Btn');
     if(btn){ btn.disabled = true; btn.dataset.oldHtml = btn.innerHTML; btn.textContent = '...'; }
     // No wallet_address is sent — the backend ignores it and creates a
     // wallet-less account by design.
-    _regData = {username:u, email:e, password:p, display_name:u, consent:true};
+    _regData = {username:u, email:e, password:p, display_name:u, consent:true, age_confirmed:true};
     try{
       var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
       var d=await r.json();
@@ -35892,14 +35940,14 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
 
     <article id="legal-terms">
       <h1>Terms of Service</h1>
-      <p class="legal-meta">Last updated: 29 October 2026.</p>
+      <p class="legal-meta">Last updated: 27 November 2026.</p>
       <p>These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the YEET Social platform operated by BlockSocial UG (haftungsbeschr&auml;nkt) (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;BlockSocial&rdquo;). By creating an account, signing in with a wallet, or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.</p>
 
       <h2>1. The Service</h2>
       <p>YEET Social is a social-media platform that combines short-form posts, audio stories, live streams and encrypted messages with a points-based creator economy: tips to creators, pay-per-view content, promotions and paper wallets are paid with platform points kept in your account, not with crypto-assets. The only blockchain feature is the one-way conversion of points into the YEET token, paid out to a wallet you control (see section&nbsp;6). Some content is ephemeral and automatically deleted after 24&nbsp;hours by default; some can be flagged as &ldquo;permanent&rdquo;. Token-related features use the YEET token deployed on the BNB Smart Chain, which only ever sits in a wallet you control, and a points balance kept in your account. Points are platform points, not a crypto-asset (see section&nbsp;6).</p>
 
       <h2>2. Eligibility</h2>
-      <p>You must be at least 16&nbsp;years old to create an account. To access content marked 18+, you must be at least 18 and complete our age-verification flow. By using the Service you represent that you meet these requirements and that your use of the Service is lawful where you reside.</p>
+      <p>The Service is offered to adults only: you must be at least 18&nbsp;years old to create an account or use the Service. To access content marked 18+, you must additionally complete our age-verification flow. By using the Service you represent that you meet these requirements and that your use of the Service is lawful where you reside.</p>
 
       <h2>3. Account registration and security</h2>
       <ul>
@@ -36246,14 +36294,14 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
 
     <article id="legal-terms-de" lang="de">
       <h1>Nutzungsbedingungen</h1>
-      <p class="legal-meta">Stand: 29. Oktober 2026.</p>
+      <p class="legal-meta">Stand: 27. November 2026.</p>
       <p>Diese Nutzungsbedingungen („Bedingungen“) regeln Ihren Zugang zu und Ihre Nutzung der Plattform YEET Social, die von der BlockSocial UG (haftungsbeschränkt) („wir“, „uns“, „BlockSocial“) betrieben wird. Indem Sie ein Konto erstellen, sich mit einer Wallet anmelden oder den Dienst anderweitig nutzen, erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst bitte nicht.</p>
 
       <h2>1. Der Dienst</h2>
       <p>YEET Social ist eine Social-Media-Plattform, die Kurzbeiträge, Audio Stories, Live-Streams und verschlüsselte Nachrichten mit einer punktebasierten Creator-Ökonomie verbindet: Trinkgelder an Creator, Pay-per-View-Inhalte, Promotions und Paper Wallets werden mit in Ihrem Konto geführten Plattform-Punkten bezahlt, nicht mit Kryptowerten. Die einzige Blockchain-Funktion ist die einseitige Umwandlung von Punkten in den YEET-Token, der an eine von Ihnen kontrollierte Wallet ausgezahlt wird (siehe Abschnitt&nbsp;6). Einige Inhalte sind flüchtig und werden standardmäßig nach 24 Stunden automatisch gelöscht; andere können als „dauerhaft“ gekennzeichnet werden. Tokenbezogene Funktionen nutzen den auf der BNB Smart Chain bereitgestellten YEET-Token, der sich stets ausschließlich in einer von Ihnen kontrollierten Wallet befindet, sowie ein in Ihrem Konto geführtes Punkteguthaben. Punkte sind Plattform-Punkte und kein Kryptowert (siehe Abschnitt&nbsp;6).</p>
 
       <h2>2. Nutzungsvoraussetzungen</h2>
-      <p>Für die Erstellung eines Kontos müssen Sie mindestens 16 Jahre alt sein. Für den Zugriff auf als 18+ gekennzeichnete Inhalte müssen Sie mindestens 18 Jahre alt sein und unsere Altersverifikation durchlaufen. Mit der Nutzung des Dienstes versichern Sie, dass Sie diese Voraussetzungen erfüllen und dass Ihre Nutzung des Dienstes an Ihrem Wohnsitz rechtmäßig ist.</p>
+      <p>Der Dienst richtet sich ausschließlich an Erwachsene: Für die Erstellung eines Kontos und die Nutzung des Dienstes müssen Sie mindestens 18 Jahre alt sein. Für den Zugriff auf als 18+ gekennzeichnete Inhalte müssen Sie zusätzlich unsere Altersverifikation durchlaufen. Mit der Nutzung des Dienstes versichern Sie, dass Sie diese Voraussetzungen erfüllen und dass Ihre Nutzung des Dienstes an Ihrem Wohnsitz rechtmäßig ist.</p>
 
       <h2>3. Registrierung und Kontosicherheit</h2>
       <ul>
@@ -41131,7 +41179,7 @@ function render(){
   } else {
     if(blobUrl){ try{URL.revokeObjectURL(blobUrl);}catch(e){} }
     blobUrl=URL.createObjectURL(blob);
-    var adultOk=localStorage.getItem('yeet_adult')==='1';
+    var adultOk=localStorage.getItem('yeet_adult')==='1' && !window.YEET_ANDROID;
     st.innerHTML='<audio controls src="'+blobUrl+'" style="width:100%;margin:6px 0" aria-label="'+esc(T('audio.preview'))+'"></audio>'
       +'<textarea id="arCaption" maxlength="420" rows="2" placeholder="'+esc(T('audio.caption'))+'" aria-label="'+esc(T('audio.caption'))+'" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 10px;color:var(--text);font-size:13px;resize:vertical;margin:6px 0"></textarea>'
       +'<div class="rec-opts" role="group" aria-label="'+esc(T('audio.title'))+'">'

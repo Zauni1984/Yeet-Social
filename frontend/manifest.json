@@ -1,52 +1,73 @@
 {
-  "name": "YEET — Web3 Social",
+  "id": "/",
+  "name": "YEET Social",
   "short_name": "YEET",
-  "description": "Decentralised social media on BSC. Posts vanish in 24h. Earn YEET tokens.",
-  "start_url": "/",
+  "description": "24-hour posts, audio stories, live streams and end-to-end encrypted messages. Collect points for what you do.",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#05060a",
   "theme_color": "#05060a",
   "categories": [
-    "social",
-    "finance"
+    "social"
   ],
   "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/monochrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
     }
   ],
   "shortcuts": [
     {
-      "name": "New Yeet",
+      "name": "New post",
       "short_name": "Post",
       "url": "/?compose=1",
       "icons": [
         {
           "src": "/icons/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
-      "name": "Global Feed",
+      "name": "Feed",
       "short_name": "Feed",
       "url": "/",
       "icons": [
         {
           "src": "/icons/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

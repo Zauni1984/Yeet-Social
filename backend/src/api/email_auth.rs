@@ -18,6 +18,8 @@ pub struct EmailRegisterRequest {
     pub username: Option<String>,
     pub display_name: Option<String>,
     pub consent: Option<bool>,
+    /// "I am at least 18 years old" — the service is for adults only.
+    pub age_confirmed: Option<bool>,
     /// Client-derived wallet address (lower-case 0x...). Optional, since
     /// older clients do not send it; when present we persist it so the
     /// account is reachable for tipping / paper-wallet redemption /
@@ -180,6 +182,9 @@ pub async fn register(
     if req.consent != Some(true) {
         return Err(AppError::Validation("Consent required (DSGVO)".into()));
     }
+    if req.age_confirmed != Some(true) {
+        return Err(AppError::Validation("AGE_REQUIRED: You must be at least 18 years old to use YEET Social".into()));
+    }
 
     let email_lower = req.email.to_lowercase();
 
@@ -219,8 +224,8 @@ pub async fn register(
     // signature-verified link-wallet flow (link_wallet_verify). Any
     // wallet_address in the request is ignored on purpose.
     let user_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO users (email, password_hash, password_salt, username, display_name)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id"
+        "INSERT INTO users (email, password_hash, password_salt, username, display_name, age_declared_at)
+         VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id"
     )
     .bind(&email_lower).bind(&hash).bind(&salt).bind(&username)
     .bind(req.display_name.unwrap_or_else(|| username.clone()))

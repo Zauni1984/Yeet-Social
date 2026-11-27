@@ -102,3 +102,21 @@ beim NOTE-Swap geprüft und prüft sie jetzt auch bei `POST /api/v1/points/conve
 Gleichzeitig veröffentlicht: der Leitfaden „Das YEET-Belohnungssystem“ (DE/EN) als PDF, verlinkt
 im Footer. Er erklärt die Regeln, ersetzt die Nutzungsbedingungen aber nicht; Quelle unter
 `docs/rewards/`, Erzeugung mit `node scripts/build-rewards-pdf.cjs`.
+
+## 27. November 2026 — Mindestalter 18 statt 16
+
+Nutzungsbedingungen, Abschnitt zur Nutzungsberechtigung (DE und EN): Der Dienst richtet sich
+ausschließlich an Erwachsene; Mindestalter für Konto und Nutzung ist 18 Jahre (bisher 16). Der
+Zugang zu 18+-Inhalten setzt weiterhin zusätzlich die Altersverifikation voraus. Stand-Datum der
+Nutzungsbedingungen auf den 27. November 2026 gesetzt.
+
+Technisch: Die Registrierung per E-Mail verlangt die Bestätigung „Ich bin mindestens 18 Jahre
+alt“ (`age_confirmed`, Fehlercode `AGE_REQUIRED`); der Zeitpunkt steht in
+`users.age_declared_at`. Bestehende Konten und Anmeldungen per Wallet haben keinen Eintrag; für
+sie gilt die Erklärung aus den Nutzungsbedingungen.
+
+Offen (Betreiber): ob bestehende Nutzer über die Änderung informiert werden und ob Konten, die
+bei der Altersverifikation als minderjährig auffallen, gesperrt werden.
+
+Zusammenhang: Vorbereitung der Android-App für Google Play (`docs/play-store.md`). Dort werden
+18+-Inhalte gar nicht angezeigt.

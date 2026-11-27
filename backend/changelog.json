@@ -475,6 +475,24 @@
         "#Login",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-11-26-00-installable-app",
+      "text": "YEET can now be installed as an app: open justyeet.it in your phone's browser and choose \"Add to home screen\" to get YEET with its own icon, full screen. This is also the groundwork for the Android app in Google Play. Fixed along the way: the privacy policy link in the sign-up form now opens the policy.",
+      "tags": [
+        "#App",
+        "#Android",
+        "#NewFeature"
+      ]
+    },
+    {
+      "id": "2026-11-27-00-adults-only",
+      "text": "YEET Social is now for adults only: the minimum age is 18 (it was 16). New sign-ups confirm \"I am at least 18\", and the Terms of Service say so. Nothing changes for existing accounts of adults. The coming Android app from Google Play will not show 18+ content at all, as Google requires; the website keeps it behind age verification.",
+      "tags": [
+        "#Terms",
+        "#Android",
+        "#Safety"
+      ]
     }
   ]
 }

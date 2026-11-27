@@ -102,6 +102,39 @@ pub async fn limit(state: &AppState, scope: &str, principal: &str,
     }
 }
 
+tokio::task_local! {
+    /// True for requests from the Google Play app (see `store_client`).
+    static STORE_CLIENT: bool;
+}
+
+/// Marks requests that come from the Android app distributed through Google
+/// Play. The app is the website in a Trusted Web Activity; the page sends
+/// `X-Yeet-Client: android` when it runs inside it (docs/play-store.md).
+/// Play does not allow adult user content in an app, so handlers ask
+/// `store_safe()` and leave 18+ content out for these requests. The header is
+/// a product switch, not an access control: the age gate stays what protects
+/// 18+ content everywhere else.
+pub async fn store_client(req: Request, next: Next) -> Response {
+    let is_store = req.headers().get("x-yeet-client")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.eq_ignore_ascii_case("android"));
+    STORE_CLIENT.scope(is_store, next.run(req)).await
+}
+
+/// Whether the current request comes from the Google Play app and must not
+/// show, create or open 18+ content.
+pub fn store_safe() -> bool {
+    STORE_CLIENT.try_with(|v| *v).unwrap_or(false)
+}
+
+/// Refuse 18+ content created from the Google Play app.
+pub fn reject_adult_in_store(is_adult: bool) -> Result<(), AppError> {
+    if is_adult && store_safe() {
+        return Err(AppError::Validation("STORE_NO_ADULT: 18+ content is not available in the Android app".into()));
+    }
+    Ok(())
+}
+
 /// Router-wide guard: every request to the authentication and admin route
 /// classes is throttled per client IP before it reaches a handler, so a
 /// brute force against passwords, nonces or the admin secret is capped no
