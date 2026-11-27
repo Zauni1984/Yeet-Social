@@ -327,6 +327,7 @@ fn build_router(state: AppState) -> Router {
         .layer(DefaultBodyLimit::max(1024 * 1024))
         // Per-IP throttle for the auth and admin route classes.
         .layer(axum::middleware::from_fn_with_state(state.clone(), api::middleware::abuse_guard))
+        .layer(axum::middleware::from_fn(api::middleware::store_client))
         .layer(ServiceBuilder::new()
             .layer(TraceLayer::new_for_http())
             .layer(cors)

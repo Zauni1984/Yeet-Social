@@ -484,6 +484,15 @@
         "#Android",
         "#NewFeature"
       ]
+    },
+    {
+      "id": "2026-11-27-00-adults-only",
+      "text": "YEET Social is now for adults only: the minimum age is 18 (it was 16). New sign-ups confirm \"I am at least 18\", and the Terms of Service say so. Nothing changes for existing accounts of adults. The coming Android app from Google Play will not show 18+ content at all, as Google requires; the website keeps it behind age verification.",
+      "tags": [
+        "#Terms",
+        "#Android",
+        "#Safety"
+      ]
     }
   ]
 }

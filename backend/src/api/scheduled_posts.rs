@@ -67,6 +67,7 @@ pub async fn create(
     if req.publish_at > Utc::now() + chrono::Duration::days(60) {
         return Err(AppError::Validation("Cannot schedule more than 60 days ahead".into()));
     }
+    crate::api::middleware::reject_adult_in_store(req.is_adult.unwrap_or(false))?;
     let user_id = resolve_user_id(&state, &auth.address).await?;
     if let Some(m) = req.media_url.as_deref() { crate::api::posts::validate_media_url(m)?; }
     crate::api::posts::ensure_not_posting_banned(state.db.pool(), user_id).await?;

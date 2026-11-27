@@ -118,7 +118,7 @@ pub async fn search(
         )
         .bind(viewer)
         .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
-        let allow_adult = verified.unwrap_or(false);
+        let allow_adult = verified.unwrap_or(false) && !crate::api::middleware::store_safe();
         let adult_clause = if allow_adult { "" } else { " AND p.is_adult = FALSE" };
 
         let sql = format!(

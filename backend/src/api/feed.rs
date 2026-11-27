@@ -242,9 +242,11 @@ pub async fn fetch_post(state: &AppState, post_id: Uuid, viewer_id: Option<Uuid>
           AND (COALESCE(p.visibility::text, 'public') = 'public' OR p.author_id = $2::uuid
                OR EXISTS (SELECT 1 FROM follows f WHERE f.follower_id = $2::uuid AND f.following_id = p.author_id))
           AND (p.is_adult = FALSE OR p.author_id = $2::uuid
-               OR EXISTS (SELECT 1 FROM users v WHERE v.id = $2::uuid AND v.age_verified_at IS NOT NULL))"
+               OR EXISTS (SELECT 1 FROM users v WHERE v.id = $2::uuid AND v.age_verified_at IS NOT NULL))
+          AND ($3 = FALSE OR p.is_adult = FALSE)"
     )
     .bind(post_id).bind(viewer_id.unwrap_or(Uuid::nil()))
+    .bind(crate::api::middleware::store_safe())
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(row.map(row_to_feed_post))
 }
@@ -402,7 +404,8 @@ pub async fn get_user_posts(
         Some(a) => resolve_viewer_id(&state, a).await.ok() == Some(user_id),
         None => false,
     };
-    let allow_adult = viewer_verified || viewer_is_author;
+    // The Google Play app never shows 18+ posts, not even the author's own.
+    let allow_adult = (viewer_verified || viewer_is_author) && !crate::api::middleware::store_safe();
     let include_adult_sql = if allow_adult { "" } else { " AND p.is_adult = FALSE" };
     let include_adult_count_sql = if allow_adult { "" } else { " AND is_adult = FALSE" };
 
@@ -477,6 +480,9 @@ pub async fn get_adult_feed(
     auth: AuthUser,
     Query(q): Query<FeedQuery>,
 ) -> AppResult<Json<PagedResponse<FeedPost>>> {
+    if crate::api::middleware::store_safe() {
+        return Err(AppError::Forbidden("STORE_NO_ADULT: 18+ content is not available in the Android app".into()));
+    }
     // Adult feed requires an authenticated + age-verified account
     if !viewer_is_age_verified(&state, Some(&auth)).await {
         return Err(AppError::Forbidden("Age verification required".into()));

@@ -2,6 +2,40 @@
 <html lang="de">
 <head>
 <script>
+// Google Play app (android/, docs/play-store.md): the site runs inside a
+// Trusted Web Activity. Play does not allow adult user content in an app, so
+// in that context 18+ content is switched off: every API call carries
+// X-Yeet-Client: android (the server then leaves 18+ content out) and the
+// 18+ controls are hidden. Kept per tab (sessionStorage), because
+// localStorage is shared with the phone's normal browser, which must stay
+// unaffected.
+(function(){
+  try{
+    var inApp = sessionStorage.getItem('yeet_android')==='1'
+      || new URLSearchParams(location.search).get('source')==='android'
+      || /^android-app:\/\/it\.justyeet\.app(\/|$)/.test(document.referrer||'');
+    if(!inApp) return;
+    sessionStorage.setItem('yeet_android','1');
+    window.YEET_ANDROID = true;
+    document.documentElement.classList.add('yeet-android');
+    var nativeFetch = window.fetch;
+    window.fetch = function(input, init){
+      try{
+        var url = typeof input==='string' ? input : ((input && input.url) || '');
+        var own = (url.charAt(0)==='/' && url.charAt(1)!=='/') || url.indexOf(location.origin+'/')===0;
+        if(own && url.indexOf('/api/')!==-1){
+          init = init || {};
+          var h = new Headers(init.headers || ((typeof input!=='string' && input && input.headers) || {}));
+          h.set('X-Yeet-Client','android');
+          init.headers = h;
+        }
+      }catch(e){}
+      return nativeFetch.call(this, input, init);
+    };
+  }catch(e){}
+})();
+</script>
+<script>
 // Moods: apply the saved color mood before CSS parses so there is no
 // flash of the default theme on reload. Namespaced key (yeet_mood) so it
 // can't collide with other apps on the same origin.
@@ -39,6 +73,8 @@ if('serviceWorker' in navigator){
 <meta property="og:url" content="https://justyeet.it/">
 <meta name="twitter:card" content="summary">
 <style>
+/* Google Play app: no 18+ controls (see the first script in <head>). */
+.yeet-android #adultToggleLabel,.yeet-android .adult-only-ui,.yeet-android div:has(> #setting18){display:none !important}
 /* ── Moods (Farbstimmungen) ───────────────────────────────────────────────
    Every theme defines the SAME token set — only values change. Switching is
    one data-theme attribute on <html> + localStorage ('yeet_mood').
@@ -1255,6 +1291,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Notifications enabled on this device',
       'settings.pushUnregistered':'Notifications disabled on this device',
       'settings.verifySeed':'Verify recovery phrase',
+      'auth.age18':'I am at least 18 years old.','auth.age18Required':'YEET Social is for adults only. Please confirm that you are at least 18.',
       'pwr.forgot':'Forgot password?','pwr.needEmail':'Enter your email address above first.','pwr.sent':'If an account exists for this address, we have sent a link to set a new password. It is valid for 1 hour.','pwr.title':'Set a new password','pwr.hint':'Choose a new password for your account. All devices are signed out afterwards.','pwr.save':'Save new password','pwr.done':'Password saved. You can now log in with it.','pwr.err.RESET_LINK_INVALID':'This link is not valid or has expired. Request a new one with "Forgot password?".',
       'pw.title':'Password','pw.current':'Current password','pw.new':'New password (at least 8 characters)','pw.repeat':'Repeat new password','pw.code':'Authenticator code','pw.change':'Change password','pw.changed':'Password changed. All other devices were signed out.','pw.mismatch':'The new passwords do not match.','pw.fill':'Please fill in all fields.','pw.walletOnly':'This account signs in with a wallet and has no password.','pw.err.PASSWORD_WRONG':'The current password is not correct.','pw.err.PASSWORD_TOO_SHORT':'The new password needs at least 8 characters.','pw.err.PASSWORD_TOO_LONG':'The password is too long.','pw.err.PASSWORD_SAME':'The new password must differ from the current one.','pw.err.PASSWORD_NOT_SET':'This account signs in with a wallet and has no password.','pw.err.MFA_REQUIRED':'Please enter your authenticator code.','pw.err.MFA_INVALID':'The authenticator code is not valid.','pw.err.rate':'Too many attempts. Please try again later.',
       'twofa.title':'Two-factor authentication','twofa.loading':'…','twofa.on':'Enabled','twofa.off':'Not enabled — recommended for account safety.','twofa.enable':'Enable 2FA (authenticator app)','twofa.disable':'Disable 2FA','twofa.recoveryLeft':'{n} recovery codes left','twofa.scanHint':'Scan this with an authenticator app (Google Authenticator, Aegis, 1Password …), then enter the 6-digit code.','twofa.manualEntry':'Or enter this key manually:','twofa.verify':'Verify & enable','twofa.badCode':'That code is not valid.','twofa.enabledTitle':'Two-factor authentication is on','twofa.recoveryHint':'Save these one-time recovery codes somewhere safe. Each works once if you lose your authenticator. They are shown only now.','twofa.saved':'I saved them','twofa.disablePrompt':'Enter a current 6-digit code (or a recovery code) to turn 2FA off:','twofa.disabledToast':'Two-factor authentication disabled.','twofa.enterCode':'Enter your 6-digit authenticator code (or a recovery code):','twofa.needed':'Two-factor code required to finish signing in.',
@@ -1699,6 +1736,7 @@ html.ld-on body{overflow:hidden}
       'settings.pushRegistered':'Benachrichtigungen auf diesem Gerät aktiviert',
       'settings.pushUnregistered':'Benachrichtigungen auf diesem Gerät deaktiviert',
       'settings.verifySeed':'Recovery-Phrase prüfen',
+      'auth.age18':'Ich bin mindestens 18 Jahre alt.','auth.age18Required':'YEET Social ist nur für Erwachsene. Bitte bestätige, dass du mindestens 18 bist.',
       'pwr.forgot':'Passwort vergessen?','pwr.needEmail':'Gib zuerst oben deine E-Mail-Adresse ein.','pwr.sent':'Falls zu dieser Adresse ein Konto existiert, haben wir einen Link zum Festlegen eines neuen Passworts geschickt. Er ist 1 Stunde gültig.','pwr.title':'Neues Passwort festlegen','pwr.hint':'Wähle ein neues Passwort für dein Konto. Danach werden alle Geräte abgemeldet.','pwr.save':'Neues Passwort speichern','pwr.done':'Passwort gespeichert. Du kannst dich jetzt damit anmelden.','pwr.err.RESET_LINK_INVALID':'Dieser Link ist ungültig oder abgelaufen. Fordere über „Passwort vergessen?“ einen neuen an.',
       'pw.title':'Passwort','pw.current':'Aktuelles Passwort','pw.new':'Neues Passwort (mindestens 8 Zeichen)','pw.repeat':'Neues Passwort wiederholen','pw.code':'Authenticator-Code','pw.change':'Passwort ändern','pw.changed':'Passwort geändert. Alle anderen Geräte wurden abgemeldet.','pw.mismatch':'Die neuen Passwörter stimmen nicht überein.','pw.fill':'Bitte alle Felder ausfüllen.','pw.walletOnly':'Dieses Konto meldet sich per Wallet an und hat kein Passwort.','pw.err.PASSWORD_WRONG':'Das aktuelle Passwort ist nicht korrekt.','pw.err.PASSWORD_TOO_SHORT':'Das neue Passwort braucht mindestens 8 Zeichen.','pw.err.PASSWORD_TOO_LONG':'Das Passwort ist zu lang.','pw.err.PASSWORD_SAME':'Das neue Passwort muss sich vom aktuellen unterscheiden.','pw.err.PASSWORD_NOT_SET':'Dieses Konto meldet sich per Wallet an und hat kein Passwort.','pw.err.MFA_REQUIRED':'Bitte gib deinen Authenticator-Code ein.','pw.err.MFA_INVALID':'Der Authenticator-Code ist nicht gültig.','pw.err.rate':'Zu viele Versuche. Bitte später erneut versuchen.',
       'twofa.title':'Zwei-Faktor-Authentifizierung','twofa.loading':'…','twofa.on':'Aktiv','twofa.off':'Nicht aktiv — für die Kontosicherheit empfohlen.','twofa.enable':'2FA aktivieren (Authenticator-App)','twofa.disable':'2FA deaktivieren','twofa.recoveryLeft':'{n} Wiederherstellungscodes übrig','twofa.scanHint':'Scanne dies mit einer Authenticator-App (Google Authenticator, Aegis, 1Password …) und gib dann den 6-stelligen Code ein.','twofa.manualEntry':'Oder diesen Schlüssel manuell eingeben:','twofa.verify':'Prüfen & aktivieren','twofa.badCode':'Dieser Code ist ungültig.','twofa.enabledTitle':'Zwei-Faktor-Authentifizierung ist aktiv','twofa.recoveryHint':'Bewahre diese einmaligen Wiederherstellungscodes sicher auf. Jeder funktioniert einmal, falls du deinen Authenticator verlierst. Sie werden nur jetzt angezeigt.','twofa.saved':'Gespeichert','twofa.disablePrompt':'Gib einen aktuellen 6-stelligen Code (oder einen Wiederherstellungscode) ein, um 2FA zu deaktivieren:','twofa.disabledToast':'Zwei-Faktor-Authentifizierung deaktiviert.','twofa.enterCode':'Gib deinen 6-stelligen Authenticator-Code (oder einen Wiederherstellungscode) ein:','twofa.needed':'Zwei-Faktor-Code nötig, um die Anmeldung abzuschließen.',
@@ -31361,7 +31399,7 @@ function applySettings(){
 function updateAdultUiVisibility(enabled){
   // Never show 18+ entry points to logged-out visitors, regardless of the cached setting.
   var jwt=localStorage.getItem('yeet_jwt');
-  var show = !!enabled && !!jwt;
+  var show = !!enabled && !!jwt && !window.YEET_ANDROID;
   var navLink=document.querySelector('.sidebar a.nav-link[data-nav="adult"]');
   if(navLink) navLink.style.display = show ? '' : 'none';
   var tabs=document.querySelectorAll('.tabs .tab');
@@ -33888,7 +33926,7 @@ function openCreateLive(scheduled){
         ? ('<label style="font-size:11px;color:var(--muted)">'+window.t('sched.when')+'</label>'
            +'<input id="liveSchedAt" type="datetime-local" value="'+nowLocal+'" style="width:100%;background:var(--card-2);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;color:var(--text);margin:4px 0 10px">')
         : '')
-    + '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;margin:0 0 12px"><input type="checkbox" id="liveAdult" style="accent-color:#f5a623"> 18+</label>'
+    + '<label class="adult-only-ui" style="display:flex;align-items:center;gap:6px;font-size:12px;color:#f5a623;margin:0 0 12px"><input type="checkbox" id="liveAdult" style="accent-color:#f5a623"> 18+</label>'
     + '<div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px">'
     +   '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">'+window.t('promo.choose')+'</div>'
     +   '<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid var(--border-2);border-radius:8px;margin-bottom:6px;cursor:pointer"><input type="radio" name="liveProm" value="" checked style="margin-top:3px"><div><div style="font-size:13px;font-weight:600">'+window.t('promo.none')+'</div></div></label>'
@@ -34446,6 +34484,10 @@ function showExternalLinkWarning(e,url){
       <input type="checkbox" id="rConsent" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
       <span data-i18n-html="auth.consent">I agree to the <a href="/legal/privacy" target="_blank" style="color:var(--yeet)">privacy policy</a> and consent to receiving a verification email (GDPR / DSGVO double opt-in).</span>
     </label>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted);margin:-6px 0 14px;line-height:1.4;cursor:pointer">
+      <input type="checkbox" id="rAge18" style="margin-top:2px;accent-color:var(--yeet);flex-shrink:0">
+      <span data-i18n="auth.age18">I am at least 18 years old.</span>
+    </label>
     <button id="regNext1Btn" class="btn-yeet" style="width:100%;padding:12px;font-size:14px" onclick="regNext1()"><span data-i18n="auth.continue">Continue</span> <span class="yi yi-arrowr"></span></button>
   </div>
 </div>
@@ -34848,11 +34890,13 @@ function showExternalLinkWarning(e,url){
     if(p.length<8){_showErr(window.t('auth.passwordMinErr'));return}
     if(!/\S+@\S+\.\S+/.test(e)){_showErr(window.t('auth.invalidEmail'));return}
     if(!c||!c.checked){_showErr(window.t('auth.acceptPrivacy'));return}
+    var a18=document.getElementById('rAge18');
+    if(!a18||!a18.checked){_showErr(window.t('auth.age18Required'));return}
     var btn = document.getElementById('regNext1Btn');
     if(btn){ btn.disabled = true; btn.dataset.oldHtml = btn.innerHTML; btn.textContent = '...'; }
     // No wallet_address is sent — the backend ignores it and creates a
     // wallet-less account by design.
-    _regData = {username:u, email:e, password:p, display_name:u, consent:true};
+    _regData = {username:u, email:e, password:p, display_name:u, consent:true, age_confirmed:true};
     try{
       var r=await fetch('/api/v1/auth/email-register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(_regData)});
       var d=await r.json();
@@ -35896,14 +35940,14 @@ Email: info@blocksocial.eu (subject: &ldquo;DPO&rdquo;)</address>
 
     <article id="legal-terms">
       <h1>Terms of Service</h1>
-      <p class="legal-meta">Last updated: 29 October 2026.</p>
+      <p class="legal-meta">Last updated: 27 November 2026.</p>
       <p>These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the YEET Social platform operated by BlockSocial UG (haftungsbeschr&auml;nkt) (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;BlockSocial&rdquo;). By creating an account, signing in with a wallet, or otherwise using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.</p>
 
       <h2>1. The Service</h2>
       <p>YEET Social is a social-media platform that combines short-form posts, audio stories, live streams and encrypted messages with a points-based creator economy: tips to creators, pay-per-view content, promotions and paper wallets are paid with platform points kept in your account, not with crypto-assets. The only blockchain feature is the one-way conversion of points into the YEET token, paid out to a wallet you control (see section&nbsp;6). Some content is ephemeral and automatically deleted after 24&nbsp;hours by default; some can be flagged as &ldquo;permanent&rdquo;. Token-related features use the YEET token deployed on the BNB Smart Chain, which only ever sits in a wallet you control, and a points balance kept in your account. Points are platform points, not a crypto-asset (see section&nbsp;6).</p>
 
       <h2>2. Eligibility</h2>
-      <p>You must be at least 16&nbsp;years old to create an account. To access content marked 18+, you must be at least 18 and complete our age-verification flow. By using the Service you represent that you meet these requirements and that your use of the Service is lawful where you reside.</p>
+      <p>The Service is offered to adults only: you must be at least 18&nbsp;years old to create an account or use the Service. To access content marked 18+, you must additionally complete our age-verification flow. By using the Service you represent that you meet these requirements and that your use of the Service is lawful where you reside.</p>
 
       <h2>3. Account registration and security</h2>
       <ul>
@@ -36250,14 +36294,14 @@ E-Mail: info@blocksocial.eu (Betreff: „DPO“)</address>
 
     <article id="legal-terms-de" lang="de">
       <h1>Nutzungsbedingungen</h1>
-      <p class="legal-meta">Stand: 29. Oktober 2026.</p>
+      <p class="legal-meta">Stand: 27. November 2026.</p>
       <p>Diese Nutzungsbedingungen („Bedingungen“) regeln Ihren Zugang zu und Ihre Nutzung der Plattform YEET Social, die von der BlockSocial UG (haftungsbeschränkt) („wir“, „uns“, „BlockSocial“) betrieben wird. Indem Sie ein Konto erstellen, sich mit einer Wallet anmelden oder den Dienst anderweitig nutzen, erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie nicht einverstanden sind, nutzen Sie den Dienst bitte nicht.</p>
 
       <h2>1. Der Dienst</h2>
       <p>YEET Social ist eine Social-Media-Plattform, die Kurzbeiträge, Audio Stories, Live-Streams und verschlüsselte Nachrichten mit einer punktebasierten Creator-Ökonomie verbindet: Trinkgelder an Creator, Pay-per-View-Inhalte, Promotions und Paper Wallets werden mit in Ihrem Konto geführten Plattform-Punkten bezahlt, nicht mit Kryptowerten. Die einzige Blockchain-Funktion ist die einseitige Umwandlung von Punkten in den YEET-Token, der an eine von Ihnen kontrollierte Wallet ausgezahlt wird (siehe Abschnitt&nbsp;6). Einige Inhalte sind flüchtig und werden standardmäßig nach 24 Stunden automatisch gelöscht; andere können als „dauerhaft“ gekennzeichnet werden. Tokenbezogene Funktionen nutzen den auf der BNB Smart Chain bereitgestellten YEET-Token, der sich stets ausschließlich in einer von Ihnen kontrollierten Wallet befindet, sowie ein in Ihrem Konto geführtes Punkteguthaben. Punkte sind Plattform-Punkte und kein Kryptowert (siehe Abschnitt&nbsp;6).</p>
 
       <h2>2. Nutzungsvoraussetzungen</h2>
-      <p>Für die Erstellung eines Kontos müssen Sie mindestens 16 Jahre alt sein. Für den Zugriff auf als 18+ gekennzeichnete Inhalte müssen Sie mindestens 18 Jahre alt sein und unsere Altersverifikation durchlaufen. Mit der Nutzung des Dienstes versichern Sie, dass Sie diese Voraussetzungen erfüllen und dass Ihre Nutzung des Dienstes an Ihrem Wohnsitz rechtmäßig ist.</p>
+      <p>Der Dienst richtet sich ausschließlich an Erwachsene: Für die Erstellung eines Kontos und die Nutzung des Dienstes müssen Sie mindestens 18 Jahre alt sein. Für den Zugriff auf als 18+ gekennzeichnete Inhalte müssen Sie zusätzlich unsere Altersverifikation durchlaufen. Mit der Nutzung des Dienstes versichern Sie, dass Sie diese Voraussetzungen erfüllen und dass Ihre Nutzung des Dienstes an Ihrem Wohnsitz rechtmäßig ist.</p>
 
       <h2>3. Registrierung und Kontosicherheit</h2>
       <ul>
@@ -41135,7 +41179,7 @@ function render(){
   } else {
     if(blobUrl){ try{URL.revokeObjectURL(blobUrl);}catch(e){} }
     blobUrl=URL.createObjectURL(blob);
-    var adultOk=localStorage.getItem('yeet_adult')==='1';
+    var adultOk=localStorage.getItem('yeet_adult')==='1' && !window.YEET_ANDROID;
     st.innerHTML='<audio controls src="'+blobUrl+'" style="width:100%;margin:6px 0" aria-label="'+esc(T('audio.preview'))+'"></audio>'
       +'<textarea id="arCaption" maxlength="420" rows="2" placeholder="'+esc(T('audio.caption'))+'" aria-label="'+esc(T('audio.caption'))+'" style="width:100%;box-sizing:border-box;background:var(--card-2);border:1px solid var(--border-2);border-radius:10px;padding:8px 10px;color:var(--text);font-size:13px;resize:vertical;margin:6px 0"></textarea>'
       +'<div class="rec-opts" role="group" aria-label="'+esc(T('audio.title'))+'">'

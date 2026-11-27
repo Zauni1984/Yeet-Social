@@ -140,6 +140,7 @@ pub async fn create_live(
     Json(req): Json<CreateLiveRequest>,
 ) -> AppResult<Json<ApiResponse<Uuid>>> {
     ensure_lives_feature()?;
+    crate::api::middleware::reject_adult_in_store(req.is_adult.unwrap_or(false))?;
     let title = req.title.trim();
     if title.is_empty() || title.len() > 120 {
         return Err(AppError::Validation("Title must be 1-120 chars".into()));
@@ -196,7 +197,7 @@ pub async fn list_active(
     Query(q): Query<ListLivesQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<LiveSummary>>>> {
     ensure_lives_feature()?;
-    let include_adult = q.include_adult.unwrap_or(false);
+    let include_adult = q.include_adult.unwrap_or(false) && !crate::api::middleware::store_safe();
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
     let rows = sqlx::query_as::<_, LiveRow>(
         "SELECT l.id, l.host_user_id, l.title, l.description, l.status,
@@ -230,7 +231,7 @@ pub async fn list_scheduled(
     Query(q): Query<ListLivesQuery>,
 ) -> AppResult<Json<ApiResponse<Vec<LiveSummary>>>> {
     ensure_lives_feature()?;
-    let include_adult = q.include_adult.unwrap_or(false);
+    let include_adult = q.include_adult.unwrap_or(false) && !crate::api::middleware::store_safe();
     let limit = q.limit.unwrap_or(50).clamp(1, 200);
     let rows = sqlx::query_as::<_, LiveRow>(
         "SELECT l.id, l.host_user_id, l.title, l.description, l.status,
@@ -274,6 +275,9 @@ pub async fn get_live(
     .bind(id)
     .fetch_optional(state.db.pool()).await.map_err(AppError::Database)?
     .ok_or_else(|| AppError::NotFound("Live not found".into()))?;
+    if row.is_adult && crate::api::middleware::store_safe() {
+        return Err(AppError::NotFound("Live not found".into()));
+    }
 
     Ok(Json(ApiResponse::ok(row_to_summary(row))))
 }
@@ -384,6 +388,9 @@ pub async fn viewer_token(
     }
     // 18+ lives (audit MSG-M10): same gate as 18+ posts — signed in and
     // age-verified, no anonymous viewer tokens.
+    if is_adult && crate::api::middleware::store_safe() {
+        return Err(AppError::Forbidden("STORE_NO_ADULT: 18+ content is not available in the Android app".into()));
+    }
     if is_adult && !crate::api::feed::viewer_is_age_verified(&state, auth_opt.as_ref()).await {
         return Err(AppError::Forbidden("Age verification required for 18+ lives".into()));
     }
@@ -882,5 +889,6 @@ pub async fn list_mine(
     )
     .bind(user_id)
     .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
-    Ok(Json(ApiResponse::ok(rows.into_iter().map(row_to_summary).collect())))
+    let store = crate::api::middleware::store_safe();
+    Ok(Json(ApiResponse::ok(rows.into_iter().filter(|r| !(store && r.is_adult)).map(row_to_summary).collect())))
 }

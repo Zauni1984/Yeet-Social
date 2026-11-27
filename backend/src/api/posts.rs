@@ -124,6 +124,7 @@ pub async fn create_post(
         }
     }
 
+    crate::api::middleware::reject_adult_in_store(req.is_adult.unwrap_or(false))?;
     let is_permanent = req.is_permanent.unwrap_or(false) || req.is_nft.unwrap_or(false);
     let expires_at = if is_permanent {
         Utc::now() + ChronoDuration::hours(24 * 365 * 100)
@@ -533,12 +534,13 @@ pub async fn get_comments(
             AND {vis}
             AND (p.is_adult = FALSE OR p.author_id = $2::uuid
                  OR EXISTS (SELECT 1 FROM users v WHERE v.id = $2::uuid AND v.age_verified_at IS NOT NULL))
+            AND ($3 = FALSE OR p.is_adult = FALSE)
           ORDER BY c.created_at ASC",
         vis = visibility_sql("$2"));
     // Dynamic SQL audited for sqlx 0.9 (`SqlSafeStr`): only constant fragments or
     // whitelisted identifiers are interpolated; every user-supplied value is bound.
     let comments = sqlx::query_as::<_, Comment>(sqlx::AssertSqlSafe(sql.as_str()))
-        .bind(id).bind(viewer)
+        .bind(id).bind(viewer).bind(crate::api::middleware::store_safe())
         .fetch_all(state.db.pool()).await.map_err(AppError::Database)?;
     Ok(Json(ApiResponse::ok(comments)))
 }

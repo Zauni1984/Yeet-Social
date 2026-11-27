@@ -73,21 +73,35 @@ unsigniert.
 Diese Punkte entscheiden, ob Google die App annimmt. Sie sind keine
 Technikfragen.
 
-### 3.1 18+-Inhalte
+### 3.1 18+-Inhalte (entschieden: in der Android-App abgeschaltet)
 
-Play verbietet Apps, die sexuelle Inhalte enthalten oder bewerben. Bei
-Plattformen mit Nutzerinhalten duldet Google beiläufige Erwachseneninhalte nur,
-wenn sie standardmäßig ausgeblendet und für Minderjährige gesperrt sind.
-Ausdrücklich verboten ist, solche Inhalte zu monetarisieren.
+Play verbietet Apps, die sexuelle Inhalte enthalten oder bewerben, und
+ausdrücklich, Erwachseneninhalte von Nutzern zu monetarisieren. Deshalb gibt
+es in der Android-App **keine 18+-Inhalte**. Website und installierte Web-App
+bleiben unverändert.
 
-YEET hat einen 18+-Bereich und Pay-per-View. **Pay-per-View oder Trinkgeld auf
-18+-Beiträge ist mit Play nicht vereinbar.** Möglichkeiten:
+So ist es umgesetzt:
 
-- a) In der Android-App (Aufruf mit `?source=android`) den 18+-Bereich ganz
-  ausblenden. Sicherster Weg.
-- b) 18+ in der App nur nach Altersverifikation zeigen, aber dort jede
-  Bezahlfunktion sperren. Höheres Ablehnungsrisiko.
-- c) Nichts ändern: Ablehnung oder spätere Sperre ist wahrscheinlich.
+- Die Seite erkennt die Android-App am Startparameter `?source=android` oder
+  am Referrer `android-app://it.justyeet.app` und merkt es sich für den Tab
+  (`sessionStorage`; der normale Browser auf demselben Telefon bleibt
+  unberührt).
+- Jeder API-Aufruf trägt dann `X-Yeet-Client: android`.
+- Der Server lässt für solche Anfragen 18+-Beiträge überall weg: Einzelbeitrag,
+  Profil, dauerhafte Beiträge, Suche, Kommentare, 18+-Feed, 18+-Live-Streams.
+  Das gilt auch für die eigenen 18+-Beiträge des Nutzers.
+- 18+-Beiträge, geplante 18+-Beiträge und 18+-Streams lassen sich aus der App
+  nicht anlegen.
+- Die 18+-Schalter (Composer, Einstellungen, Live, Audio) und der 18+-Tab sind
+  ausgeblendet.
+
+Damit entfällt auch Pay-per-View und Trinkgeld auf 18+-Inhalte in der App.
+
+Grenzen: Die Kennung ist ein Produktschalter und kein Zugriffsschutz; die
+Altersverifikation schützt 18+-Inhalte weiterhin überall sonst.
+Direktnachrichten sind Ende-zu-Ende-verschlüsselt und werden nicht gefiltert.
+Beiträge, die ihr Autor nicht als 18+ markiert hat, fallen unter die normale
+Moderation (Melden, Admin-Panel).
 
 ### 3.2 Punkte, Trinkgeld, Pay-per-View
 
@@ -117,10 +131,17 @@ Erklärung so anzugeben.
 | Konto löschen über eine Web-Adresse | Adresse für das Formular nötig, z. B. ein Abschnitt in der Datenschutzerklärung |
 | Datenschutzerklärung als öffentliche URL | `https://justyeet.it/legal/privacy` |
 
-### 3.5 Zielgruppe
+### 3.5 Zielgruppe (entschieden: nur ab 18)
 
-Zielgruppe „18 und älter“ angeben. Mit jüngeren Zielgruppen greifen die
-Familienrichtlinien, die mit Token und 18+-Inhalten nicht vereinbar sind.
+YEET Social wird insgesamt nur Erwachsenen angeboten. Die Nutzungsbedingungen
+verlangen ein Mindestalter von 18 Jahren, und die Registrierung per E-Mail
+fragt die Bestätigung „Ich bin mindestens 18 Jahre alt“ ab (Zeitpunkt wird
+gespeichert). In der Console: Zielgruppe „18 und älter“. Im Fragebogen zur
+Inhaltseinstufung wahrheitsgemäß angeben, dass Nutzer miteinander
+kommunizieren und Inhalte teilen.
+
+Die Anmeldung per Wallet hat kein Registrierungsformular; dort gilt die
+Altersangabe aus den Nutzungsbedingungen.
 
 ## 4. Store-Eintrag
 
